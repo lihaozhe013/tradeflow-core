@@ -5,8 +5,6 @@ import { fileURLToPath } from "url";
 import cors from "cors";
 import type { AppConfig, CustomError } from "@/types/index";
 import { appConfigPath } from "@/utils/paths";
-import "@/db";
-import { ensureAllTablesAndColumns } from "@/utils/dbUpgrade";
 import { logger } from "@/utils/logger";
 import { requestLogger, errorLogger } from "@/utils/loggerMiddleware";
 import { authenticateToken, checkWritePermission } from "@/utils/auth";
@@ -23,7 +21,6 @@ import exportRoutes from "@/routes/export";
 import analysisRoutes from "@/routes/analysis/analysis";
 import aboutRoutes from "@/routes/about";
 import authRoutes from "@/routes/auth";
-import dbBackupRoutes from "@/routes/dbBackup";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -41,17 +38,8 @@ const PORT: number =
 // =============================================================================
 
 // Check and upgrade database structures upon startup
-try {
-  ensureAllTablesAndColumns();
-  logger.info("Database initialization completed!");
-} catch (error) {
-  const err = error as CustomError;
-  logger.error("Database initialization failed!", {
-    error: err.message,
-    stack: err.stack,
-  });
-  process.exit(1);
-}
+// database init is handled by Prisma
+logger.info("Database initialization completed!");
 
 // Logger Middleware
 app.use(requestLogger);
@@ -107,7 +95,6 @@ app.use("/api/payable", payableRoutes);
 app.use("/api/export", exportRoutes);
 app.use("/api/analysis", analysisRoutes);
 app.use("/api/about", aboutRoutes);
-app.use("/api/db-backup", dbBackupRoutes);
 
 // =============================================================================
 // Error Message Middleware
@@ -190,10 +177,7 @@ app.listen(PORT, () => {
 
   if (process.env["NODE_ENV"] === "production") {
     console.log("Running Production Mode...");
-    console.log(`Local: http://localhost:${PORT}`);
   } else {
-    console.log("Development mode is running.");
-    console.log(`Backend: http://localhost:${PORT}`);
-    console.log("Frontend: http://localhost:5173");
+    console.log("Development mode is running...");
   }
 });

@@ -1,9 +1,9 @@
 import fs from 'fs';
 import path from 'path';
-import db from '@/db.js';
+import { prisma } from '@/prismaClient.js';
 import decimalCalc from '@/utils/decimalCalculator.js';
-import { logger } from '@/utils/logger';
-import { getDataDir } from '@/utils/paths';
+import { logger } from '@/utils/logger.js';
+import { getDataDir } from '@/utils/paths.js';
 
 const CACHE_FILE_NAME = 'invoice-cache.json';
 
@@ -61,65 +61,106 @@ class InvoiceCacheService {
   /**
    * Refresh cache for a specific customer (outbound/receivable)
    */
-  public refreshCustomerCache(customer_code: string): Promise<InvoicedRecord[]> {
-    return this.refreshCache(customer_code, 'outbound_records', 'customer_code');
+  public async refreshCustomerCache(customer_code: string): Promise<InvoicedRecord[]> {
+    try {
+      const groups = await prisma.outboundRecord.groupBy({
+        by: ['invoice_number'],
+        where: {
+          customer_code: customer_code,
+          invoice_number: { not: null, notIn: [''] }
+        },
+        _sum: {
+          total_price: true
+        },
+        _min: {
+          invoice_date: true
+        },
+        _count: {
+          _all: true
+        }
+      });
+
+      // Sort in memory or use logic. SQL was ORDER BY MIN(invoice_date) DESC
+      // Prisma groupBy allows orderBy since recent versions, but simpler to sort in code if needed or check types.
+      // Let's sort in memory to be safe and consistent.
+      groups.sort((a, b) => {
+        const dateA = a._min.invoice_date || '';
+        const dateB = b._min.invoice_date || '';
+        return dateB.localeCompare(dateA);
+      });
+
+      const invoicedRecords: InvoicedRecord[] = groups.map(g => ({
+        invoice_number: g.invoice_number!,
+        invoice_date: g._min.invoice_date,
+        total_amount: decimalCalc.fromSqlResult(g._sum.total_price || 0, 0),
+        record_count: g._count._all
+      }));
+
+      this.cache[customer_code] = {
+        invoiced_records: invoicedRecords,
+        last_updated: new Date().toISOString(),
+      };
+
+      this.saveCache();
+      return invoicedRecords;
+
+    } catch (err: any) {
+      logger.error(`Failed to refresh invoice cache for customer ${customer_code}: ${err.message}`);
+      throw err;
+    }
   }
 
   /**
    * Refresh cache for a specific supplier (inbound/payable)
    */
-  public refreshSupplierCache(supplier_code: string): Promise<InvoicedRecord[]> {
-    return this.refreshCache(supplier_code, 'inbound_records', 'supplier_code');
+  public async refreshSupplierCache(supplier_code: string): Promise<InvoicedRecord[]> {
+    try {
+      const groups = await prisma.inboundRecord.groupBy({
+        by: ['invoice_number'],
+        where: {
+          supplier_code: supplier_code,
+          invoice_number: { not: null, notIn: [''] }
+        },
+        _sum: {
+          total_price: true
+        },
+        _min: {
+          invoice_date: true
+        },
+        _count: {
+          _all: true
+        }
+      });
+
+      groups.sort((a, b) => {
+        const dateA = a._min.invoice_date || '';
+        const dateB = b._min.invoice_date || '';
+        return dateB.localeCompare(dateA);
+      });
+
+      const invoicedRecords: InvoicedRecord[] = groups.map(g => ({
+        invoice_number: g.invoice_number!,
+        invoice_date: g._min.invoice_date,
+        total_amount: decimalCalc.fromSqlResult(g._sum.total_price || 0, 0),
+        record_count: g._count._all
+      }));
+
+      this.cache[supplier_code] = {
+        invoiced_records: invoicedRecords,
+        last_updated: new Date().toISOString(),
+      };
+
+      this.saveCache();
+      return invoicedRecords;
+
+    } catch (err: any) {
+      logger.error(`Failed to refresh invoice cache for supplier ${supplier_code}: ${err.message}`);
+      throw err;
+    }
   }
 
-  /**
-   * Generic refresh cache method
-   */
-  private refreshCache(code: string, tableName: string, codeColumn: string): Promise<InvoicedRecord[]> {
-    return new Promise((resolve, reject) => {
-      try {
-        const sql = `
-          SELECT 
-            invoice_number,
-            MIN(invoice_date) as invoice_date,
-            SUM(total_price) as total_amount,
-            COUNT(*) as record_count
-          FROM ${tableName}
-          WHERE ${codeColumn} = ? 
-            AND invoice_number IS NOT NULL 
-            AND invoice_number != ''
-          GROUP BY invoice_number
-          ORDER BY MIN(invoice_date) DESC
-        `;
+  // Helper method removed as distinct implementation is clearer with Prisma types
 
-        const rows = db.prepare(sql).all(code) as {
-          invoice_number: string;
-          invoice_date: string | null;
-          total_amount: number | null;
-          record_count: number;
-        }[];
-
-        const invoicedRecords: InvoicedRecord[] = rows.map(row => ({
-          invoice_number: row.invoice_number,
-          invoice_date: row.invoice_date,
-          total_amount: decimalCalc.fromSqlResult(row.total_amount, 0),
-          record_count: row.record_count,
-        }));
-
-        this.cache[code] = {
-          invoiced_records: invoicedRecords,
-          last_updated: new Date().toISOString(),
-        };
-
-        this.saveCache();
-        resolve(invoicedRecords);
-      } catch (err) {
-        const error = err as Error;
-        logger.error(`Failed to refresh invoice cache for ${code}: ${error.message}`);
-        reject(error);
-      }
-    });
-  }
 
   /**
    * Get cached invoiced records for a customer

@@ -32,6 +32,7 @@ router.get('/', (req: Request, res: Response): void => {
  * GET /api/inventory/total-cost-estimate
  */
 router.get('/total-cost-estimate', (_req: Request, res: Response): void => {
+  // getInventoryCache reads from JSON file, so it is safe regardless of DB driver
   getInventoryCache((err, inventoryData) => {
     if (err) {
       res.status(500).json({ error: err.message });
@@ -49,6 +50,7 @@ router.get('/total-cost-estimate', (_req: Request, res: Response): void => {
  * POST /api/inventory/refresh
  */
 router.post('/refresh', (_req: Request, res: Response): void => {
+  // This triggers a refresh which queries DB.
   refreshInventoryCache((err, inventoryData) => {
     if (err) {
       res.status(500).json({ error: err.message });
@@ -64,4 +66,4 @@ router.post('/refresh', (_req: Request, res: Response): void => {
   });
 });
 
-export default router; 
+export default router;

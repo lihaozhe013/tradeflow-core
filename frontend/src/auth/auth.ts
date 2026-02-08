@@ -90,14 +90,14 @@ export const authAPI = {
   
   async getCurrentUser(): Promise<GetCurrentUserResponse> {
     const token = tokenManager.getToken();
-    if (!token) {
-      throw new Error('No token found');
+    
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
     }
     
     const response = await fetch('/api/auth/me', {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
+      headers,
     });
     
     if (!response.ok) {

@@ -1,5 +1,13 @@
 {
   "currency_unit_symbol": "$",
+  "database": {
+    "type": "postgresql",
+    "host": "localhost",
+    "port": 5432,
+    "user": "postgres",
+    "password": "postgres",
+    "dbName": "tradeflow"
+  },
   "auth": {
     "enabled": true,
     "tokenExpiresInHours": 12,

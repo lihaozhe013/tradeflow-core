@@ -20,3 +20,10 @@ fs.moveSync(srcServer, dstServer, { overwrite: true });
 const srcPkg = r("backend/scripts/package.json");
 const dstPkg = r("dist/package.json");
 fs.copySync(srcPkg, dstPkg);
+
+// Copy prisma directory
+const srcPrisma = r("backend/prisma");
+const dstPrisma = r("dist/prisma");
+if (fs.pathExistsSync(srcPrisma)) {
+    fs.copySync(srcPrisma, dstPrisma);
+}

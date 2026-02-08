@@ -1,7 +1,8 @@
-import db from "@/db";
-import decimalCalc from "@/utils/decimalCalculator";
-import { calculateFilteredSoldGoodsCost } from "@/routes/analysis/utils/costCalculator";
-import type { DetailItem, AnalysisType } from "@/routes/analysis/utils/types";
+import { Prisma } from "@prisma/client";
+import { prisma } from "@/prismaClient.js";
+import decimalCalc from "@/utils/decimalCalculator.js";
+import { calculateFilteredSoldGoodsCost } from "@/routes/analysis/utils/costCalculator.js";
+import type { DetailItem, AnalysisType } from "@/routes/analysis/utils/types.js";
 
 /**
  * Calculate detailed analytical data (grouped by customer or product)
@@ -35,56 +36,66 @@ function handleInboundAnalysis(
   _groupByProduct: boolean,
   callback: (err: Error | null, detailData?: DetailItem[]) => void
 ) {
-  // Logic: Group by Supplier if Supplier is "All", otherwise Group by Product
-  const groupField = groupBySupplier ? "supplier_code" : "product_model";
+  (async () => {
+    // Logic: Group by Supplier if Supplier is "All", otherwise Group by Product
+    const groupField = groupBySupplier ? Prisma.sql`supplier_code` : Prisma.sql`product_model`;
 
-  const conditions = [`date(inbound_date) BETWEEN ? AND ?`];
-  const params: any[] = [startDate, endDate];
-
-  if (supplierCode && supplierCode !== 'All') {
-      conditions.push(`supplier_code = ?`);
-      params.push(supplierCode);
-  }
-  if (productModel && productModel !== 'All') {
-      conditions.push(`product_model = ?`);
-      params.push(productModel);
-  }
-
-  const inboundSql = `
-    SELECT 
-      ${groupField} as group_key,
-      product_model,
-      supplier_code,
-      SUM(CASE WHEN unit_price >= 0 THEN quantity * unit_price ELSE 0 END) as normal_purchase,
-      SUM(CASE WHEN unit_price < 0 THEN ABS(quantity * unit_price) ELSE 0 END) as special_income
-    FROM inbound_records 
-    WHERE ${conditions.join(' AND ')}
-    GROUP BY ${groupField}
-    HAVING normal_purchase > 0 OR special_income > 0
-  `;
-
-  try {
-    const inboundGroups: any[] = db.prepare(inboundSql).all(...params);
-    const results: DetailItem[] = inboundGroups.map(group => {
-      const normalPurchase = decimalCalc.fromSqlResult(group.normal_purchase, 0, 2);
-      const specialIncome = decimalCalc.fromSqlResult(group.special_income, 0, 2);
-      const purchaseAmount = decimalCalc.toDbNumber(
-        decimalCalc.subtract(normalPurchase, specialIncome),
-        2
-      );
-
-      return {
-        group_key: group.group_key,
-        supplier_code: groupBySupplier ? group.group_key : (supplierCode || group.supplier_code), 
-        product_model: groupBySupplier ? (productModel || group.product_model) : group.group_key,
-        purchase_amount: purchaseAmount
-      };
-    });
+    // Only select the necessary columns to avoid GROUP BY issues in Postgres
+    const selectCols = groupBySupplier 
+        ? Prisma.sql`${groupField} as group_key, supplier_code` 
+        : Prisma.sql`${groupField} as group_key, product_model`;
     
-    callback(null, results);
-  } catch (err) {
-    callback(err as Error);
-  }
+    // Group only by relevant columns
+    const groupByCols = groupBySupplier
+        ? Prisma.sql`${groupField}, supplier_code`
+        : Prisma.sql`${groupField}, product_model`;
+
+    const conditions: Prisma.Sql[] = [];
+    
+    // Date comparison (lexicographical for ISO strings)
+    conditions.push(Prisma.sql`inbound_date >= ${startDate}`);
+    conditions.push(Prisma.sql`inbound_date <= ${endDate}`);
+
+    if (supplierCode && supplierCode !== 'All') {
+        conditions.push(Prisma.sql`supplier_code = ${supplierCode}`);
+    }
+    if (productModel && productModel !== 'All') {
+        conditions.push(Prisma.sql`product_model = ${productModel}`);
+    }
+
+    const inboundSql = Prisma.sql`
+      SELECT 
+        ${selectCols},
+        SUM(CASE WHEN unit_price >= 0 THEN quantity * unit_price ELSE 0 END) as normal_purchase,
+        SUM(CASE WHEN unit_price < 0 THEN ABS(quantity * unit_price) ELSE 0 END) as special_income
+      FROM inbound_records 
+      WHERE ${Prisma.join(conditions, ' AND ')}
+      GROUP BY ${groupByCols}
+    `;
+
+    try {
+      const inboundGroups = await prisma.$queryRaw<any[]>(inboundSql);
+      const results: DetailItem[] = inboundGroups.map(group => {
+        const normalPurchase = decimalCalc.fromSqlResult(group.normal_purchase, 0, 2);
+        const specialIncome = decimalCalc.fromSqlResult(group.special_income, 0, 2);
+        const purchaseAmount = decimalCalc.toDbNumber(
+          decimalCalc.subtract(normalPurchase, specialIncome),
+          2
+        );
+
+        return {
+          group_key: group.group_key,
+          supplier_code: groupBySupplier ? group.group_key : (supplierCode || undefined), 
+          product_model: groupBySupplier ? (productModel || undefined) : group.group_key,
+          purchase_amount: purchaseAmount
+        };
+      });
+      
+      callback(null, results);
+    } catch (err) {
+      callback(err as Error);
+    }
+  })();
 }
 
 function handleOutboundAnalysis(
@@ -93,153 +104,137 @@ function handleOutboundAnalysis(
   customerCode: string | null | undefined,
   productModel: string | null | undefined,
   groupByCustomer: boolean,
-  groupByProduct: boolean,
+  _groupByProduct: boolean,
   callback: (err: Error | null, detailData?: DetailItem[]) => void
 ) {
-  // Logic: Group by Customer if Customer is "All", otherwise Group by Product
-  const groupField = groupByCustomer ? "customer_code" : "product_model";
+  (async () => {
+    // Logic: Group by Customer if Customer is "All", otherwise Group by Product
+    const groupField = groupByCustomer ? Prisma.sql`customer_code` : Prisma.sql`product_model`;
 
-  const conditions = [`date(outbound_date) BETWEEN ? AND ?`];
-  const params: any[] = [startDate, endDate];
+    // Only select the necessary columns
+    const selectCols = groupByCustomer 
+        ? Prisma.sql`${groupField} as group_key, customer_code` 
+        : Prisma.sql`${groupField} as group_key, product_model`;
+    
+    // Group only by relevant columns
+    const groupByCols = groupByCustomer
+        ? Prisma.sql`${groupField}, customer_code`
+        : Prisma.sql`${groupField}, product_model`;
 
-  if (customerCode && customerCode !== 'All') {
-      conditions.push(`customer_code = ?`);
-      params.push(customerCode);
-  }
-  if (productModel && productModel !== 'All') {
-      conditions.push(`product_model = ?`);
-      params.push(productModel);
-  }
+    const conditions: Prisma.Sql[] = [];
+    
+    // Date comparison
+    conditions.push(Prisma.sql`outbound_date >= ${startDate}`);
+    conditions.push(Prisma.sql`outbound_date <= ${endDate}`);
 
-  // Retrieve all relevant outbound records
-  const outboundSql = `
-    SELECT 
-      ${groupField} as group_key,
-      product_model,
-      customer_code,
-      SUM(CASE WHEN unit_price >= 0 THEN quantity * unit_price ELSE 0 END) as normal_sales,
-      SUM(CASE WHEN unit_price < 0 THEN ABS(quantity * unit_price) ELSE 0 END) as special_expense
-    FROM outbound_records 
-    WHERE ${conditions.join(' AND ')}
-    GROUP BY ${groupField}
-    HAVING normal_sales > 0 OR special_expense > 0
-  `;
-
-  try {
-    const outboundGroups: any[] = db.prepare(outboundSql).all(...params);
-
-    if (!outboundGroups || outboundGroups.length === 0) {
-      callback(null, []);
-      return;
+    if (customerCode && customerCode !== 'All') {
+        conditions.push(Prisma.sql`customer_code = ${customerCode}`);
+    }
+    if (productModel && productModel !== 'All') {
+        conditions.push(Prisma.sql`product_model = ${productModel}`);
     }
 
-    // Calculate the average cost of all products (maintain consistency with the original logic)
-    const avgCostData: any[] = db.prepare(`
+    // Retrieve all relevant outbound records
+    const outboundSql = Prisma.sql`
       SELECT 
-        product_model,
-        SUM(quantity * unit_price) / SUM(quantity) as avg_cost_price,
-        SUM(quantity) as total_inbound_quantity
-      FROM inbound_records 
-      WHERE unit_price >= 0
-      GROUP BY product_model
-    `).all();
+        ${selectCols},
+        SUM(CASE WHEN unit_price >= 0 THEN quantity * unit_price ELSE 0 END) as normal_sales,
+        SUM(CASE WHEN unit_price < 0 THEN ABS(quantity * unit_price) ELSE 0 END) as special_expense
+      FROM outbound_records 
+      WHERE ${Prisma.join(conditions, ' AND ')}
+      GROUP BY ${groupByCols}
+    `;
 
-    const avgCostMap: Record<
-      string,
-      { avg_cost_price: number; total_inbound_quantity: number }
-    > = {};
-    avgCostData.forEach((item: any) => {
-      avgCostMap[item.product_model] = {
-        avg_cost_price: decimalCalc.fromSqlResult(
-          item.avg_cost_price,
-          0,
-          4
-        ),
-        total_inbound_quantity: decimalCalc.fromSqlResult(
-          item.total_inbound_quantity,
-          0,
-          0
-        ),
-      };
-    });
+    try {
+      const outboundGroups = await prisma.$queryRaw<any[]>(outboundSql);
 
-          // Calculate the detailed data for each group
-          const detailPromises = outboundGroups.map((group: any) => {
-            return new Promise<DetailItem | null>((resolve, reject) => {
-              const groupKey = group.group_key as string;
-              const currentCustomerCode = groupByCustomer
-                ? groupKey
-                : customerCode;
-              const currentProductModel = groupByProduct
-                ? groupKey
-                : productModel;
+      if (!outboundGroups || outboundGroups.length === 0) {
+        callback(null, []);
+        return;
+      }
 
-              // Calculate the cost of this grouping
-              calculateFilteredSoldGoodsCost(
-                startDate,
-                endDate,
-                currentCustomerCode === "All" ? null : currentCustomerCode,
-                currentProductModel === "All" ? null : currentProductModel,
-                (costErr, costAmount) => {
-                  if (costErr) return reject(costErr);
+            // Calculate the detailed data for each group
+            const detailPromises = outboundGroups.map((group: any) => {
+              return new Promise<DetailItem | null>((resolve, reject) => {
+                const groupKey = group.group_key as string;
+                
+                // If grouped by customer, key is customer -> Product is All
+                // If grouped by product, key is product -> Customer is All/Specific (from filter params)
+                const currentCustomerCode = groupByCustomer
+                  ? groupKey
+                  : customerCode;
+                  
+                const currentProductModel = groupByCustomer
+                  ? productModel // Should be "All" or undefined if grouped by customer
+                  : groupKey;
 
-                  const normalSales = decimalCalc.fromSqlResult(
-                    group.normal_sales,
-                    0,
-                    2
-                  );
-                  const specialExpense = decimalCalc.fromSqlResult(
-                    group.special_expense,
-                    0,
-                    2
-                  );
-                  const salesAmount = decimalCalc.toDbNumber(
-                    decimalCalc.subtract(normalSales, specialExpense),
-                    2
-                  );
-                  const cost = decimalCalc.toDbNumber(costAmount ?? 0, 2);
-                  const profit = decimalCalc.toDbNumber(
-                    decimalCalc.subtract(salesAmount, cost),
-                    2
-                  );
+                // Calculate the cost of this grouping
+                calculateFilteredSoldGoodsCost(
+                  startDate,
+                  endDate,
+                  currentCustomerCode === "All" ? null : currentCustomerCode,
+                  currentProductModel === "All" ? null : currentProductModel,
+                  (costErr, costAmount) => {
+                    if (costErr) return reject(costErr);
 
-                  // Calculate the profit margin
-                  let profitRate = 0;
-                  if (salesAmount > 0) {
-                    const rate = decimalCalc.multiply(
-                      decimalCalc.divide(profit, salesAmount),
-                      100
+                    const normalSales = decimalCalc.fromSqlResult(
+                      group.normal_sales,
+                      0,
+                      2
                     );
-                    profitRate = decimalCalc.toDbNumber(rate, 2);
-                  }
+                    const specialExpense = decimalCalc.fromSqlResult(
+                      group.special_expense,
+                      0,
+                      2
+                    );
+                    const salesAmount = decimalCalc.toDbNumber(
+                      decimalCalc.subtract(normalSales, specialExpense),
+                      2
+                    );
+                    const cost = decimalCalc.toDbNumber(costAmount ?? 0, 2);
+                    const profit = decimalCalc.toDbNumber(
+                      decimalCalc.subtract(salesAmount, cost),
+                      2
+                    );
 
-                  if (salesAmount > 0) {
-                    resolve({
-                      group_key: groupKey,
-                      customer_code: currentCustomerCode ?? undefined,
-                      product_model: currentProductModel ?? undefined,
-                      sales_amount: salesAmount,
-                      cost_amount: cost,
-                      profit_amount: profit,
-                      profit_rate: profitRate,
-                    });
-                  } else {
-                    resolve(null);
+                    // Calculate the profit margin
+                    let profitRate = 0;
+                    if (salesAmount > 0) {
+                      const rate = decimalCalc.multiply(
+                        decimalCalc.divide(profit, salesAmount),
+                        100
+                      );
+                      profitRate = decimalCalc.toDbNumber(rate, 2);
+                    }
+
+                    if (salesAmount !== 0) {
+                      resolve({
+                        group_key: groupKey,
+                        customer_code: currentCustomerCode ?? undefined,
+                        product_model: currentProductModel ?? undefined,
+                        sales_amount: salesAmount,
+                        cost_amount: cost,
+                        profit_amount: profit,
+                        profit_rate: profitRate,
+                      });
+                    } else {
+                      resolve(null);
+                    }
                   }
-                }
-              );
+                );
+              });
             });
-          });
 
-    Promise.all(detailPromises)
-      .then((results) => {
-        const validResults = results.filter(
-          (item): item is DetailItem => item !== null
-        );
-        callback(null, validResults);
-      })
-      .catch((e) => callback(e as Error));
-  } catch (err) {
-    callback(err as Error);
-  }
+      Promise.all(detailPromises)
+        .then((results) => {
+          const validResults = results.filter(
+            (item): item is DetailItem => item !== null
+          );
+          callback(null, validResults);
+        })
+        .catch((e) => callback(e as Error));
+    } catch (err) {
+      callback(err as Error);
+    }
+  })();
 }

@@ -5,7 +5,7 @@ import type { User } from '@/auth/auth';
 import type { AuthContextValue, LoginResult } from '@/auth/useAuth.d';
 
 /**
- * 认证状态接口
+ * Certification Status Interface
  */
 interface AuthState {
   user: User | null;
@@ -16,7 +16,7 @@ interface AuthState {
 }
 
 /**
- * Action 类型
+ * Action Type
  */
 type AuthAction =
   | { type: 'SET_LOADING'; payload: boolean }
@@ -33,7 +33,6 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
-// 初始状态
 const initialState: AuthState = {
   user: null,
   token: null,
@@ -43,7 +42,7 @@ const initialState: AuthState = {
 };
 
 /**
- * Reducer 函数
+ * Reducer
  */
 const authReducer = (state: AuthState, action: AuthAction): AuthState => {
   switch (action.type) {
@@ -102,13 +101,13 @@ const authReducer = (state: AuthState, action: AuthAction): AuthState => {
   }
 };
 
-// 创建 Context
+// Create Context
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 /**
- * AuthProvider 组件
+ * AuthProvider
  * 
- * 提供认证上下文，管理用户认证状态
+ * Provide authentication context and manage user authentication status
  * 
  * @example
  * ```tsx
@@ -121,45 +120,43 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [state, dispatch] = useReducer(authReducer, initialState);
   const { t } = useTranslation();
 
-  // 初始化时检查本地存储的认证信息
+  // Check locally stored authentication information during initialization
   useEffect(() => {
     const initAuth = async () => {
       const token = tokenManager.getToken();
-      const user = userManager.getUser();
 
-      if (token && user) {
-        try {
-          // 验证 token 是否仍然有效
-          const response = await authAPI.getCurrentUser();
-          if (response.success) {
-            dispatch({
-              type: 'LOGIN_SUCCESS',
-              payload: { user: response.user, token },
-            });
+      try {
+        // Attempt to verify or retrieve the current user from the server (supports tokenless access when Auth is disabled)
+        const response = await authAPI.getCurrentUser();
+
+        if (response.success && response.user) {
+          const activeToken = token ?? 'dev-mode-token';
+          dispatch({
+            type: 'LOGIN_SUCCESS',
+            payload: { user: response.user, token: activeToken },
+          });
+          // Only save when a valid token is present; otherwise, it may be in Dev Mode
+          if (token) {
             tokenManager.setToken(token);
-            userManager.setUser(response.user);
-          } else {
-            // Token 无效，清除本地存储
-            tokenManager.clearToken();
-            userManager.setUser(null);
-            dispatch({ type: 'LOGOUT' });
           }
-        } catch {
-          // Token 验证失败，清除本地存储
-          tokenManager.clearToken();
-          userManager.setUser(null);
-          dispatch({ type: 'LOGOUT' });
+          userManager.setUser(response.user);
+          return;
         }
-      } else {
-        dispatch({ type: 'SET_LOADING', payload: false });
+      } catch {
+        // Verification failed, clear status
       }
+
+      // Verification failed or no response received; performing logout cleanup
+      tokenManager.clearToken();
+      userManager.setUser(null);
+      dispatch({ type: 'LOGOUT' });
     };
 
     void initAuth();
   }, []);
 
   /**
-   * 登录函数
+   * Login
    */
   const login = async (username: string, password: string): Promise<LoginResult> => {
     dispatch({ type: 'SET_LOADING', payload: true });
@@ -171,11 +168,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (response.success) {
         const { token, user } = response;
 
-        // 保存到本地存储
+        // Save to local storage
         tokenManager.setToken(token);
         userManager.setUser(user);
 
-        // 更新状态
+        // Update Status
         dispatch({
           type: 'LOGIN_SUCCESS',
           payload: { user, token },
@@ -196,7 +193,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   /**
-   * 登出函数
+   * Logout
    */
   const logout = (): void => {
     authAPI.logout();
@@ -204,14 +201,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   /**
-   * 清除错误
+   * Clear Error
    */
   const clearError = (): void => {
     dispatch({ type: 'CLEAR_ERROR' });
   };
 
   /**
-   * 检查权限
+   * Inspection Authority
    */
   const hasPermission = (requiredRole: 'reader' | 'editor'): boolean => {
     if (!state.user) return false;
@@ -236,5 +233,4 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-// 导出 AuthContext 以便在其他文件中使用
 export default AuthContext;

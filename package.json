@@ -4,8 +4,8 @@
   "version": "0.6.0",
   "description": "a lightweight tradeflow system core",
   "scripts": {
-    "install:all": "npm install && cd frontend && npm install && cd ../backend && npm install",
-    "ci:all": "npm ci && cd frontend && npm ci && cd ../backend && npm ci",
+    "install:all": "npm install && cd frontend && npm install && cd ../backend && npm install && npx prisma generate",
+    "ci:all": "npm ci && cd frontend && npm ci && cd ../backend && npm ci && npx prisma generate",
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
     "dev:frontend": "cd frontend && npm run dev",
     "dev:backend": "cd backend && npm run dev",

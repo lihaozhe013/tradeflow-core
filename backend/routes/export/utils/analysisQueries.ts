@@ -1,4 +1,5 @@
-import db from "@/db";
+import { Prisma } from "@prisma/client";
+import { prisma } from "@/prismaClient.js";
 
 type Row = Record<string, any>;
 
@@ -11,7 +12,7 @@ export default class AnalysisQueries {
     endDate: string
   ): Promise<any[]> {
     try {
-      const customerSalesSql = `
+      const customerSalesSql = Prisma.sql`
         SELECT 
           p.code as customer_code,
           p.full_name as customer_name,
@@ -20,17 +21,17 @@ export default class AnalysisQueries {
           SUM(o.total_price) as sales_amount
         FROM outbound_records o
         LEFT JOIN partners p ON (o.customer_code = p.code OR o.customer_short_name = p.short_name)
-        WHERE o.outbound_date >= ? AND o.outbound_date <= ?
+        WHERE o.outbound_date >= ${startDate} AND o.outbound_date <= ${endDate}
         AND p.code IS NOT NULL
         AND o.unit_price >= 0
         GROUP BY p.code, p.full_name, o.product_model
         ORDER BY p.full_name, o.product_model
       `;
 
-      const salesData = db.prepare(customerSalesSql).all(startDate, endDate) as Row[];
+      const salesData = await prisma.$queryRaw<Row[]>(customerSalesSql);
       if (!salesData || salesData.length === 0) return [];
 
-      const avgCostSql = `
+      const avgCostSql = Prisma.sql`
           SELECT 
             product_model,
             SUM(quantity * unit_price) / SUM(quantity) as avg_cost_price
@@ -39,10 +40,11 @@ export default class AnalysisQueries {
           GROUP BY product_model
         `;
 
-      const costData = db.prepare(avgCostSql).all() as Row[];
+      const costData = await prisma.$queryRaw<Row[]>(avgCostSql);
       const costMap: Record<string, number> = {};
       (costData || []).forEach((item) => {
-        costMap[item["product_model"]] = item["avg_cost_price"] || 0;
+        const avgCost = item["avg_cost_price"];
+        costMap[item["product_model"]] = typeof avgCost === 'bigint' ? Number(avgCost) : (Number(avgCost) || 0);
       });
 
       const customerMap: Record<string, any> = {};
@@ -50,8 +52,10 @@ export default class AnalysisQueries {
         const customerCode = row["customer_code"];
         const customerName = row["customer_name"];
         const productModel = row["product_model"];
-        const salesAmount = row["sales_amount"] || 0;
-        const quantity = row["total_quantity"] || 0;
+        const salesAmountVal = row["sales_amount"];
+        const salesAmount = typeof salesAmountVal === 'bigint' ? Number(salesAmountVal) : (Number(salesAmountVal) || 0);
+        const quantityVal = row["total_quantity"];
+        const quantity = typeof quantityVal === 'bigint' ? Number(quantityVal) : (Number(quantityVal) || 0);
         const avgCostPrice = costMap[productModel] || 0;
         const costAmount = avgCostPrice * quantity;
         const profitAmount = salesAmount - costAmount;
@@ -106,7 +110,7 @@ export default class AnalysisQueries {
     endDate: string
   ): Promise<any[]> {
     try {
-      const productSalesSql = `
+      const productSalesSql = Prisma.sql`
         SELECT 
           o.product_model,
           p.code as customer_code,
@@ -115,17 +119,17 @@ export default class AnalysisQueries {
           SUM(o.total_price) as sales_amount
         FROM outbound_records o
         LEFT JOIN partners p ON (o.customer_code = p.code OR o.customer_short_name = p.short_name)
-        WHERE o.outbound_date >= ? AND o.outbound_date <= ?
+        WHERE o.outbound_date >= ${startDate} AND o.outbound_date <= ${endDate}
         AND p.code IS NOT NULL
         AND o.unit_price >= 0
         GROUP BY o.product_model, p.code, p.full_name
         ORDER BY o.product_model, p.full_name
       `;
 
-      const salesData = db.prepare(productSalesSql).all(startDate, endDate) as Row[];
+      const salesData = await prisma.$queryRaw<Row[]>(productSalesSql);
       if (!salesData || salesData.length === 0) return [];
 
-      const avgCostSql = `
+      const avgCostSql = Prisma.sql`
           SELECT 
             product_model,
             SUM(quantity * unit_price) / SUM(quantity) as avg_cost_price
@@ -134,10 +138,11 @@ export default class AnalysisQueries {
           GROUP BY product_model
         `;
 
-      const costData = db.prepare(avgCostSql).all() as Row[];
+      const costData = await prisma.$queryRaw<Row[]>(avgCostSql);
       const costMap: Record<string, number> = {};
       (costData || []).forEach((item) => {
-        costMap[item["product_model"]] = item["avg_cost_price"] || 0;
+        const avgCost = item["avg_cost_price"];
+        costMap[item["product_model"]] = typeof avgCost === 'bigint' ? Number(avgCost) : (Number(avgCost) || 0);
       });
 
       const productMap: Record<string, any> = {};
@@ -145,8 +150,10 @@ export default class AnalysisQueries {
         const productModel = row["product_model"];
         const customerCode = row["customer_code"];
         const customerName = row["customer_name"];
-        const salesAmount = row["sales_amount"] || 0;
-        const quantity = row["total_quantity"] || 0;
+        const salesAmountVal = row["sales_amount"];
+        const salesAmount = typeof salesAmountVal === 'bigint' ? Number(salesAmountVal) : (Number(salesAmountVal) || 0);
+        const quantityVal = row["total_quantity"];
+        const quantity = typeof quantityVal === 'bigint' ? Number(quantityVal) : (Number(quantityVal) || 0);
         const avgCostPrice = costMap[productModel] || 0;
         const costAmount = avgCostPrice * quantity;
         const profitAmount = salesAmount - costAmount;

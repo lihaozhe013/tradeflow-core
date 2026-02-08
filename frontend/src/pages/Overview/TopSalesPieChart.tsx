@@ -145,9 +145,9 @@ const TopSalesPieChart = () => {
               <Cell
                 key={`cell-${index}`}
                 fill={
-                  entry.name === t("overview.other")
+                  (entry.name === t("overview.other")
                     ? "#d9d9d9"
-                    : COLORS[index % COLORS.length]
+                    : COLORS[index % COLORS.length]) || "#0088FE"
                 }
               />
             ))}
@@ -161,7 +161,7 @@ const TopSalesPieChart = () => {
                 | ReadonlyArray<number | string>
                 | undefined
             ) => [value, t("overview.salesAmount")]}
-            labelFormatter={(label: string) =>
+            labelFormatter={(label: any) =>
               `${t("overview.product")}: ${label}`
             }
           />

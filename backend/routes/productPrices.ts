@@ -1,56 +1,51 @@
 import express, { type Router, type Request, type Response } from 'express';
-import db from '@/db.js';
+import { prisma } from '@/prismaClient.js';
+import { Prisma } from '@prisma/client';
 
 const router: Router = express.Router();
 
-interface CountResult {
-  total: number;
-}
-
-interface UnitPriceResult {
-  unit_price: number;
-}
-
-router.get('/', (req: Request, res: Response): void => {
+router.get('/', async (req: Request, res: Response): Promise<void> => {
   const { partner_short_name, product_model, effective_date } = req.query;
-  let { page = 1 } = req.query;
+  const page = Number(req.query['page'] || 1);
   const limit = 10;
+  const skip = (page - 1) * limit;
 
-  let baseWhere = ' FROM product_prices WHERE 1=1';
-  const whereParams: any[] = [];
+  const where: Prisma.ProductPriceWhereInput = {};
 
   if (partner_short_name) {
-    baseWhere += ' AND partner_short_name LIKE ?';
-    whereParams.push(`%${partner_short_name}%`);
+    where.partner_short_name = { contains: partner_short_name as string };
   }
   if (product_model) {
-    baseWhere += ' AND product_model LIKE ?';
-    whereParams.push(`%${product_model}%`);
+    where.product_model = { contains: product_model as string };
   }
   if (effective_date) {
-    baseWhere += ' AND effective_date = ?';
-    whereParams.push(effective_date);
+    where.effective_date = effective_date as string;
   }
 
-  const orderBy = ' ORDER BY effective_date DESC, partner_short_name, product_model';
-
-  const offset = (Number(page) - 1) * limit;
-  const listSql = `SELECT *${baseWhere}${orderBy} LIMIT ? OFFSET ?`;
-  const listParams = [...whereParams, limit, offset];
-
   try {
-    const rows = db.prepare(listSql).all(...listParams);
+    const [rows, total] = await prisma.$transaction([
+      prisma.productPrice.findMany({
+        where,
+        orderBy: [
+            { effective_date: 'desc' }, 
+            { partner_short_name: 'asc' }, 
+            { product_model: 'asc' } // Ensure deterministic ordering
+        ],
+        skip,
+        take: limit
+      }),
+      prisma.productPrice.count({ where })
+    ]);
 
-    const countSql = `SELECT COUNT(*) as total${baseWhere}`;
-    const countResult = db.prepare(countSql).get(...whereParams) as CountResult;
+    // Rows are already in snake_case
 
     res.json({
       data: rows,
       pagination: {
-        page: Number(page),
+        page,
         limit,
-        total: countResult.total,
-        pages: Math.ceil(countResult.total / limit)
+        total,
+        pages: Math.ceil(total / limit)
       }
     });
   } catch (err) {
@@ -62,7 +57,7 @@ router.get('/', (req: Request, res: Response): void => {
 /**
  * GET /api/product-prices/current
  */
-router.get('/current', (req: Request, res: Response): void => {
+router.get('/current', async (req: Request, res: Response): Promise<void> => {
   const { partner_short_name, product_model, date } = req.query;
   
   if (!partner_short_name || !product_model) {
@@ -72,20 +67,22 @@ router.get('/current', (req: Request, res: Response): void => {
   
   const targetDate = (date as string) || new Date().toISOString().split('T')[0];
   
-  const sql = `
-    SELECT * FROM product_prices 
-    WHERE partner_short_name = ? AND product_model = ? AND effective_date <= ?
-    ORDER BY effective_date DESC 
-    LIMIT 1
-  `;
-  
   try {
-    const row = db.prepare(sql).get(partner_short_name, product_model, targetDate);
+    const row = await prisma.productPrice.findFirst({
+      where: {
+        partner_short_name: partner_short_name as string,
+        product_model: product_model as string,
+        effective_date: { lte: targetDate }
+      },
+      orderBy: { effective_date: 'desc' }
+    });
     
     if (!row) {
       res.status(404).json({ error: 'No valid price found' });
       return;
     }
+    
+    // Rows are already in snake_case
     
     res.json({ data: row });
   } catch (err) {
@@ -97,18 +94,20 @@ router.get('/current', (req: Request, res: Response): void => {
 /**
  * POST /api/product-prices
  */
-router.post('/', (req: Request, res: Response): void => {
+router.post('/', async (req: Request, res: Response): Promise<void> => {
   const { partner_short_name, product_model, effective_date, unit_price } = req.body;
   
-  const sql = `
-    INSERT INTO product_prices (partner_short_name, product_model, effective_date, unit_price)
-    VALUES (?, ?, ?, ?)
-  `;
-  
   try {
-    const result = db.prepare(sql).run(partner_short_name, product_model, effective_date, unit_price);
+    const result = await prisma.productPrice.create({
+      data: {
+        partner_short_name,
+        product_model,
+        effective_date,
+        unit_price
+      }
+    });
     
-    res.json({ id: result.lastInsertRowid, message: 'Product price created!' });
+    res.json({ id: result.id, message: 'Product price created!' });
   } catch (err) {
     const error = err as Error;
     res.status(500).json({ error: error.message });
@@ -118,26 +117,28 @@ router.post('/', (req: Request, res: Response): void => {
 /**
  * PUT /api/product-prices/:id
  */
-router.put('/:id', (req: Request, res: Response): void => {
-  const { id } = req.params;
+router.put('/:id', async (req: Request, res: Response): Promise<void> => {
+  const id = Number(req.params['id']);
   const { partner_short_name, product_model, effective_date, unit_price } = req.body;
   
-  const sql = `
-    UPDATE product_prices SET partner_short_name=?, product_model=?, effective_date=?, unit_price=?
-    WHERE id=?
-  `;
-  
   try {
-    const result = db.prepare(sql).run(partner_short_name, product_model, effective_date, unit_price, id);
-    
-    if (result.changes === 0) {
-      res.status(404).json({ error: 'Product price dne' });
-      return;
-    }
+    await prisma.productPrice.update({
+      where: { id },
+      data: {
+        partner_short_name,
+        product_model,
+        effective_date,
+        unit_price
+      }
+    });
     
     res.json({ message: 'Product price updated!' });
   } catch (err) {
     const error = err as Error;
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+        res.status(404).json({ error: 'Product price dne' });
+        return;
+    }
     res.status(500).json({ error: error.message });
   }
 });
@@ -145,20 +146,21 @@ router.put('/:id', (req: Request, res: Response): void => {
 /**
  * DELETE /api/product-prices/:id
  */
-router.delete('/:id', (req: Request, res: Response): void => {
+router.delete('/:id', async (req: Request, res: Response): Promise<void> => {
+  const id = Number(req.params['id']);
+  
   try {
-    const { id } = req.params;
-    
-    const result = db.prepare('DELETE FROM product_prices WHERE id = ?').run(id);
-    
-    if (result.changes === 0) {
-      res.status(404).json({ error: 'Product price dne' });
-      return;
-    }
+    await prisma.productPrice.delete({
+       where: { id }
+    });
     
     res.json({ message: 'Product price delete!' });
   } catch (err) {
     const error = err as Error;
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+        res.status(404).json({ error: 'Product price dne' });
+        return;
+    }
     res.status(500).json({ error: error.message });
   }
 });
@@ -166,9 +168,8 @@ router.delete('/:id', (req: Request, res: Response): void => {
 /**
  * GET /api/product-prices/auto
  * Automatically get product prices
- * (exact match and effective date <= specified date, take the latest one)
  */
-router.get('/auto', (req: Request, res: Response): void => {
+router.get('/auto', async (req: Request, res: Response): Promise<void> => {
   const { partner_short_name, product_model, date } = req.query;
   
   if (!partner_short_name || !product_model || !date) {
@@ -176,20 +177,22 @@ router.get('/auto', (req: Request, res: Response): void => {
     return;
   }
   
-  const sql = `
-    SELECT unit_price FROM product_prices
-    WHERE partner_short_name = ? AND product_model = ? AND effective_date <= ?
-    ORDER BY effective_date DESC
-    LIMIT 1
-  `;
-  
   try {
-    const row = db.prepare(sql).get(partner_short_name, product_model, date) as UnitPriceResult;
+    const row = await prisma.productPrice.findFirst({
+        where: {
+            partner_short_name: partner_short_name as string,
+            product_model: product_model as string,
+            effective_date: { lte: date as string }
+        },
+        orderBy: { effective_date: 'desc' },
+        select: { unit_price: true }
+    });
     
     if (!row) {
       res.status(404).json({ error: 'No valid price found' });
       return;
     }
+    // Note: row.unit_price is snake_case in SQL result and Prisma Client
     
     res.json({ unit_price: row.unit_price });
   } catch (err) {

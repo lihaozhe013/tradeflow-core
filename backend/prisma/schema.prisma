@@ -1,0 +1,107 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ----------------------------------------------------
+// Models mirroring existing tables
+// ----------------------------------------------------
+
+model InboundRecord {
+  id                  Int     @id @default(autoincrement())
+  supplier_code       String?
+  supplier_short_name String?
+  supplier_full_name  String?
+  product_code        String?
+  product_model       String?
+  quantity            Int?
+  unit_price          Float?
+  total_price         Float?
+  inbound_date        String?
+  invoice_date        String?
+  invoice_number      String?
+  receipt_number      String?
+  order_number        String?
+  remark              String?
+
+  @@map("inbound_records")
+}
+
+model OutboundRecord {
+  id                  Int     @id @default(autoincrement())
+  customer_code       String?
+  customer_short_name String?
+  customer_full_name  String?
+  product_code        String?
+  product_model       String?
+  quantity            Int?
+  unit_price          Float?
+  total_price         Float?
+  outbound_date       String?
+  invoice_date        String?
+  invoice_number      String?
+  receipt_number      String?
+  order_number        String?
+  remark              String?
+
+  @@map("outbound_records")
+}
+
+model Partner {
+  code           String? @unique
+  short_name     String  @id
+  full_name      String?
+  address        String?
+  contact_person String?
+  contact_phone  String?
+  type           Int?
+
+  @@map("partners")
+}
+
+model Product {
+  code          String  @unique
+  category      String?
+  product_model String?
+  remark        String?
+
+  @@map("products")
+}
+
+model ProductPrice {
+  id                 Int     @id @default(autoincrement())
+  partner_short_name String?
+  product_model      String?
+  effective_date     String?
+  unit_price         Float?
+
+  @@map("product_prices")
+}
+
+model ReceivablePayment {
+  id            Int     @id @default(autoincrement())
+  customer_code String?
+  amount        Float?
+  pay_date      String?
+  pay_method    String?
+  remark        String?
+
+  @@map("receivable_payments")
+}
+
+model PayablePayment {
+  id            Int     @id @default(autoincrement())
+  supplier_code String?
+  amount        Float?
+  pay_date      String?
+  pay_method    String?
+  remark        String?
+
+  @@map("payable_payments")
+}

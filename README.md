@@ -1,6 +1,6 @@
 # Tradeflow Core
 
-A lightweight tradeflow system designed for small businesses, built with React.js based frontend and Node.js + SQLite based backend.
+A lightweight tradeflow system designed for small businesses, built with React.js based frontend and Node.js + SQLite/PostgreSQL based backend.
 
 ## Key Features
 
@@ -12,11 +12,12 @@ A lightweight tradeflow system designed for small businesses, built with React.j
 - **Data Export**: Supports data export in Excel format
 - **JWT Authentication**: Stateless authentication system
 - **Role Based Access Control**: Can assign **Editor** and **Viewer** to each user
+- **Multi-Database Support**: Seamlessly switch between **SQLite** (default) and **PostgreSQL** for production environments
 
 ## Tech Stack
 
 - **Frontend**: React 19, Vite, Ant Design, TypeScript
-- **Backend**: Node.js, Express, SQLite3, TypeScript
+- **Backend**: Node.js, Express, SQLite3 / PostgreSQL, TypeScript
 - **Authentication**: JWT stateless authentication
 - **Styling**: CSS3, Ant Design component library
 - **Logging**: Winston logging system
@@ -30,7 +31,7 @@ flowchart LR
   API --> Auth["JWT Auth + RBAC"]
   Auth --> Services{{"**Services**<br>(Inventory, Pricing, Finance, Reports)"}}
   Services <--> Config["Config JSON"]
-  Services <--> DB[("SQLite")]
+  Services <--> DB[("SQLite/Postgres")]
   Services <--> Cache["Cache(JSON/Redis)"]
   API --> Logging["Winston Logs"]
 ```
@@ -210,85 +211,8 @@ npm run build
 npm run dev
 ```
 
-### Development (With Docker)
-#### All in one command (build image and start image)
-```bash
-make build
-```
-
-#### Start
-```bash
-make start
-```
-
-or
-
-```bash
-docker compose up -d
-```
-
-#### Stop
-
-```bash
-make stop
-```
-
-or
-
-```bash
-docker compose stop
-```
-
-#### Use shell in docker
-```bash
-make sh
-```
-
-## Production Deployment
-First, ensure that a functional build artifact is available
-```bash
-npm run build
-cd dist # dist stores the complete frontend and backend build artifacts
-mkdir -p data
-cp -r ../config-example/* data/
-cd ..
-```
-
-To start the server
-```bash
-cd dist
-NODE_ENV=production node ./backend/server.js 
-```
-
-
-For production deployment with PM2 cluster mode:
-```bash
-cd dist/pm2
-./stop-pm2.sh
-./start-pm2.sh
-```
-This will:
-- Shut down the previously running process
-- Install PM2 globally (if not installed)
-- Build the frontend application
-- Start backend services with cluster mode (max instances)
-- Configure logging and auto-restart
-
-> Internal access logs have been simplified. If you require detailed access logs, I recommend using Nginx as a proxy and reviewing Nginx's logs.
-
-### Docker (Prod)
-To create docker image, first build the project
-```bash
-npm run build
-```
-Then
-```
-docker build -t tradeflow-core:1.0 .
-```
-
 ## Data Files
 The system uses JSON configuration files located in the `data/` directory:
 
 - `appConfig.json`: Application settings and company information
 - `exportConfig.json`: Data export templates and settings
-- `data.db`: SQLite database file

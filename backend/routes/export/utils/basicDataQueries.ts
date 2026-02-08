@@ -1,4 +1,4 @@
-import db from "@/db";
+import { prisma } from "@/prismaClient.js";
 
 export default class BasicDataQueries {
   async getBaseInfoData(tables: string = "123"): Promise<any> {
@@ -9,47 +9,70 @@ export default class BasicDataQueries {
     return result;
   }
 
-  getPartnersData(): Promise<any[]> {
+  async getPartnersData(): Promise<any[]> {
     try {
-      const sql = `
-        SELECT code, short_name, full_name, 
-               CASE WHEN type = 0 THEN '供应商' ELSE '客户' END as type_name,
-               address, contact_person, contact_phone 
-        FROM partners 
-        ORDER BY short_name
-      `;
-      const rows = db.prepare(sql).all() as any[];
-      return Promise.resolve(rows);
+      const partners = await prisma.partner.findMany({
+        select: {
+          code: true,
+          short_name: true,
+          full_name: true,
+          type: true,
+          address: true,
+          contact_person: true,
+          contact_phone: true,
+        },
+        orderBy: {
+          short_name: "asc",
+        },
+      });
+
+      return partners.map((p) => ({
+        code: p.code,
+        short_name: p.short_name,
+        full_name: p.full_name,
+        type_name: p.type === 0 ? "Supplier" : "Customer",
+        address: p.address,
+        contact_person: p.contact_person,
+        contact_phone: p.contact_phone,
+      }));
     } catch (error) {
-      return Promise.reject(error as Error);
+      throw error;
     }
   }
 
-  getProductsData(): Promise<any[]> {
+  async getProductsData(): Promise<any[]> {
     try {
-      const sql = `
-        SELECT code, category, product_model, remark 
-        FROM products 
-        ORDER BY category, product_model
-      `;
-      const rows = db.prepare(sql).all() as any[];
-      return Promise.resolve(rows);
+      return await prisma.product.findMany({
+        select: {
+          code: true,
+          category: true,
+          product_model: true,
+          remark: true,
+        },
+        orderBy: [{ category: "asc" }, { product_model: "asc" }],
+      });
     } catch (error) {
-      return Promise.reject(error as Error);
+      throw error;
     }
   }
 
-  getPricesData(): Promise<any[]> {
+  async getPricesData(): Promise<any[]> {
     try {
-      const sql = `
-        SELECT partner_short_name, product_model, effective_date, unit_price 
-        FROM product_prices 
-        ORDER BY partner_short_name, product_model, effective_date DESC
-      `;
-      const rows = db.prepare(sql).all() as any[];
-      return Promise.resolve(rows);
+      return await prisma.productPrice.findMany({
+        select: {
+          partner_short_name: true,
+          product_model: true,
+          effective_date: true,
+          unit_price: true,
+        },
+        orderBy: [
+          { partner_short_name: "asc" },
+          { product_model: "asc" },
+          { effective_date: "desc" },
+        ],
+      });
     } catch (error) {
-      return Promise.reject(error as Error);
+      throw error;
     }
   }
 }

@@ -1,13 +1,10 @@
 import express, { type Router, type Request, type Response } from 'express';
-import db from '@/db.js';
+import { prisma } from '@/prismaClient.js';
+import { Prisma } from '@prisma/client';
 import decimalCalc from '@/utils/decimalCalculator.js';
 import invoiceCacheService from '@/utils/invoiceCacheService.js';
 
 const router: Router = express.Router();
-
-interface CountResult {
-  total: number;
-}
 
 interface ReceivableRow {
   customer_code: string;
@@ -21,32 +18,18 @@ interface ReceivableRow {
   payment_count: number;
 }
 
-interface CustomerResult {
-  code: string;
-  short_name: string;
-  full_name: string;
-  type: number;
-  address?: string;
-  contact_person?: string;
-  contact_phone?: string;
-}
-
-interface TotalResult {
-  total: number | null;
-}
-
 /**
  * GET /api/receivable
  */
-router.get('/', (req: Request, res: Response): void => {
+router.get('/', async (req: Request, res: Response): Promise<void> => {
   const { page = 1, limit = 10, customer_short_name, sort_field = 'balance', sort_order = 'desc' } = req.query;
   
-  let whereSql = '';
-  const params: any[] = [];
+  let whereClause = "WHERE p.type = 1";
   
   if (customer_short_name) {
-    whereSql = ' AND p.short_name LIKE ?';
-    params.push(`%${customer_short_name}%`);
+    // Basic sanitization for LIKE clause
+    const sanitizedVal = String(customer_short_name).replace(/'/g, "''");
+    whereClause += ` AND p.short_name LIKE '%${sanitizedVal}%'`;
   }
 
   const allowedSortFields = ['customer_code', 'customer_short_name', 'total_receivable', 'total_paid', 'balance', 'last_payment_date'];
@@ -58,6 +41,8 @@ router.get('/', (req: Request, res: Response): void => {
 
   const offset = (Number(page) - 1) * Number(limit);
 
+  // Using raw SQL for the main dashboard view to maintain the exact aggregation logic and efficiency
+  // Prisma doesn't support this kind of complex left-joined aggregation + sorting on aggregates easily without fetching all data.
   const sql = `
     SELECT
       p.code AS customer_code,
@@ -80,41 +65,42 @@ router.get('/', (req: Request, res: Response): void => {
       from receivable_payments
       GROUP BY customer_code
     ) r ON p.code = r.customer_code
-    WHERE p.type = 1${whereSql}
+    ${whereClause}
     ORDER BY ${orderBy}
-    LIMIT ? OFFSET ?
+    LIMIT ${Number(limit)} OFFSET ${offset}
   `;
-  
-  params.push(Number(limit), offset);
 
   try {
-    const rows = db.prepare(sql).all(...params) as ReceivableRow[];
+    const rows = await prisma.$queryRawUnsafe<ReceivableRow[]>(sql);
 
+    // Process rows to ensure decimal precision
     const processedRows = rows.map(row => {
       const totalReceivable = decimalCalc.fromSqlResult(row.total_receivable, 0);
       const totalPaid = decimalCalc.fromSqlResult(row.total_paid, 0);
       const balance = decimalCalc.calculateBalance(totalReceivable, totalPaid);
       
+      // Convert BigInt to Number for payment_count
+      const paymentCount = row.payment_count ? Number(row.payment_count) : 0;
+      
       return {
         ...row,
         total_receivable: totalReceivable,
         total_paid: totalPaid,
-        balance: balance
+        balance: balance,
+        payment_count: paymentCount
       };
     });
 
-    const countSql = `
-      SELECT COUNT(DISTINCT p.code) as total
-      FROM partners p
-      WHERE p.type = 1${whereSql}
-    `;
-    
-    const countParams = customer_short_name ? [`%${customer_short_name}%`] : [];
-    const countResult = db.prepare(countSql).get(...countParams) as CountResult;
+    // Count total partners matching criteria
+    const where: Prisma.PartnerWhereInput = { type: 1 };
+    if (customer_short_name) {
+      where.short_name = { contains: customer_short_name as string };
+    }
+    const total = await prisma.partner.count({ where });
     
     res.json({
       data: processedRows,
-      total: countResult.total,
+      total: total,
       page: Number(page),
       limit: Number(limit)
     });
@@ -127,23 +113,26 @@ router.get('/', (req: Request, res: Response): void => {
 /**
  * GET /api/receivable/payments/:customer_code
  */
-router.get('/payments/:customer_code', (req: Request, res: Response): void => {
-  const { customer_code } = req.params;
+router.get('/payments/:customer_code', async (req: Request, res: Response): Promise<void> => {
+  const customer_code = req.params['customer_code'] as string;
   const { page = 1, limit = 10 } = req.query;
   
-  const offset = (Number(page) - 1) * Number(limit);
-  
-  const sql = 'SELECT * FROM receivable_payments WHERE customer_code = ? ORDER BY pay_date DESC LIMIT ? OFFSET ?';
+  const skip = (Number(page) - 1) * Number(limit);
   
   try {
-    const rows = db.prepare(sql).all(customer_code, Number(limit), offset);
-
-    const countSql = 'SELECT COUNT(*) as total FROM receivable_payments WHERE customer_code = ?';
-    const countResult = db.prepare(countSql).get(customer_code) as CountResult;
+    const [rows, total] = await prisma.$transaction([
+      prisma.receivablePayment.findMany({
+        where: { customer_code },
+        orderBy: { pay_date: 'desc' },
+        skip,
+        take: Number(limit)
+      }),
+      prisma.receivablePayment.count({ where: { customer_code } })
+    ]);
     
     res.json({
       data: rows,
-      total: countResult.total,
+      total,
       page: Number(page),
       limit: Number(limit)
     });
@@ -156,21 +145,25 @@ router.get('/payments/:customer_code', (req: Request, res: Response): void => {
 /**
  * POST /api/receivable/payments
  */
-router.post('/payments', (req: Request, res: Response): Response | void => {
+router.post('/payments', async (req: Request, res: Response): Promise<void> => {
   const { customer_code, amount, pay_date, pay_method, remark } = req.body;
   
-  if (!customer_code || !amount || !pay_date) {
-    return res.status(400).json({ error: 'Customer ID, payment amount, and payment date are required fields' });
+  if (!customer_code || amount === undefined || !pay_date) {
+    res.status(400).json({ error: 'Customer ID, payment amount, and payment date are required fields' });
+    return;
   }
   
-  const sql = `
-    INSERT INTO receivable_payments (customer_code, amount, pay_date, pay_method, remark)
-    VALUES (?, ?, ?, ?, ?)
-  `;
-  
   try {
-    const result = db.prepare(sql).run(customer_code, amount, pay_date, pay_method || '', remark || '');
-    res.json({ id: result.lastInsertRowid, message: 'Payment record created!' });
+    const result = await prisma.receivablePayment.create({
+      data: {
+        customer_code,
+        amount,
+        pay_date,
+        pay_method: pay_method || '',
+        remark: remark || ''
+      }
+    });
+    res.json({ id: result.id, message: 'Payment record created!' });
   } catch (err) {
     const error = err as Error;
     res.status(500).json({ error: error.message });
@@ -180,29 +173,34 @@ router.post('/payments', (req: Request, res: Response): Response | void => {
 /**
  * PUT /api/receivable/payments/:id
  */
-router.put('/payments/:id', (req: Request, res: Response): Response | void => {
-  const { id } = req.params;
+router.put('/payments/:id', async (req: Request, res: Response): Promise<void> => {
+  const id = Number(req.params['id']);
   const { customer_code, amount, pay_date, pay_method, remark } = req.body;
   
-  if (!customer_code || !amount || !pay_date) {
-    return res.status(400).json({ error: 'Customer ID, payment amount, and payment date are required fields' });
+  if (!customer_code || amount === undefined || !pay_date) {
+    res.status(400).json({ error: 'Customer ID, payment amount, and payment date are required fields' });
+    return;
   }
   
-  const sql = `
-    UPDATE receivable_payments 
-    SET customer_code=?, amount=?, pay_date=?, pay_method=?, remark=?
-    WHERE id=?
-  `;
-  
   try {
-    const result = db.prepare(sql).run(customer_code, amount, pay_date, pay_method || '', remark || '', id);
-    if (result.changes === 0) {
-      res.status(404).json({ error: 'Payment records dne' });
-      return;
-    }
+    await prisma.receivablePayment.update({
+      where: { id },
+      data: {
+        customer_code,
+        amount,
+        pay_date,
+        pay_method: pay_method || '',
+        remark: remark || ''
+      }
+    });
+    
     res.json({ message: 'Payment record updated!' });
   } catch (err) {
     const error = err as Error;
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+        res.status(404).json({ error: 'Payment records dne' });
+        return;
+    }
     res.status(500).json({ error: error.message });
   }
 });
@@ -210,19 +208,19 @@ router.put('/payments/:id', (req: Request, res: Response): Response | void => {
 /**
  * DELETE /api/receivable/payments/:id
  */
-router.delete('/payments/:id', (req: Request, res: Response): void => {
+router.delete('/payments/:id', async (req: Request, res: Response): Promise<void> => {
   try {
-    const { id } = req.params;
+    const id = Number(req.params['id']);
     
-    const result = db.prepare('DELETE FROM receivable_payments WHERE id = ?').run(id);
-    if (result.changes === 0) {
-      res.status(404).json({ error: 'Payment records dne' });
-      return;
-    }
+    await prisma.receivablePayment.delete({ where: { id } });
     
     res.json({ message: 'Payment record deleted!' });
   } catch (err) {
     const error = err as Error;
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+        res.status(404).json({ error: 'Payment records dne' });
+        return;
+    }
     res.status(500).json({ error: error.message });
   }
 });
@@ -230,8 +228,8 @@ router.delete('/payments/:id', (req: Request, res: Response): void => {
 /**
  * GET /api/receivable/details/:customer_code
  */
-router.get('/details/:customer_code', (req: Request, res: Response): void => {
-  const { customer_code } = req.params;
+router.get('/details/:customer_code', async (req: Request, res: Response): Promise<void> => {
+  const customer_code = req.params['customer_code'] as string;
   const { 
     outbound_page = 1, 
     outbound_limit = 10, 
@@ -240,35 +238,53 @@ router.get('/details/:customer_code', (req: Request, res: Response): void => {
   } = req.query;
 
   try {
-    const customerSql = 'SELECT * FROM partners WHERE code = ? AND type = 1';
-    const customer = db.prepare(customerSql).get(customer_code) as CustomerResult;
+    const customer = await prisma.partner.findFirst({
+      where: { code: customer_code, type: 1 }
+    });
 
     if (!customer) {
       res.status(404).json({ error: 'Clienet dne' });
       return;
     }
 
-    const outboundOffset = (Number(outbound_page) - 1) * Number(outbound_limit);
-    const outboundSql = 'SELECT * FROM outbound_records WHERE customer_code = ? ORDER BY outbound_date DESC LIMIT ? OFFSET ?';
-    const outboundRecords = db.prepare(outboundSql).all(customer_code, Number(outbound_limit), outboundOffset);
+    const outboundSkip = (Number(outbound_page) - 1) * Number(outbound_limit);
+    const paymentSkip = (Number(payment_page) - 1) * Number(payment_limit);
 
-    const outboundCountSql = 'SELECT COUNT(*) as total FROM outbound_records WHERE customer_code = ?';
-    const outboundCountResult = db.prepare(outboundCountSql).get(customer_code) as CountResult;
+    // Parallel fetch
+    const [
+      outboundRecords,
+      outboundCount,
+      paymentRecords,
+      paymentCount,
+      outboundAgg,
+      paymentAgg
+    ] = await Promise.all([
+      prisma.outboundRecord.findMany({
+        where: { customer_code },
+        orderBy: { outbound_date: 'desc' },
+        skip: outboundSkip,
+        take: Number(outbound_limit)
+      }),
+      prisma.outboundRecord.count({ where: { customer_code } }),
+      prisma.receivablePayment.findMany({
+        where: { customer_code },
+        orderBy: { pay_date: 'desc' },
+        skip: paymentSkip,
+        take: Number(payment_limit)
+      }),
+      prisma.receivablePayment.count({ where: { customer_code } }),
+      prisma.outboundRecord.aggregate({
+        where: { customer_code },
+        _sum: { total_price: true }
+      }),
+      prisma.receivablePayment.aggregate({
+        where: { customer_code },
+        _sum: { amount: true }
+      })
+    ]);
 
-    const paymentOffset = (Number(payment_page) - 1) * Number(payment_limit);
-    const paymentSql = 'SELECT * FROM receivable_payments WHERE customer_code = ? ORDER BY pay_date DESC LIMIT ? OFFSET ?';
-    const paymentRecords = db.prepare(paymentSql).all(customer_code, Number(payment_limit), paymentOffset);
-
-    const paymentCountSql = 'SELECT COUNT(*) as total FROM receivable_payments WHERE customer_code = ?';
-    const paymentCountResult = db.prepare(paymentCountSql).get(customer_code) as CountResult;
-
-    const totalReceivableSql = 'SELECT SUM(total_price) as total FROM outbound_records WHERE customer_code = ?';
-    const totalReceivableResult = db.prepare(totalReceivableSql).get(customer_code) as TotalResult;
-    const totalReceivable = decimalCalc.fromSqlResult(totalReceivableResult.total, 0);
-    
-    const totalPaidSql = 'SELECT SUM(amount) as total FROM receivable_payments WHERE customer_code = ?';
-    const totalPaidResult = db.prepare(totalPaidSql).get(customer_code) as TotalResult;
-    const totalPaid = decimalCalc.fromSqlResult(totalPaidResult.total, 0);
+    const totalReceivable = decimalCalc.fromSqlResult(outboundAgg._sum?.total_price || 0, 0);
+    const totalPaid = decimalCalc.fromSqlResult(paymentAgg._sum?.amount || 0, 0);
     const balance = decimalCalc.calculateBalance(totalReceivable, totalPaid);
     
     res.json({
@@ -280,13 +296,13 @@ router.get('/details/:customer_code', (req: Request, res: Response): void => {
       },
       outbound_records: {
         data: outboundRecords,
-        total: outboundCountResult.total,
+        total: outboundCount,
         page: Number(outbound_page),
         limit: Number(outbound_limit)
       },
       payment_records: {
         data: paymentRecords,
-        total: paymentCountResult.total,
+        total: paymentCount,
         page: Number(payment_page),
         limit: Number(payment_limit)
       }
@@ -301,33 +317,34 @@ router.get('/details/:customer_code', (req: Request, res: Response): void => {
  * GET /api/receivable/uninvoiced/:customer_code
  * Get uninvoiced outbound records for a customer (invoice_number is NULL or empty)
  */
-router.get('/uninvoiced/:customer_code', (req: Request, res: Response): void => {
-  const { customer_code } = req.params;
+router.get('/uninvoiced/:customer_code', async (req: Request, res: Response): Promise<void> => {
+  const customer_code = req.params['customer_code'] as string;
   const { page = 1, limit = 10 } = req.query;
   
-  const offset = (Number(page) - 1) * Number(limit);
-  
-  const sql = `
-    SELECT * FROM outbound_records 
-    WHERE customer_code = ? 
-      AND (invoice_number IS NULL OR invoice_number = '')
-    ORDER BY outbound_date DESC 
-    LIMIT ? OFFSET ?
-  `;
+  const skip = (Number(page) - 1) * Number(limit);
   
   try {
-    const rows = db.prepare(sql).all(customer_code, Number(limit), offset);
+    const where: Prisma.OutboundRecordWhereInput = {
+      customer_code,
+      OR: [
+        { invoice_number: null },
+        { invoice_number: '' }
+      ]
+    };
 
-    const countSql = `
-      SELECT COUNT(*) as total FROM outbound_records 
-      WHERE customer_code = ? 
-        AND (invoice_number IS NULL OR invoice_number = '')
-    `;
-    const countResult = db.prepare(countSql).get(customer_code) as CountResult;
+    const [rows, total] = await prisma.$transaction([
+      prisma.outboundRecord.findMany({
+        where,
+        orderBy: { outbound_date: 'desc' },
+        skip,
+        take: Number(limit)
+      }),
+      prisma.outboundRecord.count({ where })
+    ]);
     
     res.json({
       data: rows,
-      total: countResult.total,
+      total,
       page: Number(page),
       limit: Number(limit)
     });
@@ -370,7 +387,6 @@ router.get('/invoiced/:customer_code', (req: Request, res: Response): void => {
 
 /**
  * POST /api/receivable/invoices/refresh/:customer_code
- * Refresh invoice cache for a customer
  */
 router.post('/invoices/refresh/:customer_code', async (req: Request, res: Response): Promise<void> => {
   const customer_code  = req.params['customer_code'] as string;

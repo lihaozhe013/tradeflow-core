@@ -1,13 +1,10 @@
 import express, { type Router, type Request, type Response } from 'express';
-import db from '@/db.js';
+import { prisma } from '@/prismaClient.js';
+import { Prisma } from '@prisma/client';
 import decimalCalc from '@/utils/decimalCalculator.js';
 import invoiceCacheService from '@/utils/invoiceCacheService.js';
 
 const router: Router = express.Router();
-
-interface CountResult {
-  total: number;
-}
 
 interface PayableRow {
   supplier_code: string;
@@ -21,32 +18,17 @@ interface PayableRow {
   payment_count: number;
 }
 
-interface SupplierResult {
-  code: string;
-  short_name: string;
-  full_name: string;
-  type: number;
-  address?: string;
-  contact_person?: string;
-  contact_phone?: string;
-}
-
-interface TotalResult {
-  total: number | null;
-}
-
 /**
  * GET /api/payable
  */
-router.get('/', (req: Request, res: Response): void => {
+router.get('/', async (req: Request, res: Response): Promise<void> => {
   const { page = 1, limit = 10, supplier_short_name, sort_field = 'balance', sort_order = 'desc' } = req.query;
   
-  let whereSql = '';
-  const params: any[] = [];
+  let whereClause = "WHERE p.type = 0";
   
   if (supplier_short_name) {
-    whereSql = ' AND p.short_name LIKE ?';
-    params.push(`%${supplier_short_name}%`);
+    const sanitizedVal = String(supplier_short_name).replace(/'/g, "''");
+    whereClause += ` AND p.short_name LIKE '%${sanitizedVal}%'`;
   }
 
   const allowedSortFields = ['supplier_code', 'supplier_short_name', 'total_payable', 'total_paid', 'balance', 'last_payment_date'];
@@ -80,41 +62,40 @@ router.get('/', (req: Request, res: Response): void => {
       FROM payable_payments
       GROUP BY supplier_code
     ) pp ON p.code = pp.supplier_code
-    WHERE p.type = 0${whereSql}
+    ${whereClause}
     ORDER BY ${orderBy}
-    LIMIT ? OFFSET ?
+    LIMIT ${Number(limit)} OFFSET ${offset}
   `;
 
-  params.push(Number(limit), offset);
-
   try {
-    const rows = db.prepare(sql).all(...params) as PayableRow[];
+    const rows = await prisma.$queryRawUnsafe<PayableRow[]>(sql);
 
     const processedRows = rows.map(row => {
       const totalPayable = decimalCalc.fromSqlResult(row.total_payable, 0);
       const totalPaid = decimalCalc.fromSqlResult(row.total_paid, 0);
       const balance = decimalCalc.calculateBalance(totalPayable, totalPaid);
       
+      // Convert BigInt to Number for payment_count
+      const paymentCount = row.payment_count ? Number(row.payment_count) : 0;
+
       return {
         ...row,
         total_payable: totalPayable,
         total_paid: totalPaid,
-        balance: balance
+        balance: balance,
+        payment_count: paymentCount
       };
     });
 
-    const countSql = `
-      SELECT COUNT(DISTINCT p.code) as total
-      FROM partners p
-      WHERE p.type = 0${whereSql}
-    `;
-    
-    const countParams = supplier_short_name ? [`%${supplier_short_name}%`] : [];
-    const countResult = db.prepare(countSql).get(...countParams) as CountResult;
+    const where: Prisma.PartnerWhereInput = { type: 0 };
+    if (supplier_short_name) {
+      where.short_name = { contains: supplier_short_name as string };
+    }
+    const total = await prisma.partner.count({ where });
     
     res.json({
       data: processedRows,
-      total: countResult.total,
+      total: total,
       page: Number(page),
       limit: Number(limit)
     });
@@ -127,23 +108,26 @@ router.get('/', (req: Request, res: Response): void => {
 /**
  * GET /api/payable/payments/:supplier_code
  */
-router.get('/payments/:supplier_code', (req: Request, res: Response): void => {
-  const { supplier_code } = req.params;
+router.get('/payments/:supplier_code', async (req: Request, res: Response): Promise<void> => {
+  const supplier_code = req.params['supplier_code'] as string;
   const { page = 1, limit = 10 } = req.query;
   
-  const offset = (Number(page) - 1) * Number(limit);
-  
-  const sql = 'SELECT * FROM payable_payments WHERE supplier_code = ? ORDER BY pay_date DESC LIMIT ? OFFSET ?';
+  const skip = (Number(page) - 1) * Number(limit);
   
   try {
-    const rows = db.prepare(sql).all(supplier_code, Number(limit), offset);
-    
-    const countSql = 'SELECT COUNT(*) as total FROM payable_payments WHERE supplier_code = ?';
-    const countResult = db.prepare(countSql).get(supplier_code) as CountResult;
+    const [rows, total] = await prisma.$transaction([
+      prisma.payablePayment.findMany({
+        where: { supplier_code },
+        orderBy: { pay_date: 'desc' },
+        skip,
+        take: Number(limit)
+      }),
+      prisma.payablePayment.count({ where: { supplier_code } })
+    ]);
     
     res.json({
       data: rows,
-      total: countResult.total,
+      total,
       page: Number(page),
       limit: Number(limit)
     });
@@ -156,21 +140,25 @@ router.get('/payments/:supplier_code', (req: Request, res: Response): void => {
 /**
  * POST /api/payable/payments
  */
-router.post('/payments', (req: Request, res: Response): Response | void => {
+router.post('/payments', async (req: Request, res: Response): Promise<void> => {
   const { supplier_code, amount, pay_date, pay_method, remark } = req.body;
   
-  if (!supplier_code || !amount || !pay_date) {
-    return res.status(400).json({ error: 'Supplier ID, payment amount, and payment date are required fields' });
+  if (!supplier_code || amount === undefined || !pay_date) {
+    res.status(400).json({ error: 'Supplier ID, payment amount, and payment date are required fields' });
+    return;
   }
   
-  const sql = `
-    INSERT INTO payable_payments (supplier_code, amount, pay_date, pay_method, remark)
-    VALUES (?, ?, ?, ?, ?)
-  `;
-  
   try {
-    const result = db.prepare(sql).run(supplier_code, amount, pay_date, pay_method || '', remark || '');
-    res.json({ id: result.lastInsertRowid, message: 'Payment record created!' });
+    const result = await prisma.payablePayment.create({
+      data: {
+        supplier_code,
+        amount,
+        pay_date,
+        pay_method: pay_method || '',
+        remark: remark || ''
+      }
+    });
+    res.json({ id: result.id, message: 'Payment record created!' });
   } catch (err) {
     const error = err as Error;
     res.status(500).json({ error: error.message });
@@ -180,29 +168,34 @@ router.post('/payments', (req: Request, res: Response): Response | void => {
 /**
  * PUT /api/payable/payments/:id
  */
-router.put('/payments/:id', (req: Request, res: Response): Response | void => {
-  const { id } = req.params;
+router.put('/payments/:id', async (req: Request, res: Response): Promise<void> => {
+  const id = Number(req.params['id']);
   const { supplier_code, amount, pay_date, pay_method, remark } = req.body;
   
-  if (!supplier_code || !amount || !pay_date) {
-    return res.status(400).json({ error: 'Supplier ID, payment amount, and payment date are required fields' });
+  if (!supplier_code || amount === undefined || !pay_date) {
+    res.status(400).json({ error: 'Supplier ID, payment amount, and payment date are required fields' });
+    return;
   }
   
-  const sql = `
-    UPDATE payable_payments 
-    SET supplier_code=?, amount=?, pay_date=?, pay_method=?, remark=?
-    WHERE id=?
-  `;
-  
   try {
-    const result = db.prepare(sql).run(supplier_code, amount, pay_date, pay_method || '', remark || '', id);
-    if (result.changes === 0) {
-      res.status(404).json({ error: 'Payement record dne' });
-      return;
-    }
+    await prisma.payablePayment.update({
+      where: { id },
+      data: {
+        supplier_code,
+        amount,
+        pay_date,
+        pay_method: pay_method || '',
+        remark: remark || ''
+      }
+    });
+    
     res.json({ message: 'Payment record updated!' });
   } catch (err) {
     const error = err as Error;
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+        res.status(404).json({ error: 'Payement record dne' });
+        return;
+    }
     res.status(500).json({ error: error.message });
   }
 });
@@ -210,20 +203,19 @@ router.put('/payments/:id', (req: Request, res: Response): Response | void => {
 /**
  * DELETE /api/payable/payments/:id
  */
-router.delete('/payments/:id', (req: Request, res: Response): void => {
+router.delete('/payments/:id', async (req: Request, res: Response): Promise<void> => {
   try {
-    const { id } = req.params;
+    const id = Number(req.params['id']);
     
-    const result = db.prepare('DELETE FROM payable_payments WHERE id = ?').run(id);
-    
-    if (result.changes === 0) {
-      res.status(404).json({ error: 'Payment record dne' });
-      return;
-    }
+    await prisma.payablePayment.delete({ where: { id } });
     
     res.json({ message: 'Payment record deleted!' });
   } catch (err) {
     const error = err as Error;
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+        res.status(404).json({ error: 'Payment record dne' });
+        return;
+    }
     res.status(500).json({ error: error.message });
   }
 });
@@ -231,8 +223,8 @@ router.delete('/payments/:id', (req: Request, res: Response): void => {
 /**
  * GET /api/payable/details/:supplier_code
  */
-router.get('/details/:supplier_code', (req: Request, res: Response): void => {
-  const { supplier_code } = req.params;
+router.get('/details/:supplier_code', async (req: Request, res: Response): Promise<void> => {
+  const supplier_code = req.params['supplier_code'] as string;
   const { 
     inbound_page = 1, 
     inbound_limit = 10, 
@@ -241,35 +233,52 @@ router.get('/details/:supplier_code', (req: Request, res: Response): void => {
   } = req.query;
 
   try {
-    const supplierSql = 'SELECT * FROM partners WHERE code = ? AND type = 0';
-    const supplier = db.prepare(supplierSql).get(supplier_code) as SupplierResult;
+    const supplier = await prisma.partner.findFirst({
+      where: { code: supplier_code, type: 0 }
+    });
 
     if (!supplier) {
       res.status(404).json({ error: 'Supplier dne' });
       return;
     }
 
-    const inboundOffset = (Number(inbound_page) - 1) * Number(inbound_limit);
-    const inboundSql = 'SELECT * FROM inbound_records WHERE supplier_code = ? ORDER BY inbound_date DESC LIMIT ? OFFSET ?';
-    const inboundRecords = db.prepare(inboundSql).all(supplier_code, Number(inbound_limit), inboundOffset);
+    const inboundSkip = (Number(inbound_page) - 1) * Number(inbound_limit);
+    const paymentSkip = (Number(payment_page) - 1) * Number(payment_limit);
 
-    const inboundCountSql = 'SELECT COUNT(*) as total FROM inbound_records WHERE supplier_code = ?';
-    const inboundCountResult = db.prepare(inboundCountSql).get(supplier_code) as CountResult;
+    const [
+      inboundRecords,
+      inboundCount,
+      paymentRecords,
+      paymentCount,
+      inboundAgg,
+      paymentAgg
+    ] = await Promise.all([
+      prisma.inboundRecord.findMany({
+        where: { supplier_code },
+        orderBy: { inbound_date: 'desc' },
+        skip: inboundSkip,
+        take: Number(inbound_limit)
+      }),
+      prisma.inboundRecord.count({ where: { supplier_code } }),
+      prisma.payablePayment.findMany({
+        where: { supplier_code },
+        orderBy: { pay_date: 'desc' },
+        skip: paymentSkip,
+        take: Number(payment_limit)
+      }),
+      prisma.payablePayment.count({ where: { supplier_code } }),
+      prisma.inboundRecord.aggregate({
+        where: { supplier_code },
+        _sum: { total_price: true }
+      }),
+      prisma.payablePayment.aggregate({
+        where: { supplier_code },
+        _sum: { amount: true }
+      })
+    ]);
 
-    const paymentOffset = (Number(payment_page) - 1) * Number(payment_limit);
-    const paymentSql = 'SELECT * FROM payable_payments WHERE supplier_code = ? ORDER BY pay_date DESC LIMIT ? OFFSET ?';
-    const paymentRecords = db.prepare(paymentSql).all(supplier_code, Number(payment_limit), paymentOffset);
-
-    const paymentCountSql = 'SELECT COUNT(*) as total FROM payable_payments WHERE supplier_code = ?';
-    const paymentCountResult = db.prepare(paymentCountSql).get(supplier_code) as CountResult;
-
-    const totalPayableSql = 'SELECT SUM(total_price) as total FROM inbound_records WHERE supplier_code = ?';
-    const totalPayableResult = db.prepare(totalPayableSql).get(supplier_code) as TotalResult;
-    const totalPayable = decimalCalc.fromSqlResult(totalPayableResult.total, 0);
-    
-    const totalPaidSql = 'SELECT SUM(amount) as total FROM payable_payments WHERE supplier_code = ?';
-    const totalPaidResult = db.prepare(totalPaidSql).get(supplier_code) as TotalResult;
-    const totalPaid = decimalCalc.fromSqlResult(totalPaidResult.total, 0);
+    const totalPayable = decimalCalc.fromSqlResult(inboundAgg._sum?.total_price || 0, 0);
+    const totalPaid = decimalCalc.fromSqlResult(paymentAgg._sum?.amount || 0, 0);
     const balance = decimalCalc.calculateBalance(totalPayable, totalPaid);
     
     res.json({
@@ -281,13 +290,13 @@ router.get('/details/:supplier_code', (req: Request, res: Response): void => {
       },
       inbound_records: {
         data: inboundRecords,
-        total: inboundCountResult.total,
+        total: inboundCount,
         page: Number(inbound_page),
         limit: Number(inbound_limit)
       },
       payment_records: {
         data: paymentRecords,
-        total: paymentCountResult.total,
+        total: paymentCount,
         page: Number(payment_page),
         limit: Number(payment_limit)
       }
@@ -302,33 +311,34 @@ router.get('/details/:supplier_code', (req: Request, res: Response): void => {
  * GET /api/payable/uninvoiced/:supplier_code
  * Get uninvoiced inbound records for a supplier (invoice_number is NULL or empty)
  */
-router.get('/uninvoiced/:supplier_code', (req: Request, res: Response): void => {
+router.get('/uninvoiced/:supplier_code', async (req: Request, res: Response): Promise<void> => {
   const supplier_code = req.params['supplier_code'] as string;
   const { page = 1, limit = 10 } = req.query;
   
-  const offset = (Number(page) - 1) * Number(limit);
-  
-  const sql = `
-    SELECT * FROM inbound_records 
-    WHERE supplier_code = ? 
-      AND (invoice_number IS NULL OR invoice_number = '')
-    ORDER BY inbound_date DESC 
-    LIMIT ? OFFSET ?
-  `;
+  const skip = (Number(page) - 1) * Number(limit);
   
   try {
-    const rows = db.prepare(sql).all(supplier_code, Number(limit), offset);
+    const where: Prisma.InboundRecordWhereInput = {
+      supplier_code,
+      OR: [
+        { invoice_number: null },
+        { invoice_number: '' }
+      ]
+    };
 
-    const countSql = `
-      SELECT COUNT(*) as total FROM inbound_records 
-      WHERE supplier_code = ? 
-        AND (invoice_number IS NULL OR invoice_number = '')
-    `;
-    const countResult = db.prepare(countSql).get(supplier_code) as CountResult;
+    const [rows, total] = await prisma.$transaction([
+      prisma.inboundRecord.findMany({
+        where,
+        orderBy: { inbound_date: 'desc' },
+        skip,
+        take: Number(limit)
+      }),
+      prisma.inboundRecord.count({ where })
+    ]);
     
     res.json({
       data: rows,
-      total: countResult.total,
+      total,
       page: Number(page),
       limit: Number(limit)
     });

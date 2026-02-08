@@ -48,11 +48,14 @@ export function getLogDir(): string {
 
 
 const appConfigPath = resolveFilesInDataPath("appConfig.json");
-let currency_unit_symbol: any = {};
+let currency_unit_symbol = "¥";
 try {
   if (fs.existsSync(appConfigPath)) {
     const temp_data = fs.readFileSync(appConfigPath, 'utf8');
-    currency_unit_symbol = JSON.parse(temp_data);
+    const json = JSON.parse(temp_data);
+    if(json.currency_symbol) {
+        currency_unit_symbol = json.currency_symbol;
+    }
   }
 } catch (e) {
 }

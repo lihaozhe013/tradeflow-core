@@ -18,6 +18,14 @@ export interface FrontendConfig {
  * AppConfig Interface
  */
 export interface AppConfig {
+  database?: {
+    type?: 'sqlite' | 'postgresql';
+    host?: string;
+    port?: number;
+    user?: string;
+    password?: string;
+    dbName?: string;
+  };
   server?: ServerConfig;
   frontend?: FrontendConfig;
 }

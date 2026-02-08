@@ -1,15 +1,11 @@
-import { Card, Row, Col, Typography, Spin, Alert, Image, Button, message } from 'antd';
-import { DatabaseOutlined } from '@ant-design/icons';
+import { Card, Row, Col, Typography, Spin, Alert, Image } from 'antd';
 import { useTranslation } from 'react-i18next';
 import { useSimpleApiData } from '@/hooks/useSimpleApi';
-import { tokenManager } from '@/auth/auth';
-import { useState } from 'react';
 
 const { Title, Paragraph, Text } = Typography;
 
 function About() {
   const { t } = useTranslation();
-  const [backupLoading, setBackupLoading] = useState(false);
   const {
     data: aboutData,
     loading,
@@ -33,33 +29,6 @@ function About() {
       address: ''
     }
   });
-
-  const handleBackup = async () => {
-    setBackupLoading(true);
-    try {
-      const token = tokenManager.getToken();
-      const response = await fetch('/api/db-backup', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      const result = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(result.details || result.error || 'Backup Failed！');
-      }
-
-      message.success('Backup Succeed!');
-    } catch (error) {
-      const err = error as Error;
-      message.error(`Backup Failed: ${err.message}`);
-    } finally {
-      setBackupLoading(false);
-    }
-  };
 
   if (loading) {
     return (
@@ -166,17 +135,6 @@ function About() {
             <Paragraph style={{ color: '#000000ff', textAlign: 'center' }}>
               {aboutData?.company?.slogan ?? t('about.systemSlogan')}
             </Paragraph>
-            <Button
-              type="primary"
-              icon={<DatabaseOutlined />}
-              loading={backupLoading}
-              onClick={handleBackup}
-              size="large"
-              block
-              style={{ marginTop: '20px' }}
-            >
-              Backup DB
-            </Button>
           </Card>
         </Col>
       </Row>

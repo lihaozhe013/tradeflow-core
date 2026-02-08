@@ -1,4 +1,4 @@
-import db from "@/db";
+import { prisma } from "@/prismaClient.js";
 
 export default class TransactionQueries {
   async getInboundOutboundData(filters: any = {}): Promise<any> {
@@ -29,71 +29,145 @@ export default class TransactionQueries {
     return result;
   }
 
-  getInboundData(filters: any = {}): Promise<any[]> {
+  async getInboundData(filters: any = {}): Promise<any[]> {
     try {
-      let sql = `
-        SELECT id, supplier_code, supplier_short_name, supplier_full_name,
-               product_code, product_model, quantity, unit_price, total_price,
-               inbound_date, invoice_date, invoice_number, receipt_number, order_number, remark
-        FROM inbound_records 
-        WHERE 1=1
-      `;
-      const params: any[] = [];
-      if (filters.dateFrom) {
-        sql += " AND inbound_date >= ?";
-        params.push(filters.dateFrom);
-      }
-      if (filters.dateTo) {
-        sql += " AND inbound_date <= ?";
-        params.push(filters.dateTo);
-      }
+      const where: any = {};
+      if (filters.dateFrom) where.inbound_date = { gte: filters.dateFrom };
+      if (filters.dateTo) where.inbound_date = { ...where.inbound_date, lte: filters.dateTo };
+      
       if (filters.productCode) {
-        sql += " AND (product_code LIKE ? OR product_model LIKE ?)";
-        params.push(`%${filters.productCode}%`, `%${filters.productCode}%`);
+        where.OR = [
+          ...(where.OR || []),
+          { product_code: { contains: filters.productCode } },
+          { product_model: { contains: filters.productCode } },
+        ];
       }
       if (filters.customerCode) {
-        sql += " AND (supplier_code LIKE ? OR supplier_short_name LIKE ?)";
-        params.push(`%${filters.customerCode}%`, `%${filters.customerCode}%`);
+        const supplierConditions = [
+           { supplier_code: { contains: filters.customerCode } },
+           { supplier_short_name: { contains: filters.customerCode } }
+        ];
+        if(where.OR) {
+           where.AND = [{ OR: supplierConditions }];
+        } else {
+           where.OR = supplierConditions;
+        }
       }
-      sql += " ORDER BY inbound_date DESC, id DESC";
-      const rows = db.prepare(sql).all(...params) as any[];
-      return Promise.resolve(rows);
+
+      // Note: The original logic combined productCode OR and customerCode OR with AND implictly by appending to SQL.
+      // SQL: WHERE 1=1 AND (prod OR prod) AND (supp OR supp)
+      // Prisma: where: { AND: [ { OR: [...prod] }, { OR: [...supp] } ] }
+      
+      // Let's refine the Prisma 'where' construction to strictly match the SQL logic
+      const andConditions: any[] = [];
+      
+      if (filters.dateFrom) andConditions.push({ inbound_date: { gte: filters.dateFrom } });
+      if (filters.dateTo) andConditions.push({ inbound_date: { lte: filters.dateTo } });
+      
+      if (filters.productCode) {
+        andConditions.push({
+          OR: [
+            { product_code: { contains: filters.productCode } },
+            { product_model: { contains: filters.productCode } }
+          ]
+        });
+      }
+      
+      if (filters.customerCode) {
+        andConditions.push({
+          OR: [
+            { supplier_code: { contains: filters.customerCode } },
+            { supplier_short_name: { contains: filters.customerCode } }
+          ]
+        });
+      }
+
+      const finalWhere = andConditions.length > 0 ? { AND: andConditions } : {};
+
+      const rows = await prisma.inboundRecord.findMany({
+        where: finalWhere,
+        select: {
+          id: true,
+          supplier_code: true,
+          supplier_short_name: true,
+          supplier_full_name: true,
+          product_code: true,
+          product_model: true,
+          quantity: true,
+          unit_price: true,
+          total_price: true,
+          inbound_date: true,
+          invoice_date: true,
+          invoice_number: true,
+          receipt_number: true,
+          order_number: true,
+          remark: true,
+        },
+        orderBy: [
+          { inbound_date: "desc" },
+          { id: "desc" },
+        ],
+      });
+      return rows;
     } catch (error) {
-      return Promise.reject(error as Error);
+      throw error;
     }
   }
 
-  getOutboundData(filters: any = {}): Promise<any[]> {
+  async getOutboundData(filters: any = {}): Promise<any[]> {
     try {
-      let sql = `
-        SELECT id, customer_code, customer_short_name, customer_full_name,
-               product_code, product_model, quantity, unit_price, total_price,
-               outbound_date, invoice_date, invoice_number, receipt_number, order_number, remark
-        FROM outbound_records 
-        WHERE 1=1
-      `;
-      const params: any[] = [];
-      if (filters.dateFrom) {
-        sql += " AND outbound_date >= ?";
-        params.push(filters.dateFrom);
-      }
-      if (filters.dateTo) {
-        sql += " AND outbound_date <= ?";
-        params.push(filters.dateTo);
-      }
+      const andConditions: any[] = [];
+      
+      if (filters.dateFrom) andConditions.push({ outbound_date: { gte: filters.dateFrom } });
+      if (filters.dateTo) andConditions.push({ outbound_date: { lte: filters.dateTo } });
+      
       if (filters.productCode) {
-        sql += " AND (product_code LIKE ? OR product_model LIKE ?)";
-        params.push(`%${filters.productCode}%`, `%${filters.productCode}%`);
+        andConditions.push({
+          OR: [
+            { product_code: { contains: filters.productCode } },
+            { product_model: { contains: filters.productCode } }
+          ]
+        });
       }
+      
       if (filters.customerCode) {
-        sql += " AND (customer_code LIKE ? OR customer_short_name LIKE ?)";
-        params.push(`%${filters.customerCode}%`, `%${filters.customerCode}%`);
+        andConditions.push({
+          OR: [
+            { customer_code: { contains: filters.customerCode } },
+            { customer_short_name: { contains: filters.customerCode } }
+          ]
+        });
       }
-      sql += " ORDER BY outbound_date DESC, id DESC";
-      const rows = db.prepare(sql).all(...params) as any[];
-      return Promise.resolve(rows);
+
+      const finalWhere = andConditions.length > 0 ? { AND: andConditions } : {};
+
+      const rows = await prisma.outboundRecord.findMany({
+        where: finalWhere,
+        select: {
+          id: true,
+          customer_code: true,
+          customer_short_name: true,
+          customer_full_name: true,
+          product_code: true,
+          product_model: true,
+          quantity: true,
+          unit_price: true,
+          total_price: true,
+          outbound_date: true,
+          invoice_date: true,
+          invoice_number: true,
+          receipt_number: true,
+          order_number: true,
+          remark: true,
+        },
+        orderBy: [
+          { outbound_date: "desc" },
+          { id: "desc" },
+        ],
+      });
+      return rows;
     } catch (error) {
-      return Promise.reject(error as Error);
+      throw error;
     }
   }
 }

@@ -3,9 +3,8 @@ services:
     image: lihaozhe013/tradeflow-core:latest
     container_name: tradeflow-core-prod
     restart: always
-    ports:
-      - "8000:8000"
+    network_mode: "host"
     volumes:
-      - /opt/tradeflow/data:/app/data
+      - ./data:/app/data
     environment:
       - NODE_ENV=production

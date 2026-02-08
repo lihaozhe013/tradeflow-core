@@ -1,97 +1,81 @@
 import express, { type Router, type Request, type Response } from 'express';
-import db from '@/db.js';
+import { prisma } from '@/prismaClient.js';
+import { Prisma } from '@prisma/client';
 import decimalCalc from '@/utils/decimalCalculator.js';
 
 const router: Router = express.Router();
 
-interface CountResult {
-  total: number;
-}
-
-/**
- * Validate query parameters (exclude empty strings, null, and undefined)
- */
 function isProvided(val: any): boolean {
   return !(val === undefined || val === null || val === '' || val === 'null' || val === 'undefined');
 }
 
-// No mapping between invoice_* and receipt_*; API uses invoice_* directly.
-
 /**
  * GET /api/inbound
  */
-router.get('/', (req: Request, res: Response): void => {
+router.get('/', async (req: Request, res: Response): Promise<void> => {
   try {
     let { page = 1 } = req.query;
     let pageNum = parseInt(page as string, 10);
     if (!Number.isFinite(pageNum) || pageNum < 1) pageNum = 1;
     const limit = 10;
+    const skip = (pageNum - 1) * limit;
     
-    let sql = 'SELECT * FROM inbound_records WHERE 1=1';
-    const params: any[] = [];
+    const where: Prisma.InboundRecordWhereInput = {};
     
     if (isProvided(req.query['supplier_short_name'])) {
-      sql += ' AND supplier_short_name LIKE ?';
-      params.push(`%${req.query['supplier_short_name']}%`);
+      where.supplier_short_name = { contains: req.query['supplier_short_name'] as string };
     }
     if (isProvided(req.query['product_model'])) {
-      sql += ' AND product_model LIKE ?';
-      params.push(`%${req.query['product_model']}%`);
+      where.product_model = { contains: req.query['product_model'] as string };
     }
     if (isProvided(req.query['start_date'])) {
-      sql += ' AND inbound_date >= ?';
-      params.push(req.query['start_date']);
+      where.inbound_date = { gte: req.query['start_date'] as string };
     }
     if (isProvided(req.query['end_date'])) {
-      sql += ' AND inbound_date <= ?';
-      params.push(req.query['end_date']);
+      where.inbound_date = { lte: req.query['end_date'] as string };
     }
 
+    const sortField = req.query['sort_field'] as string;
     const allowedSortFields = ['inbound_date', 'unit_price', 'total_price', 'id'];
-    let orderBy = 'id DESC';
-    if (req.query['sort_field'] && allowedSortFields.includes(req.query['sort_field'] as string)) {
-      const sortOrder = req.query['sort_order'] && (req.query['sort_order'] as string).toLowerCase() === 'asc' ? 'ASC' : 'DESC';
-      orderBy = `${req.query['sort_field']} ${sortOrder}`;
-    }
-    sql += ` ORDER BY ${orderBy}`;
+    let orderBy: Prisma.InboundRecordOrderByWithRelationInput = { id: 'desc' };
 
-    const offset = (pageNum - 1) * limit;
-    sql += ' LIMIT ? OFFSET ?';
-    params.push(limit, offset);
+    if (sortField && allowedSortFields.includes(sortField)) {
+        const fieldMap: Record<string, keyof Prisma.InboundRecordOrderByWithRelationInput> = {
+            'inbound_date': 'inbound_date',
+            'unit_price': 'unit_price',
+            'total_price': 'total_price',
+            'id': 'id'
+        };
+        const prismaField = fieldMap[sortField];
+        const sortOrder = req.query['sort_order'] && (req.query['sort_order'] as string).toLowerCase() === 'asc' ? 'asc' : 'desc';
+        // Need to cast the dynamic object structure for TypeScript
+        if (prismaField) {
+          orderBy = { [prismaField]: sortOrder } as Prisma.InboundRecordOrderByWithRelationInput; 
+        } 
+    }
 
-    const rows = db.prepare(sql).all(...params);
+    const [rows, total] = await prisma.$transaction([
+        prisma.inboundRecord.findMany({
+            where,
+            orderBy,
+            skip,
+            take: limit
+        }),
+        prisma.inboundRecord.count({ where })
+    ]);
     
-    let countSql = 'SELECT COUNT(*) as total FROM inbound_records WHERE 1=1';
-    const countParams: any[] = [];
-    
-    if (isProvided(req.query['supplier_short_name'])) {
-      countSql += ' AND supplier_short_name LIKE ?';
-      countParams.push(`%${req.query['supplier_short_name']}%`);
-    }
-    if (isProvided(req.query['product_model'])) {
-      countSql += ' AND product_model LIKE ?';
-      countParams.push(`%${req.query['product_model']}%`);
-    }
-    if (isProvided(req.query['start_date'])) {
-      countSql += ' AND inbound_date >= ?';
-      countParams.push(req.query['start_date']);
-    }
-    if (isProvided(req.query['end_date'])) {
-      countSql += ' AND inbound_date <= ?';
-      countParams.push(req.query['end_date']);
-    }
-    
-    const countResult = db.prepare(countSql).get(...countParams) as CountResult;
+    // Rows are already in snake_case
     
     res.json({
       data: rows,
       pagination: {
         page: pageNum,
         limit: limit,
-        total: countResult.total,
-        pages: Math.ceil(countResult.total / limit)
+        total,
+        pages: Math.ceil(total / limit)
       }
     });
+
   } catch (err) {
     const error = err as Error;
     res.status(500).json({ error: error.message });
@@ -101,7 +85,7 @@ router.get('/', (req: Request, res: Response): void => {
 /**
  * POST /api/inbound
  */
-router.post('/', (req: Request, res: Response): void => {
+router.post('/', async (req: Request, res: Response): Promise<void> => {
   try {
     const {
       supplier_code, supplier_short_name, supplier_full_name, 
@@ -112,25 +96,26 @@ router.post('/', (req: Request, res: Response): void => {
 
     const total_price = decimalCalc.calculateTotalPrice(quantity, unit_price);
     
-    const sql = `
-      INSERT INTO inbound_records 
-      (supplier_code, supplier_short_name, supplier_full_name, 
-       product_code, product_model, quantity, unit_price, total_price, 
-       inbound_date, invoice_date, invoice_number, receipt_number, order_number, 
-       remark)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `;
+    const result = await prisma.inboundRecord.create({
+        data: {
+          supplier_code,
+          supplier_short_name,
+          supplier_full_name,
+          product_code,
+          product_model,
+          quantity,
+          unit_price,
+          total_price,
+          inbound_date,
+          invoice_date,
+          invoice_number,
+          receipt_number,
+          order_number,
+          remark
+        }
+    });
     
-    const params = [
-      supplier_code, supplier_short_name, supplier_full_name, 
-      product_code, product_model, quantity, unit_price, total_price,
-      inbound_date, invoice_date, invoice_number, receipt_number, order_number,
-      remark
-    ];
-    
-    const result = db.prepare(sql).run(...params);
-    
-    res.json({ id: result.lastInsertRowid, message: 'Inbound record created!' });
+    res.json({ id: result.id, message: 'Inbound record created!' });
   } catch (err) {
     const error = err as Error;
     res.status(500).json({ error: error.message });
@@ -140,9 +125,9 @@ router.post('/', (req: Request, res: Response): void => {
 /**
  * PUT /api/inbound/:id
  */
-router.put('/:id', (req: Request, res: Response): void => {
+router.put('/:id', async (req: Request, res: Response): Promise<void> => {
   try {
-    const { id } = req.params;
+    const id = Number(req.params['id']);
     
     const {
       supplier_code, supplier_short_name, supplier_full_name, 
@@ -153,32 +138,33 @@ router.put('/:id', (req: Request, res: Response): void => {
     
     const total_price = decimalCalc.calculateTotalPrice(quantity, unit_price);
     
-    const sql = `
-      UPDATE inbound_records SET
-      supplier_code=?, supplier_short_name=?, supplier_full_name=?, 
-      product_code=?, product_model=?, quantity=?, unit_price=?, total_price=?,
-      inbound_date=?, invoice_date=?, invoice_number=?, receipt_number=?, order_number=?,
-      remark=?
-      WHERE id=?
-    `;
-    
-    const params = [
-      supplier_code, supplier_short_name, supplier_full_name, 
-      product_code, product_model, quantity, unit_price, total_price,
-      inbound_date, invoice_date, invoice_number, receipt_number, order_number,
-      remark, id
-    ];
-    
-    const result = db.prepare(sql).run(...params);
-    
-    if (result.changes === 0) {
-      res.status(404).json({ error: 'No inbound records exist' });
-      return;
-    }
+    await prisma.inboundRecord.update({
+        where: { id },
+        data: {
+          supplier_code,
+          supplier_short_name,
+          supplier_full_name,
+          product_code,
+          product_model,
+          quantity,
+          unit_price,
+          total_price,
+          inbound_date,
+          invoice_date,
+          invoice_number,
+          receipt_number,
+          order_number,
+          remark
+        }
+    });
     
     res.json({ message: 'Inbound record updated!' });
   } catch (err) {
     const error = err as Error;
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+        res.status(404).json({ error: 'No inbound records exist' });
+        return;
+    }
     res.status(500).json({ error: error.message });
   }
 });
@@ -186,20 +172,19 @@ router.put('/:id', (req: Request, res: Response): void => {
 /**
  * DELETE /api/inbound/:id
  */
-router.delete('/:id', (req: Request, res: Response): void => {
+router.delete('/:id', async (req: Request, res: Response): Promise<void> => {
   try {
-    const { id } = req.params;
+    const id = Number(req.params['id']);
     
-    const result = db.prepare('DELETE FROM inbound_records WHERE id = ?').run(id);
-    
-    if (result.changes === 0) {
-      res.status(404).json({ error: 'No inbound records exist' });
-      return;
-    }
+    await prisma.inboundRecord.delete({ where: { id } });
     
     res.json({ message: 'Inbound record deleted!' });
   } catch (err) {
     const error = err as Error;
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+        res.status(404).json({ error: 'No inbound records exist' });
+        return;
+    }
     res.status(500).json({ error: error.message });
   }
 });
@@ -208,7 +193,7 @@ router.delete('/:id', (req: Request, res: Response): void => {
  * POST /api/inbound/batch
  * Batch update multiple inbound records
  */
-router.post('/batch', (req: Request, res: Response): void => {
+router.post('/batch', async (req: Request, res: Response): Promise<void> => {
   try {
     const { ids, updates } = req.body;
     
@@ -223,92 +208,91 @@ router.post('/batch', (req: Request, res: Response): void => {
       return;
     }
     
-    // Build dynamic UPDATE statement based on provided fields
-    const updateFields: string[] = [];
-    const updateValues: any[] = [];
+    const allowedFieldsMap: Record<string, keyof Prisma.InboundRecordUpdateInput> = {
+      'supplier_code': 'supplier_code',
+      'supplier_short_name': 'supplier_short_name',
+      'supplier_full_name': 'supplier_full_name',
+      'product_code': 'product_code',
+      'product_model': 'product_model',
+      'quantity': 'quantity',
+      'unit_price': 'unit_price',
+      'inbound_date': 'inbound_date',
+      'invoice_date': 'invoice_date',
+      'invoice_number': 'invoice_number',
+      'receipt_number': 'receipt_number',
+      'order_number': 'order_number',
+      'remark': 'remark'
+    };
     
-    const allowedFields = [
-      'supplier_code', 'supplier_short_name', 'supplier_full_name',
-      'product_code', 'product_model', 'quantity', 'unit_price',
-      'inbound_date', 'invoice_date', 'invoice_number', 'receipt_number', 
-      'order_number', 'remark'
-    ];
-    
-    // Track if we need to recalculate total_price
-    let needsRecalculation = false;
+    // Prepare base update object
+    const updateData: Prisma.InboundRecordUpdateInput = {};
     let hasQuantity = false;
     let hasUnitPrice = false;
-    
-    for (const field of allowedFields) {
-      if (isProvided(updates[field])) {
-        updateFields.push(`${field}=?`);
-        updateValues.push(updates[field]);
-        
-        if (field === 'quantity') hasQuantity = true;
-        if (field === 'unit_price') hasUnitPrice = true;
-      }
+
+    for (const [key, val] of Object.entries(updates)) {
+        if (allowedFieldsMap[key] && isProvided(val)) {
+            // @ts-ignore - dynamic assignment
+            updateData[allowedFieldsMap[key]] = val;
+            if (key === 'quantity') hasQuantity = true;
+            if (key === 'unit_price') hasUnitPrice = true;
+        }
     }
     
-    if (updateFields.length === 0) {
+    if (Object.keys(updateData).length === 0) {
       res.status(400).json({ error: 'No valid update fields provided' });
       return;
     }
     
-    needsRecalculation = hasQuantity || hasUnitPrice;
-    
-    // Execute batch update with transaction for better performance
+    const needsRecalculation = hasQuantity || hasUnitPrice;
     let completed = 0;
     let errors = 0;
     const notFound: number[] = [];
+
+    // Transactions per record might be safer to track individual success/failure
+    // But REST API usually implies all-or-nothing or partial-ok report. 
+    // The original code tried to update one by one and collected errors.
     
-    const batchUpdate = db.transaction(() => {
-      for (const recordId of ids) {
+    // We can't use updateMany easily if recalculation is needed per row dependent on its own values.
+    // So we iterate.
+    
+    for (const recordId of ids) {
         try {
-          // If we need to recalculate total_price, we need to fetch current values first
-          if (needsRecalculation) {
-            const row = db.prepare('SELECT quantity, unit_price FROM inbound_records WHERE id = ?').get(recordId) as any;
-            
-            if (!row) {
-              notFound.push(recordId);
-              continue;
-            }
-            
-            // Calculate new total_price
-            const finalQuantity = hasQuantity ? updates.quantity : row.quantity;
-            const finalUnitPrice = hasUnitPrice ? updates.unit_price : row.unit_price;
-            const total_price = decimalCalc.calculateTotalPrice(finalQuantity, finalUnitPrice);
-            
-            // Add total_price to update
-            const finalUpdateFields = [...updateFields, 'total_price=?'];
-            const finalUpdateValues = [...updateValues, total_price, recordId];
-            
-            const sql = `UPDATE inbound_records SET ${finalUpdateFields.join(', ')} WHERE id=?`;
-            
-            const result = db.prepare(sql).run(...finalUpdateValues);
-            if (result.changes === 0) {
-              notFound.push(recordId);
+            if (needsRecalculation) {
+                // Fetch current first
+                const current = await prisma.inboundRecord.findUnique({ where: { id: recordId }, select: { quantity: true, unit_price: true } });
+                if (!current) {
+                    notFound.push(recordId);
+                    continue;
+                }
+                
+                const finalQuantity = hasQuantity ? updates.quantity : current.quantity;
+                const finalUnitPrice = hasUnitPrice ? updates.unit_price : current.unit_price;
+                const total_price = decimalCalc.calculateTotalPrice(finalQuantity, finalUnitPrice);
+                
+                await prisma.inboundRecord.update({
+                    where: { id: recordId },
+                    data: {
+                        ...updateData,
+                        total_price: total_price
+                    }
+                });
+                completed++;
             } else {
-              completed++;
+                // No calc needed
+                 await prisma.inboundRecord.update({
+                    where: { id: recordId },
+                    data: updateData
+                });
+                completed++;
             }
-          } else {
-            // No recalculation needed, direct update
-            const finalUpdateValues = [...updateValues, recordId];
-            const sql = `UPDATE inbound_records SET ${updateFields.join(', ')} WHERE id=?`;
-            
-            const result = db.prepare(sql).run(...finalUpdateValues);
-            if (result.changes === 0) {
-              notFound.push(recordId);
+        } catch (e: any) {
+            if (e.code === 'P2025') {
+                 notFound.push(recordId);
             } else {
-              completed++;
+                 errors++;
             }
-          }
-        } catch (err) {
-          errors++;
         }
-      }
-    });
-    
-    batchUpdate();
+    }
     
     res.json({
       message: 'Batch update completed!',
