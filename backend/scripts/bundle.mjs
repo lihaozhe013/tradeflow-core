@@ -23,19 +23,12 @@ async function main() {
     outfile,
     bundle: true,
     platform: 'node',
+    target: ['node24'],
     format: 'esm',
-    target: ['node22'],
-    sourcemap: true,
+    sourcemap: false,
     minify: true,
-    // Externalize all npm packages so node_modules aren't bundled
     packages: 'external',
-    external: [
-      // Native/binary modules should remain external
-      'sqlite3',
-      'argon2',
-    ],
     plugins: [
-      // Minimal alias plugin to support '@/...' imports
       {
         name: 'alias-atslash',
         setup(build) {
@@ -57,12 +50,9 @@ async function main() {
                 candidates.push(path.join(base, 'index' + ext));
               }
             }
-
             for (const p of candidates) {
               if (fs.existsSync(p)) return { path: p };
             }
-
-            // Fall back to the raw resolved path so esbuild reports a helpful error
             return { path: base };
           });
         },
@@ -72,8 +62,6 @@ async function main() {
       'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'production'),
     },
   });
-
-  // eslint-disable-next-line no-console
   console.log('esbuild: backend bundled ->', path.relative(process.cwd(), outfile));
 }
 
