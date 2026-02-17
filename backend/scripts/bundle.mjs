@@ -23,6 +23,7 @@ async function main() {
     outfile,
     bundle: true,
     platform: 'node',
+    target: ['node24'],
     format: 'esm',
     sourcemap: false,
     minify: true,
