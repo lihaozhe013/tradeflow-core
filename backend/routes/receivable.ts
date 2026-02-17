@@ -22,20 +22,34 @@ interface ReceivableRow {
  * GET /api/receivable
  */
 router.get('/', async (req: Request, res: Response): Promise<void> => {
-  const { page = 1, limit = 10, customer_short_name, sort_field = 'balance', sort_order = 'desc' } = req.query;
-  
-  let whereClause = "WHERE p.type = 1";
-  
+  const {
+    page = 1,
+    limit = 10,
+    customer_short_name,
+    sort_field = 'balance',
+    sort_order = 'desc',
+  } = req.query;
+
+  let whereClause = 'WHERE p.type = 1';
+
   if (customer_short_name) {
     // Basic sanitization for LIKE clause
     const sanitizedVal = String(customer_short_name).replace(/'/g, "''");
     whereClause += ` AND p.short_name LIKE '%${sanitizedVal}%'`;
   }
 
-  const allowedSortFields = ['customer_code', 'customer_short_name', 'total_receivable', 'total_paid', 'balance', 'last_payment_date'];
+  const allowedSortFields = [
+    'customer_code',
+    'customer_short_name',
+    'total_receivable',
+    'total_paid',
+    'balance',
+    'last_payment_date',
+  ];
   let orderBy = 'balance DESC';
   if (sort_field && allowedSortFields.includes(sort_field as string)) {
-    const sortOrderStr = sort_order && (sort_order as string).toLowerCase() === 'asc' ? 'ASC' : 'DESC';
+    const sortOrderStr =
+      sort_order && (sort_order as string).toLowerCase() === 'asc' ? 'ASC' : 'DESC';
     orderBy = `${sort_field} ${sortOrderStr}`;
   }
 
@@ -74,20 +88,20 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     const rows = await prisma.$queryRawUnsafe<ReceivableRow[]>(sql);
 
     // Process rows to ensure decimal precision
-    const processedRows = rows.map(row => {
+    const processedRows = rows.map((row) => {
       const totalReceivable = decimalCalc.fromSqlResult(row.total_receivable, 0);
       const totalPaid = decimalCalc.fromSqlResult(row.total_paid, 0);
       const balance = decimalCalc.calculateBalance(totalReceivable, totalPaid);
-      
+
       // Convert BigInt to Number for payment_count
       const paymentCount = row.payment_count ? Number(row.payment_count) : 0;
-      
+
       return {
         ...row,
         total_receivable: totalReceivable,
         total_paid: totalPaid,
         balance: balance,
-        payment_count: paymentCount
+        payment_count: paymentCount,
       };
     });
 
@@ -97,12 +111,12 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       where.short_name = { contains: customer_short_name as string };
     }
     const total = await prisma.partner.count({ where });
-    
+
     res.json({
       data: processedRows,
       total: total,
       page: Number(page),
-      limit: Number(limit)
+      limit: Number(limit),
     });
   } catch (err) {
     const error = err as Error;
@@ -116,25 +130,25 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
 router.get('/payments/:customer_code', async (req: Request, res: Response): Promise<void> => {
   const customer_code = req.params['customer_code'] as string;
   const { page = 1, limit = 10 } = req.query;
-  
+
   const skip = (Number(page) - 1) * Number(limit);
-  
+
   try {
     const [rows, total] = await prisma.$transaction([
       prisma.receivablePayment.findMany({
         where: { customer_code },
         orderBy: { pay_date: 'desc' },
         skip,
-        take: Number(limit)
+        take: Number(limit),
       }),
-      prisma.receivablePayment.count({ where: { customer_code } })
+      prisma.receivablePayment.count({ where: { customer_code } }),
     ]);
-    
+
     res.json({
       data: rows,
       total,
       page: Number(page),
-      limit: Number(limit)
+      limit: Number(limit),
     });
   } catch (err) {
     const error = err as Error;
@@ -147,12 +161,14 @@ router.get('/payments/:customer_code', async (req: Request, res: Response): Prom
  */
 router.post('/payments', async (req: Request, res: Response): Promise<void> => {
   const { customer_code, amount, pay_date, pay_method, remark } = req.body;
-  
+
   if (!customer_code || amount === undefined || !pay_date) {
-    res.status(400).json({ error: 'Customer ID, payment amount, and payment date are required fields' });
+    res
+      .status(400)
+      .json({ error: 'Customer ID, payment amount, and payment date are required fields' });
     return;
   }
-  
+
   try {
     const result = await prisma.receivablePayment.create({
       data: {
@@ -160,8 +176,8 @@ router.post('/payments', async (req: Request, res: Response): Promise<void> => {
         amount,
         pay_date,
         pay_method: pay_method || '',
-        remark: remark || ''
-      }
+        remark: remark || '',
+      },
     });
     res.json({ id: result.id, message: 'Payment record created!' });
   } catch (err) {
@@ -176,12 +192,14 @@ router.post('/payments', async (req: Request, res: Response): Promise<void> => {
 router.put('/payments/:id', async (req: Request, res: Response): Promise<void> => {
   const id = Number(req.params['id']);
   const { customer_code, amount, pay_date, pay_method, remark } = req.body;
-  
+
   if (!customer_code || amount === undefined || !pay_date) {
-    res.status(400).json({ error: 'Customer ID, payment amount, and payment date are required fields' });
+    res
+      .status(400)
+      .json({ error: 'Customer ID, payment amount, and payment date are required fields' });
     return;
   }
-  
+
   try {
     await prisma.receivablePayment.update({
       where: { id },
@@ -190,16 +208,16 @@ router.put('/payments/:id', async (req: Request, res: Response): Promise<void> =
         amount,
         pay_date,
         pay_method: pay_method || '',
-        remark: remark || ''
-      }
+        remark: remark || '',
+      },
     });
-    
+
     res.json({ message: 'Payment record updated!' });
   } catch (err) {
     const error = err as Error;
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
-        res.status(404).json({ error: 'Payment records dne' });
-        return;
+      res.status(404).json({ error: 'Payment records dne' });
+      return;
     }
     res.status(500).json({ error: error.message });
   }
@@ -211,15 +229,15 @@ router.put('/payments/:id', async (req: Request, res: Response): Promise<void> =
 router.delete('/payments/:id', async (req: Request, res: Response): Promise<void> => {
   try {
     const id = Number(req.params['id']);
-    
+
     await prisma.receivablePayment.delete({ where: { id } });
-    
+
     res.json({ message: 'Payment record deleted!' });
   } catch (err) {
     const error = err as Error;
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
-        res.status(404).json({ error: 'Payment records dne' });
-        return;
+      res.status(404).json({ error: 'Payment records dne' });
+      return;
     }
     res.status(500).json({ error: error.message });
   }
@@ -230,16 +248,16 @@ router.delete('/payments/:id', async (req: Request, res: Response): Promise<void
  */
 router.get('/details/:customer_code', async (req: Request, res: Response): Promise<void> => {
   const customer_code = req.params['customer_code'] as string;
-  const { 
-    outbound_page = 1, 
-    outbound_limit = 10, 
-    payment_page = 1, 
-    payment_limit = 10 
+  const {
+    outbound_page = 1,
+    outbound_limit = 10,
+    payment_page = 1,
+    payment_limit = 10,
   } = req.query;
 
   try {
     const customer = await prisma.partner.findFirst({
-      where: { code: customer_code, type: 1 }
+      where: { code: customer_code, type: 1 },
     });
 
     if (!customer) {
@@ -251,61 +269,55 @@ router.get('/details/:customer_code', async (req: Request, res: Response): Promi
     const paymentSkip = (Number(payment_page) - 1) * Number(payment_limit);
 
     // Parallel fetch
-    const [
-      outboundRecords,
-      outboundCount,
-      paymentRecords,
-      paymentCount,
-      outboundAgg,
-      paymentAgg
-    ] = await Promise.all([
-      prisma.outboundRecord.findMany({
-        where: { customer_code },
-        orderBy: { outbound_date: 'desc' },
-        skip: outboundSkip,
-        take: Number(outbound_limit)
-      }),
-      prisma.outboundRecord.count({ where: { customer_code } }),
-      prisma.receivablePayment.findMany({
-        where: { customer_code },
-        orderBy: { pay_date: 'desc' },
-        skip: paymentSkip,
-        take: Number(payment_limit)
-      }),
-      prisma.receivablePayment.count({ where: { customer_code } }),
-      prisma.outboundRecord.aggregate({
-        where: { customer_code },
-        _sum: { total_price: true }
-      }),
-      prisma.receivablePayment.aggregate({
-        where: { customer_code },
-        _sum: { amount: true }
-      })
-    ]);
+    const [outboundRecords, outboundCount, paymentRecords, paymentCount, outboundAgg, paymentAgg] =
+      await Promise.all([
+        prisma.outboundRecord.findMany({
+          where: { customer_code },
+          orderBy: { outbound_date: 'desc' },
+          skip: outboundSkip,
+          take: Number(outbound_limit),
+        }),
+        prisma.outboundRecord.count({ where: { customer_code } }),
+        prisma.receivablePayment.findMany({
+          where: { customer_code },
+          orderBy: { pay_date: 'desc' },
+          skip: paymentSkip,
+          take: Number(payment_limit),
+        }),
+        prisma.receivablePayment.count({ where: { customer_code } }),
+        prisma.outboundRecord.aggregate({
+          where: { customer_code },
+          _sum: { total_price: true },
+        }),
+        prisma.receivablePayment.aggregate({
+          where: { customer_code },
+          _sum: { amount: true },
+        }),
+      ]);
 
     const totalReceivable = decimalCalc.fromSqlResult(outboundAgg._sum?.total_price || 0, 0);
     const totalPaid = decimalCalc.fromSqlResult(paymentAgg._sum?.amount || 0, 0);
     const balance = decimalCalc.calculateBalance(totalReceivable, totalPaid);
-    
+
     res.json({
       customer,
       summary: {
         total_receivable: totalReceivable,
         total_paid: totalPaid,
-        balance: balance
+        balance: balance,
       },
       outbound_records: {
         data: outboundRecords,
         total: outboundCount,
         page: Number(outbound_page),
-        limit: Number(outbound_limit)
+        limit: Number(outbound_limit),
       },
       payment_records: {
         data: paymentRecords,
         total: paymentCount,
         page: Number(payment_page),
-        limit: Number(payment_limit)
-      }
+        limit: Number(payment_limit),
+      },
     });
   } catch (err) {
     const error = err as Error;
@@ -320,16 +332,13 @@ router.get('/details/:customer_code', async (req: Request, res: Response): Promi
 router.get('/uninvoiced/:customer_code', async (req: Request, res: Response): Promise<void> => {
   const customer_code = req.params['customer_code'] as string;
   const { page = 1, limit = 10 } = req.query;
-  
+
   const skip = (Number(page) - 1) * Number(limit);
-  
+
   try {
     const where: Prisma.OutboundRecordWhereInput = {
       customer_code,
-      OR: [
-        { invoice_number: null },
-        { invoice_number: '' }
-      ]
+      OR: [{ invoice_number: null }, { invoice_number: '' }],
     };
 
     const [rows, total] = await prisma.$transaction([
@@ -337,16 +346,16 @@ router.get('/uninvoiced/:customer_code', async (req: Request, res: Response): Pr
         where,
         orderBy: { outbound_date: 'desc' },
         skip,
-        take: Number(limit)
+        take: Number(limit),
       }),
-      prisma.outboundRecord.count({ where })
+      prisma.outboundRecord.count({ where }),
     ]);
-    
+
     res.json({
       data: rows,
       total,
       page: Number(page),
-      limit: Number(limit)
+      limit: Number(limit),
     });
   } catch (err) {
     const error = err as Error;
@@ -359,55 +368,58 @@ router.get('/uninvoiced/:customer_code', async (req: Request, res: Response): Pr
  * Get invoiced records grouped by invoice_number (from cache)
  */
 router.get('/invoiced/:customer_code', (req: Request, res: Response): void => {
-  const customer_code  = req.params['customer_code'] as string;
+  const customer_code = req.params['customer_code'] as string;
   const { page = 1, limit = 10 } = req.query;
-  
+
   const cachedRecords = invoiceCacheService.getCachedInvoicedRecords(customer_code);
-  
+
   if (!cachedRecords) {
-    res.status(404).json({ 
+    res.status(404).json({
       error: 'No cached data found. Please refresh the cache first.',
-      message: 'Cache not initialized'
+      message: 'Cache not initialized',
     });
     return;
   }
-  
+
   const offset = (Number(page) - 1) * Number(limit);
   const paginatedRecords = cachedRecords.slice(offset, offset + Number(limit));
   const lastUpdated = invoiceCacheService.getLastUpdateTime(customer_code);
-  
+
   res.json({
     data: paginatedRecords,
     total: cachedRecords.length,
     page: Number(page),
     limit: Number(limit),
-    last_updated: lastUpdated
+    last_updated: lastUpdated,
   });
 });
 
 /**
  * POST /api/receivable/invoices/refresh/:customer_code
  */
-router.post('/invoices/refresh/:customer_code', async (req: Request, res: Response): Promise<void> => {
-  const customer_code  = req.params['customer_code'] as string;
-  
-  try {
-    const invoicedRecords = await invoiceCacheService.refreshCustomerCache(customer_code);
-    const lastUpdated = invoiceCacheService.getLastUpdateTime(customer_code);
-    
-    res.json({
-      message: 'Invoice cache refreshed successfully',
-      total: invoicedRecords.length,
-      last_updated: lastUpdated,
-      data: invoicedRecords
-    });
-  } catch (error) {
-    const err = error as Error;
-    res.status(500).json({ 
-      error: err.message,
-      message: 'Failed to refresh invoice cache'
-    });
-  }
-});
+router.post(
+  '/invoices/refresh/:customer_code',
+  async (req: Request, res: Response): Promise<void> => {
+    const customer_code = req.params['customer_code'] as string;
+
+    try {
+      const invoicedRecords = await invoiceCacheService.refreshCustomerCache(customer_code);
+      const lastUpdated = invoiceCacheService.getLastUpdateTime(customer_code);
+
+      res.json({
+        message: 'Invoice cache refreshed successfully',
+        total: invoicedRecords.length,
+        last_updated: lastUpdated,
+        data: invoicedRecords,
+      });
+    } catch (error) {
+      const err = error as Error;
+      res.status(500).json({
+        error: err.message,
+        message: 'Failed to refresh invoice cache',
+      });
+    }
+  },
+);
 
 export default router;

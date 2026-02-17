@@ -2,7 +2,7 @@
  * Precision Calculation Tool
  * Based on Decimal.js
  */
-import Decimal from "decimal.js";
+import Decimal from 'decimal.js';
 
 Decimal.config({
   precision: 20, // 20 significant digits
@@ -23,24 +23,18 @@ class DecimalCalculator {
     return this.decimal(a).add(this.decimal(b));
   }
 
-  subtract(
-    a: number | string | Decimal,
-    b: number | string | Decimal,
-  ): Decimal {
+  subtract(a: number | string | Decimal, b: number | string | Decimal): Decimal {
     return this.decimal(a).sub(this.decimal(b));
   }
 
-  multiply(
-    a: number | string | Decimal,
-    b: number | string | Decimal,
-  ): Decimal {
+  multiply(a: number | string | Decimal, b: number | string | Decimal): Decimal {
     return this.decimal(a).mul(this.decimal(b));
   }
 
   divide(a: number | string | Decimal, b: number | string | Decimal): Decimal {
     const divisor = this.decimal(b);
     if (divisor.isZero()) {
-      throw new Error("Division by zero");
+      throw new Error('Division by zero');
     }
     return this.decimal(a).div(divisor);
   }
@@ -51,10 +45,7 @@ class DecimalCalculator {
    * @param unitPrice
    * @returns Total price rounded to five decimal places
    */
-  calculateTotalPrice(
-    quantity: number | string,
-    unitPrice: number | string,
-  ): number {
+  calculateTotalPrice(quantity: number | string, unitPrice: number | string): number {
     const q = this.decimal(quantity);
     const p = this.decimal(unitPrice);
     const result = q.mul(p);
@@ -67,10 +58,7 @@ class DecimalCalculator {
    * @param paidAmount
    * @returns balance rounded to five decimal places
    */
-  calculateBalance(
-    totalAmount: number | string,
-    paidAmount: number | string,
-  ): number {
+  calculateBalance(totalAmount: number | string, paidAmount: number | string): number {
     const total = this.decimal(totalAmount);
     const paid = this.decimal(paidAmount);
     const result = total.sub(paid);
@@ -92,10 +80,7 @@ class DecimalCalculator {
    * @param decimalPlaces Decimal places, default 5 digits (supports 0.00001 precision)
    * @returns Numbers suitable for database storage
    */
-  toDbNumber(
-    value: number | string | Decimal,
-    decimalPlaces: number = 5,
-  ): number {
+  toDbNumber(value: number | string | Decimal, decimalPlaces: number = 5): number {
     const decimal = this.decimal(value);
     return this.toNumber(decimal, decimalPlaces);
   }
@@ -115,8 +100,7 @@ class DecimalCalculator {
       return defaultValue;
     }
     // Handle BigInt by converting to string first
-    const val =
-      typeof sqlResult === "bigint" ? sqlResult.toString() : sqlResult;
+    const val = typeof sqlResult === 'bigint' ? sqlResult.toString() : sqlResult;
     const decimal = this.decimal(val);
     return this.toNumber(decimal, decimalPlaces);
   }

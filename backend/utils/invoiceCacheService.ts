@@ -1,11 +1,11 @@
-import fs from "fs";
-import path from "path";
-import { prisma } from "@/prismaClient";
-import decimalCalc from "@/utils/decimalCalculator";
-import { logger } from "@/utils/logger";
-import { getDataDir } from "@/utils/paths";
+import fs from 'fs';
+import path from 'path';
+import { prisma } from '@/prismaClient';
+import decimalCalc from '@/utils/decimalCalculator';
+import { logger } from '@/utils/logger';
+import { getDataDir } from '@/utils/paths';
 
-const CACHE_FILE_NAME = "invoice-cache.json";
+const CACHE_FILE_NAME = 'invoice-cache.json';
 
 interface InvoicedRecord {
   invoice_number: string;
@@ -36,7 +36,7 @@ class InvoiceCacheService {
   private loadCache(): InvoiceCacheData {
     try {
       if (fs.existsSync(this.cachePath)) {
-        const data = fs.readFileSync(this.cachePath, "utf-8");
+        const data = fs.readFileSync(this.cachePath, 'utf-8');
         return JSON.parse(data);
       }
     } catch (error) {
@@ -50,12 +50,8 @@ class InvoiceCacheService {
    */
   private saveCache(): void {
     try {
-      fs.writeFileSync(
-        this.cachePath,
-        JSON.stringify(this.cache, null, 2),
-        "utf-8",
-      );
-      logger.info("Invoice cache saved successfully");
+      fs.writeFileSync(this.cachePath, JSON.stringify(this.cache, null, 2), 'utf-8');
+      logger.info('Invoice cache saved successfully');
     } catch (error) {
       logger.error(`Failed to save invoice cache: ${error}`);
       throw error;
@@ -65,15 +61,13 @@ class InvoiceCacheService {
   /**
    * Refresh cache for a specific customer (outbound/receivable)
    */
-  public async refreshCustomerCache(
-    customer_code: string,
-  ): Promise<InvoicedRecord[]> {
+  public async refreshCustomerCache(customer_code: string): Promise<InvoicedRecord[]> {
     try {
       const groups = await prisma.outboundRecord.groupBy({
-        by: ["invoice_number"],
+        by: ['invoice_number'],
         where: {
           customer_code: customer_code,
-          invoice_number: { not: null, notIn: [""] },
+          invoice_number: { not: null, notIn: [''] },
         },
         _sum: {
           total_price: true,
@@ -90,8 +84,8 @@ class InvoiceCacheService {
       // Prisma groupBy allows orderBy since recent versions, but simpler to sort in code if needed or check types.
       // Let's sort in memory to be safe and consistent.
       groups.sort((a, b) => {
-        const dateA = a._min.invoice_date || "";
-        const dateB = b._min.invoice_date || "";
+        const dateA = a._min.invoice_date || '';
+        const dateB = b._min.invoice_date || '';
         return dateB.localeCompare(dateA);
       });
 
@@ -110,9 +104,7 @@ class InvoiceCacheService {
       this.saveCache();
       return invoicedRecords;
     } catch (err: any) {
-      logger.error(
-        `Failed to refresh invoice cache for customer ${customer_code}: ${err.message}`,
-      );
+      logger.error(`Failed to refresh invoice cache for customer ${customer_code}: ${err.message}`);
       throw err;
     }
   }
@@ -120,15 +112,13 @@ class InvoiceCacheService {
   /**
    * Refresh cache for a specific supplier (inbound/payable)
    */
-  public async refreshSupplierCache(
-    supplier_code: string,
-  ): Promise<InvoicedRecord[]> {
+  public async refreshSupplierCache(supplier_code: string): Promise<InvoicedRecord[]> {
     try {
       const groups = await prisma.inboundRecord.groupBy({
-        by: ["invoice_number"],
+        by: ['invoice_number'],
         where: {
           supplier_code: supplier_code,
-          invoice_number: { not: null, notIn: [""] },
+          invoice_number: { not: null, notIn: [''] },
         },
         _sum: {
           total_price: true,
@@ -142,8 +132,8 @@ class InvoiceCacheService {
       });
 
       groups.sort((a, b) => {
-        const dateA = a._min.invoice_date || "";
-        const dateB = b._min.invoice_date || "";
+        const dateA = a._min.invoice_date || '';
+        const dateB = b._min.invoice_date || '';
         return dateB.localeCompare(dateA);
       });
 
@@ -162,9 +152,7 @@ class InvoiceCacheService {
       this.saveCache();
       return invoicedRecords;
     } catch (err: any) {
-      logger.error(
-        `Failed to refresh invoice cache for supplier ${supplier_code}: ${err.message}`,
-      );
+      logger.error(`Failed to refresh invoice cache for supplier ${supplier_code}: ${err.message}`);
       throw err;
     }
   }
@@ -174,9 +162,7 @@ class InvoiceCacheService {
   /**
    * Get cached invoiced records for a customer
    */
-  public getCachedInvoicedRecords(
-    customer_code: string,
-  ): InvoicedRecord[] | null {
+  public getCachedInvoicedRecords(customer_code: string): InvoicedRecord[] | null {
     const customerCache = this.cache[customer_code];
     if (!customerCache) {
       return null;

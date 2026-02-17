@@ -1,9 +1,9 @@
-import BasicDataQueries from "@/routes/export/utils/basicDataQueries";
-import TransactionQueries from "@/routes/export/utils/transactionQueries";
-import ReceivableQueries from "@/routes/export/utils/receivableQueries";
-import PayableQueries from "@/routes/export/utils/payableQueries";
-import InvoiceQueries from "@/routes/export/utils/invoiceQueries";
-import AnalysisQueries from "@/routes/export/utils/analysisQueries";
+import BasicDataQueries from '@/routes/export/utils/basicDataQueries';
+import TransactionQueries from '@/routes/export/utils/transactionQueries';
+import ReceivableQueries from '@/routes/export/utils/receivableQueries';
+import PayableQueries from '@/routes/export/utils/payableQueries';
+import InvoiceQueries from '@/routes/export/utils/invoiceQueries';
+import AnalysisQueries from '@/routes/export/utils/analysisQueries';
 
 export default class ExportQueries {
   basicData: BasicDataQueries;
@@ -22,7 +22,7 @@ export default class ExportQueries {
     this.analysis = new AnalysisQueries();
   }
 
-  async getBaseInfoData(tables: string = "123") {
+  async getBaseInfoData(tables: string = '123') {
     return this.basicData.getBaseInfoData(tables);
   }
 

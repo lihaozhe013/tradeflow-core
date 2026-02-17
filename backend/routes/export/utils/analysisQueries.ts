@@ -1,5 +1,5 @@
-import { prisma } from "@/prismaClient";
-import decimalCalc from "@/utils/decimalCalculator";
+import { prisma } from '@/prismaClient';
+import decimalCalc from '@/utils/decimalCalculator';
 
 interface Batch {
   quantity_remaining: number;
@@ -16,13 +16,13 @@ export default class AnalysisQueries {
       // Inbound: All history, sorted by date asc for FIFO
       prisma.inboundRecord.findMany({
         where: { quantity: { gt: 0 } },
-        orderBy: [{ inbound_date: "asc" }, { id: "asc" }],
+        orderBy: [{ inbound_date: 'asc' }, { id: 'asc' }],
         select: { product_model: true, quantity: true, unit_price: true },
       }),
       // Outbound: Up to endDate
       prisma.outboundRecord.findMany({
         where: { quantity: { gt: 0 }, outbound_date: { lte: endDate } },
-        orderBy: [{ outbound_date: "asc" }, { id: "asc" }],
+        orderBy: [{ outbound_date: 'asc' }, { id: 'asc' }],
         select: {
           id: true,
           product_model: true,
@@ -55,8 +55,7 @@ export default class AnalysisQueries {
     // Initial Inventory (Inbound)
     for (const inRecord of allInbound) {
       if (!inRecord.product_model || !inRecord.quantity) continue;
-      if (!inventoryState[inRecord.product_model])
-        inventoryState[inRecord.product_model] = [];
+      if (!inventoryState[inRecord.product_model]) inventoryState[inRecord.product_model] = [];
 
       inventoryState[inRecord.product_model]!.push({
         quantity_remaining: Number(inRecord.quantity),
@@ -75,16 +74,11 @@ export default class AnalysisQueries {
       const batches = inventoryState[model] || [];
 
       // Determine if this record is in our target period
-      const isTarget =
-        outRecord.outbound_date! >= startDate &&
-        outRecord.outbound_date! <= endDate;
+      const isTarget = outRecord.outbound_date! >= startDate && outRecord.outbound_date! <= endDate;
 
       // Resolve Partner - match behavior of "p.code IS NOT NULL"
       let partner = null;
-      if (
-        outRecord.customer_code &&
-        partnerCodeMap.has(outRecord.customer_code)
-      ) {
+      if (outRecord.customer_code && partnerCodeMap.has(outRecord.customer_code)) {
         partner = partnerCodeMap.get(outRecord.customer_code);
       } else if (
         outRecord.customer_short_name &&
@@ -131,10 +125,7 @@ export default class AnalysisQueries {
   /**
    * Get customer analysis data with product details
    */
-  async getCustomerAnalysisData(
-    startDate: string,
-    endDate: string,
-  ): Promise<any[]> {
+  async getCustomerAnalysisData(startDate: string, endDate: string): Promise<any[]> {
     try {
       const records = await this.calculateFIFOData(startDate, endDate);
 
@@ -184,15 +175,11 @@ export default class AnalysisQueries {
       return Object.values(customerMap)
         .map((cust: any) => {
           cust.profit_rate =
-            cust.sales_amount !== 0
-              ? (cust.profit_amount / cust.sales_amount) * 100
-              : 0;
+            cust.sales_amount !== 0 ? (cust.profit_amount / cust.sales_amount) * 100 : 0;
           cust.product_details = Object.values(cust.product_details_map)
             .map((prod: any) => {
               prod.profit_rate =
-                prod.sales_amount !== 0
-                  ? (prod.profit_amount / prod.sales_amount) * 100
-                  : 0;
+                prod.sales_amount !== 0 ? (prod.profit_amount / prod.sales_amount) * 100 : 0;
               return prod;
             })
             .sort((a: any, b: any) => b.sales_amount - a.sales_amount);
@@ -209,10 +196,7 @@ export default class AnalysisQueries {
   /**
    * Get product analysis data with customer details
    */
-  async getProductAnalysisData(
-    startDate: string,
-    endDate: string,
-  ): Promise<any[]> {
+  async getProductAnalysisData(startDate: string, endDate: string): Promise<any[]> {
     try {
       const records = await this.calculateFIFOData(startDate, endDate);
       const productMap: Record<string, any> = {};
@@ -261,15 +245,11 @@ export default class AnalysisQueries {
       return Object.values(productMap)
         .map((prod: any) => {
           prod.profit_rate =
-            prod.sales_amount !== 0
-              ? (prod.profit_amount / prod.sales_amount) * 100
-              : 0;
+            prod.sales_amount !== 0 ? (prod.profit_amount / prod.sales_amount) * 100 : 0;
           prod.customer_details = Object.values(prod.customer_details_map)
             .map((cust: any) => {
               cust.profit_rate =
-                cust.sales_amount !== 0
-                  ? (cust.profit_amount / cust.sales_amount) * 100
-                  : 0;
+                cust.sales_amount !== 0 ? (cust.profit_amount / cust.sales_amount) * 100 : 0;
               return cust;
             })
             .sort((a: any, b: any) => b.sales_amount - a.sales_amount);
@@ -277,10 +257,7 @@ export default class AnalysisQueries {
           delete prod.customer_details_map;
           return prod;
         })
-        .filter(
-          (product: any) =>
-            product.product_model && product.product_model.trim() !== "",
-        )
+        .filter((product: any) => product.product_model && product.product_model.trim() !== '')
         .sort((a: any, b: any) => b.sales_amount - a.sales_amount);
     } catch (error) {
       throw error as Error;

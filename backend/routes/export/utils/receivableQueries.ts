@@ -1,12 +1,12 @@
-import { Prisma } from "@prisma/client";
-import { prisma } from "@/prismaClient";
-import decimalCalc from "@/utils/decimalCalculator";
+import { Prisma } from '@prisma/client';
+import { prisma } from '@/prismaClient';
+import decimalCalc from '@/utils/decimalCalculator';
 
 export default class ReceivableQueries {
   async getReceivableSummary(filters: any = {}): Promise<any[]> {
     try {
       const conditions: Prisma.Sql[] = [Prisma.sql`1=1`];
-      
+
       if (filters.outboundFrom) {
         conditions.push(Prisma.sql`o.outbound_date >= ${filters.outboundFrom}`);
       }
@@ -30,23 +30,17 @@ export default class ReceivableQueries {
           COALESCE(SUM(o.total_price), 0) - COALESCE(SUM(p.amount), 0) as balance
         FROM outbound_records o
         LEFT JOIN receivable_payments p ON o.customer_code = p.customer_code
-        WHERE ${Prisma.join(conditions, " AND ")}
+        WHERE ${Prisma.join(conditions, ' AND ')}
         GROUP BY o.customer_code, o.customer_short_name, o.customer_full_name
         ORDER BY balance DESC
       `;
-      
+
       const rows = await prisma.$queryRaw<any[]>(sql);
-      
+
       const processed = rows.map((row) => {
         const totalSales = decimalCalc.fromSqlResult(row.total_sales, 0);
-        const totalPayments = decimalCalc.fromSqlResult(
-          row.total_payments,
-          0
-        );
-        const balance = decimalCalc.calculateBalance(
-          totalSales,
-          totalPayments
-        );
+        const totalPayments = decimalCalc.fromSqlResult(row.total_payments, 0);
+        const balance = decimalCalc.calculateBalance(totalSales, totalPayments);
         return {
           ...row,
           total_sales: totalSales,
@@ -81,12 +75,9 @@ export default class ReceivableQueries {
           outbound_date: true,
           remark: true,
         },
-        orderBy: [
-            { outbound_date: 'desc' },
-            { id: 'desc' }
-        ]
+        orderBy: [{ outbound_date: 'desc' }, { id: 'desc' }],
       });
-      return rows.map(r => ({ ...r, record_id: r.id }));
+      return rows.map((r) => ({ ...r, record_id: r.id }));
     } catch (error) {
       throw error;
     }
@@ -101,7 +92,7 @@ export default class ReceivableQueries {
       if (filters.paymentTo) {
         where.pay_date = { ...where.pay_date, lte: filters.paymentTo };
       }
-      
+
       const rows = await prisma.receivablePayment.findMany({
         where,
         select: {
@@ -112,10 +103,7 @@ export default class ReceivableQueries {
           pay_method: true,
           remark: true,
         },
-        orderBy: [
-            { pay_date: 'desc' },
-            { id: 'desc' }
-        ]
+        orderBy: [{ pay_date: 'desc' }, { id: 'desc' }],
       });
       return rows;
     } catch (error) {

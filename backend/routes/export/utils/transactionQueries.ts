@@ -1,16 +1,10 @@
-import { prisma } from "@/prismaClient";
+import { prisma } from '@/prismaClient';
 
 export default class TransactionQueries {
   async getInboundOutboundData(filters: any = {}): Promise<any> {
-    const {
-      tables = "12",
-      dateFrom,
-      dateTo,
-      productCode,
-      customerCode,
-    } = filters || {};
+    const { tables = '12', dateFrom, dateTo, productCode, customerCode } = filters || {};
     const result: any = {};
-    if (tables.includes("1")) {
+    if (tables.includes('1')) {
       result.inbound = await this.getInboundData({
         dateFrom,
         dateTo,
@@ -18,7 +12,7 @@ export default class TransactionQueries {
         customerCode,
       });
     }
-    if (tables.includes("2")) {
+    if (tables.includes('2')) {
       result.outbound = await this.getOutboundData({
         dateFrom,
         dateTo,
@@ -34,7 +28,7 @@ export default class TransactionQueries {
       const where: any = {};
       if (filters.dateFrom) where.inbound_date = { gte: filters.dateFrom };
       if (filters.dateTo) where.inbound_date = { ...where.inbound_date, lte: filters.dateTo };
-      
+
       if (filters.productCode) {
         where.OR = [
           ...(where.OR || []),
@@ -44,41 +38,41 @@ export default class TransactionQueries {
       }
       if (filters.customerCode) {
         const supplierConditions = [
-           { supplier_code: { contains: filters.customerCode } },
-           { supplier_short_name: { contains: filters.customerCode } }
+          { supplier_code: { contains: filters.customerCode } },
+          { supplier_short_name: { contains: filters.customerCode } },
         ];
-        if(where.OR) {
-           where.AND = [{ OR: supplierConditions }];
+        if (where.OR) {
+          where.AND = [{ OR: supplierConditions }];
         } else {
-           where.OR = supplierConditions;
+          where.OR = supplierConditions;
         }
       }
 
       // Note: The original logic combined productCode OR and customerCode OR with AND implictly by appending to SQL.
       // SQL: WHERE 1=1 AND (prod OR prod) AND (supp OR supp)
       // Prisma: where: { AND: [ { OR: [...prod] }, { OR: [...supp] } ] }
-      
+
       // Let's refine the Prisma 'where' construction to strictly match the SQL logic
       const andConditions: any[] = [];
-      
+
       if (filters.dateFrom) andConditions.push({ inbound_date: { gte: filters.dateFrom } });
       if (filters.dateTo) andConditions.push({ inbound_date: { lte: filters.dateTo } });
-      
+
       if (filters.productCode) {
         andConditions.push({
           OR: [
             { product_code: { contains: filters.productCode } },
-            { product_model: { contains: filters.productCode } }
-          ]
+            { product_model: { contains: filters.productCode } },
+          ],
         });
       }
-      
+
       if (filters.customerCode) {
         andConditions.push({
           OR: [
             { supplier_code: { contains: filters.customerCode } },
-            { supplier_short_name: { contains: filters.customerCode } }
-          ]
+            { supplier_short_name: { contains: filters.customerCode } },
+          ],
         });
       }
 
@@ -103,10 +97,7 @@ export default class TransactionQueries {
           order_number: true,
           remark: true,
         },
-        orderBy: [
-          { inbound_date: "desc" },
-          { id: "desc" },
-        ],
+        orderBy: [{ inbound_date: 'desc' }, { id: 'desc' }],
       });
       return rows;
     } catch (error) {
@@ -117,25 +108,25 @@ export default class TransactionQueries {
   async getOutboundData(filters: any = {}): Promise<any[]> {
     try {
       const andConditions: any[] = [];
-      
+
       if (filters.dateFrom) andConditions.push({ outbound_date: { gte: filters.dateFrom } });
       if (filters.dateTo) andConditions.push({ outbound_date: { lte: filters.dateTo } });
-      
+
       if (filters.productCode) {
         andConditions.push({
           OR: [
             { product_code: { contains: filters.productCode } },
-            { product_model: { contains: filters.productCode } }
-          ]
+            { product_model: { contains: filters.productCode } },
+          ],
         });
       }
-      
+
       if (filters.customerCode) {
         andConditions.push({
           OR: [
             { customer_code: { contains: filters.customerCode } },
-            { customer_short_name: { contains: filters.customerCode } }
-          ]
+            { customer_short_name: { contains: filters.customerCode } },
+          ],
         });
       }
 
@@ -160,10 +151,7 @@ export default class TransactionQueries {
           order_number: true,
           remark: true,
         },
-        orderBy: [
-          { outbound_date: "desc" },
-          { id: "desc" },
-        ],
+        orderBy: [{ outbound_date: 'desc' }, { id: 'desc' }],
       });
       return rows;
     } catch (error) {

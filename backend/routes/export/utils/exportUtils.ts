@@ -13,9 +13,9 @@ export default class ExportUtils {
       'base-info': 'Base-Info-Export',
       'inbound-outbound': 'Inbound-Outbound-Export',
       'receivable-payable': 'Receivable-Payable-Export',
-      'invoice': 'Invoice-Export',
-      'statement': 'Statement-Export',
-      'analysis': 'Analysis-Export'
+      invoice: 'Invoice-Export',
+      statement: 'Statement-Export',
+      analysis: 'Analysis-Export',
     };
     const typeName = typeMap[exportType] || exportType;
     return `${typeName}_${timestamp}.xlsx`;
@@ -26,15 +26,15 @@ export default class ExportUtils {
    */
   static createWorksheet(data: any[], template: ExportTemplate) {
     // Create headers
-    const headers = template.columns.map(col => col.label);
+    const headers = template.columns.map((col) => col.label);
 
     // Create data rows
-    const rows = (data || []).map(item =>
-      template.columns.map(col => {
+    const rows = (data || []).map((item) =>
+      template.columns.map((col) => {
         const value = (item as any)[col.key];
         if (typeof value === 'number') return value;
         return value != null ? String(value) : '';
-      })
+      }),
     );
 
     // Merge headers and data
@@ -44,7 +44,7 @@ export default class ExportUtils {
     const worksheet = XLSX.utils.aoa_to_sheet(sheetData);
 
     // Set column widths
-    const colWidths = template.columns.map(col => {
+    const colWidths = template.columns.map((col) => {
       const labelWidth = col.label.length * 2;
       let dataWidth = 10;
       if (col.key.includes('date')) dataWidth = 12;

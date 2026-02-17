@@ -1,12 +1,12 @@
-import { Prisma } from "@prisma/client";
-import { prisma } from "@/prismaClient";
-import decimalCalc from "@/utils/decimalCalculator";
+import { Prisma } from '@prisma/client';
+import { prisma } from '@/prismaClient';
+import decimalCalc from '@/utils/decimalCalculator';
 
 export default class PayableQueries {
   async getPayableSummary(filters: any = {}): Promise<any[]> {
     try {
       const conditions: Prisma.Sql[] = [Prisma.sql`1=1`];
-      
+
       if (filters.outboundFrom) {
         conditions.push(Prisma.sql`i.inbound_date >= ${filters.outboundFrom}`);
       }
@@ -30,26 +30,17 @@ export default class PayableQueries {
           COALESCE(SUM(i.total_price), 0) - COALESCE(SUM(p.amount), 0) as balance
         FROM inbound_records i
         LEFT JOIN payable_payments p ON i.supplier_code = p.supplier_code
-        WHERE ${Prisma.join(conditions, " AND ")}
+        WHERE ${Prisma.join(conditions, ' AND ')}
         GROUP BY i.supplier_code, i.supplier_short_name, i.supplier_full_name
         ORDER BY balance DESC
       `;
-      
+
       const rows = await prisma.$queryRaw<any[]>(sql);
-      
+
       const processed = rows.map((row) => {
-        const totalPurchases = decimalCalc.fromSqlResult(
-          row.total_purchases,
-          0
-        );
-        const totalPayments = decimalCalc.fromSqlResult(
-          row.total_payments,
-          0
-        );
-        const balance = decimalCalc.calculateBalance(
-          totalPurchases,
-          totalPayments
-        );
+        const totalPurchases = decimalCalc.fromSqlResult(row.total_purchases, 0);
+        const totalPayments = decimalCalc.fromSqlResult(row.total_payments, 0);
+        const balance = decimalCalc.calculateBalance(totalPurchases, totalPayments);
         return {
           ...row,
           total_purchases: totalPurchases,
@@ -84,15 +75,12 @@ export default class PayableQueries {
           inbound_date: true,
           remark: true,
         },
-        orderBy: [
-            { inbound_date: 'desc' },
-            { id: 'desc' }
-        ]
+        orderBy: [{ inbound_date: 'desc' }, { id: 'desc' }],
       });
-      
+
       // Map 'id' to 'record_id' to match original return structure if strictly needed,
       // but usually standardizing on 'id' is better. However, let's preserve compat.
-      return rows.map(r => ({ ...r, record_id: r.id }));
+      return rows.map((r) => ({ ...r, record_id: r.id }));
     } catch (error) {
       throw error;
     }
@@ -118,12 +106,9 @@ export default class PayableQueries {
           pay_method: true,
           remark: true,
         },
-        orderBy: [
-            { pay_date: 'desc' },
-            { id: 'desc' }
-        ]
+        orderBy: [{ pay_date: 'desc' }, { id: 'desc' }],
       });
-      
+
       return rows;
     } catch (error) {
       throw error;

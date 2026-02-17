@@ -54,34 +54,37 @@ interface StatsCache {
  * Helper: Build weighted average cost map from inbound records
  */
 function buildAvgCostMap(inboundRecords: any[]): Record<string, AvgCostData> {
-  return inboundRecords.reduce((map, item) => {
-    if (!item.product_model) return map;
+  return inboundRecords.reduce(
+    (map, item) => {
+      if (!item.product_model) return map;
 
-    const totalQty = item._sum.quantity || 0;
-    const totalPrice = item._sum.total_price || 0;
-    
-    if (totalQty > 0) {
-      map[item.product_model] = {
-        avg_cost_price: decimalCalc.fromSqlResult(totalPrice / totalQty, 0, 4),
-        total_inbound_quantity: decimalCalc.fromSqlResult(totalQty, 0),
-      };
-    }
-    return map;
-  }, {} as Record<string, AvgCostData>);
+      const totalQty = item._sum.quantity || 0;
+      const totalPrice = item._sum.total_price || 0;
+
+      if (totalQty > 0) {
+        map[item.product_model] = {
+          avg_cost_price: decimalCalc.fromSqlResult(totalPrice / totalQty, 0, 4),
+          total_inbound_quantity: decimalCalc.fromSqlResult(totalQty, 0),
+        };
+      }
+      return map;
+    },
+    {} as Record<string, AvgCostData>,
+  );
 }
 
 /**
  * Helper: Calculate cost for a single sales record
  */
 function calculateOutboundCost(record: any, avgCostMap: Record<string, AvgCostData>) {
-  const productModel = record.product_model || "unknown";
+  const productModel = record.product_model || 'unknown';
   const soldQuantity = decimalCalc.decimal(record.quantity || 0);
-  
+
   // Use weighted average inbound price for this product if exists
   const costPerUnit = avgCostMap[productModel]
-     ? decimalCalc.decimal(avgCostMap[productModel].avg_cost_price)
-     : decimalCalc.fromSqlResult(record.unit_price || 0, 0, 4); // Fallback to selling price
-     
+    ? decimalCalc.decimal(avgCostMap[productModel].avg_cost_price)
+    : decimalCalc.fromSqlResult(record.unit_price || 0, 0, 4); // Fallback to selling price
+
   return decimalCalc.multiply(soldQuantity, costPerUnit);
 }
 
@@ -115,12 +118,12 @@ async function calculateSoldGoodsCost(): Promise<number> {
     by: ['product_model'],
     where: {
       unit_price: { gte: 0 },
-      inbound_date: { gte: oneYearAgoStr }
+      inbound_date: { gte: oneYearAgoStr },
     },
     _sum: {
       quantity: true,
       total_price: true, // Assuming total_price corresponds to quantity * unit_price
-    }
+    },
   });
 
   const avgCostMap = buildAvgCostMap(inboundRecords);
@@ -129,13 +132,13 @@ async function calculateSoldGoodsCost(): Promise<number> {
   const outboundRecords = await prisma.outboundRecord.findMany({
     where: {
       unit_price: { gte: 0 },
-      outbound_date: { gte: oneYearAgoStr }
+      outbound_date: { gte: oneYearAgoStr },
     },
     select: {
       product_model: true,
       quantity: true,
-      unit_price: true // as selling_price
-    }
+      unit_price: true, // as selling_price
+    },
   });
 
   if (outboundRecords.length === 0) {
@@ -144,7 +147,7 @@ async function calculateSoldGoodsCost(): Promise<number> {
 
   // 3. Use average cost to calculate sold goods cost
   const totalSoldGoodsCost = outboundRecords
-    .map(record => calculateOutboundCost(record, avgCostMap))
+    .map((record) => calculateOutboundCost(record, avgCostMap))
     .reduce(sumDecimals, decimalCalc.decimal(0));
 
   // 4. Calculate special income from inbound negative unit price items from past year, reduce total cost
@@ -152,12 +155,12 @@ async function calculateSoldGoodsCost(): Promise<number> {
   const specialIncomeRecords = await prisma.inboundRecord.findMany({
     where: {
       unit_price: { lt: 0 },
-      inbound_date: { gte: oneYearAgoStr }
+      inbound_date: { gte: oneYearAgoStr },
     },
     select: {
       quantity: true,
-      unit_price: true
-    }
+      unit_price: true,
+    },
   });
 
   const totalSpecialIncome = specialIncomeRecords
@@ -167,10 +170,7 @@ async function calculateSoldGoodsCost(): Promise<number> {
   const finalCost = decimalCalc.subtract(totalSoldGoodsCost, totalSpecialIncome);
 
   // Ensure cost is not negative and keep two decimal places
-  return decimalCalc.toDbNumber(
-    decimalCalc.decimal(Math.max(0, finalCost.toNumber())),
-    2
-  );
+  return decimalCalc.toDbNumber(decimalCalc.decimal(Math.max(0, finalCost.toNumber())), 2);
 }
 
 // ========== Route Handlers ==========
@@ -178,7 +178,7 @@ async function calculateSoldGoodsCost(): Promise<number> {
 // 获取系统统计数据
 // GET Read cache only
 router.get('/stats', (_req: Request, res: Response) => {
-  const statsFile = resolveFilesInDataPath("overview-stats.json");
+  const statsFile = resolveFilesInDataPath('overview-stats.json');
   if (fs.existsSync(statsFile)) {
     try {
       const json = fs.readFileSync(statsFile, 'utf-8');
@@ -193,7 +193,7 @@ router.get('/stats', (_req: Request, res: Response) => {
 
 // POST Force refresh and write to cache (including top_sales_products and monthly_inventory_changes)
 router.post('/stats', async (_req: Request, res: Response): Promise<void> => {
-  const statsFile = resolveFilesInDataPath("overview-stats.json");
+  const statsFile = resolveFilesInDataPath('overview-stats.json');
   const stats: StatsCache = {};
 
   // Get the date one year ago from now
@@ -207,9 +207,9 @@ router.post('/stats', async (_req: Request, res: Response): Promise<void> => {
     // -------------------------------------------------------------------------
     const outOfInventoryPromise = prisma.inventory.findMany({
       where: { quantity: { lte: 0 } },
-      select: { product_model: true }
+      select: { product_model: true },
     });
-    
+
     // Convert to simple array of objects { product_model: string }
     stats.out_of_inventory_products = await outOfInventoryPromise;
 
@@ -217,8 +217,12 @@ router.post('/stats', async (_req: Request, res: Response): Promise<void> => {
     // 2. Overview Stats (Counts & Amounts)
     // -------------------------------------------------------------------------
     const counts = {
-      total_inbound: await prisma.inboundRecord.count({ where: { inbound_date: { gte: oneYearAgoStr } } }),
-      total_outbound: await prisma.outboundRecord.count({ where: { outbound_date: { gte: oneYearAgoStr } } }),
+      total_inbound: await prisma.inboundRecord.count({
+        where: { inbound_date: { gte: oneYearAgoStr } },
+      }),
+      total_outbound: await prisma.outboundRecord.count({
+        where: { outbound_date: { gte: oneYearAgoStr } },
+      }),
       suppliers_count: await prisma.partner.count({ where: { type: 0 } }),
       customers_count: await prisma.partner.count({ where: { type: 1 } }),
       products_count: await prisma.product.count(),
@@ -229,7 +233,7 @@ router.post('/stats', async (_req: Request, res: Response): Promise<void> => {
     // Assuming 'total_price' field stores (quantity * unit_price).
     const normalPurchaseAgg = await prisma.inboundRecord.aggregate({
       _sum: { total_price: true },
-      where: { unit_price: { gte: 0 }, inbound_date: { gte: oneYearAgoStr } }
+      where: { unit_price: { gte: 0 }, inbound_date: { gte: oneYearAgoStr } },
     });
     const normalPurchase = decimalCalc.fromSqlResult(normalPurchaseAgg._sum.total_price || 0, 0);
 
@@ -238,32 +242,42 @@ router.post('/stats', async (_req: Request, res: Response): Promise<void> => {
     // Fetching raw records for negative items:
     const negativeInbound = await prisma.inboundRecord.findMany({
       where: { unit_price: { lt: 0 }, inbound_date: { gte: oneYearAgoStr } },
-      select: { quantity: true, unit_price: true }
+      select: { quantity: true, unit_price: true },
     });
     let specialIncomeDec = decimalCalc.decimal(0);
     for (const r of negativeInbound) {
-      specialIncomeDec = decimalCalc.add(specialIncomeDec, Math.abs((r.quantity || 0) * (r.unit_price || 0)));
+      specialIncomeDec = decimalCalc.add(
+        specialIncomeDec,
+        Math.abs((r.quantity || 0) * (r.unit_price || 0)),
+      );
     }
-    
+
     // Sales Amount: Normal (>0)
     const normalSalesAgg = await prisma.outboundRecord.aggregate({
       _sum: { total_price: true },
-      where: { unit_price: { gte: 0 }, outbound_date: { gte: oneYearAgoStr } }
+      where: { unit_price: { gte: 0 }, outbound_date: { gte: oneYearAgoStr } },
     });
     const normalSales = decimalCalc.fromSqlResult(normalSalesAgg._sum.total_price || 0, 0);
 
     // Sales Amount: Special Expense (Abs(negative))
     const negativeOutbound = await prisma.outboundRecord.findMany({
-        where: { unit_price: { lt: 0 }, outbound_date: { gte: oneYearAgoStr } },
-        select: { quantity: true, unit_price: true }
+      where: { unit_price: { lt: 0 }, outbound_date: { gte: oneYearAgoStr } },
+      select: { quantity: true, unit_price: true },
     });
     let specialExpenseDec = decimalCalc.decimal(0);
     for (const r of negativeOutbound) {
-        specialExpenseDec = decimalCalc.add(specialExpenseDec, Math.abs((r.quantity || 0) * (r.unit_price || 0)));
+      specialExpenseDec = decimalCalc.add(
+        specialExpenseDec,
+        Math.abs((r.quantity || 0) * (r.unit_price || 0)),
+      );
     }
 
-    const totalPurchaseAmt = decimalCalc.toDbNumber(decimalCalc.subtract(normalPurchase, specialIncomeDec));
-    const totalSalesAmt = decimalCalc.toDbNumber(decimalCalc.subtract(normalSales, specialExpenseDec));
+    const totalPurchaseAmt = decimalCalc.toDbNumber(
+      decimalCalc.subtract(normalPurchase, specialIncomeDec),
+    );
+    const totalSalesAmt = decimalCalc.toDbNumber(
+      decimalCalc.subtract(normalSales, specialExpenseDec),
+    );
 
     // Sold Goods Cost
     const soldGoodsCost = await calculateSoldGoodsCost();
@@ -276,7 +290,7 @@ router.post('/stats', async (_req: Request, res: Response): Promise<void> => {
       total_purchase_amount: totalPurchaseAmt,
       total_sales_amount: totalSalesAmt,
       sold_goods_cost: soldGoodsCost,
-      inventoryed_products: inventoryCount
+      inventoryed_products: inventoryCount,
     };
 
     // -------------------------------------------------------------------------
@@ -285,31 +299,33 @@ router.post('/stats', async (_req: Request, res: Response): Promise<void> => {
     // Raw SQL was: SELECT product_model, SUM(quantity * unit_price) ... GROUP BY product_model
     // Again, assuming total_price is reliable.
     const topSalesGroups = await prisma.outboundRecord.groupBy({
-        by: ['product_model'],
-        where: { unit_price: { gte: 0 }, outbound_date: { gte: oneYearAgoStr } },
-        _sum: { total_price: true },
-        // Prisma doesn't support 'orderBy' in groupBy easily for aggregates in all versions 
-        // We will sort in JS.
+      by: ['product_model'],
+      where: { unit_price: { gte: 0 }, outbound_date: { gte: oneYearAgoStr } },
+      _sum: { total_price: true },
+      // Prisma doesn't support 'orderBy' in groupBy easily for aggregates in all versions
+      // We will sort in JS.
     });
 
-    const processedRows = topSalesGroups.map(g => ({
-        product_model: g.product_model || "unknown",
-        total_sales: decimalCalc.fromSqlResult(g._sum.total_price || 0, 0, 2)
-    })).sort((a, b) => b.total_sales - a.total_sales); // Descending
+    const processedRows = topSalesGroups
+      .map((g) => ({
+        product_model: g.product_model || 'unknown',
+        total_sales: decimalCalc.fromSqlResult(g._sum.total_price || 0, 0, 2),
+      }))
+      .sort((a, b) => b.total_sales - a.total_sales); // Descending
 
     const topN = 10;
     const top = processedRows.slice(0, topN);
     const others = processedRows.slice(topN);
 
     let otherTotalDecimal = decimalCalc.decimal(0);
-    others.forEach(r => {
-        otherTotalDecimal = decimalCalc.add(otherTotalDecimal, r.total_sales);
+    others.forEach((r) => {
+      otherTotalDecimal = decimalCalc.add(otherTotalDecimal, r.total_sales);
     });
     const otherTotal = decimalCalc.toDbNumber(otherTotalDecimal, 2);
 
     const topSalesResult: TopSalesProduct[] = [...top];
     if (otherTotal > 0) {
-        topSalesResult.push({ product_model: 'Others', total_sales: otherTotal });
+      topSalesResult.push({ product_model: 'Others', total_sales: otherTotal });
     }
     stats.top_sales_products = topSalesResult;
 
@@ -320,98 +336,113 @@ router.post('/stats', async (_req: Request, res: Response): Promise<void> => {
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
     const monthStartStr = monthStart.toISOString().split('T')[0];
 
-    const allProductModels = await prisma.product.findMany({ select: { product_model: true }, distinct: ['product_model'] });
-    
-    // We can optimize this loop by fetching all records and processing in memory if dataset is small, 
+    const allProductModels = await prisma.product.findMany({
+      select: { product_model: true },
+      distinct: ['product_model'],
+    });
+
+    // We can optimize this loop by fetching all records and processing in memory if dataset is small,
     // but for now let's use Promise.all to parallelize reasonably or just iterate over models.
     // Iterating one by one might be slow if many products.
     // Let's optimize: Fetch Aggregations for ALL products grouped by product_model
-    
+
     // Before Month Inbound
     const beforeMonthInboundAgg = await prisma.inboundRecord.groupBy({
-        by: ['product_model'],
-        where: { inbound_date: { lt: monthStartStr } },
-        _sum: { quantity: true }
+      by: ['product_model'],
+      where: { inbound_date: { lt: monthStartStr } },
+      _sum: { quantity: true },
     });
     // Convert to Map
     const beforeInMap: Record<string, number> = {};
-    beforeMonthInboundAgg.forEach(x => { if(x.product_model) beforeInMap[x.product_model] = x._sum.quantity || 0; });
+    beforeMonthInboundAgg.forEach((x) => {
+      if (x.product_model) beforeInMap[x.product_model] = x._sum.quantity || 0;
+    });
 
     // Before Month Outbound
     const beforeMonthOutboundAgg = await prisma.outboundRecord.groupBy({
-        by: ['product_model'],
-        where: { outbound_date: { lt: monthStartStr } },
-        _sum: { quantity: true }
+      by: ['product_model'],
+      where: { outbound_date: { lt: monthStartStr } },
+      _sum: { quantity: true },
     });
     const beforeOutMap: Record<string, number> = {};
-    beforeMonthOutboundAgg.forEach(x => { if(x.product_model) beforeOutMap[x.product_model] = x._sum.quantity || 0; });
+    beforeMonthOutboundAgg.forEach((x) => {
+      if (x.product_model) beforeOutMap[x.product_model] = x._sum.quantity || 0;
+    });
 
     // Current Month Inbound
     const curMonthInboundAgg = await prisma.inboundRecord.groupBy({
-        by: ['product_model'],
-        where: { inbound_date: { gte: monthStartStr } },
-        _sum: { quantity: true }
+      by: ['product_model'],
+      where: { inbound_date: { gte: monthStartStr } },
+      _sum: { quantity: true },
     });
     const curInMap: Record<string, number> = {};
-    curMonthInboundAgg.forEach(x => { if(x.product_model) curInMap[x.product_model] = x._sum.quantity || 0; });
+    curMonthInboundAgg.forEach((x) => {
+      if (x.product_model) curInMap[x.product_model] = x._sum.quantity || 0;
+    });
 
     // Current Month Outbound
     const curMonthOutboundAgg = await prisma.outboundRecord.groupBy({
-        by: ['product_model'],
-        where: { outbound_date: { gte: monthStartStr } },
-        _sum: { quantity: true }
+      by: ['product_model'],
+      where: { outbound_date: { gte: monthStartStr } },
+      _sum: { quantity: true },
     });
     const curOutMap: Record<string, number> = {};
-    curMonthOutboundAgg.forEach(x => { if(x.product_model) curOutMap[x.product_model] = x._sum.quantity || 0; });
-
+    curMonthOutboundAgg.forEach((x) => {
+      if (x.product_model) curOutMap[x.product_model] = x._sum.quantity || 0;
+    });
 
     const monthlyChanges: Record<string, MonthlyInventoryChange> = {};
-    
+
     for (const p of allProductModels) {
-        if (!p.product_model) continue;
+      if (!p.product_model) continue;
 
-        const beforeIn = decimalCalc.fromSqlResult(beforeInMap[p.product_model] || 0, 0, 0);
-        const beforeOut = decimalCalc.fromSqlResult(beforeOutMap[p.product_model] || 0, 0, 0);
-        
-        const curIn = decimalCalc.fromSqlResult(curInMap[p.product_model] || 0, 0, 0);
-        const curOut = decimalCalc.fromSqlResult(curOutMap[p.product_model] || 0, 0, 0);
+      const beforeIn = decimalCalc.fromSqlResult(beforeInMap[p.product_model] || 0, 0, 0);
+      const beforeOut = decimalCalc.fromSqlResult(beforeOutMap[p.product_model] || 0, 0, 0);
 
-        // Start Inventory = Total In (before) - Total Out (before)
-        // Note: This logic assumes simple inventory (no adjustments/losses other than outbound).
-        const monthStartInventory = decimalCalc.toDbNumber(decimalCalc.subtract(beforeIn, beforeOut), 0);
-        
-        const monthlyChange = decimalCalc.toDbNumber(decimalCalc.subtract(curIn, curOut), 0);
-        const currentInventory = decimalCalc.toDbNumber(decimalCalc.add(monthStartInventory, monthlyChange), 0);
+      const curIn = decimalCalc.fromSqlResult(curInMap[p.product_model] || 0, 0, 0);
+      const curOut = decimalCalc.fromSqlResult(curOutMap[p.product_model] || 0, 0, 0);
 
-        monthlyChanges[p.product_model] = {
-            product_model: p.product_model,
-            month_start_inventory: monthStartInventory,
-            current_inventory: currentInventory,
-            monthly_change: monthlyChange,
-            query_date: new Date().toISOString(),
-        };
+      // Start Inventory = Total In (before) - Total Out (before)
+      // Note: This logic assumes simple inventory (no adjustments/losses other than outbound).
+      const monthStartInventory = decimalCalc.toDbNumber(
+        decimalCalc.subtract(beforeIn, beforeOut),
+        0,
+      );
+
+      const monthlyChange = decimalCalc.toDbNumber(decimalCalc.subtract(curIn, curOut), 0);
+      const currentInventory = decimalCalc.toDbNumber(
+        decimalCalc.add(monthStartInventory, monthlyChange),
+        0,
+      );
+
+      monthlyChanges[p.product_model] = {
+        product_model: p.product_model,
+        month_start_inventory: monthStartInventory,
+        current_inventory: currentInventory,
+        monthly_change: monthlyChange,
+        query_date: new Date().toISOString(),
+      };
     }
     stats.monthly_inventory_changes = monthlyChanges;
 
     // Write file
     try {
-        fs.mkdirSync(path.dirname(statsFile), { recursive: true });
-        fs.writeFileSync(statsFile, JSON.stringify(stats, null, 2), 'utf-8');
+      fs.mkdirSync(path.dirname(statsFile), { recursive: true });
+      fs.writeFileSync(statsFile, JSON.stringify(stats, null, 2), 'utf-8');
     } catch (e) {
-        console.error('Failed to write overview-stats.json:', e);
+      console.error('Failed to write overview-stats.json:', e);
     }
-    
-    res.json(stats);
 
+    res.json(stats);
   } catch (err: any) {
-    console.error("Overview Stats Error:", err);
-    res.status(500).json({ error: err.message || "Internal Server Error" });
+    console.error('Overview Stats Error:', err);
+    res.status(500).json({ error: err.message || 'Internal Server Error' });
   }
 });
 
 // Get top 10 products by sales amount and "Others" total (read from overview-stats.json)
 router.get('/top-sales-products', (_req: Request, res: Response) => {
-  const statsFile = resolveFilesInDataPath("overview-stats.json");
+  const statsFile = resolveFilesInDataPath('overview-stats.json');
   if (fs.existsSync(statsFile)) {
     try {
       const json = fs.readFileSync(statsFile, 'utf-8');
@@ -437,7 +468,7 @@ router.get('/monthly-inventory-change/:productModel', (req: Request, res: Respon
     });
   }
 
-  const statsFile = resolveFilesInDataPath("overview-stats.json");
+  const statsFile = resolveFilesInDataPath('overview-stats.json');
   if (fs.existsSync(statsFile)) {
     try {
       const json = fs.readFileSync(statsFile, 'utf-8');
@@ -452,7 +483,8 @@ router.get('/monthly-inventory-change/:productModel', (req: Request, res: Respon
       } else {
         return res.json({
           success: false,
-          message: 'Monthly inventory change data not found for this product, please refresh statistics first',
+          message:
+            'Monthly inventory change data not found for this product, please refresh statistics first',
         });
       }
     } catch (e) {

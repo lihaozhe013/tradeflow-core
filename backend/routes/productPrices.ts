@@ -27,14 +27,14 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       prisma.productPrice.findMany({
         where,
         orderBy: [
-            { effective_date: 'desc' }, 
-            { partner_short_name: 'asc' }, 
-            { product_model: 'asc' } // Ensure deterministic ordering
+          { effective_date: 'desc' },
+          { partner_short_name: 'asc' },
+          { product_model: 'asc' }, // Ensure deterministic ordering
         ],
         skip,
-        take: limit
+        take: limit,
       }),
-      prisma.productPrice.count({ where })
+      prisma.productPrice.count({ where }),
     ]);
 
     // Rows are already in snake_case
@@ -45,8 +45,8 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
         page,
         limit,
         total,
-        pages: Math.ceil(total / limit)
-      }
+        pages: Math.ceil(total / limit),
+      },
     });
   } catch (err) {
     const error = err as Error;
@@ -59,31 +59,33 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
  */
 router.get('/current', async (req: Request, res: Response): Promise<void> => {
   const { partner_short_name, product_model, date } = req.query;
-  
+
   if (!partner_short_name || !product_model) {
-    res.status(400).json({ error: 'Missing required argument: partner_short_name & product_model' });
+    res
+      .status(400)
+      .json({ error: 'Missing required argument: partner_short_name & product_model' });
     return;
   }
-  
+
   const targetDate = (date as string) || new Date().toISOString().split('T')[0];
-  
+
   try {
     const row = await prisma.productPrice.findFirst({
       where: {
         partner_short_name: partner_short_name as string,
         product_model: product_model as string,
-        effective_date: { lte: targetDate }
+        effective_date: { lte: targetDate },
       },
-      orderBy: { effective_date: 'desc' }
+      orderBy: { effective_date: 'desc' },
     });
-    
+
     if (!row) {
       res.status(404).json({ error: 'No valid price found' });
       return;
     }
-    
+
     // Rows are already in snake_case
-    
+
     res.json({ data: row });
   } catch (err) {
     const error = err as Error;
@@ -96,17 +98,17 @@ router.get('/current', async (req: Request, res: Response): Promise<void> => {
  */
 router.post('/', async (req: Request, res: Response): Promise<void> => {
   const { partner_short_name, product_model, effective_date, unit_price } = req.body;
-  
+
   try {
     const result = await prisma.productPrice.create({
       data: {
         partner_short_name,
         product_model,
         effective_date,
-        unit_price
-      }
+        unit_price,
+      },
     });
-    
+
     res.json({ id: result.id, message: 'Product price created!' });
   } catch (err) {
     const error = err as Error;
@@ -120,7 +122,7 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
 router.put('/:id', async (req: Request, res: Response): Promise<void> => {
   const id = Number(req.params['id']);
   const { partner_short_name, product_model, effective_date, unit_price } = req.body;
-  
+
   try {
     await prisma.productPrice.update({
       where: { id },
@@ -128,16 +130,16 @@ router.put('/:id', async (req: Request, res: Response): Promise<void> => {
         partner_short_name,
         product_model,
         effective_date,
-        unit_price
-      }
+        unit_price,
+      },
     });
-    
+
     res.json({ message: 'Product price updated!' });
   } catch (err) {
     const error = err as Error;
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
-        res.status(404).json({ error: 'Product price dne' });
-        return;
+      res.status(404).json({ error: 'Product price dne' });
+      return;
     }
     res.status(500).json({ error: error.message });
   }
@@ -148,18 +150,18 @@ router.put('/:id', async (req: Request, res: Response): Promise<void> => {
  */
 router.delete('/:id', async (req: Request, res: Response): Promise<void> => {
   const id = Number(req.params['id']);
-  
+
   try {
     await prisma.productPrice.delete({
-       where: { id }
+      where: { id },
     });
-    
+
     res.json({ message: 'Product price delete!' });
   } catch (err) {
     const error = err as Error;
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
-        res.status(404).json({ error: 'Product price dne' });
-        return;
+      res.status(404).json({ error: 'Product price dne' });
+      return;
     }
     res.status(500).json({ error: error.message });
   }
@@ -171,29 +173,31 @@ router.delete('/:id', async (req: Request, res: Response): Promise<void> => {
  */
 router.get('/auto', async (req: Request, res: Response): Promise<void> => {
   const { partner_short_name, product_model, date } = req.query;
-  
+
   if (!partner_short_name || !product_model || !date) {
-    res.status(400).json({ error: 'Missing required argument: partner_short_name, product_model, date' });
+    res
+      .status(400)
+      .json({ error: 'Missing required argument: partner_short_name, product_model, date' });
     return;
   }
-  
+
   try {
     const row = await prisma.productPrice.findFirst({
-        where: {
-            partner_short_name: partner_short_name as string,
-            product_model: product_model as string,
-            effective_date: { lte: date as string }
-        },
-        orderBy: { effective_date: 'desc' },
-        select: { unit_price: true }
+      where: {
+        partner_short_name: partner_short_name as string,
+        product_model: product_model as string,
+        effective_date: { lte: date as string },
+      },
+      orderBy: { effective_date: 'desc' },
+      select: { unit_price: true },
     });
-    
+
     if (!row) {
       res.status(404).json({ error: 'No valid price found' });
       return;
     }
     // Note: row.unit_price is snake_case in SQL result and Prisma Client
-    
+
     res.json({ unit_price: row.unit_price });
   } catch (err) {
     const error = err as Error;

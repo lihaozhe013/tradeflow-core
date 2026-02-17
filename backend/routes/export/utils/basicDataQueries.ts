@@ -1,11 +1,11 @@
-import { prisma } from "@/prismaClient";
+import { prisma } from '@/prismaClient';
 
 export default class BasicDataQueries {
-  async getBaseInfoData(tables: string = "123"): Promise<any> {
+  async getBaseInfoData(tables: string = '123'): Promise<any> {
     const result: any = {};
-    if (tables.includes("1")) result.partners = await this.getPartnersData();
-    if (tables.includes("2")) result.products = await this.getProductsData();
-    if (tables.includes("3")) result.prices = await this.getPricesData();
+    if (tables.includes('1')) result.partners = await this.getPartnersData();
+    if (tables.includes('2')) result.products = await this.getProductsData();
+    if (tables.includes('3')) result.prices = await this.getPricesData();
     return result;
   }
 
@@ -22,7 +22,7 @@ export default class BasicDataQueries {
           contact_phone: true,
         },
         orderBy: {
-          short_name: "asc",
+          short_name: 'asc',
         },
       });
 
@@ -30,7 +30,7 @@ export default class BasicDataQueries {
         code: p.code,
         short_name: p.short_name,
         full_name: p.full_name,
-        type_name: p.type === 0 ? "Supplier" : "Customer",
+        type_name: p.type === 0 ? 'Supplier' : 'Customer',
         address: p.address,
         contact_person: p.contact_person,
         contact_phone: p.contact_phone,
@@ -49,7 +49,7 @@ export default class BasicDataQueries {
           product_model: true,
           remark: true,
         },
-        orderBy: [{ category: "asc" }, { product_model: "asc" }],
+        orderBy: [{ category: 'asc' }, { product_model: 'asc' }],
       });
     } catch (error) {
       throw error;
@@ -66,9 +66,9 @@ export default class BasicDataQueries {
           unit_price: true,
         },
         orderBy: [
-          { partner_short_name: "asc" },
-          { product_model: "asc" },
-          { effective_date: "desc" },
+          { partner_short_name: 'asc' },
+          { product_model: 'asc' },
+          { effective_date: 'desc' },
         ],
       });
     } catch (error) {

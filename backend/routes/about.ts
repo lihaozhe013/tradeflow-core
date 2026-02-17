@@ -10,7 +10,7 @@ const router: Router = express.Router();
  */
 router.get('/', async (_req: Request, res: Response): Promise<void> => {
   try {
-    const aboutPath = resolveFilesInDataPath("about.json");
+    const aboutPath = resolveFilesInDataPath('about.json');
     await fs.access(aboutPath);
     const data = await fs.readFile(aboutPath, 'utf8');
     const aboutData = JSON.parse(data);

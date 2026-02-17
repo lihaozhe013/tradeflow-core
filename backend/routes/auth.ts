@@ -1,11 +1,11 @@
 import express, { type Router, type Request, type Response } from 'express';
-import { 
-  findUser, 
-  verifyPassword, 
-  signToken, 
-  getPublicUser, 
+import {
+  findUser,
+  verifyPassword,
+  signToken,
+  getPublicUser,
   authenticateToken,
-  loginRateLimiter 
+  loginRateLimiter,
 } from '@/utils/auth';
 import { logger } from '@/utils/logger';
 
@@ -19,18 +19,18 @@ router.post('/login', loginRateLimiter, async (req: Request, res: Response): Pro
   if (!username || !password) {
     return res.status(400).json({ success: false, message: 'Incorrect username or password!' });
   }
-  
+
   try {
     const user = findUser(username);
     if (!user || user.enabled === false || !user.password_hash) {
       return res.status(401).json({ success: false, message: 'Incorrect username or password!' });
     }
-    
+
     const ok = await verifyPassword(password, user.password_hash);
     if (!ok) {
       return res.status(401).json({ success: false, message: 'Incorrect username or password!' });
     }
-    
+
     const { token, expires_in } = signToken(user);
 
     logger.info('User login success', { username: user.username, role: user.role });
@@ -49,14 +49,14 @@ router.get('/me', authenticateToken, (req: Request, res: Response): Response => 
   if (!req.user) {
     return res.status(401).json({ success: false, message: 'Unauthorized' });
   }
-  
-  return res.json({ 
-    success: true, 
-    user: { 
-      username: req.user.username, 
-      role: req.user.role, 
-      display_name: req.user.name 
-    } 
+
+  return res.json({
+    success: true,
+    user: {
+      username: req.user.username,
+      role: req.user.role,
+      display_name: req.user.name,
+    },
   });
 });
 

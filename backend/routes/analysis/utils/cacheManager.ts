@@ -1,15 +1,15 @@
-import fs from "fs";
-import { ensureFileDirSync, resolveFilesInDataPath } from "@/utils/paths";
+import fs from 'fs';
+import { ensureFileDirSync, resolveFilesInDataPath } from '@/utils/paths';
 
 export function generateCacheKey(
   startDate: string,
   endDate: string,
   customerCode?: string,
   productModel?: string,
-  type: string = "outbound"
+  type: string = 'outbound',
 ): string {
-  const customer = customerCode || "All";
-  const product = productModel || "All";
+  const customer = customerCode || 'All';
+  const product = productModel || 'All';
   return `${type}_${startDate}_${endDate}_${customer}_${product}`;
 }
 
@@ -18,23 +18,21 @@ export function generateDetailCacheKey(
   endDate: string,
   customerCode?: string,
   productModel?: string,
-  type: string = "outbound"
+  type: string = 'outbound',
 ): string {
-  const customer = customerCode || "All";
-  const product = productModel || "All";
+  const customer = customerCode || 'All';
+  const product = productModel || 'All';
   return `detail_${type}_${startDate}_${endDate}_${customer}_${product}`;
 }
 
 export function getCacheFilePath(): string {
-  return resolveFilesInDataPath("analysis-cache.json");
+  return resolveFilesInDataPath('analysis-cache.json');
 }
 
 /**
  * Clear expired cache data (over 30 days)
  */
-export function cleanExpiredCache<T extends Record<string, any>>(
-  cacheData: T
-): T {
+export function cleanExpiredCache<T extends Record<string, any>>(cacheData: T): T {
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
@@ -69,11 +67,11 @@ export function readCache(): Record<string, any> {
   const cacheFile = getCacheFilePath();
   if (fs.existsSync(cacheFile)) {
     try {
-      const json = fs.readFileSync(cacheFile, "utf-8");
+      const json = fs.readFileSync(cacheFile, 'utf-8');
       const cacheData = JSON.parse(json);
       return cleanExpiredCache(cacheData);
     } catch (e) {
-      console.error("Failed to read the analysis cache:", e);
+      console.error('Failed to read the analysis cache:', e);
       return {};
     }
   }
@@ -89,10 +87,10 @@ export function writeCache(cacheData: Record<string, any>): boolean {
     // Ensure parent directory exists to avoid ENOENT
     ensureFileDirSync(cacheFile);
     const cleanedData = cleanExpiredCache(cacheData);
-    fs.writeFileSync(cacheFile, JSON.stringify(cleanedData, null, 2), "utf-8");
+    fs.writeFileSync(cacheFile, JSON.stringify(cleanedData, null, 2), 'utf-8');
     return true;
   } catch (e) {
-    console.error("Failed to write the analysis cache:", e);
+    console.error('Failed to write the analysis cache:', e);
     return false;
   }
 }

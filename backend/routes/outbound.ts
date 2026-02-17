@@ -1,7 +1,7 @@
-import express, { type Router, type Request, type Response } from "express";
-import { prisma } from "@/prismaClient";
-import { Prisma } from "@prisma/client";
-import decimalCalc from "@/utils/decimalCalculator";
+import express, { type Router, type Request, type Response } from 'express';
+import { prisma } from '@/prismaClient';
+import { Prisma } from '@prisma/client';
+import decimalCalc from '@/utils/decimalCalculator';
 import { pagination_limit } from '@/utils/paths';
 import { inventoryService } from '@/utils/inventoryService';
 
@@ -11,16 +11,16 @@ function isProvided(val: any): boolean {
   return !(
     val === undefined ||
     val === null ||
-    val === "" ||
-    val === "null" ||
-    val === "undefined"
+    val === '' ||
+    val === 'null' ||
+    val === 'undefined'
   );
 }
 
 /**
  * GET /api/outbound
  */
-router.get("/", async (req: Request, res: Response): Promise<void> => {
+router.get('/', async (req: Request, res: Response): Promise<void> => {
   try {
     let { page = 1 } = req.query;
     let pageNum = parseInt(page as string, 10);
@@ -30,46 +30,37 @@ router.get("/", async (req: Request, res: Response): Promise<void> => {
 
     const where: Prisma.OutboundRecordWhereInput = {};
 
-    if (isProvided(req.query["customer_short_name"])) {
+    if (isProvided(req.query['customer_short_name'])) {
       where.customer_short_name = {
-        contains: req.query["customer_short_name"] as string,
+        contains: req.query['customer_short_name'] as string,
       };
     }
-    if (isProvided(req.query["product_model"])) {
-      where.product_model = { contains: req.query["product_model"] as string };
+    if (isProvided(req.query['product_model'])) {
+      where.product_model = { contains: req.query['product_model'] as string };
     }
-    if (isProvided(req.query["start_date"])) {
-      where.outbound_date = { gte: req.query["start_date"] as string };
+    if (isProvided(req.query['start_date'])) {
+      where.outbound_date = { gte: req.query['start_date'] as string };
     }
-    if (isProvided(req.query["end_date"])) {
-      where.outbound_date = { lte: req.query["end_date"] as string };
+    if (isProvided(req.query['end_date'])) {
+      where.outbound_date = { lte: req.query['end_date'] as string };
     }
 
-    const sortField = req.query["sort_field"] as string;
-    const allowedSortFields = [
-      "outbound_date",
-      "unit_price",
-      "total_price",
-      "id",
-    ];
-    let orderBy: Prisma.OutboundRecordOrderByWithRelationInput = { id: "desc" }; // Default
+    const sortField = req.query['sort_field'] as string;
+    const allowedSortFields = ['outbound_date', 'unit_price', 'total_price', 'id'];
+    let orderBy: Prisma.OutboundRecordOrderByWithRelationInput = { id: 'desc' }; // Default
 
     if (sortField && allowedSortFields.includes(sortField)) {
-      const fieldMap: Record<
-        string,
-        keyof Prisma.OutboundRecordOrderByWithRelationInput
-      > = {
-        outbound_date: "outbound_date",
-        unit_price: "unit_price",
-        total_price: "total_price",
-        id: "id",
+      const fieldMap: Record<string, keyof Prisma.OutboundRecordOrderByWithRelationInput> = {
+        outbound_date: 'outbound_date',
+        unit_price: 'unit_price',
+        total_price: 'total_price',
+        id: 'id',
       };
       const prismaField = fieldMap[sortField];
       const sortOrder =
-        req.query["sort_order"] &&
-        (req.query["sort_order"] as string).toLowerCase() === "asc"
-          ? "asc"
-          : "desc";
+        req.query['sort_order'] && (req.query['sort_order'] as string).toLowerCase() === 'asc'
+          ? 'asc'
+          : 'desc';
       if (prismaField) {
         orderBy = {
           [prismaField]: sortOrder,
@@ -102,7 +93,7 @@ router.get("/", async (req: Request, res: Response): Promise<void> => {
 /**
  * POST /api/outbound
  */
-router.post("/", async (req: Request, res: Response): Promise<void> => {
+router.post('/', async (req: Request, res: Response): Promise<void> => {
   try {
     const {
       customer_code,
@@ -143,7 +134,7 @@ router.post("/", async (req: Request, res: Response): Promise<void> => {
 
     await inventoryService.onOutboundCreate(result);
 
-    res.json({ id: result.id, message: "Outbound record created!" });
+    res.json({ id: result.id, message: 'Outbound record created!' });
   } catch (err) {
     const error = err as Error;
     res.status(500).json({ error: error.message });
@@ -153,9 +144,9 @@ router.post("/", async (req: Request, res: Response): Promise<void> => {
 /**
  * PUT /api/outbound/:id
  */
-router.put("/:id", async (req: Request, res: Response): Promise<void> => {
+router.put('/:id', async (req: Request, res: Response): Promise<void> => {
   try {
-    const id = Number(req.params["id"]);
+    const id = Number(req.params['id']);
     const {
       customer_code,
       customer_short_name,
@@ -176,8 +167,8 @@ router.put("/:id", async (req: Request, res: Response): Promise<void> => {
 
     const oldRecord = await prisma.outboundRecord.findUnique({ where: { id } });
     if (!oldRecord) {
-        res.status(404).json({ error: "No outbound records exist" });
-        return;
+      res.status(404).json({ error: 'No outbound records exist' });
+      return;
     }
 
     const result = await prisma.outboundRecord.update({
@@ -202,14 +193,11 @@ router.put("/:id", async (req: Request, res: Response): Promise<void> => {
 
     await inventoryService.onOutboundUpdate(oldRecord, result);
 
-    res.json({ message: "Outbound record updated!" });
+    res.json({ message: 'Outbound record updated!' });
   } catch (err) {
     const error = err as Error;
-    if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === "P2025"
-    ) {
-      res.status(404).json({ error: "No outbound records exist" });
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+      res.status(404).json({ error: 'No outbound records exist' });
       return;
     }
     res.status(500).json({ error: error.message });
@@ -219,22 +207,19 @@ router.put("/:id", async (req: Request, res: Response): Promise<void> => {
 /**
  * DELETE /api/outbound/:id
  */
-router.delete("/:id", async (req: Request, res: Response): Promise<void> => {
+router.delete('/:id', async (req: Request, res: Response): Promise<void> => {
   try {
-    const id = Number(req.params["id"]);
+    const id = Number(req.params['id']);
 
     await prisma.outboundRecord.delete({ where: { id } });
 
     await inventoryService.onOutboundDelete(id);
 
-    res.json({ message: "Outbound record deleted!" });
+    res.json({ message: 'Outbound record deleted!' });
   } catch (err) {
     const error = err as Error;
-    if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === "P2025"
-    ) {
-      res.status(404).json({ error: "No outbound records exist" });
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+      res.status(404).json({ error: 'No outbound records exist' });
       return;
     }
     res.status(500).json({ error: error.message });
@@ -244,39 +229,34 @@ router.delete("/:id", async (req: Request, res: Response): Promise<void> => {
 /**
  * POST /api/outbound/batch
  */
-router.post("/batch", async (req: Request, res: Response): Promise<void> => {
+router.post('/batch', async (req: Request, res: Response): Promise<void> => {
   const { ids, updates } = req.body;
 
   if (!ids || !Array.isArray(ids) || ids.length === 0) {
-    res
-      .status(400)
-      .json({ error: "ids array is required and must not be empty" });
+    res.status(400).json({ error: 'ids array is required and must not be empty' });
     return;
   }
 
-  if (!updates || typeof updates !== "object") {
-    res.status(400).json({ error: "updates object is required" });
+  if (!updates || typeof updates !== 'object') {
+    res.status(400).json({ error: 'updates object is required' });
     return;
   }
 
   // Mapping
-  const allowedFieldsMap: Record<
-    string,
-    keyof Prisma.OutboundRecordUpdateInput
-  > = {
-    customer_code: "customer_code",
-    customer_short_name: "customer_short_name",
-    customer_full_name: "customer_full_name",
-    product_code: "product_code",
-    product_model: "product_model",
-    quantity: "quantity",
-    unit_price: "unit_price",
-    outbound_date: "outbound_date",
-    invoice_date: "invoice_date",
-    invoice_number: "invoice_number",
-    receipt_number: "receipt_number",
-    order_number: "order_number",
-    remark: "remark",
+  const allowedFieldsMap: Record<string, keyof Prisma.OutboundRecordUpdateInput> = {
+    customer_code: 'customer_code',
+    customer_short_name: 'customer_short_name',
+    customer_full_name: 'customer_full_name',
+    product_code: 'product_code',
+    product_model: 'product_model',
+    quantity: 'quantity',
+    unit_price: 'unit_price',
+    outbound_date: 'outbound_date',
+    invoice_date: 'invoice_date',
+    invoice_number: 'invoice_number',
+    receipt_number: 'receipt_number',
+    order_number: 'order_number',
+    remark: 'remark',
   };
 
   const updateData: Prisma.OutboundRecordUpdateInput = {};
@@ -287,13 +267,13 @@ router.post("/batch", async (req: Request, res: Response): Promise<void> => {
     if (allowedFieldsMap[key] && isProvided(val)) {
       // @ts-ignore
       updateData[allowedFieldsMap[key]] = val;
-      if (key === "quantity") hasQuantity = true;
-      if (key === "unit_price") hasUnitPrice = true;
+      if (key === 'quantity') hasQuantity = true;
+      if (key === 'unit_price') hasUnitPrice = true;
     }
   }
 
   if (Object.keys(updateData).length === 0) {
-    res.status(400).json({ error: "No valid update fields provided" });
+    res.status(400).json({ error: 'No valid update fields provided' });
     return;
   }
 
@@ -309,35 +289,28 @@ router.post("/batch", async (req: Request, res: Response): Promise<void> => {
         if (needsRecalculation) {
           const oldRecord = await prisma.outboundRecord.findUnique({ where: { id: recordId } });
           if (!oldRecord) {
-             notFound.push(recordId);
-             continue;
+            notFound.push(recordId);
+            continue;
           }
-          
+
           const quantity = oldRecord.quantity ?? 0;
           const unitPrice = oldRecord.unit_price ?? 0;
-          const finalQuantity = hasQuantity
-            ? (updates.quantity as number)
-            : quantity;
-          const finalUnitPrice = hasUnitPrice
-            ? (updates.unit_price as number)
-            : unitPrice;
-          const total_price = decimalCalc.calculateTotalPrice(
-            finalQuantity,
-            finalUnitPrice
-          );
+          const finalQuantity = hasQuantity ? (updates.quantity as number) : quantity;
+          const finalUnitPrice = hasUnitPrice ? (updates.unit_price as number) : unitPrice;
+          const total_price = decimalCalc.calculateTotalPrice(finalQuantity, finalUnitPrice);
 
           const result = await prisma.outboundRecord.update({
             where: { id: recordId },
             data: { ...updateData, total_price: total_price },
           });
-          
+
           await inventoryService.onOutboundUpdate(oldRecord, result);
           completed++;
         } else {
           const oldRecord = await prisma.outboundRecord.findUnique({ where: { id: recordId } });
           if (!oldRecord) {
-             notFound.push(recordId); // unlikely if we are here?
-             continue; // or handle error
+            notFound.push(recordId); // unlikely if we are here?
+            continue; // or handle error
           }
           const result = await prisma.outboundRecord.update({
             where: { id: recordId },
@@ -347,13 +320,13 @@ router.post("/batch", async (req: Request, res: Response): Promise<void> => {
           completed++;
         }
       } catch (e: any) {
-        if (e.code === "P2025") notFound.push(recordId);
+        if (e.code === 'P2025') notFound.push(recordId);
         else errors++;
       }
     }
 
     res.json({
-      message: "Batch update completed!",
+      message: 'Batch update completed!',
       updated: completed,
       notFound: notFound,
       errors: errors,
