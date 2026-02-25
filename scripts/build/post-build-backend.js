@@ -10,10 +10,6 @@ fs.ensureDirSync(r("dist"));
 // Move the single bundled server.js to dist root
 const srcServer = r("backend/dist/");
 const dstServer = r("dist/backend");
-if (!fs.pathExistsSync(srcServer)) {
-	console.error(`ERROR: Bundled file not found: ${srcServer}`);
-	process.exit(1);
-}
 fs.moveSync(srcServer, dstServer, { overwrite: true });
 
 // Copy backend package.json to dist and normalize start script
@@ -24,6 +20,4 @@ fs.copySync(srcPkg, dstPkg);
 // Copy prisma directory
 const srcPrisma = r("backend/prisma");
 const dstPrisma = r("dist/prisma");
-if (fs.pathExistsSync(srcPrisma)) {
-    fs.copySync(srcPrisma, dstPrisma);
-}
+fs.copySync(srcPrisma, dstPrisma);
