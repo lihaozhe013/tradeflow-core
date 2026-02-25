@@ -1,6 +1,5 @@
 FROM node:24-slim
 
-# Install OpenSSL (Required by Prisma Client)
 RUN apt-get update -y && apt-get install -y openssl ca-certificates bash bash-completion && rm -rf /var/lib/apt/lists/*
 
 RUN mkdir -p /app/data
@@ -19,4 +18,4 @@ RUN npx prisma generate
 
 EXPOSE 8000
 
-CMD [ "pm2-runtime", "start", "pm2/ecosystem.config.template.json" ]
+CMD [ "node", "backend/server.js"]

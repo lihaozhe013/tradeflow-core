@@ -2,7 +2,7 @@ name: TradeFlow Core Build and Push Docker Image
 on:
   push:
     branches:
-      - dev
+      - build
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
@@ -43,7 +43,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: Dockerfile.prod
+          file: Dockerfile
           push: true
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/tradeflow-core:latest
