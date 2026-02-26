@@ -9,7 +9,7 @@
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
     "dev:frontend": "cd frontend && npm run dev",
     "dev:backend": "cd backend && npm run dev",
-    "build": "node \"scripts/build/pre-build.js\" && cd frontend && npm run build && cd ../backend && npm run build && cd ..",
+    "build": "node \"scripts/build/pre-build.js\" && cd frontend && npm run build && cd ../backend && npx prisma generate && npm run build && cd ..",
     "start": "cd dist && cross-env NODE_ENV=production backend/server/.js"
   },
   "devDependencies": {

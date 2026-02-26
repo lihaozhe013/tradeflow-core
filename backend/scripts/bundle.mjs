@@ -27,7 +27,10 @@ async function main() {
     format: 'esm',
     sourcemap: false,
     minify: true,
-    packages: 'external',
+    external: ['argon2', '@prisma/client', 'prisma'],
+    banner: {
+      js: "import { createRequire } from 'module'; const require = createRequire(import.meta.url);",
+    },
     plugins: [
       {
         name: 'alias-atslash',

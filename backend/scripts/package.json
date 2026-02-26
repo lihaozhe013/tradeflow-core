@@ -2,26 +2,14 @@
   "name": "prod",
   "version": "1.0.0",
   "description": "prod",
-  "author": "Li Haozhe",
   "type": "module",
   "main": "backend/server.js",
   "dependencies": {
-    "@prisma/adapter-pg": "^7.4.0",
     "@prisma/client": "^7.4.0",
-    "@types/js-yaml": "^4.0.9",
-    "argon2": "^0.44.0",
-    "cors": "^2.8.6",
-    "decimal.js": "^10.6.0",
-    "express": "^5.2.1",
-    "fs-extra": "^11.3.3",
-    "js-yaml": "^4.1.1",
-    "jsonwebtoken": "^9.0.3",
-    "multer": "^2.0.2",
-    "prisma": "^7.4.0",
-    "xlsx": "https://cdn.sheetjs.com/xlsx-latest/xlsx-latest.tgz"
+    "argon2": "^0.44.0"
   },
   "engines": {
-    "node": ">=22.0.0",
+    "node": ">=24.0.0",
     "npm": ">=11.0.0"
   }
 }

@@ -8,13 +8,11 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-RUN npm install pm2 -g
-
 COPY dist/ .
 
 RUN npm install --omit=dev
 
-RUN npx prisma generate
+COPY backend/node_modules/.prisma/ ./node_modules/.prisma/
 
 EXPOSE 8000
 
