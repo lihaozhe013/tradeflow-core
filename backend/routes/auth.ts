@@ -21,7 +21,7 @@ router.post('/login', loginRateLimiter, async (req: Request, res: Response): Pro
   }
 
   try {
-    const user = findUser(username);
+    const user = await findUser(username);
     if (!user || user.enabled === false || !user.password_hash) {
       return res.status(401).json({ success: false, message: 'Incorrect username or password!' });
     }

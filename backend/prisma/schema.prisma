@@ -103,6 +103,18 @@ model ProductPrice {
   @@map("product_prices")
 }
 
+model User {
+  username             String   @id
+  password_hash        String
+  role                 String
+  display_name         String?
+  enabled              Boolean  @default(true)
+  last_password_change String?
+  created_at           DateTime @default(now())
+
+  @@map("users")
+}
+
 model ReceivablePayment {
   id            Int     @id @default(autoincrement())
   customer_code String?

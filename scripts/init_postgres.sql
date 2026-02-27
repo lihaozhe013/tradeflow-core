@@ -125,3 +125,14 @@ CREATE TABLE system_logs (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
+-- Table: users
+CREATE TABLE users (
+    username TEXT PRIMARY KEY,
+    password_hash TEXT NOT NULL,
+    role TEXT NOT NULL,
+    display_name TEXT,
+    enabled BOOLEAN DEFAULT TRUE,
+    last_password_change TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+

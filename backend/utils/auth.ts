@@ -6,19 +6,18 @@ import argon2 from 'argon2';
 import { Request, Response, NextFunction } from 'express';
 import { logger } from '@/utils/logger';
 import { resolveFilesInDataPath, config } from '@/utils/paths';
+import { prisma } from '../prismaClient';
+import type { User } from '@prisma/client';
 
-const usersPath: string = resolveFilesInDataPath('users.json');
 const secretPath: string = resolveFilesInDataPath('jwt-secret.txt');
 
-interface UserData {
+export interface UserData {
   username: string;
   password_hash?: string;
   role: string;
-  display_name?: string;
-  displayName?: string;
+  display_name?: string | null;
   enabled?: boolean;
-  last_password_change?: string;
-  lastPasswordChange?: string;
+  last_password_change?: string | null;
 }
 
 interface AuthConfig {
@@ -41,19 +40,6 @@ interface JWTPayload {
 interface LoginAttempt {
   count: number;
   firstAt: number;
-}
-
-function readJSONSafe<T>(filePath: string, fallback: T): T {
-  try {
-    if (!fs.existsSync(filePath)) return fallback;
-    return fs.readJSONSync(filePath) as T;
-  } catch (e) {
-    logger.warn('Failed to read JSON file', {
-      filePath,
-      error: (e as Error).message,
-    });
-    return fallback;
-  }
 }
 
 export function getAuthConfig(): AuthConfig {
@@ -89,14 +75,37 @@ export function ensureJwtSecret(): string {
   }
 }
 
-export function loadUsers(): UserData[] {
-  const data = readJSONSafe<{ users?: UserData[] }>(usersPath, { users: [] });
-  return Array.isArray(data?.users) ? data.users : [];
+export async function getAllUsers(): Promise<User[]> {
+  try {
+     return await prisma.user.findMany();
+  } catch (e) {
+     logger.error("Failed to fetch users", { error: (e as Error).message });
+     return [];
+  }
 }
 
-export function findUser(username: string): UserData | undefined {
-  const users = loadUsers();
-  return users.find((u) => u.username === username);
+export async function findUser(username: string): Promise<User | null> {
+  try {
+    return await prisma.user.findUnique({ where: { username } });
+  } catch (e) {
+    logger.error(`Failed to find user: ${username}`, { error: (e as Error).message });
+    return null;
+  }
+}
+
+export async function createUser(data: User): Promise<User> {
+  return await prisma.user.create({ data });
+}
+
+export async function updateUser(username: string, data: Partial<User>): Promise<User> {
+  return await prisma.user.update({
+    where: { username },
+    data,
+  });
+}
+
+export async function deleteUser(username: string): Promise<User> {
+  return await prisma.user.delete({ where: { username } });
 }
 
 export async function verifyPassword(plain: string, hash: string): Promise<boolean> {
@@ -107,19 +116,23 @@ export async function verifyPassword(plain: string, hash: string): Promise<boole
   }
 }
 
+export async function hashPassword(plain: string): Promise<string> {
+  return await argon2.hash(plain);
+}
+
 export function getPublicUser(
-  u: UserData | null | undefined,
+  u: User | null | undefined,
 ): { username: string; role: string; display_name: string } | null {
   if (!u) return null;
   return {
     username: u.username,
     role: u.role,
-    display_name: u.display_name || u.displayName || u.username,
+    display_name: u.display_name || u.username,
   };
 }
 
 export function signToken(
-  user: UserData,
+  user: User,
   expiresInHours?: number,
 ): { token: string; expires_in: number } {
   const secret = ensureJwtSecret();
@@ -127,8 +140,8 @@ export function signToken(
   const payload: JWTPayload = {
     sub: user.username,
     role: user.role,
-    name: user.display_name || user.displayName || user.username,
-    pwd_ver: user.last_password_change || user.lastPasswordChange || new Date(0).toISOString(),
+    name: user.display_name || user.username,
+    pwd_ver: user.last_password_change || new Date(0).toISOString(),
   };
   const token = jwt.sign(payload, secret, {
     algorithm: 'HS256',
@@ -167,7 +180,7 @@ export function loginRateLimiter(req: Request, res: Response, next: NextFunction
   next();
 }
 
-export function authenticateToken(req: Request, res: Response, next: NextFunction): void {
+export async function authenticateToken(req: Request, res: Response, next: NextFunction): Promise<void> {
   const { enabled } = getAuthConfig();
   if (!enabled) {
     // Auth disabled: inject a dev user
@@ -187,8 +200,8 @@ export function authenticateToken(req: Request, res: Response, next: NextFunctio
     return;
   }
 
-  const auth = req.headers['authorization'] || '';
-  const token = auth.startsWith('Bearer ') ? auth.slice(7) : null;
+  const authHeader = req.headers['authorization'] || '';
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
   if (!token) {
     res.status(401).json({ success: false, message: 'Unauthorized' });
     return;
@@ -198,7 +211,10 @@ export function authenticateToken(req: Request, res: Response, next: NextFunctio
     const decoded = jwt.verify(token, secret, {
       algorithms: ['HS256'],
     }) as JWTPayload;
-    const user = findUser(decoded.sub);
+    
+    // Check DB
+    const user = await findUser(decoded.sub);
+    
     if (!user || user.enabled === false) {
       res.status(401).json({ success: false, message: 'Unauthorized' });
       return;
