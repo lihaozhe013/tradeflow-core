@@ -25,7 +25,6 @@ type InventoryStatusColor = 'green' | 'orange' | 'red';
 type InventoryItem = {
   readonly product_model?: string;
   readonly current_inventory?: number;
-  readonly last_update?: string;
 };
 
 type PaginationInfo = {
@@ -162,14 +161,6 @@ const Inventory: FC = () => {
 
         return <Tag color="green">{t('inventory.normal')}</Tag>;
       },
-    },
-    {
-      title: t('inventory.lastUpdate'),
-      dataIndex: 'last_update',
-      key: 'last_update',
-      width: 180,
-      sorter: (a, b) =>
-        new Date(a.last_update ?? 0).getTime() - new Date(b.last_update ?? 0).getTime(),
     },
   ];
 

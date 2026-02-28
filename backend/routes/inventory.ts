@@ -35,41 +35,10 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       prisma.inventory.count({ where }),
     ]);
 
-    // Enhance with Last In/Out dates
-    // Batch query optimization to avoid N+1 problem and connection exhaustion
-    const productModels = rows.map((r) => r.product_model);
-
-    // 1. Fetch Max Inbound Dates grouped by product
-    const lastInbounds = await prisma.inventoryLedger.groupBy({
-      by: ['product_model'],
-      where: {
-        product_model: { in: productModels },
-        change_type: 'INBOUND',
-      },
-      _max: { date: true },
-    });
-
-    // 2. Fetch Max Outbound Dates grouped by product
-    const lastOutbounds = await prisma.inventoryLedger.groupBy({
-      by: ['product_model'],
-      where: {
-        product_model: { in: productModels },
-        change_type: 'OUTBOUND',
-      },
-      _max: { date: true },
-    });
-
-    // Create lookup maps
-    const lastInMap = new Map(lastInbounds.map((item) => [item.product_model, item._max.date]));
-    const lastOutMap = new Map(lastOutbounds.map((item) => [item.product_model, item._max.date]));
-
     const results = rows.map((row) => {
       return {
         product_model: row.product_model,
         current_inventory: row.quantity,
-        last_inbound: lastInMap.get(row.product_model) || null,
-        last_outbound: lastOutMap.get(row.product_model) || null,
-        last_update: new Date().toISOString(), // Dynamic
       };
     });
 
