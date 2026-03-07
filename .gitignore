@@ -20,6 +20,7 @@ node_modules
 *.njsproj
 *.sln
 *.sw?
+*.pyc
 
 # Data
 data/
@@ -27,5 +28,6 @@ frontend/public/logo.svg
 .npmrc
 frontend/src/config/frontendConfig.json
 ecosystem.config.json
+
 # Dist
 dist/
