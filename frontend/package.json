@@ -6,9 +6,7 @@
   "description": "frontend",
   "scripts": {
     "dev": "vite --host 0.0.0.0 --port 5173",
-    "build": "tsc && vite build && npm run build:post-build",
-    "build:post-build": "node \"../scripts/build/post-build-frontend.js\"",
-    "build:analyze": "tsc && vite build --mode analyze",
+    "build": "tsc && vite build",
     "start": "vite preview --host 0.0.0.0 --port 8080",
     "lint": "eslint . --ext js,jsx,ts,tsx",
     "lint:fix": "eslint . --ext js,jsx,ts,tsx --fix",

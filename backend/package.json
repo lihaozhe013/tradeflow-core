@@ -7,12 +7,9 @@
   "type": "module",
   "main": "dist/server.js",
   "scripts": {
-    "build": "node ./scripts/bundle.mjs && npm run build:post-build",
-    "build:post-build": "node \"../scripts/build/post-build-backend.js\"",
+    "build": "node ./scripts/bundle.mjs",
     "dev": "tsx watch server.ts",
-    "dev:debug": "tsx watch --inspect server.ts",
-    "clean": "rm -rf dist",
-    "prebuild": "npm run clean"
+    "dev:debug": "tsx watch --inspect server.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.4.0",
