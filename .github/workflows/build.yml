@@ -21,7 +21,7 @@ jobs:
           npm run ci:all
           mkdir -p data
           cp -r config-example/* data
-          npm run build
+          python build.py
 
       - name: Read version from file
         id: get_version
