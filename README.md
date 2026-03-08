@@ -217,10 +217,18 @@ mkdir -p data
 cp -r config-example/* data/
 ```
 
-4. **Init**:
+4. **Build**:
+
+> Note: I use `uv run` instead of `python` because the `python` command is incompatible across different systems. It is strongly recommended to use `uv`. If you prefer not to use `uv`, you can modify the `npm run build` command yourself to `python build.py` or `python3 build.py`.
 
 ```bash
 npm run build
+```
+
+or
+
+```bash
+python3 build.py
 ```
 
 5.  **Start the development servers**:

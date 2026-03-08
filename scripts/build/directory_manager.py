@@ -4,28 +4,26 @@ import sys
 from pathlib import Path
 
 class DirectoryManager:
-    def clean(self, base_dir, directories):
+    def clean(self, directories):
         """
         Clean specific directories. 
         If they don't exist, simply skip them without error.
 
         Args:
-            base_dir (Path): The base directory path where cleaning should happen.
-            directories (list[str]): A list of folder names (relative to base_dir) to be removed.
+            directories (list[str]): A list of folder names to be removed.
 
         Example:
-            builder.clean(Path("/project"), ["dist", "build"])
-            # Removes /project/dist and /project/build
+            builder.clean(["/workspace/dist", "/workspace/build"])
+            # Removes dist and build
         """
         print("\n>>> Task: Cleaning Directories")
-        for d in directories:
-            target = base_dir / d
+        for target in directories:
             if target.exists() and target.is_dir():
                 # We use shutil.rmtree to remove the folder and all its contents
                 shutil.rmtree(target)
-                print(f"Removed: {d}")
+                print(f"Removed: {target}")
             else:
-                print(f"Skipped (not found): {d}")
+                print(f"Skipped (not found): {target}")
 
     def run(self, work_dir, command):
         """
