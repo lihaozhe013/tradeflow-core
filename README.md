@@ -1,6 +1,6 @@
 # Tradeflow Core
 
-A lightweight tradeflow system designed for small businesses, built with React.js based frontend and Node.js + SQLite/PostgreSQL based backend.
+A lightweight tradeflow system designed for small businesses, built with React.js based frontend and Node.js + PostgreSQL based backend.
 
 ## Key Features
 
@@ -12,12 +12,11 @@ A lightweight tradeflow system designed for small businesses, built with React.j
 - **Data Export**: Supports data export in Excel format
 - **JWT Authentication**: Stateless authentication system
 - **Role Based Access Control**: Can assign **Editor** and **Viewer** to each user
-- **Multi-Database Support**: Seamlessly switch between **SQLite** (default) and **PostgreSQL** for production environments
 
 ## Tech Stack
 
 - **Frontend**: React 19, Vite, Ant Design, TypeScript
-- **Backend**: Node.js, Express, SQLite3 / PostgreSQL, TypeScript
+- **Backend**: Node.js, Express, PostgreSQL, TypeScript
 - **Authentication**: JWT stateless authentication
 - **Styling**: CSS3, Ant Design component library
 - **Logging**: Winston logging system
@@ -31,9 +30,9 @@ flowchart LR
   API --> Auth["JWT Auth + RBAC"]
   Auth --> Services{{"**Services**<br>(Inventory, Pricing, Finance, Reports)"}}
   Services <--> Config["Config JSON"]
-  Services <--> DB[("PostgreSQL/SQLite")]
+  Services <--> DB[("PostgreSQL")]
   Services <--> Cache["Cache(JSON/Redis)"]
-  API --> Logging["Logger Middleware"] --> DB["PostgreSQL/SQLite"]
+  API --> Logging["Logger Middleware"] --> DB["PostgreSQL"]
 ```
 
 ## Demo
@@ -58,7 +57,7 @@ This is the detailed page for my demo link:
 
 ## Database Schema (Backend)
 
-> SQLite doesn’t support **Date**, so we use TEXT instead…
+> The project uses Prisma as ORM, to support SQLite, which doesn’t support **Date**, we use TEXT for all dates instead…
 
 ### PARTNERS
 
