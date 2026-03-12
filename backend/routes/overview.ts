@@ -175,17 +175,12 @@ async function calculateSoldGoodsCost(): Promise<number> {
 
 // ========== Route Handlers ==========
 
-// 获取系统统计数据
 // GET Read cache only
 router.get('/stats', (_req: Request, res: Response) => {
   const statsFile = resolveFilesInDataPath('overview-stats.json');
   if (fs.existsSync(statsFile)) {
-    try {
-      const json = fs.readFileSync(statsFile, 'utf-8');
-      return res.json(JSON.parse(json));
-    } catch (e) {
-      // If reading fails, continue to recalculate
-    }
+    const json = fs.readFileSync(statsFile, 'utf-8');
+    return res.json(JSON.parse(json));
   }
   // Cache doesn't exist or reading failed, return empty or error
   return res.status(503).json({ error: 'Statistics data not generated, please refresh first.' });
@@ -451,7 +446,7 @@ router.get('/top-sales-products', (_req: Request, res: Response) => {
         return res.json({ success: true, data: stats.top_sales_products });
       }
     } catch (e) {
-      // Reading failed
+      console.error('Error reading top sales products from stats:', e);
     }
   }
   return res.status(503).json({ error: 'Statistics data not generated, please refresh first.' });
@@ -488,7 +483,7 @@ router.get('/monthly-inventory-change/:productModel', (req: Request, res: Respon
         });
       }
     } catch (e) {
-      // Reading failed
+      console.error('Error reading monthly inventory change from stats:', e);
     }
   }
 

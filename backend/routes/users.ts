@@ -1,4 +1,5 @@
 import express, { type Router, type Request, type Response } from 'express';
+import { Prisma } from '@prisma/client';
 import { prisma } from '@/prismaClient';
 import { authorize, hashPassword } from '@/utils/auth';
 
@@ -8,7 +9,7 @@ const router: Router = express.Router();
  * GET /api/users
  * List all users. Only 'editor' or admins can view.
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 
 router.get('/', authorize(['editor']), async (_req: Request, res: Response): Promise<void> => {
   try {
     const users = await prisma.user.findMany({
@@ -22,7 +23,8 @@ router.get('/', authorize(['editor']), async (_req: Request, res: Response): Pro
     });
     res.json(safeUsers);
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Failed to fetch users' });
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+    res.status(500).json({ success: false, message: `Failed to fetch users: ${errorMsg}` });
   }
 });
 
@@ -58,6 +60,7 @@ router.post('/', authorize(['editor']), async (req: Request, res: Response): Pro
       },
     });
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password_hash: _, ...safeUser } = newUser;
     res.status(201).json({ success: true, data: safeUser });
   } catch (error) {
@@ -86,7 +89,7 @@ router.put('/:username', authorize(['editor']), async (req: Request, res: Respon
       return;
     }
 
-    const data: any = {};
+    const data: Prisma.UserUpdateInput = {};
     if (role !== undefined) data.role = role;
     if (display_name !== undefined) data.display_name = display_name;
     if (enabled !== undefined) data.enabled = enabled;
@@ -101,10 +104,12 @@ router.put('/:username', authorize(['editor']), async (req: Request, res: Respon
       data,
     });
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password_hash: _, ...safeUser } = updated;
     res.json({ success: true, data: safeUser });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Failed to update user' });
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+    res.status(500).json({ success: false, message: `Failed to update user: ${errorMsg}` });
   }
 });
 
@@ -131,7 +136,8 @@ router.delete('/:username', authorize(['editor']), async (req: Request, res: Res
     res.json({ success: true, message: 'User deleted' });
   } catch (error) {
     // If not found, prisma throws P2025
-    res.status(500).json({ success: false, message: 'Failed to delete user' });
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+    res.status(500).json({ success: false, message: `Failed to delete user: ${errorMsg}` });
   }
 });
 

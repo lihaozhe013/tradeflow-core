@@ -32,7 +32,7 @@ export default class ExcelExporter {
       const data = await this.queries.getBaseInfoData(options.tables || '123');
       return this.baseInfoExporter.export(data, options);
     } catch (error: any) {
-      throw new Error(`Base info export failed: ${error.message}`);
+      throw new Error(`Base info export failed: ${error.message}`, { cause: error });
     }
   }
 
@@ -41,7 +41,7 @@ export default class ExcelExporter {
       const data = await this.queries.getInboundOutboundData(options);
       return this.transactionExporter.exportInboundOutbound(data, options);
     } catch (error: any) {
-      throw new Error(`Inbound/outbound export failed: ${error.message}`);
+      throw new Error(`Inbound/outbound export failed: ${error.message}`, { cause: error });
     }
   }
 
@@ -50,7 +50,7 @@ export default class ExcelExporter {
       const data = await this.queries.getReceivablePayableData(options);
       return this.financialExporter.exportReceivablePayable(data);
     } catch (error: any) {
-      throw new Error(`Receivable/payable export failed: ${error.message}`);
+      throw new Error(`Receivable/payable export failed: ${error.message}`, { cause: error });
     }
   }
 
@@ -59,7 +59,7 @@ export default class ExcelExporter {
       const data = await this.queries.getInboundOutboundData(options);
       return this.transactionExporter.exportStatement(data, options);
     } catch (error: any) {
-      throw new Error(`Statement export failed: ${error.message}`);
+      throw new Error(`Statement export failed: ${error.message}`, { cause: error });
     }
   }
 
@@ -67,7 +67,7 @@ export default class ExcelExporter {
     try {
       return this.analysisExporter.exportAnalysis(options);
     } catch (error: any) {
-      throw new Error(`Analysis export failed: ${error.message}`);
+      throw new Error(`Analysis export failed: ${error.message}`, { cause: error });
     }
   }
 
@@ -75,7 +75,7 @@ export default class ExcelExporter {
     try {
       return await this.advancedAnalysisExporter.exportAdvancedAnalysis(options);
     } catch (error: any) {
-      throw new Error(`Advanced analysis export failed: ${error.message}`);
+      throw new Error(`Advanced analysis export failed: ${error.message}`, { cause: error });
     }
   }
 
@@ -90,7 +90,7 @@ export default class ExcelExporter {
       });
       return this.invoiceExporter.exportInvoice(data, options);
     } catch (error: any) {
-      throw new Error(`Invoice export failed: ${error.message}`);
+      throw new Error(`Invoice export failed: ${error.message}`, { cause: error });
     }
   }
 

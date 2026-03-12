@@ -92,7 +92,7 @@ class DecimalCalculator {
    * @param decimalPlaces Decimal places, default 5 digits (supports 0.00001 precision)
    */
   fromSqlResult(
-    sqlResult: number | null | undefined | bigint,
+    sqlResult: number | string | null | undefined | bigint | Decimal,
     defaultValue: number = 0,
     decimalPlaces: number = 5,
   ): number {
@@ -100,7 +100,9 @@ class DecimalCalculator {
       return defaultValue;
     }
     // Handle BigInt by converting to string first
-    const val = typeof sqlResult === 'bigint' ? sqlResult.toString() : sqlResult;
+    const val: number | string | Decimal = typeof sqlResult === 'bigint'
+      ? sqlResult.toString()
+      : sqlResult;
     const decimal = this.decimal(val);
     return this.toNumber(decimal, decimalPlaces);
   }

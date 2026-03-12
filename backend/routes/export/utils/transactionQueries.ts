@@ -101,6 +101,7 @@ export default class TransactionQueries {
       });
       return rows;
     } catch (error) {
+      console.log('Error in getInboundData:', error);
       throw error;
     }
   }
@@ -155,6 +156,7 @@ export default class TransactionQueries {
       });
       return rows;
     } catch (error) {
+      console.log('Error in getOutboundData:', error);
       throw error;
     }
   }

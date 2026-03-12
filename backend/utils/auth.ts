@@ -112,6 +112,7 @@ export async function verifyPassword(plain: string, hash: string): Promise<boole
   try {
     return await argon2.verify(hash, plain);
   } catch (e) {
+    logger.error('Password verification failed', { error: (e as Error).message });
     return false;
   }
 }
@@ -233,7 +234,7 @@ export async function authenticateToken(req: Request, res: Response, next: NextF
     };
     next();
   } catch (e) {
-    res.status(401).json({ success: false, message: 'Unauthorized' });
+    res.status(401).json({ success: false, message: 'Unauthorized', error: (e as Error).message });
   }
 }
 

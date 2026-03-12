@@ -19,6 +19,7 @@ export function getDataDir(): string {
     try {
       return fs.existsSync(fullPath) && fs.statSync(fullPath).isDirectory();
     } catch (e) {
+      console.error(`Error checking path: ${fullPath}`, e);
       return false;
     }
   });

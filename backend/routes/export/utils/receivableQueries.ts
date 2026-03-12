@@ -50,6 +50,7 @@ export default class ReceivableQueries {
       });
       return processed;
     } catch (error) {
+      console.log('Error in getReceivableSummary:', error);
       throw error;
     }
   }
@@ -79,6 +80,7 @@ export default class ReceivableQueries {
       });
       return rows.map((r) => ({ ...r, record_id: r.id }));
     } catch (error) {
+      console.log('Error in getReceivableDetails:', error);
       throw error;
     }
   }
@@ -107,6 +109,7 @@ export default class ReceivableQueries {
       });
       return rows;
     } catch (error) {
+      console.log('Error in getReceivablePayments:', error);
       throw error;
     }
   }

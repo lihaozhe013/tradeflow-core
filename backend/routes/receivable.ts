@@ -84,44 +84,39 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     LIMIT ${Number(limit)} OFFSET ${offset}
   `;
 
-  try {
-    const rows = await prisma.$queryRawUnsafe<ReceivableRow[]>(sql);
+  const rows = await prisma.$queryRawUnsafe<ReceivableRow[]>(sql);
 
-    // Process rows to ensure decimal precision
-    const processedRows = rows.map((row) => {
-      const totalReceivable = decimalCalc.fromSqlResult(row.total_receivable, 0);
-      const totalPaid = decimalCalc.fromSqlResult(row.total_paid, 0);
-      const balance = decimalCalc.calculateBalance(totalReceivable, totalPaid);
+  // Process rows to ensure decimal precision
+  const processedRows = rows.map((row) => {
+    const totalReceivable = decimalCalc.fromSqlResult(row.total_receivable, 0);
+    const totalPaid = decimalCalc.fromSqlResult(row.total_paid, 0);
+    const balance = decimalCalc.calculateBalance(totalReceivable, totalPaid);
 
-      // Convert BigInt to Number for payment_count
-      const paymentCount = row.payment_count ? Number(row.payment_count) : 0;
+    // Convert BigInt to Number for payment_count
+    const paymentCount = row.payment_count ? Number(row.payment_count) : 0;
 
-      return {
-        ...row,
-        total_receivable: totalReceivable,
-        total_paid: totalPaid,
-        balance: balance,
-        payment_count: paymentCount,
-      };
-    });
+    return {
+      ...row,
+      total_receivable: totalReceivable,
+      total_paid: totalPaid,
+      balance: balance,
+      payment_count: paymentCount,
+    };
+  });
 
-    // Count total partners matching criteria
-    const where: Prisma.PartnerWhereInput = { type: 1 };
-    if (customer_short_name) {
-      where.short_name = { contains: customer_short_name as string };
-    }
-    const total = await prisma.partner.count({ where });
-
-    res.json({
-      data: processedRows,
-      total: total,
-      page: Number(page),
-      limit: Number(limit),
-    });
-  } catch (err) {
-    const error = err as Error;
-    res.status(500).json({ error: error.message });
+  // Count total partners matching criteria
+  const where: Prisma.PartnerWhereInput = { type: 1 };
+  if (customer_short_name) {
+    where.short_name = { contains: customer_short_name as string };
   }
+  const total = await prisma.partner.count({ where });
+
+  res.json({
+    data: processedRows,
+    total: total,
+    page: Number(page),
+    limit: Number(limit),
+  });
 });
 
 /**
@@ -133,27 +128,22 @@ router.get('/payments/:customer_code', async (req: Request, res: Response): Prom
 
   const skip = (Number(page) - 1) * Number(limit);
 
-  try {
-    const [rows, total] = await prisma.$transaction([
-      prisma.receivablePayment.findMany({
-        where: { customer_code },
-        orderBy: { pay_date: 'desc' },
-        skip,
-        take: Number(limit),
-      }),
-      prisma.receivablePayment.count({ where: { customer_code } }),
-    ]);
+  const [rows, total] = await prisma.$transaction([
+    prisma.receivablePayment.findMany({
+      where: { customer_code },
+      orderBy: { pay_date: 'desc' },
+      skip,
+      take: Number(limit),
+    }),
+    prisma.receivablePayment.count({ where: { customer_code } }),
+  ]);
 
-    res.json({
-      data: rows,
-      total,
-      page: Number(page),
-      limit: Number(limit),
-    });
-  } catch (err) {
-    const error = err as Error;
-    res.status(500).json({ error: error.message });
-  }
+  res.json({
+    data: rows,
+    total,
+    page: Number(page),
+    limit: Number(limit),
+  });
 });
 
 /**
@@ -169,21 +159,16 @@ router.post('/payments', async (req: Request, res: Response): Promise<void> => {
     return;
   }
 
-  try {
-    const result = await prisma.receivablePayment.create({
-      data: {
-        customer_code,
-        amount,
-        pay_date,
-        pay_method: pay_method || '',
-        remark: remark || '',
-      },
-    });
-    res.json({ id: result.id, message: 'Payment record created!' });
-  } catch (err) {
-    const error = err as Error;
-    res.status(500).json({ error: error.message });
-  }
+  const result = await prisma.receivablePayment.create({
+    data: {
+      customer_code,
+      amount,
+      pay_date,
+      pay_method: pay_method || '',
+      remark: remark || '',
+    },
+  });
+  res.json({ id: result.id, message: 'Payment record created!' });
 });
 
 /**
@@ -255,74 +240,69 @@ router.get('/details/:customer_code', async (req: Request, res: Response): Promi
     payment_limit = 10,
   } = req.query;
 
-  try {
-    const customer = await prisma.partner.findFirst({
-      where: { code: customer_code, type: 1 },
-    });
+  const customer = await prisma.partner.findFirst({
+    where: { code: customer_code, type: 1 },
+  });
 
-    if (!customer) {
-      res.status(404).json({ error: 'Clienet dne' });
-      return;
-    }
-
-    const outboundSkip = (Number(outbound_page) - 1) * Number(outbound_limit);
-    const paymentSkip = (Number(payment_page) - 1) * Number(payment_limit);
-
-    // Parallel fetch
-    const [outboundRecords, outboundCount, paymentRecords, paymentCount, outboundAgg, paymentAgg] =
-      await Promise.all([
-        prisma.outboundRecord.findMany({
-          where: { customer_code },
-          orderBy: { outbound_date: 'desc' },
-          skip: outboundSkip,
-          take: Number(outbound_limit),
-        }),
-        prisma.outboundRecord.count({ where: { customer_code } }),
-        prisma.receivablePayment.findMany({
-          where: { customer_code },
-          orderBy: { pay_date: 'desc' },
-          skip: paymentSkip,
-          take: Number(payment_limit),
-        }),
-        prisma.receivablePayment.count({ where: { customer_code } }),
-        prisma.outboundRecord.aggregate({
-          where: { customer_code },
-          _sum: { total_price: true },
-        }),
-        prisma.receivablePayment.aggregate({
-          where: { customer_code },
-          _sum: { amount: true },
-        }),
-      ]);
-
-    const totalReceivable = decimalCalc.fromSqlResult(outboundAgg._sum?.total_price || 0, 0);
-    const totalPaid = decimalCalc.fromSqlResult(paymentAgg._sum?.amount || 0, 0);
-    const balance = decimalCalc.calculateBalance(totalReceivable, totalPaid);
-
-    res.json({
-      customer,
-      summary: {
-        total_receivable: totalReceivable,
-        total_paid: totalPaid,
-        balance: balance,
-      },
-      outbound_records: {
-        data: outboundRecords,
-        total: outboundCount,
-        page: Number(outbound_page),
-        limit: Number(outbound_limit),
-      },
-      payment_records: {
-        data: paymentRecords,
-        total: paymentCount,
-        page: Number(payment_page),
-        limit: Number(payment_limit),
-      },
-    });
-  } catch (err) {
-    const error = err as Error;
-    res.status(500).json({ error: error.message });
+  if (!customer) {
+    res.status(404).json({ error: 'Clienet dne' });
+    return;
   }
+
+  const outboundSkip = (Number(outbound_page) - 1) * Number(outbound_limit);
+  const paymentSkip = (Number(payment_page) - 1) * Number(payment_limit);
+
+  // Parallel fetch
+  const [outboundRecords, outboundCount, paymentRecords, paymentCount, outboundAgg, paymentAgg] =
+    await Promise.all([
+      prisma.outboundRecord.findMany({
+        where: { customer_code },
+        orderBy: { outbound_date: 'desc' },
+        skip: outboundSkip,
+        take: Number(outbound_limit),
+      }),
+      prisma.outboundRecord.count({ where: { customer_code } }),
+      prisma.receivablePayment.findMany({
+        where: { customer_code },
+        orderBy: { pay_date: 'desc' },
+        skip: paymentSkip,
+        take: Number(payment_limit),
+      }),
+      prisma.receivablePayment.count({ where: { customer_code } }),
+      prisma.outboundRecord.aggregate({
+        where: { customer_code },
+        _sum: { total_price: true },
+      }),
+      prisma.receivablePayment.aggregate({
+        where: { customer_code },
+        _sum: { amount: true },
+      }),
+    ]);
+
+  const totalReceivable = decimalCalc.fromSqlResult(outboundAgg._sum?.total_price || 0, 0);
+  const totalPaid = decimalCalc.fromSqlResult(paymentAgg._sum?.amount || 0, 0);
+  const balance = decimalCalc.calculateBalance(totalReceivable, totalPaid);
+
+  res.json({
+    customer,
+    summary: {
+      total_receivable: totalReceivable,
+      total_paid: totalPaid,
+      balance: balance,
+    },
+    outbound_records: {
+      data: outboundRecords,
+      total: outboundCount,
+      page: Number(outbound_page),
+      limit: Number(outbound_limit),
+    },
+    payment_records: {
+      data: paymentRecords,
+      total: paymentCount,
+      page: Number(payment_page),
+      limit: Number(payment_limit),
+    },
+  });
 });
 
 /**
@@ -335,32 +315,27 @@ router.get('/uninvoiced/:customer_code', async (req: Request, res: Response): Pr
 
   const skip = (Number(page) - 1) * Number(limit);
 
-  try {
-    const where: Prisma.OutboundRecordWhereInput = {
-      customer_code,
-      OR: [{ invoice_number: null }, { invoice_number: '' }],
-    };
+  const where: Prisma.OutboundRecordWhereInput = {
+    customer_code,
+    OR: [{ invoice_number: null }, { invoice_number: '' }],
+  };
 
-    const [rows, total] = await prisma.$transaction([
-      prisma.outboundRecord.findMany({
-        where,
-        orderBy: { outbound_date: 'desc' },
-        skip,
-        take: Number(limit),
-      }),
-      prisma.outboundRecord.count({ where }),
-    ]);
+  const [rows, total] = await prisma.$transaction([
+    prisma.outboundRecord.findMany({
+      where,
+      orderBy: { outbound_date: 'desc' },
+      skip,
+      take: Number(limit),
+    }),
+    prisma.outboundRecord.count({ where }),
+  ]);
 
-    res.json({
-      data: rows,
-      total,
-      page: Number(page),
-      limit: Number(limit),
-    });
-  } catch (err) {
-    const error = err as Error;
-    res.status(500).json({ error: error.message });
-  }
+  res.json({
+    data: rows,
+    total,
+    page: Number(page),
+    limit: Number(limit),
+  });
 });
 
 /**

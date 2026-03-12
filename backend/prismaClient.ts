@@ -1,10 +1,11 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
+
 import { PrismaPg } from '@prisma/adapter-pg';
 import pg from 'pg';
 import { config } from "@/utils/paths";
 import { logger } from "@/utils/logger";
 
-let prismaInstance: PrismaClient | null = null;
+const prismaInstance: PrismaClient | null = null;
 
 function getDatabaseConfig() {
   return config.database || {};
@@ -32,18 +33,17 @@ function createPrismaClient() {
   });
   const adapter = new PrismaPg(pool);
 
-  const log: any[] = process.env['NODE_ENV'] === 'development' 
+  const log: Prisma.LogLevel[] = process.env['NODE_ENV'] === 'development' 
     ? ['query', 'info', 'warn', 'error'] 
     : ['error'];
 
   return new PrismaClient({
     adapter,
-    // @ts-ignore
     log,
   });
 }
 
-export const prisma = prismaInstance || (prismaInstance = createPrismaClient());
+export const prisma = prismaInstance || createPrismaClient();
 
 // Handle graceful shutdown
 process.on('beforeExit', async () => {

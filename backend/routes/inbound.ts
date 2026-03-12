@@ -22,7 +22,7 @@ function isProvided(val: any): boolean {
  */
 router.get('/', async (req: Request, res: Response): Promise<void> => {
   try {
-    let { page = 1 } = req.query;
+    const { page = 1 } = req.query;
     let pageNum = parseInt(page as string, 10);
     if (!Number.isFinite(pageNum) || pageNum < 1) pageNum = 1;
     const limit = pagination_limit;
@@ -274,7 +274,7 @@ router.post('/batch', async (req: Request, res: Response): Promise<void> => {
 
     for (const [key, val] of Object.entries(updates)) {
       if (allowedFieldsMap[key] && isProvided(val)) {
-        // @ts-ignore - dynamic assignment
+        // @ts-expect-error - dynamic assignment
         updateData[allowedFieldsMap[key]] = val;
         if (key === 'quantity') hasQuantity = true;
         if (key === 'unit_price') hasUnitPrice = true;

@@ -3,6 +3,10 @@ import { prisma } from "@/prismaClient";
 import decimalCalc from "@/utils/decimalCalculator";
 import type { PurchaseData } from "@/routes/analysis/utils/types";
 
+interface PurchaseResult {
+  purchase_amount: number | null;
+}
+
 export function calculatePurchaseData(
   startDate: string,
   endDate: string,
@@ -33,7 +37,7 @@ export function calculatePurchaseData(
     `;
 
     try {
-      const result = await prisma.$queryRaw<any[]>(query);
+      const result = await prisma.$queryRaw<PurchaseResult[]>(query);
       const purchaseRow = result[0];
       const purchaseAmount = decimalCalc.fromSqlResult(
         purchaseRow?.purchase_amount,

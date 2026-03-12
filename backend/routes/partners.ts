@@ -31,19 +31,12 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     where.code = { contains: code as string };
   }
 
-  try {
-    const rows = await prisma.partner.findMany({
-      where,
-      orderBy: { short_name: 'asc' },
-    });
+  const rows = await prisma.partner.findMany({
+    where,
+    orderBy: { short_name: 'asc' },
+  });
 
-    // Rows are already in snake_case
-
-    res.json({ data: rows });
-  } catch (err) {
-    const error = err as Error;
-    res.status(500).json({ error: error.message });
-  }
+  res.json({ data: rows });
 });
 
 /**

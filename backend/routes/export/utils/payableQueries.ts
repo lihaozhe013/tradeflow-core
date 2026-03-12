@@ -50,6 +50,7 @@ export default class PayableQueries {
       });
       return processed;
     } catch (error) {
+      console.log('Error in getPayableSummary:', error);
       throw error;
     }
   }
@@ -82,6 +83,7 @@ export default class PayableQueries {
       // but usually standardizing on 'id' is better. However, let's preserve compat.
       return rows.map((r) => ({ ...r, record_id: r.id }));
     } catch (error) {
+      console.log('Error in getPayableDetails:', error);
       throw error;
     }
   }
@@ -111,6 +113,7 @@ export default class PayableQueries {
 
       return rows;
     } catch (error) {
+      console.log('Error in getPayablePayments:', error);
       throw error;
     }
   }
