@@ -9,7 +9,8 @@
   "scripts": {
     "build": "node ./scripts/bundle.mjs",
     "dev": "tsx watch server.ts",
-    "dev:debug": "tsx watch --inspect server.ts"
+    "dev:debug": "tsx watch --inspect server.ts",
+    "lint": "eslint ."
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.4.0",
@@ -27,6 +28,7 @@
     "xlsx": "https://cdn.sheetjs.com/xlsx-latest/xlsx-latest.tgz"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/argon2": "^0.14.1",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
@@ -37,13 +39,16 @@
     "@types/pg": "^8.16.0",
     "esbuild": "^0.27.3",
     "esbuild-plugin-tsconfig-paths": "^1.0.2",
+    "eslint": "^10.0.3",
+    "globals": "^17.4.0",
     "nodemon": "^3.1.11",
     "prisma": "^7.4.0",
     "ts-node": "^10.9.2",
     "tsc-alias": "^1.8.16",
     "tsconfig-paths": "^4.2.0",
     "tsx": "^4.21.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.57.0"
   },
   "engines": {
     "node": ">=22.0.0",
