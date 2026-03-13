@@ -11,21 +11,16 @@ const router: Router = express.Router();
  */
 
 router.get('/', authorize(['editor']), async (_req: Request, res: Response): Promise<void> => {
-  try {
-    const users = await prisma.user.findMany({
-      orderBy: { username: 'asc' },
-    });
-    // Strip hash before returning
-    const safeUsers = users.map((u) => {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { password_hash, ...rest } = u;
-      return rest;
-    });
-    res.json(safeUsers);
-  } catch (error) {
-    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-    res.status(500).json({ success: false, message: `Failed to fetch users: ${errorMsg}` });
-  }
+  const users = await prisma.user.findMany({
+    orderBy: { username: 'asc' },
+  });
+  // Strip hash before returning
+  const safeUsers = users.map((u) => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { password_hash, ...rest } = u;
+    return rest;
+  });
+  res.json(safeUsers);
 });
 
 /**

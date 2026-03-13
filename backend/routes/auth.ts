@@ -20,26 +20,20 @@ router.post('/login', loginRateLimiter, async (req: Request, res: Response): Pro
     return res.status(400).json({ success: false, message: 'Incorrect username or password!' });
   }
 
-  try {
-    const user = await findUser(username);
-    if (!user || user.enabled === false || !user.password_hash) {
-      return res.status(401).json({ success: false, message: 'Incorrect username or password!' });
-    }
-
-    const ok = await verifyPassword(password, user.password_hash);
-    if (!ok) {
-      return res.status(401).json({ success: false, message: 'Incorrect username or password!' });
-    }
-
-    const { token, expires_in } = signToken(user);
-
-    logger.info('User login success', { username: user.username, role: user.role });
-    return res.json({ success: true, token, expires_in, user: getPublicUser(user) });
-  } catch (e) {
-    const error = e as Error;
-    logger.error('Login error', { error: error.message });
-    return res.status(500).json({ success: false, message: 'Server Error' });
+  const user = await findUser(username);
+  if (!user || user.enabled === false || !user.password_hash) {
+    return res.status(401).json({ success: false, message: 'Incorrect username or password!' });
   }
+
+  const ok = await verifyPassword(password, user.password_hash);
+  if (!ok) {
+    return res.status(401).json({ success: false, message: 'Incorrect username or password!' });
+  }
+
+  const { token, expires_in } = signToken(user);
+
+  logger.info('User login success', { username: user.username, role: user.role });
+  return res.json({ success: true, token, expires_in, user: getPublicUser(user) });
 });
 
 /**
