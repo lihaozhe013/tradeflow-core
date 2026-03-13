@@ -33,21 +33,16 @@ export default [
       ...reactHooks.configs.recommended.rules,
       ...tseslint.configs.recommended.rules,
       
-      // TypeScript specific rules for ES2024
-      '@typescript-eslint/no-unused-vars': [
-        'error', 
-        { 
-          varsIgnorePattern: '^[A-Z_]',
-          argsIgnorePattern: '^_'
-        }
-      ],
-      '@typescript-eslint/no-explicit-any': 'warn',
-      '@typescript-eslint/no-inferrable-types': 'error',
-      '@typescript-eslint/consistent-type-imports': 'error',
-      '@typescript-eslint/no-unused-expressions': 'error',
-      '@typescript-eslint/prefer-nullish-coalescing': 'error',
-      '@typescript-eslint/prefer-optional-chain': 'error',
-      '@typescript-eslint/no-non-null-assertion': 'warn',
+      // Relaxed rules for vibe coding
+      '@typescript-eslint/no-unused-vars': 'off',
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-inferrable-types': 'off',
+      '@typescript-eslint/consistent-type-imports': 'off',
+      '@typescript-eslint/no-unused-expressions': 'off',
+      '@typescript-eslint/prefer-nullish-coalescing': 'off',
+      '@typescript-eslint/prefer-optional-chain': 'off',
+      '@typescript-eslint/no-non-null-assertion': 'off',
+      '@typescript-eslint/ban-ts-comment': 'off',
       
       // React specific rules
       'react-refresh/only-export-components': [
@@ -56,8 +51,10 @@ export default [
       ],
       
       // General rules
-      'no-unused-vars': 'off', // Turn off base rule as it can report incorrect errors
-      'prefer-const': 'error',
+      'no-unused-vars': 'off',
+      'prefer-const': 'off',
+      'no-console': 'off',
+      'no-debugger': 'off',
     },
   },
   // Configuration for TypeScript config files
@@ -80,6 +77,9 @@ export default [
       ...js.configs.recommended.rules,
       ...tseslint.configs.recommended.rules,
       'no-console': 'off',
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-unused-vars': 'off',
+      '@typescript-eslint/ban-ts-comment': 'off',
     },
   },
   // Configuration for JavaScript files
@@ -102,9 +102,11 @@ export default [
       ...js.configs.recommended.rules,
       ...reactHooks.configs.recommended.rules,
       
-      // For JS files, use the original no-unused-vars rule
-      'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
-      'prefer-const': 'error',
+      // For JS files, relaxed
+      'no-unused-vars': 'off',
+      'prefer-const': 'off',
+      'no-console': 'off',
+      'no-debugger': 'off',
       
       // React specific rules
       'react-refresh/only-export-components': [

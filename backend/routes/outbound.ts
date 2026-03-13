@@ -7,7 +7,7 @@ import { inventoryService } from '@/utils/inventoryService';
 
 const router: Router = express.Router();
 
-function isProvided(val: any): boolean {
+function isProvided(val: unknown): boolean {
   return !(
     val === undefined ||
     val === null ||
@@ -22,7 +22,7 @@ function isProvided(val: any): boolean {
  */
 router.get('/', async (req: Request, res: Response): Promise<void> => {
   try {
-    let { page = 1 } = req.query;
+    const { page = 1 } = req.query;
     let pageNum = parseInt(page as string, 10);
     if (!Number.isFinite(pageNum) || pageNum < 1) pageNum = 1;
     const limit = pagination_limit;
@@ -265,7 +265,7 @@ router.post('/batch', async (req: Request, res: Response): Promise<void> => {
 
   for (const [key, val] of Object.entries(updates)) {
     if (allowedFieldsMap[key] && isProvided(val)) {
-      // @ts-ignore
+      // @ts-expect-error - dynamic assignment
       updateData[allowedFieldsMap[key]] = val;
       if (key === 'quantity') hasQuantity = true;
       if (key === 'unit_price') hasUnitPrice = true;
@@ -319,8 +319,8 @@ router.post('/batch', async (req: Request, res: Response): Promise<void> => {
           await inventoryService.onOutboundUpdate(oldRecord, result);
           completed++;
         }
-      } catch (e: any) {
-        if (e.code === 'P2025') notFound.push(recordId);
+      } catch (e: unknown) {
+        if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2025') notFound.push(recordId);
         else errors++;
       }
     }

@@ -41,7 +41,7 @@ if (process.env['NODE_ENV'] !== 'production') {
       credentials: true,
     }),
   );
-  console.log('Dev Mode: CORS cross-origin support has been enabled.');
+  logger.info('Dev Mode: CORS cross-origin support has been enabled.');
 }
 
 // =============================================================================
@@ -134,8 +134,6 @@ if (shouldHostFrontend && config.frontend) {
 // =============================================================================
 
 app.listen(PORT, () => {
-  console.log('Server Start Complete!');
-
   logger.info('Server Start Complete!', {
     port: PORT,
     environment: process.env['NODE_ENV'] || 'development',

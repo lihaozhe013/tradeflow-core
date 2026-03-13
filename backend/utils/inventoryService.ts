@@ -110,7 +110,7 @@ export const inventoryService = {
   /**
    * Handle Inbound Create
    */
-  async onInboundCreate(record: Prisma.InboundRecordGetPayload<{}>) {
+  async onInboundCreate(record: Prisma.InboundRecordGetPayload<null>) {
     if (!record.product_model || !record.quantity) return;
     await prisma.$transaction(async (tx) => {
       await tx.inventoryLedger.create({
@@ -133,7 +133,7 @@ export const inventoryService = {
   /**
    * Handle Outbound Create
    */
-  async onOutboundCreate(record: Prisma.OutboundRecordGetPayload<{}>) {
+  async onOutboundCreate(record: Prisma.OutboundRecordGetPayload<null>) {
     if (!record.product_model || !record.quantity) return;
     await prisma.$transaction(async (tx) => {
       // Ledger stores negative qty for outbound? Or stores positive number with type OUTBOUND?
@@ -209,8 +209,8 @@ export const inventoryService = {
    * Handle Inbound Update
    */
   async onInboundUpdate(
-    oldRecord: Prisma.InboundRecordGetPayload<{}>,
-    newRecord: Prisma.InboundRecordGetPayload<{}>,
+    oldRecord: Prisma.InboundRecordGetPayload<null>,
+    newRecord: Prisma.InboundRecordGetPayload<null>,
   ) {
     // Revert Old, Apply New
     await this.onInboundDelete(oldRecord.id);
@@ -221,8 +221,8 @@ export const inventoryService = {
    * Handle Outbound Update
    */
   async onOutboundUpdate(
-    oldRecord: Prisma.OutboundRecordGetPayload<{}>,
-    newRecord: Prisma.OutboundRecordGetPayload<{}>,
+    oldRecord: Prisma.OutboundRecordGetPayload<null>,
+    newRecord: Prisma.OutboundRecordGetPayload<null>,
   ) {
     // Revert Old, Apply New
     await this.onOutboundDelete(oldRecord.id);

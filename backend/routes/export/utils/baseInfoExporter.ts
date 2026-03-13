@@ -1,30 +1,33 @@
-import * as XLSX from 'xlsx';
-import ExportUtils from '@/routes/export/utils/exportUtils';
+import * as XLSX from "xlsx";
+import ExportUtils from "@/routes/export/utils/exportUtils";
+import { TEMPLATES } from "@/routes/export/utils/exportTemplates";
+import { BaseInfoData, BasicDataFilters } from "@/routes/export/utils/types";
 
-export default class BaseInfoExporter {
-  private templates: any;
-  constructor(templates: any) {
-    this.templates = templates;
-  }
+export function generateBaseInfoExcel(
+  data: BaseInfoData,
+  options: BasicDataFilters = {},
+): Buffer {
+  const { tables = "123" } = options;
+  const workbook = XLSX.utils.book_new();
 
-  export(data: any, options: any = {}): Buffer {
-    const { tables = '123' } = options || {};
-    const workbook = XLSX.utils.book_new();
-    if (tables.includes('1') && data.partners) {
-      const worksheet = ExportUtils.createWorksheet(data.partners, this.templates.partners);
-      XLSX.utils.book_append_sheet(workbook, worksheet, this.templates.partners.sheetName);
-    }
-    if (tables.includes('2') && data.products) {
-      const worksheet = ExportUtils.createWorksheet(data.products, this.templates.products);
-      XLSX.utils.book_append_sheet(workbook, worksheet, this.templates.products.sheetName);
-    }
-    if (tables.includes('3') && data.prices) {
-      const worksheet = ExportUtils.createWorksheet(data.prices, this.templates.prices);
-      XLSX.utils.book_append_sheet(workbook, worksheet, this.templates.prices.sheetName);
-    }
-    return XLSX.write(workbook, {
-      type: 'buffer',
-      bookType: 'xlsx',
-    }) as unknown as Buffer;
+  if (tables.includes("1") && data.partners) {
+    const template = TEMPLATES.partners;
+    const worksheet = ExportUtils.createWorksheet(data.partners, template);
+    XLSX.utils.book_append_sheet(workbook, worksheet, template.sheetName);
   }
+  if (tables.includes("2") && data.products) {
+    const template = TEMPLATES.products;
+    const worksheet = ExportUtils.createWorksheet(data.products, template);
+    XLSX.utils.book_append_sheet(workbook, worksheet, template.sheetName);
+  }
+  if (tables.includes("3") && data.prices) {
+    const template = TEMPLATES.prices;
+    const worksheet = ExportUtils.createWorksheet(data.prices, template);
+    XLSX.utils.book_append_sheet(workbook, worksheet, template.sheetName);
+  }
+  return XLSX.write(workbook, {
+    type: "buffer",
+    bookType: "xlsx",
+  }) as unknown as Buffer;
 }
+

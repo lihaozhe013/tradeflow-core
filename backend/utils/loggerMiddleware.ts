@@ -35,15 +35,15 @@ function shouldSkipLogging(req: Request): boolean {
   return false;
 }
 
-function maskSensitiveData(data: any): any {
+function maskSensitiveData(data: unknown): unknown {
   if (!data) return data;
   if (typeof data !== 'object') return data;
 
   if (Array.isArray(data)) {
-    return data.map((item) => maskSensitiveData(item));
+    return data.map((item: unknown) => maskSensitiveData(item));
   }
 
-  const masked = { ...data };
+  const masked = { ...(data as Record<string, unknown>) };
   for (const key of Object.keys(masked)) {
     if (SENSITIVE_KEYS.some((k) => key.toLowerCase().includes(k.toLowerCase()))) {
       masked[key] = '******';
@@ -73,6 +73,10 @@ export const requestLogger = (req: Request, res: Response, next: NextFunction): 
       if (res.statusCode) {
         try {
           const username = req.user?.username || 'anonymous';
+          // Filter out anonymous requests that are not login attempts (e.g. network attacks)
+          if (username === 'anonymous' && req.originalUrl !== '/api/auth/login') {
+            return;
+          }
 
           let bodyToLog = null;
           if (req.body) {

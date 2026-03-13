@@ -1,4 +1,4 @@
-export type AnalysisType = "inbound" | "outbound";
+export type AnalysisType = 'inbound' | 'outbound';
 
 export interface AnalysisSummary {
   normal_amount: number;

@@ -103,8 +103,9 @@ class InvoiceCacheService {
 
       this.saveCache();
       return invoicedRecords;
-    } catch (err: any) {
-      logger.error(`Failed to refresh invoice cache for customer ${customer_code}: ${err.message}`);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      logger.error(`Failed to refresh invoice cache for customer ${customer_code}: ${message}`);
       throw err;
     }
   }
@@ -151,8 +152,9 @@ class InvoiceCacheService {
 
       this.saveCache();
       return invoicedRecords;
-    } catch (err: any) {
-      logger.error(`Failed to refresh invoice cache for supplier ${supplier_code}: ${err.message}`);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      logger.error(`Failed to refresh invoice cache for supplier ${supplier_code}: ${message}`);
       throw err;
     }
   }

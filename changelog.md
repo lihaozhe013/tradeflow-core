@@ -1,5 +1,9 @@
 # Change Log
 
+## v0.7.2
+
+- Remove redundent code, simplify the error handling
+
 ## v0.7.1
 
 - Add Inventory Ledger table, support FIFO inventory valuation method to compute the accurate inventory value.
