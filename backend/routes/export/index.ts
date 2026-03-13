@@ -1,4 +1,5 @@
 import { Router, Request, Response } from "express";
+import { logger } from "@/utils/logger";
 import * as ExportService from "@/routes/export/utils";
 import {
   BasicDataFilters,
@@ -174,22 +175,31 @@ router.post("/advanced-analysis", async (req: Request, res: Response) => {
     endDate: string;
   };
 
-  const buffer = await ExportService.exportAdvancedAnalysis({
-    exportType,
-    startDate,
-    endDate,
-  });
-  const filename = ExportService.generateFilename(`${exportType}-analysis`);
+  try {
+    logger.info(`[Export] Starting advanced analysis export`, { exportType, startDate, endDate });
 
-   res.setHeader(
-    "Content-Type",
-    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-  );
-  res.setHeader(
-    "Content-Disposition",
-    `attachment; filename="${encodeURIComponent(filename)}"`,
-  );
-  res.send(buffer);
+    const buffer = await ExportService.exportAdvancedAnalysis({
+      exportType,
+      startDate,
+      endDate,
+    });
+    const filename = ExportService.generateFilename(`${exportType}-analysis`);
+
+    logger.info(`[Export] Advanced analysis export successful`, { filename, size: buffer.length });
+
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    );
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${encodeURIComponent(filename)}"`,
+    );
+    res.send(buffer);
+  } catch (error: any) {
+    logger.error(`[Export] Advanced analysis export failed`, { error: error.message, stack: error.stack });
+    res.status(500).json({ success: false, message: "Export processing failed: " + error.message });
+  }
 });
 
 // Get export service status

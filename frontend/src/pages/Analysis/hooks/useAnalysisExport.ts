@@ -80,7 +80,7 @@ export const useAnalysisExport = () => {
         type: analysisType
       };
 
-      const blob = await (apiInstance as any).postBlob('/export/analysis/advanced', requestBody);
+      const blob = await (apiInstance as any).postBlob('/export/advanced-analysis', requestBody);
 
       const defaultFilename = `Advanced_Export_${analysisType}_${exportType}.xlsx`;
       downloadFile(blob, defaultFilename);
