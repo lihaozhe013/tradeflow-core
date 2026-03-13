@@ -1,120 +1,118 @@
-import { Prisma } from '@prisma/client';
-import { prisma } from '@/prismaClient';
-import decimalCalc from '@/utils/decimalCalculator';
+import { Prisma } from "@prisma/client";
+import { prisma } from "@/prismaClient";
+import decimalCalc from "@/utils/decimalCalculator";
+import {
+  ReceivablePayableFilters as PayableFilters,
+  PayablePaymentDto,
+  PayableSummaryDto,
+  InboundRecordDto,
+} from "./types";
 
-export default class PayableQueries {
-  async getPayableSummary(filters: any = {}): Promise<any[]> {
-    try {
-      const conditions: Prisma.Sql[] = [Prisma.sql`1=1`];
+export async function getPayableSummary(
+  filters: PayableFilters = {},
+): Promise<PayableSummaryDto[]> {
+  const conditions: Prisma.Sql[] = [Prisma.sql`1=1`];
 
-      if (filters.outboundFrom) {
-        conditions.push(Prisma.sql`i.inbound_date >= ${filters.outboundFrom}`);
-      }
-      if (filters.outboundTo) {
-        conditions.push(Prisma.sql`i.inbound_date <= ${filters.outboundTo}`);
-      }
-      if (filters.paymentFrom) {
-        conditions.push(Prisma.sql`(p.pay_date IS NULL OR p.pay_date >= ${filters.paymentFrom})`);
-      }
-      if (filters.paymentTo) {
-        conditions.push(Prisma.sql`(p.pay_date IS NULL OR p.pay_date <= ${filters.paymentTo})`);
-      }
+  if (filters.outboundFrom) {
+    conditions.push(Prisma.sql`i.inbound_date >= ${filters.outboundFrom}`);
+  }
+  if (filters.outboundTo) {
+    conditions.push(Prisma.sql`i.inbound_date <= ${filters.outboundTo}`);
+  }
+  if (filters.paymentFrom) {
+    conditions.push(
+      Prisma.sql`(p.pay_date IS NULL OR p.pay_date >= ${filters.paymentFrom})`,
+    );
+  }
+  if (filters.paymentTo) {
+    conditions.push(
+      Prisma.sql`(p.pay_date IS NULL OR p.pay_date <= ${filters.paymentTo})`,
+    );
+  }
 
-      const sql = Prisma.sql`
+  const sql = Prisma.sql`
         SELECT 
           i.supplier_code,
           i.supplier_short_name,
           i.supplier_full_name,
-          COALESCE(SUM(i.total_price), 0) as total_purchases,
+          COALESCE(SUM(i.total_price), 0) as total_purchase,
           COALESCE(SUM(p.amount), 0) as total_payments,
           COALESCE(SUM(i.total_price), 0) - COALESCE(SUM(p.amount), 0) as balance
         FROM inbound_records i
         LEFT JOIN payable_payments p ON i.supplier_code = p.supplier_code
-        WHERE ${Prisma.join(conditions, ' AND ')}
+        WHERE ${Prisma.join(conditions, " AND ")}
         GROUP BY i.supplier_code, i.supplier_short_name, i.supplier_full_name
         ORDER BY balance DESC
       `;
 
-      const rows = await prisma.$queryRaw<any[]>(sql);
+  type PayableSummaryRow = {
+    supplier_code: string;
+    supplier_short_name: string;
+    supplier_full_name: string;
+    total_purchase: number | string | null | bigint;
+    total_payments: number | string | null | bigint;
+  };
+  const rows = await prisma.$queryRaw<PayableSummaryRow[]>(sql);
 
-      const processed = rows.map((row) => {
-        const totalPurchases = decimalCalc.fromSqlResult(row.total_purchases, 0);
-        const totalPayments = decimalCalc.fromSqlResult(row.total_payments, 0);
-        const balance = decimalCalc.calculateBalance(totalPurchases, totalPayments);
-        return {
-          ...row,
-          total_purchases: totalPurchases,
-          total_payments: totalPayments,
-          balance,
-        };
-      });
-      return processed;
-    } catch (error) {
-      console.log('Error in getPayableSummary:', error);
-      throw error;
-    }
+  return rows.map((row) => {
+    const totalPurchase = decimalCalc.fromSqlResult(row.total_purchase, 0);
+    const totalPayments = decimalCalc.fromSqlResult(row.total_payments, 0);
+    const balance = decimalCalc.calculateBalance(totalPurchase, totalPayments);
+    return {
+      supplier_code: row.supplier_code,
+      supplier_short_name: row.supplier_short_name,
+      supplier_full_name: row.supplier_full_name,
+      total_purchase: totalPurchase,
+      total_payments: totalPayments,
+      balance,
+    };
+  });
+}
+
+export async function getPayableDetails(
+  filters: PayableFilters = {},
+): Promise<(InboundRecordDto & { record_id: number })[]> {
+  const where: Prisma.InboundRecordWhereInput = {};
+  const dateConditions: Prisma.StringFilter = {};
+
+  if (filters.outboundFrom) {
+    dateConditions.gte = filters.outboundFrom;
+  }
+  if (filters.outboundTo) {
+    dateConditions.lte = filters.outboundTo;
   }
 
-  async getPayableDetails(filters: any = {}): Promise<any[]> {
-    try {
-      const where: any = {};
-      if (filters.outboundFrom) {
-        where.inbound_date = { ...where.inbound_date, gte: filters.outboundFrom };
-      }
-      if (filters.outboundTo) {
-        where.inbound_date = { ...where.inbound_date, lte: filters.outboundTo };
-      }
-
-      const rows = await prisma.inboundRecord.findMany({
-        where,
-        select: {
-          id: true,
-          supplier_code: true,
-          supplier_short_name: true,
-          product_model: true,
-          total_price: true,
-          inbound_date: true,
-          remark: true,
-        },
-        orderBy: [{ inbound_date: 'desc' }, { id: 'desc' }],
-      });
-
-      // Map 'id' to 'record_id' to match original return structure if strictly needed,
-      // but usually standardizing on 'id' is better. However, let's preserve compat.
-      return rows.map((r) => ({ ...r, record_id: r.id }));
-    } catch (error) {
-      console.log('Error in getPayableDetails:', error);
-      throw error;
-    }
+  if (Object.keys(dateConditions).length > 0) {
+    where.inbound_date = dateConditions;
   }
 
-  async getPayablePayments(filters: any = {}): Promise<any[]> {
-    try {
-      const where: any = {};
-      if (filters.paymentFrom) {
-        where.pay_date = { ...where.pay_date, gte: filters.paymentFrom };
-      }
-      if (filters.paymentTo) {
-        where.pay_date = { ...where.pay_date, lte: filters.paymentTo };
-      }
+  const rows = await prisma.inboundRecord.findMany({
+    where,
+    orderBy: [{ inbound_date: "desc" }, { id: "desc" }],
+  });
 
-      const rows = await prisma.payablePayment.findMany({
-        where,
-        select: {
-          id: true,
-          supplier_code: true,
-          amount: true,
-          pay_date: true,
-          pay_method: true,
-          remark: true,
-        },
-        orderBy: [{ pay_date: 'desc' }, { id: 'desc' }],
-      });
+  return rows.map((r) => ({ ...r, record_id: r.id }));
+}
 
-      return rows;
-    } catch (error) {
-      console.log('Error in getPayablePayments:', error);
-      throw error;
-    }
+export async function getPayablePayments(
+  filters: PayableFilters = {},
+): Promise<PayablePaymentDto[]> {
+  const where: Prisma.PayablePaymentWhereInput = {};
+  const dateConditions: Prisma.StringFilter = {};
+
+  if (filters.paymentFrom) {
+    dateConditions.gte = filters.paymentFrom;
   }
+  if (filters.paymentTo) {
+    dateConditions.lte = filters.paymentTo;
+  }
+
+  if (Object.keys(dateConditions).length > 0) {
+    where.pay_date = dateConditions;
+  }
+
+  return await prisma.payablePayment.findMany({
+    where,
+    orderBy: [{ pay_date: "desc" }, { id: "desc" }],
+  });
 }

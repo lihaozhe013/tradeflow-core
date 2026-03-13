@@ -1,48 +1,48 @@
 import * as XLSX from 'xlsx';
 import ExportUtils from '@/routes/export/utils/exportUtils';
+import { TEMPLATES } from '@/routes/export/utils/exportTemplates';
+import { InboundOutboundData, TransactionFilters } from './types';
 
-export default class TransactionExporter {
-  private templates: any;
-  constructor(templates: any) {
-    this.templates = templates;
-  }
+export function generateTransactionExcel(
+  data: InboundOutboundData,
+  options: TransactionFilters,
+): Buffer {
+  const workbook = XLSX.utils.book_new();
 
-  exportInboundOutbound(data: any, options: any = {}): Buffer {
-    const workbook = XLSX.utils.book_new();
-    if (options.tables?.includes('1') && data.inbound) {
-      const worksheet = ExportUtils.createWorksheet(data.inbound, this.templates.inbound);
-      XLSX.utils.book_append_sheet(workbook, worksheet, this.templates.inbound.sheetName);
-    }
-    if (options.tables?.includes('2') && data.outbound) {
-      const worksheet = ExportUtils.createWorksheet(data.outbound, this.templates.outbound);
-      XLSX.utils.book_append_sheet(workbook, worksheet, this.templates.outbound.sheetName);
-    }
-    return XLSX.write(workbook, {
-      type: 'buffer',
-      bookType: 'xlsx',
-    }) as unknown as Buffer;
+  if (options.tables?.includes('1') && data.inbound) {
+    const template = TEMPLATES.inbound;
+    const worksheet = ExportUtils.createWorksheet(data.inbound, template);
+    XLSX.utils.book_append_sheet(workbook, worksheet, template.sheetName);
   }
+  if (options.tables?.includes('2') && data.outbound) {
+    const template = TEMPLATES.outbound;
+    const worksheet = ExportUtils.createWorksheet(data.outbound, template);
+    XLSX.utils.book_append_sheet(workbook, worksheet, template.sheetName);
+  }
+  return XLSX.write(workbook, {
+    type: 'buffer',
+    bookType: 'xlsx',
+  }) as unknown as Buffer;
+}
 
-  exportStatement(data: any, options: any = {}): Buffer {
-    const workbook = XLSX.utils.book_new();
-    if (options.tables?.includes('1') && data.inbound) {
-      const worksheet = ExportUtils.createWorksheet(data.inbound, this.templates.inbound_statement);
-      XLSX.utils.book_append_sheet(workbook, worksheet, this.templates.inbound_statement.sheetName);
-    }
-    if (options.tables?.includes('2') && data.outbound) {
-      const worksheet = ExportUtils.createWorksheet(
-        data.outbound,
-        this.templates.outbound_statement,
-      );
-      XLSX.utils.book_append_sheet(
-        workbook,
-        worksheet,
-        this.templates.outbound_statement.sheetName,
-      );
-    }
-    return XLSX.write(workbook, {
-      type: 'buffer',
-      bookType: 'xlsx',
-    }) as unknown as Buffer;
+export function generateStatementExcel(
+  data: InboundOutboundData,
+  options: TransactionFilters,
+): Buffer {
+  const workbook = XLSX.utils.book_new();
+
+  if (options.tables?.includes('1') && data.inbound) {
+    const template = TEMPLATES.inbound_statement;
+    const worksheet = ExportUtils.createWorksheet(data.inbound, template);
+    XLSX.utils.book_append_sheet(workbook, worksheet, template.sheetName);
   }
+  if (options.tables?.includes('2') && data.outbound) {
+    const template = TEMPLATES.outbound_statement;
+    const worksheet = ExportUtils.createWorksheet(data.outbound, template);
+    XLSX.utils.book_append_sheet(workbook, worksheet, template.sheetName);
+  }
+  return XLSX.write(workbook, {
+    type: 'buffer',
+    bookType: 'xlsx',
+  }) as unknown as Buffer;
 }
