@@ -1,6 +1,6 @@
 import { prisma } from '@/prismaClient';
 import decimalCalc from '@/utils/decimalCalculator';
-import { AnalysisCustomerData, AnalysisProductData, AnalysisRecord } from './types';
+import { AnalysisCustomerData, AnalysisProductData, AnalysisRecord } from '@/routes/export/utils/types';
 
 interface Batch {
   quantity_remaining: number;

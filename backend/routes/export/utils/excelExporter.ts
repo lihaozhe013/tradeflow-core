@@ -5,9 +5,9 @@ import {
   InvoiceFilters,
   AnalysisExportOptions,
 } from "./types";
-import { getBaseInfoData } from "./basicDataQueries";
-import { generateBaseInfoExcel } from "./baseInfoExporter";
-import { getInboundOutboundData } from "./transactionQueries";
+import { getBaseInfoData } from "@/routes/export/utils/basicDataQueries";
+import { generateBaseInfoExcel } from "@/routes/export/utils/baseInfoExporter";
+import { getInboundOutboundData } from "@/routes/export/utils/transactionQueries";
 import {
   generateTransactionExcel,
   generateStatementExcel,

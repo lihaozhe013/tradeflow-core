@@ -1,5 +1,5 @@
 import { prisma } from "@/prismaClient";
-import { BaseInfoData, PartnerDto, PriceDto, ProductDto } from "./types";
+import { BaseInfoData, PartnerDto, PriceDto, ProductDto } from "@/routes/export/utils/types";
 
 export async function getBaseInfoData(
   tables: string = "123",

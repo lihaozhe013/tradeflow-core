@@ -2,7 +2,7 @@ import * as XLSX from 'xlsx';
 import ExportUtils, { ExportTemplate } from '@/routes/export/utils/exportUtils';
 import { TEMPLATES } from '@/routes/export/utils/exportTemplates';
 import { currency_unit_symbol } from '@/utils/paths';
-import { AnalysisExportOptions } from './types';
+import { AnalysisExportOptions } from '@/routes/export/utils/types';
 
 /**
  * Format currency value for display

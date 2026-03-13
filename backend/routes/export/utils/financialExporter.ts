@@ -1,7 +1,7 @@
 import * as XLSX from "xlsx";
 import ExportUtils from "@/routes/export/utils/exportUtils";
 import { TEMPLATES } from "@/routes/export/utils/exportTemplates";
-import { ReceivablePayableData } from "./types";
+import { ReceivablePayableData } from "@/routes/export/utils/types";
 
 export function generateFinancialExcel(data: ReceivablePayableData): Buffer {
   const workbook = XLSX.utils.book_new();

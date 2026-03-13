@@ -1,7 +1,7 @@
 import * as XLSX from "xlsx";
 import ExportUtils from "@/routes/export/utils/exportUtils";
 import { TEMPLATES } from "@/routes/export/utils/exportTemplates";
-import { InvoiceItemDto } from "./types";
+import { InvoiceItemDto } from "@/routes/export/utils/types";
 
 export function generateInvoiceExcel(data: InvoiceItemDto[]): Buffer {
   const template = TEMPLATES.invoice;

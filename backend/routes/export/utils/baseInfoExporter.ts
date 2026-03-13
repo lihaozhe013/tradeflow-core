@@ -1,7 +1,7 @@
 import * as XLSX from "xlsx";
 import ExportUtils from "@/routes/export/utils/exportUtils";
 import { TEMPLATES } from "@/routes/export/utils/exportTemplates";
-import { BaseInfoData, BasicDataFilters } from "./types";
+import { BaseInfoData, BasicDataFilters } from "@/routes/export/utils/types";
 
 export function generateBaseInfoExcel(
   data: BaseInfoData,

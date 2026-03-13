@@ -5,7 +5,7 @@ import {
   InboundRecordDto,
   OutboundRecordDto,
   TransactionFilters,
-} from "./types";
+} from "@/routes/export/utils/types";
 
 export async function getInboundOutboundData(
   filters: TransactionFilters = {},

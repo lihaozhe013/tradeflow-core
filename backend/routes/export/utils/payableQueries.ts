@@ -6,7 +6,7 @@ import {
   PayablePaymentDto,
   PayableSummaryDto,
   InboundRecordDto,
-} from "./types";
+} from "@/routes/export/utils/types";
 
 export async function getPayableSummary(
   filters: PayableFilters = {},

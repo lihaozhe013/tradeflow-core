@@ -6,7 +6,7 @@ import {
   ReceivablePaymentDto,
   ReceivableSummaryDto,
   OutboundRecordDto,
-} from "./types";
+} from "@/routes/export/utils/types";
 
 export async function getReceivableSummary(
   filters: ReceivableFilters = {},
