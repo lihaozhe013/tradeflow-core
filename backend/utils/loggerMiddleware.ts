@@ -73,6 +73,10 @@ export const requestLogger = (req: Request, res: Response, next: NextFunction): 
       if (res.statusCode) {
         try {
           const username = req.user?.username || 'anonymous';
+          // Filter out anonymous requests that are not login attempts (e.g. network attacks)
+          if (username === 'anonymous' && req.originalUrl !== '/api/auth/login') {
+            return;
+          }
 
           let bodyToLog = null;
           if (req.body) {
