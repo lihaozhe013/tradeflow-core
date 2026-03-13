@@ -1,7 +1,6 @@
 import { PrismaClient, Prisma } from '@prisma/client';
-
 import { PrismaPg } from '@prisma/adapter-pg';
-import pg from 'pg';
+import { Pool } from 'pg';
 import { config } from "@/utils/paths";
 import { logger } from "@/utils/logger";
 
@@ -13,8 +12,6 @@ function getDatabaseConfig() {
 
 function createPrismaClient() {
   const dbConfig = getDatabaseConfig();
-  
-  // Default to nothing if not postgres, or throw
   const { user, password, host, port, dbName, maxConnections } = dbConfig;
   const connectionString = `postgresql://${user}:${password}@${host}:${port}/${dbName}`;
   
@@ -25,12 +22,15 @@ function createPrismaClient() {
   // If provided in config, use that value.
   const poolMax = maxConnections ? Number(maxConnections) : 5;
 
-  const pool = new pg.Pool({ 
+  const pool = new Pool({ 
     connectionString,
     max: poolMax,
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 5000,
   });
+  
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-expect-error
   const adapter = new PrismaPg(pool);
 
   const log: Prisma.LogLevel[] = process.env['NODE_ENV'] === 'development' 
