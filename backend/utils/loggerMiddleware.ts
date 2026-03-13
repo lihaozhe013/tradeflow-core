@@ -35,15 +35,15 @@ function shouldSkipLogging(req: Request): boolean {
   return false;
 }
 
-function maskSensitiveData(data: any): any {
+function maskSensitiveData(data: unknown): unknown {
   if (!data) return data;
   if (typeof data !== 'object') return data;
 
   if (Array.isArray(data)) {
-    return data.map((item) => maskSensitiveData(item));
+    return data.map((item: unknown) => maskSensitiveData(item));
   }
 
-  const masked = { ...data };
+  const masked = { ...(data as Record<string, unknown>) };
   for (const key of Object.keys(masked)) {
     if (SENSITIVE_KEYS.some((k) => key.toLowerCase().includes(k.toLowerCase()))) {
       masked[key] = '******';

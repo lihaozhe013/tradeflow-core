@@ -63,7 +63,7 @@ export async function generateAdvancedAnalysisExcel(
   const workbook = XLSX.utils.book_new();
 
   if (exportType === "customer") {
-    const customerData = await getCustomerAnalysisData(startDate, endDate);
+    const customerData = await getCustomerAnalysisData(startDate || "", endDate || "");
     const summaryLabels = TEMPLATES.analysis_customer_summary.labels || {};
     const detailLabels = TEMPLATES.analysis_customer_detail.labels || {};
 
@@ -130,7 +130,7 @@ export async function generateAdvancedAnalysisExcel(
     }
   } else {
     // Product export
-    const productData = await getProductAnalysisData(startDate, endDate);
+    const productData = await getProductAnalysisData(startDate || "", endDate || "");
     const summaryLabels = TEMPLATES.analysis_product_summary.labels || {};
     const detailLabels = TEMPLATES.analysis_product_detail.labels || {};
 

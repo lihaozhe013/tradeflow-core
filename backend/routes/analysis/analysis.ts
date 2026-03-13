@@ -124,7 +124,7 @@ router.post('/refresh', async (req: Request, res: Response) => {
   }
 
   // Helper to save result and respond
-  const saveAndRespond = (data: any, detailData: DetailItem[]) => {
+  const saveAndRespond = (data: Record<string, unknown>, detailData: DetailItem[]) => {
     const cacheKey = generateCacheKey(
       start_date!,
       end_date!,

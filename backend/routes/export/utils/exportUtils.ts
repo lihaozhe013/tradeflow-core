@@ -23,16 +23,24 @@ export function generateFilename(exportType: string): string {
 /**
  * Create worksheet using template configuration
  */
-export function createWorksheet(data: Record<string, unknown>[], template: ExportTemplate) {
+export function createWorksheet(data: unknown[], template: ExportTemplate) {
   // Create headers
   const headers = template.columns.map((col) => col.label);
   const dataRows = data.map((item) =>
     template.columns.map((col) => {
+      const row = item as Record<string, unknown>;
       // Handle nested properties if key contains dot
       if (col.key.includes(".")) {
-        return col.key.split(".").reduce((obj, key) => obj?.[key], item) ?? "";
+        return (
+          col.key
+            .split(".")
+            .reduce<unknown>(
+              (obj, key) => (obj as Record<string, unknown>)?.[key],
+              row,
+            ) ?? ""
+        );
       }
-      return item[col.key] ?? "";
+      return row[col.key] ?? "";
     }),
   );
 

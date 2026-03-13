@@ -65,7 +65,7 @@ async function main() {
       'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'production'),
     },
   });
-  console.log('esbuild: backend bundled ->', path.relative(process.cwd(), outfile));
+  console.info('esbuild: backend bundled ->', path.relative(process.cwd(), outfile));
 }
 
 main().catch((err) => {

@@ -27,7 +27,6 @@ import { generateAnalysisExcel } from "./analysisExporter";
 import { generateAdvancedAnalysisExcel } from "./advancedAnalysisExporter";
 import { getInvoiceData } from "./invoiceQueries";
 import { generateInvoiceExcel } from "./invoiceExporter";
-import ExportUtils from "./exportUtils";
 
 export async function exportBaseInfo(
   options: BasicDataFilters = {},
@@ -106,9 +105,5 @@ export async function exportInvoice(
     dateTo,
   });
   return generateInvoiceExcel(data);
-}
-
-export function generateFilename(exportType: string) {
-  return ExportUtils.generateFilename(exportType);
 }
 

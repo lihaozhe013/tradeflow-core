@@ -81,42 +81,37 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     LIMIT ${Number(limit)} OFFSET ${offset}
   `;
 
-  try {
-    const rows = await prisma.$queryRawUnsafe<PayableRow[]>(sql);
+  const rows = await prisma.$queryRawUnsafe<PayableRow[]>(sql);
 
-    const processedRows = rows.map((row) => {
-      const totalPayable = decimalCalc.fromSqlResult(row.total_payable, 0);
-      const totalPaid = decimalCalc.fromSqlResult(row.total_paid, 0);
-      const balance = decimalCalc.calculateBalance(totalPayable, totalPaid);
+  const processedRows = rows.map((row) => {
+    const totalPayable = decimalCalc.fromSqlResult(row.total_payable, 0);
+    const totalPaid = decimalCalc.fromSqlResult(row.total_paid, 0);
+    const balance = decimalCalc.calculateBalance(totalPayable, totalPaid);
 
-      // Convert BigInt to Number for payment_count
-      const paymentCount = row.payment_count ? Number(row.payment_count) : 0;
+    // Convert BigInt to Number for payment_count
+    const paymentCount = row.payment_count ? Number(row.payment_count) : 0;
 
-      return {
-        ...row,
-        total_payable: totalPayable,
-        total_paid: totalPaid,
-        balance: balance,
-        payment_count: paymentCount,
-      };
-    });
+    return {
+      ...row,
+      total_payable: totalPayable,
+      total_paid: totalPaid,
+      balance: balance,
+      payment_count: paymentCount,
+    };
+  });
 
-    const where: Prisma.PartnerWhereInput = { type: 0 };
-    if (supplier_short_name) {
-      where.short_name = { contains: supplier_short_name as string };
-    }
-    const total = await prisma.partner.count({ where });
-
-    res.json({
-      data: processedRows,
-      total: total,
-      page: Number(page),
-      limit: Number(limit),
-    });
-  } catch (err) {
-    const error = err as Error;
-    res.status(500).json({ error: error.message });
+  const where: Prisma.PartnerWhereInput = { type: 0 };
+  if (supplier_short_name) {
+    where.short_name = { contains: supplier_short_name as string };
   }
+  const total = await prisma.partner.count({ where });
+
+  res.json({
+    data: processedRows,
+    total: total,
+    page: Number(page),
+    limit: Number(limit),
+  });
 });
 
 /**
@@ -128,27 +123,22 @@ router.get('/payments/:supplier_code', async (req: Request, res: Response): Prom
 
   const skip = (Number(page) - 1) * Number(limit);
 
-  try {
-    const [rows, total] = await prisma.$transaction([
-      prisma.payablePayment.findMany({
-        where: { supplier_code },
-        orderBy: { pay_date: 'desc' },
-        skip,
-        take: Number(limit),
-      }),
-      prisma.payablePayment.count({ where: { supplier_code } }),
-    ]);
+  const [rows, total] = await prisma.$transaction([
+    prisma.payablePayment.findMany({
+      where: { supplier_code },
+      orderBy: { pay_date: 'desc' },
+      skip,
+      take: Number(limit),
+    }),
+    prisma.payablePayment.count({ where: { supplier_code } }),
+  ]);
 
-    res.json({
-      data: rows,
-      total,
-      page: Number(page),
-      limit: Number(limit),
-    });
-  } catch (err) {
-    const error = err as Error;
-    res.status(500).json({ error: error.message });
-  }
+  res.json({
+    data: rows,
+    total,
+    page: Number(page),
+    limit: Number(limit),
+  });
 });
 
 /**
@@ -164,21 +154,16 @@ router.post('/payments', async (req: Request, res: Response): Promise<void> => {
     return;
   }
 
-  try {
-    const result = await prisma.payablePayment.create({
-      data: {
-        supplier_code,
-        amount,
-        pay_date,
-        pay_method: pay_method || '',
-        remark: remark || '',
-      },
-    });
-    res.json({ id: result.id, message: 'Payment record created!' });
-  } catch (err) {
-    const error = err as Error;
-    res.status(500).json({ error: error.message });
-  }
+  const result = await prisma.payablePayment.create({
+    data: {
+      supplier_code,
+      amount,
+      pay_date,
+      pay_method: pay_method || '',
+      remark: remark || '',
+    },
+  });
+  res.json({ id: result.id, message: 'Payment record created!' });
 });
 
 /**
@@ -195,47 +180,27 @@ router.put('/payments/:id', async (req: Request, res: Response): Promise<void> =
     return;
   }
 
-  try {
-    await prisma.payablePayment.update({
-      where: { id },
-      data: {
-        supplier_code,
-        amount,
-        pay_date,
-        pay_method: pay_method || '',
-        remark: remark || '',
-      },
-    });
+  await prisma.payablePayment.update({
+    where: { id },
+    data: {
+      supplier_code,
+      amount,
+      pay_date,
+      pay_method: pay_method || '',
+      remark: remark || '',
+    },
+  });
 
-    res.json({ message: 'Payment record updated!' });
-  } catch (err) {
-    const error = err as Error;
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
-      res.status(404).json({ error: 'Payement record dne' });
-      return;
-    }
-    res.status(500).json({ error: error.message });
-  }
+  res.json({ message: 'Payment record updated!' });
 });
 
 /**
  * DELETE /api/payable/payments/:id
  */
 router.delete('/payments/:id', async (req: Request, res: Response): Promise<void> => {
-  try {
-    const id = Number(req.params['id']);
-
-    await prisma.payablePayment.delete({ where: { id } });
-
-    res.json({ message: 'Payment record deleted!' });
-  } catch (err) {
-    const error = err as Error;
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
-      res.status(404).json({ error: 'Payment record dne' });
-      return;
-    }
-    res.status(500).json({ error: error.message });
-  }
+  const id = Number(req.params['id']);
+  await prisma.payablePayment.delete({ where: { id } });
+  res.json({ message: 'Payment record deleted!' });
 });
 
 /**
@@ -245,73 +210,68 @@ router.get('/details/:supplier_code', async (req: Request, res: Response): Promi
   const supplier_code = req.params['supplier_code'] as string;
   const { inbound_page = 1, inbound_limit = 10, payment_page = 1, payment_limit = 10 } = req.query;
 
-  try {
-    const supplier = await prisma.partner.findFirst({
-      where: { code: supplier_code, type: 0 },
-    });
+  const supplier = await prisma.partner.findFirst({
+    where: { code: supplier_code, type: 0 },
+  });
 
-    if (!supplier) {
-      res.status(404).json({ error: 'Supplier dne' });
-      return;
-    }
-
-    const inboundSkip = (Number(inbound_page) - 1) * Number(inbound_limit);
-    const paymentSkip = (Number(payment_page) - 1) * Number(payment_limit);
-
-    const [inboundRecords, inboundCount, paymentRecords, paymentCount, inboundAgg, paymentAgg] =
-      await Promise.all([
-        prisma.inboundRecord.findMany({
-          where: { supplier_code },
-          orderBy: { inbound_date: 'desc' },
-          skip: inboundSkip,
-          take: Number(inbound_limit),
-        }),
-        prisma.inboundRecord.count({ where: { supplier_code } }),
-        prisma.payablePayment.findMany({
-          where: { supplier_code },
-          orderBy: { pay_date: 'desc' },
-          skip: paymentSkip,
-          take: Number(payment_limit),
-        }),
-        prisma.payablePayment.count({ where: { supplier_code } }),
-        prisma.inboundRecord.aggregate({
-          where: { supplier_code },
-          _sum: { total_price: true },
-        }),
-        prisma.payablePayment.aggregate({
-          where: { supplier_code },
-          _sum: { amount: true },
-        }),
-      ]);
-
-    const totalPayable = decimalCalc.fromSqlResult(inboundAgg._sum?.total_price || 0, 0);
-    const totalPaid = decimalCalc.fromSqlResult(paymentAgg._sum?.amount || 0, 0);
-    const balance = decimalCalc.calculateBalance(totalPayable, totalPaid);
-
-    res.json({
-      supplier,
-      summary: {
-        total_payable: totalPayable,
-        total_paid: totalPaid,
-        balance: balance,
-      },
-      inbound_records: {
-        data: inboundRecords,
-        total: inboundCount,
-        page: Number(inbound_page),
-        limit: Number(inbound_limit),
-      },
-      payment_records: {
-        data: paymentRecords,
-        total: paymentCount,
-        page: Number(payment_page),
-        limit: Number(payment_limit),
-      },
-    });
-  } catch (err) {
-    const error = err as Error;
-    res.status(500).json({ error: error.message });
+  if (!supplier) {
+    res.status(404).json({ error: 'Supplier dne' });
+    return;
   }
+
+  const inboundSkip = (Number(inbound_page) - 1) * Number(inbound_limit);
+  const paymentSkip = (Number(payment_page) - 1) * Number(payment_limit);
+
+  const [inboundRecords, inboundCount, paymentRecords, paymentCount, inboundAgg, paymentAgg] =
+    await Promise.all([
+      prisma.inboundRecord.findMany({
+        where: { supplier_code },
+        orderBy: { inbound_date: 'desc' },
+        skip: inboundSkip,
+        take: Number(inbound_limit),
+      }),
+      prisma.inboundRecord.count({ where: { supplier_code } }),
+      prisma.payablePayment.findMany({
+        where: { supplier_code },
+        orderBy: { pay_date: 'desc' },
+        skip: paymentSkip,
+        take: Number(payment_limit),
+      }),
+      prisma.payablePayment.count({ where: { supplier_code } }),
+      prisma.inboundRecord.aggregate({
+        where: { supplier_code },
+        _sum: { total_price: true },
+      }),
+      prisma.payablePayment.aggregate({
+        where: { supplier_code },
+        _sum: { amount: true },
+      }),
+    ]);
+
+  const totalPayable = decimalCalc.fromSqlResult(inboundAgg._sum?.total_price || 0, 0);
+  const totalPaid = decimalCalc.fromSqlResult(paymentAgg._sum?.amount || 0, 0);
+  const balance = decimalCalc.calculateBalance(totalPayable, totalPaid);
+
+  res.json({
+    supplier,
+    summary: {
+      total_payable: totalPayable,
+      total_paid: totalPaid,
+      balance: balance,
+    },
+    inbound_records: {
+      data: inboundRecords,
+      total: inboundCount,
+      page: Number(inbound_page),
+      limit: Number(inbound_limit),
+    },
+    payment_records: {
+      data: paymentRecords,
+      total: paymentCount,
+      page: Number(payment_page),
+      limit: Number(payment_limit),
+    },
+  });
 });
 
 /**
@@ -324,32 +284,27 @@ router.get('/uninvoiced/:supplier_code', async (req: Request, res: Response): Pr
 
   const skip = (Number(page) - 1) * Number(limit);
 
-  try {
-    const where: Prisma.InboundRecordWhereInput = {
-      supplier_code,
-      OR: [{ invoice_number: null }, { invoice_number: '' }],
-    };
+  const where: Prisma.InboundRecordWhereInput = {
+    supplier_code,
+    OR: [{ invoice_number: null }, { invoice_number: '' }],
+  };
 
-    const [rows, total] = await prisma.$transaction([
-      prisma.inboundRecord.findMany({
-        where,
-        orderBy: { inbound_date: 'desc' },
-        skip,
-        take: Number(limit),
-      }),
-      prisma.inboundRecord.count({ where }),
-    ]);
+  const [rows, total] = await prisma.$transaction([
+    prisma.inboundRecord.findMany({
+      where,
+      orderBy: { inbound_date: 'desc' },
+      skip,
+      take: Number(limit),
+    }),
+    prisma.inboundRecord.count({ where }),
+  ]);
 
-    res.json({
-      data: rows,
-      total,
-      page: Number(page),
-      limit: Number(limit),
-    });
-  } catch (err) {
-    const error = err as Error;
-    res.status(500).json({ error: error.message });
-  }
+  res.json({
+    data: rows,
+    total,
+    page: Number(page),
+    limit: Number(limit),
+  });
 });
 
 /**
@@ -392,23 +347,15 @@ router.post(
   async (req: Request, res: Response): Promise<void> => {
     const supplier_code = req.params['supplier_code'] as string;
 
-    try {
-      const invoicedRecords = await invoiceCacheService.refreshSupplierCache(supplier_code);
-      const lastUpdated = invoiceCacheService.getLastUpdateTime(supplier_code);
+    const invoicedRecords = await invoiceCacheService.refreshSupplierCache(supplier_code);
+    const lastUpdated = invoiceCacheService.getLastUpdateTime(supplier_code);
 
-      res.json({
-        message: 'Invoice cache refreshed successfully',
-        total: invoicedRecords.length,
-        last_updated: lastUpdated,
-        data: invoicedRecords,
-      });
-    } catch (error) {
-      const err = error as Error;
-      res.status(500).json({
-        error: err.message,
-        message: 'Failed to refresh invoice cache',
-      });
-    }
+    res.json({
+      message: 'Invoice cache refreshed successfully',
+      total: invoicedRecords.length,
+      last_updated: lastUpdated,
+      data: invoicedRecords,
+    });
   },
 );
 

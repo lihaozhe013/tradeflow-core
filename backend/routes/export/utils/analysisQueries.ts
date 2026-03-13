@@ -69,8 +69,16 @@ async function calculateFIFOData(startDate: string, endDate: string): Promise<An
   const partnerCodeMap = new Map<string, { code: string; full_name: string }>();
   const partnerShortMap = new Map<string, { code: string; full_name: string }>();
   partners.forEach((p) => {
-    if (p.code) partnerCodeMap.set(p.code, { code: p.code, full_name: p.full_name });
-    if (p.short_name) partnerShortMap.set(p.short_name, { code: p.code, full_name: p.full_name });
+    if (p.code)
+      partnerCodeMap.set(p.code, {
+        code: p.code,
+        full_name: p.full_name || "",
+      });
+    if (p.short_name)
+      partnerShortMap.set(p.short_name, {
+        code: p.code || "",
+        full_name: p.full_name || "",
+      });
   });
 
   // 3. FIFO Simulation
@@ -117,6 +125,8 @@ async function calculateFIFOData(startDate: string, endDate: string): Promise<An
       if (batches.length === 0) break;
 
       const batch = batches[0];
+      if (!batch) break;
+
       const take = Math.min(batch.quantity_remaining, qtyToFulfill);
 
       if (isTarget && partner) {

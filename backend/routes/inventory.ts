@@ -51,9 +51,10 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
         pages: Math.ceil(total / limitNum),
       },
     });
-  } catch (err: any) {
-    logger.error(`Failed to get inventory: ${err.message}`);
-    res.status(500).json({ error: err.message });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    logger.error(`Failed to get inventory: ${message}`);
+    res.status(500).json({ error: message });
   }
 });
 
@@ -88,8 +89,9 @@ router.get('/total-cost-estimate', async (_req: Request, res: Response): Promise
       total_cost_estimate: decimalCalc.toDbNumber(totalCost, 2),
       last_updated: new Date().toISOString(),
     });
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    res.status(500).json({ error: message });
   }
 });
 
@@ -105,8 +107,9 @@ router.post('/refresh', async (_req: Request, res: Response): Promise<void> => {
       last_updated: new Date().toISOString(),
       products_count: result.products_count,
     });
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    res.status(500).json({ error: message });
   }
 });
 

@@ -33,7 +33,12 @@ export async function calculateSalesData(
     ${normalSalesWhere}
   `;
 
-  const result = await prisma.$queryRaw<any[]>(query);
+  interface SalesRow {
+    normal_sales: number | null;
+    special_expense: number | null;
+  }
+
+  const result = await prisma.$queryRaw<SalesRow[]>(query);
   const salesRow = result[0];
 
   const normalSales = decimalCalc.fromSqlResult(salesRow?.normal_sales, 0, 2);

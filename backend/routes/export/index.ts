@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-import * as ExportService from "@/routes/export/utils/excelExporter";
+import * as ExportService from "@/routes/export/utils";
 import {
   BasicDataFilters,
   TransactionFilters,

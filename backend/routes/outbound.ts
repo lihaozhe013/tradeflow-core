@@ -7,7 +7,7 @@ import { inventoryService } from '@/utils/inventoryService';
 
 const router: Router = express.Router();
 
-function isProvided(val: any): boolean {
+function isProvided(val: unknown): boolean {
   return !(
     val === undefined ||
     val === null ||
@@ -319,8 +319,8 @@ router.post('/batch', async (req: Request, res: Response): Promise<void> => {
           await inventoryService.onOutboundUpdate(oldRecord, result);
           completed++;
         }
-      } catch (e: any) {
-        if (e.code === 'P2025') notFound.push(recordId);
+      } catch (e: unknown) {
+        if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2025') notFound.push(recordId);
         else errors++;
       }
     }

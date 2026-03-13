@@ -185,47 +185,26 @@ router.put('/payments/:id', async (req: Request, res: Response): Promise<void> =
     return;
   }
 
-  try {
-    await prisma.receivablePayment.update({
-      where: { id },
-      data: {
-        customer_code,
-        amount,
-        pay_date,
-        pay_method: pay_method || '',
-        remark: remark || '',
-      },
-    });
-
-    res.json({ message: 'Payment record updated!' });
-  } catch (err) {
-    const error = err as Error;
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
-      res.status(404).json({ error: 'Payment records dne' });
-      return;
-    }
-    res.status(500).json({ error: error.message });
-  }
+  await prisma.receivablePayment.update({
+    where: { id },
+    data: {
+      customer_code,
+      amount,
+      pay_date,
+      pay_method: pay_method || '',
+      remark: remark || '',
+    },
+  });
+  res.json({ message: 'Payment record updated!' });
 });
 
 /**
  * DELETE /api/receivable/payments/:id
  */
 router.delete('/payments/:id', async (req: Request, res: Response): Promise<void> => {
-  try {
-    const id = Number(req.params['id']);
-
-    await prisma.receivablePayment.delete({ where: { id } });
-
-    res.json({ message: 'Payment record deleted!' });
-  } catch (err) {
-    const error = err as Error;
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
-      res.status(404).json({ error: 'Payment records dne' });
-      return;
-    }
-    res.status(500).json({ error: error.message });
-  }
+  const id = Number(req.params['id']);
+  await prisma.receivablePayment.delete({ where: { id } });
+  res.json({ message: 'Payment record deleted!' });
 });
 
 /**
@@ -376,24 +355,15 @@ router.post(
   '/invoices/refresh/:customer_code',
   async (req: Request, res: Response): Promise<void> => {
     const customer_code = req.params['customer_code'] as string;
+    const invoicedRecords = await invoiceCacheService.refreshCustomerCache(customer_code);
+    const lastUpdated = invoiceCacheService.getLastUpdateTime(customer_code);
 
-    try {
-      const invoicedRecords = await invoiceCacheService.refreshCustomerCache(customer_code);
-      const lastUpdated = invoiceCacheService.getLastUpdateTime(customer_code);
-
-      res.json({
-        message: 'Invoice cache refreshed successfully',
-        total: invoicedRecords.length,
-        last_updated: lastUpdated,
-        data: invoicedRecords,
-      });
-    } catch (error) {
-      const err = error as Error;
-      res.status(500).json({
-        error: err.message,
-        message: 'Failed to refresh invoice cache',
-      });
-    }
+    res.json({
+      message: 'Invoice cache refreshed successfully',
+      total: invoicedRecords.length,
+      last_updated: lastUpdated,
+      data: invoicedRecords,
+    });
   },
 );
 
