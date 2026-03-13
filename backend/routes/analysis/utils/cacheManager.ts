@@ -37,7 +37,9 @@ export function getCacheFilePath(): string {
 /**
  * Clear expired cache data (over 30 days)
  */
-export function cleanExpiredCache(cacheData: Record<string, CacheEntry>): Record<string, CacheEntry> {
+export function cleanExpiredCache(
+  cacheData: Record<string, CacheEntry>,
+): Record<string, CacheEntry> {
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
@@ -70,14 +72,9 @@ export function cleanExpiredCache(cacheData: Record<string, CacheEntry>): Record
 export function readCache(): Record<string, CacheEntry> {
   const cacheFile = getCacheFilePath();
   if (fs.existsSync(cacheFile)) {
-    try {
-      const json = fs.readFileSync(cacheFile, 'utf-8');
-      const cacheData = JSON.parse(json) as Record<string, CacheEntry>;
-      return cleanExpiredCache(cacheData);
-    } catch (e) {
-      console.error('Failed to read the analysis cache:', e);
-      return {};
-    }
+    const json = fs.readFileSync(cacheFile, 'utf-8');
+    const cacheData = JSON.parse(json) as Record<string, CacheEntry>;
+    return cleanExpiredCache(cacheData);
   }
   return {};
 }
@@ -87,14 +84,9 @@ export function readCache(): Record<string, CacheEntry> {
  */
 export function writeCache(cacheData: Record<string, CacheEntry>): boolean {
   const cacheFile = getCacheFilePath();
-  try {
-    // Ensure parent directory exists to avoid ENOENT
-    ensureFileDirSync(cacheFile);
-    const cleanedData = cleanExpiredCache(cacheData);
-    fs.writeFileSync(cacheFile, JSON.stringify(cleanedData, null, 2), 'utf-8');
-    return true;
-  } catch (e) {
-    console.error('Failed to write the analysis cache:', e);
-    return false;
-  }
+  // Ensure parent directory exists to avoid ENOENT
+  ensureFileDirSync(cacheFile);
+  const cleanedData = cleanExpiredCache(cacheData);
+  fs.writeFileSync(cacheFile, JSON.stringify(cleanedData, null, 2), 'utf-8');
+  return true;
 }

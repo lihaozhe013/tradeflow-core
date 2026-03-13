@@ -13,12 +13,7 @@ import {
   readCache,
   writeCache,
 } from '@/routes/analysis/utils';
-import type {
-  SalesData,
-  DetailItem,
-  FilterOptions,
-  AnalysisType,
-} from '@/routes/analysis/utils/types';
+import type { DetailItem, AnalysisType } from '@/routes/analysis/utils/types';
 
 const router = Router();
 
@@ -106,7 +101,7 @@ router.get('/detail', (req: Request, res: Response) => {
 });
 
 // POST /api/analysis/refresh
-router.post('/refresh', (req: Request, res: Response) => {
+router.post('/refresh', async (req: Request, res: Response) => {
   const { start_date, end_date, customer_code, supplier_code, product_model, type } =
     req.body as Record<string, string | undefined>;
 
@@ -166,156 +161,108 @@ router.post('/refresh', (req: Request, res: Response) => {
   };
 
   if (analysisType === 'inbound') {
-    calculatePurchaseData(
+    const purchaseData = await calculatePurchaseData(
       start_date!,
       end_date!,
-      partnerCode, // This is supplier_code
+      partnerCode,
       product_model,
-      (err, purchaseData) => {
-        if (err || !purchaseData) {
-          res.status(500).json({
-            success: false,
-            message: 'Failed to calculate purchase data',
-          });
-          return;
-        }
-
-        const resultData = {
-          ...purchaseData,
-          query_params: {
-            start_date,
-            end_date,
-            supplier_code: partnerCode || 'All',
-            product_model: product_model || 'All',
-            type: 'inbound',
-          },
-          last_updated: new Date().toISOString(),
-        };
-
-        calculateDetailAnalysis(
-          start_date!,
-          end_date!,
-          partnerCode,
-          product_model,
-          'inbound',
-          (detailErr, detailData) => {
-            if (detailErr) {
-              console.error('Detail analysis failed', detailErr);
-            }
-            saveAndRespond(resultData, detailData || []);
-          },
-        );
-      },
     );
+
+    const resultData = {
+      ...purchaseData,
+      query_params: {
+        start_date,
+        end_date,
+        supplier_code: partnerCode || 'All',
+        product_model: product_model || 'All',
+        type: 'inbound',
+      },
+      last_updated: new Date().toISOString(),
+    };
+
+    const detailData = await calculateDetailAnalysis(
+      start_date!,
+      end_date!,
+      partnerCode,
+      product_model,
+      'inbound',
+    );
+
+    saveAndRespond(resultData, detailData || []);
     return;
   }
 
   // Outbound Logic
-  calculateSalesData(
+  const salesData = await calculateSalesData(start_date!, end_date!, customer_code, product_model);
+
+  const costAmount = await calculateFilteredSoldGoodsCost(
     start_date!,
     end_date!,
     customer_code,
     product_model,
-    (salesErr: Error | null, salesData?: SalesData) => {
-      if (salesErr || !salesData) {
-        console.error('Failed to calculate sales:', salesErr);
-        res.status(500).json({
-          success: false,
-          message: 'Failed to calculate sales',
-        });
-        return;
-      }
-
-      calculateFilteredSoldGoodsCost(start_date!, end_date!, customer_code, product_model).then(
-        (costAmount) => {
-          const salesAmount = salesData.sales_amount;
-          const cost = decimalCalc.toDbNumber(costAmount ?? 0, 2);
-          const profit = decimalCalc.toDbNumber(decimalCalc.subtract(salesAmount, cost), 2);
-
-          let profitRate = 0;
-          if (salesAmount > 0) {
-            const rate = decimalCalc.multiply(decimalCalc.divide(profit, salesAmount), 100);
-            profitRate = decimalCalc.toDbNumber(rate, 2);
-          }
-
-          const resultData = {
-            sales_amount: salesAmount,
-            cost_amount: cost,
-            profit_amount: profit,
-            profit_rate: profitRate,
-            query_params: {
-              start_date,
-              end_date,
-              customer_code: customer_code || 'All',
-              product_model: product_model || 'All',
-            },
-            last_updated: new Date().toISOString(),
-          };
-
-          calculateDetailAnalysis(
-            start_date!,
-            end_date!,
-            customer_code,
-            product_model,
-            'outbound',
-            (detailErr: Error | null, detailData?: DetailItem[]) => {
-              if (detailErr) {
-                console.error('Failed to compute detailed analysis data:', detailErr);
-                detailData = [];
-              }
-
-              saveAndRespond(resultData, detailData || []);
-            },
-          );
-        },
-      );
-    },
   );
+
+  const salesAmount = salesData.sales_amount;
+  const cost = decimalCalc.toDbNumber(costAmount ?? 0, 2);
+  const profit = decimalCalc.toDbNumber(decimalCalc.subtract(salesAmount, cost), 2);
+
+  let profitRate = 0;
+  if (salesAmount > 0) {
+    const rate = decimalCalc.multiply(decimalCalc.divide(profit, salesAmount), 100);
+    profitRate = decimalCalc.toDbNumber(rate, 2);
+  }
+
+  const resultData = {
+    sales_amount: salesAmount,
+    cost_amount: cost,
+    profit_amount: profit,
+    profit_rate: profitRate,
+    query_params: {
+      start_date,
+      end_date,
+      customer_code: customer_code || 'All',
+      product_model: product_model || 'All',
+    },
+    last_updated: new Date().toISOString(),
+  };
+
+  const detailData = await calculateDetailAnalysis(
+    start_date!,
+    end_date!,
+    customer_code,
+    product_model,
+    'outbound',
+  );
+
+  saveAndRespond(resultData, detailData || []);
 });
 
 // GET /api/analysis/filter-options
-router.get('/filter-options', (_req: Request, res: Response) => {
-  getFilterOptions((err: Error | null, options?: FilterOptions) => {
-    if (err || !options) {
-      res.status(500).json({
-        success: false,
-        message: 'Query filtering options failed',
-      });
-      return;
-    }
-
-    res.json({
-      success: true,
-      ...options,
-    });
+router.get('/filter-options', async (_req: Request, res: Response) => {
+  const options = await getFilterOptions();
+  res.json({
+    success: true,
+    ...options,
   });
 });
 
 // POST /api/analysis/clean-cache
 router.post('/clean-cache', (_req: Request, res: Response) => {
-  try {
-    const cache = readCache();
-    const originalSize = Object.keys(cache).length;
+  const cache = readCache();
+  const originalSize = Object.keys(cache).length;
 
-    if (writeCache(cache)) {
-      const newCache = readCache();
-      const newSize = Object.keys(newCache).length;
-      const cleanedCount = originalSize - newSize;
+  if (writeCache(cache)) {
+    const newCache = readCache();
+    const newSize = Object.keys(newCache).length;
+    const cleanedCount = originalSize - newSize;
 
-      res.json({
-        success: true,
-        message: `Cleaning completed. ${cleanedCount} expired cache entries deleted.`,
-        original_size: originalSize,
-        new_size: newSize,
-      });
-    } else {
-      res.status(500).json({
-        success: false,
-        message: 'Cache clearing failed',
-      });
-    }
-  } catch (error) {
-    console.error('Cache clearing failed:', error);
+    res.json({
+      success: true,
+      message: `Cleaning completed. ${cleanedCount} expired cache entries deleted.`,
+      original_size: originalSize,
+      new_size: newSize,
+    });
+  } else {
     res.status(500).json({
       success: false,
       message: 'Cache clearing failed',

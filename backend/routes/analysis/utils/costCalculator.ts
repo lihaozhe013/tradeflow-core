@@ -6,6 +6,7 @@ import decimalCalc from '@/utils/decimalCalculator';
  * Calculate the Cost of Goods Sold (COGS) using FIFO (First-In, First-Out) method.
  * This provides much more accurate profit analysis than global weighted average.
  */
+
 export async function calculateFilteredSoldGoodsCost(
   startDate: string,
   endDate: string,
@@ -137,8 +138,6 @@ export async function calculateFilteredSoldGoodsCost(
       totalPeriodCost = decimalCalc.add(totalPeriodCost, currentRecordCost);
     }
   }
-
   const finalResult = decimalCalc.toDbNumber(totalPeriodCost, 2);
-
   return finalResult;
 }
