@@ -20,6 +20,15 @@
       { "label": "Remark", "key": "remark" }
     ]
   },
+  "inventory": {
+    "sheetName": "Inventory Data",
+    "columns": [
+      { "label": "Product Model", "key": "product_model" },
+      { "label": "Quantity", "key": "quantity" },
+      { "label": "Estimated Unit Cost", "key": "unit_cost" },
+      { "label": "Total Value", "key": "total_value" }
+    ]
+  },
   "prices": {
     "sheetName": "Product Prices",
     "columns": [
