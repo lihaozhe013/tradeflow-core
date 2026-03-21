@@ -148,6 +148,7 @@
         "inboundStatement": "입고 명세서",
         "inoutDate": "입출고일",
         "inputPartnerCode": "파트너 코드를 입력하세요",
+        "inventoryExport": "재고 데이터 내보내기",
         "invoice": "세금계산서",
         "invoiceTip": "설명: 제품 모델과 단가별로 수량과 금액을 합산하여 세금계산서 내역 생성에 적합합니다.",
         "networkError": "네트워크 연결 실패, 서버 상태를 확인하세요.",

@@ -11,6 +11,8 @@ export * from "@/routes/export/utils/financialExporter";
 export * from "@/routes/export/utils/analysisExporter";
 export * from "@/routes/export/utils/advancedAnalysisExporter";
 export * from "@/routes/export/utils/invoiceExporter";
+export * from "@/routes/export/utils/inventoryQueries";
+export * from "@/routes/export/utils/inventoryExporter";
 export * from "@/routes/export/utils/excelExporter";
 export * from "@/routes/export/utils/exportUtils";
 export * from "@/routes/export/utils/exportTemplates";

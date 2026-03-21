@@ -163,6 +163,19 @@ router.post('/advanced-analysis', async (req: Request, res: Response) => {
   res.send(buffer);
 });
 
+// Export inventory data
+router.post('/inventory', async (_req: Request, res: Response) => {
+  const buffer = await ExportService.exportInventory();
+  const filename = ExportService.generateFilename('inventory');
+
+  res.setHeader(
+    'Content-Type',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  );
+  res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(filename)}"`);
+  res.send(buffer);
+});
+
 // Get export service status
 router.get('/status', (_req: Request, res: Response) => {
   res.json({
@@ -196,6 +209,10 @@ router.get('/status', (_req: Request, res: Response) => {
       {
         name: 'invoice',
         description: 'Invoice export',
+      },
+      {
+        name: 'inventory',
+        description: 'Current inventory data export',
       },
     ],
   });

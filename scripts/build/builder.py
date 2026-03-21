@@ -19,7 +19,7 @@ def build(base_dir):
     builder.copy(data_dir / 'logo.svg', frontend_dir / 'public' / 'logo.svg')
 
     # build frontend
-    builder.run(frontend_dir, 'npx tsc && npx vite build')
+    builder.run(frontend_dir, 'npx vite build')
     builder.move(frontend_dir / 'dist', dist_dir / 'frontend')
 
     # build backend

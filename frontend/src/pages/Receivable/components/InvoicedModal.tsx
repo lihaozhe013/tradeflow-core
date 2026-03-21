@@ -1,4 +1,4 @@
-import { useState, useEffect, type FC } from 'react';
+import { useState, useEffect, useCallback, type FC } from 'react';
 import { Modal, Table, Button, message, Typography } from 'antd';
 import { ReloadOutlined } from '@ant-design/icons';
 import { currency_unit_symbol } from '@/config/types';
@@ -51,34 +51,37 @@ const InvoicedModal: FC<InvoicedModalProps> = ({
   const [pagination, setPagination] = useState<ModalPaginationState>(DEFAULT_PAGINATION);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
 
-  const fetchInvoicedRecords = async (page = 1): Promise<void> => {
-    if (!customerCode) return;
+  const fetchInvoicedRecords = useCallback(
+    async (page = 1): Promise<void> => {
+      if (!customerCode) return;
 
-    try {
-      setLoading(true);
-      const query = new URLSearchParams({
-        page: String(page),
-        limit: String(DEFAULT_PAGINATION.pageSize),
-      });
+      try {
+        setLoading(true);
+        const query = new URLSearchParams({
+          page: String(page),
+          limit: String(DEFAULT_PAGINATION.pageSize),
+        });
 
-      const result = await apiInstance.get<InvoicedRecordsResponse>(
-        `/receivable/invoiced/${customerCode}?${query.toString()}`
-      );
+        const result = await apiInstance.get<InvoicedRecordsResponse>(
+          `/receivable/invoiced/${customerCode}?${query.toString()}`,
+        );
 
-      setData(result?.data ?? []);
-      setPagination({
-        current: result?.page ?? page,
-        pageSize: DEFAULT_PAGINATION.pageSize,
-        total: result?.total ?? 0,
-      });
-      setLastUpdated(result?.last_updated ?? null);
-    } catch (error) {
-      console.error('获取已开票记录失败:', error);
-      message.error('Failed to fetch invoiced records. Please refresh the cache first.');
-    } finally {
-      setLoading(false);
-    }
-  };
+        setData(result?.data ?? []);
+        setPagination({
+          current: result?.page ?? page,
+          pageSize: DEFAULT_PAGINATION.pageSize,
+          total: result?.total ?? 0,
+        });
+        setLastUpdated(result?.last_updated ?? null);
+      } catch (error) {
+        console.error('获取已开票记录失败:', error);
+        message.error('Failed to fetch invoiced records. Please refresh the cache first.');
+      } finally {
+        setLoading(false);
+      }
+    },
+    [customerCode, apiInstance],
+  );
 
   const handleRefreshCache = async (): Promise<void> => {
     if (!customerCode) return;
@@ -101,7 +104,7 @@ const InvoicedModal: FC<InvoicedModalProps> = ({
       setPagination(DEFAULT_PAGINATION);
       fetchInvoicedRecords(1);
     }
-  }, [visible, customerCode]);
+  }, [visible, customerCode, fetchInvoicedRecords]);
 
   const handleTableChange = (paginationConfig: TablePaginationConfig): void => {
     const page = paginationConfig.current ?? 1;
@@ -148,7 +151,14 @@ const InvoicedModal: FC<InvoicedModalProps> = ({
       width={800}
       style={{ top: 20 }}
     >
-      <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div
+        style={{
+          marginBottom: 16,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}
+      >
         <Text type="secondary">
           {lastUpdated ? `Last updated: ${new Date(lastUpdated).toLocaleString()}` : ''}
         </Text>

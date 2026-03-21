@@ -1,5 +1,9 @@
 # Change Log
 
+## v0.8.0
+
+- Inventory Export feature
+
 ## v0.7.2
 
 - Remove redundent code, simplify the error handling

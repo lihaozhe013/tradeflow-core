@@ -12,20 +12,20 @@ import type {
 
 /**
  * 通用 API 请求 Hook
- * 
+ *
  * 自动处理加载状态、错误处理、认证等功能
- * 
+ *
  * @example
  * ```typescript
  * const { loading, get, post } = useApi();
- * 
+ *
  * // 获取数据
  * const users = await get<User[]>('/api/users');
- * 
+ *
  * // 提交数据
  * const result = await post<CreateResponse>('/api/users', { name: 'John' });
  * ```
- * 
+ *
  * @returns API 操作方法和状态
  */
 export const useApi = (): UseApiReturn => {
@@ -65,7 +65,7 @@ export const useApi = (): UseApiReturn => {
         setLoading(false);
       }
     },
-    [logout]
+    [logout],
   );
 
   /**
@@ -75,7 +75,7 @@ export const useApi = (): UseApiReturn => {
     async <T = unknown>(url: string, options: ApiRequestOptions = {}): Promise<T> => {
       return await request<T>(url, { method: 'GET', ...options });
     },
-    [request]
+    [request],
   );
 
   /**
@@ -85,7 +85,7 @@ export const useApi = (): UseApiReturn => {
     async <T = unknown>(
       url: string,
       data?: unknown,
-      options: ApiRequestOptions = {}
+      options: ApiRequestOptions = {},
     ): Promise<T> => {
       return await request<T>(url, {
         method: 'POST',
@@ -93,7 +93,7 @@ export const useApi = (): UseApiReturn => {
         ...options,
       });
     },
-    [request]
+    [request],
   );
 
   /**
@@ -103,7 +103,7 @@ export const useApi = (): UseApiReturn => {
     async <T = unknown>(
       url: string,
       data?: unknown,
-      options: ApiRequestOptions = {}
+      options: ApiRequestOptions = {},
     ): Promise<T> => {
       return await request<T>(url, {
         method: 'PUT',
@@ -111,7 +111,7 @@ export const useApi = (): UseApiReturn => {
         ...options,
       });
     },
-    [request]
+    [request],
   );
 
   /**
@@ -121,7 +121,7 @@ export const useApi = (): UseApiReturn => {
     async <T = unknown>(url: string, options: ApiRequestOptions = {}): Promise<T> => {
       return await request<T>(url, { method: 'DELETE', ...options });
     },
-    [request]
+    [request],
   );
 
   /**
@@ -131,9 +131,8 @@ export const useApi = (): UseApiReturn => {
     async <T = unknown>(
       url: string,
       formData: FormData,
-      options: ApiRequestOptions = {}
+      options: ApiRequestOptions = {},
     ): Promise<T> => {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { headers, ...restOptions } = options;
       return await request<T>(url, {
         method: 'POST',
@@ -142,7 +141,7 @@ export const useApi = (): UseApiReturn => {
         ...restOptions,
       });
     },
-    [request]
+    [request],
   );
 
   /**
@@ -178,7 +177,7 @@ export const useApi = (): UseApiReturn => {
         setLoading(false);
       }
     },
-    []
+    [],
   );
 
   return {
@@ -197,9 +196,9 @@ export const useApi = (): UseApiReturn => {
 
 /**
  * 专门用于数据获取的 Hook
- * 
+ *
  * 支持自动加载、重试、缓存等功能
- * 
+ *
  * @example
  * ```typescript
  * const { data, loading, refresh } = useApiData<User[]>('/api/users', {
@@ -208,14 +207,14 @@ export const useApi = (): UseApiReturn => {
  *   onError: (error) => console.error('失败', error),
  * });
  * ```
- * 
+ *
  * @param url - API 地址
  * @param options - 配置选项
  * @returns 数据状态和操作方法
  */
 export const useApiData = <T = unknown>(
   url: string,
-  options: UseApiDataOptions<T> = {}
+  options: UseApiDataOptions<T> = {},
 ): UseApiDataReturn<T> => {
   const {
     immediate = true, // 是否立即加载
@@ -241,7 +240,7 @@ export const useApiData = <T = unknown>(
 
   /**
    * 获取数据方法
-   * 
+   *
    * @param autoCreate - 当数据未生成（503）时，是否自动创建
    */
   const fetchData = useCallback(
@@ -277,7 +276,7 @@ export const useApiData = <T = unknown>(
         setLoading(false);
       }
     },
-    [url, get, post, defaultData]
+    [url, get, post, defaultData],
   );
 
   /**

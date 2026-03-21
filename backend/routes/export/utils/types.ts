@@ -6,7 +6,7 @@ import {
   Product,
   ProductPrice,
   ReceivablePayment,
-} from "@prisma/client";
+} from '@prisma/client';
 
 export interface BasicDataFilters {
   tables?: string;
@@ -125,7 +125,6 @@ export interface InvoiceData {
   invoices: InvoiceItemDto[];
 }
 
-
 export interface AnalysisRecord {
   // Contains merged fields from outbound record + calculated cost
   id: number;
@@ -177,4 +176,3 @@ export interface AnalysisProductData {
   profit_rate: number;
   customer_details: AnalysisCustomerDetail[];
 }
-
