@@ -55,9 +55,11 @@ const Inventory: FC = () => {
 
   const { post, loading: actionLoading } = useSimpleApi();
 
+  const { current } = pagination;
+
   const buildInventoryUrl = useCallback(() => {
     const params = new URLSearchParams({
-      page: pagination.current.toString(),
+      page: current.toString(),
     });
 
     if (productFilter) {
@@ -65,7 +67,7 @@ const Inventory: FC = () => {
     }
 
     return `/inventory?${params.toString()}`;
-  }, [pagination, productFilter]);
+  }, [current, productFilter]);
 
   const {
     data: inventoryResponse,
@@ -87,6 +89,7 @@ const Inventory: FC = () => {
 
   const totalCostEstimate = totalCostResponse?.total_cost_estimate ?? 0;
 
+  /* useEffect removed to avoid setState in effect loop
   useEffect(() => {
     if (!inventoryResponse?.pagination) {
       return;
@@ -98,6 +101,7 @@ const Inventory: FC = () => {
       total: inventoryResponse.pagination?.total ?? prev.total,
     }));
   }, [inventoryResponse]);
+  */
 
   const handleRefreshCache = async (): Promise<void> => {
     await post('/inventory/refresh', {});
@@ -232,7 +236,7 @@ const Inventory: FC = () => {
             pagination={{
               current: pagination.current,
               pageSize: pagination.pageSize,
-              total: pagination.total,
+              total: inventoryResponse?.pagination?.total ?? 0,
               showQuickJumper: true,
               showTotal: (total, range) =>
                 t('inventory.paginationTotal', {
