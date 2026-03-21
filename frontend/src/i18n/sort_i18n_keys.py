@@ -1,8 +1,16 @@
 # python sort_i18n_keys.py ./locales/en/en-US.json ./locales/zh/zh-CN.json ./locales/ko/ko-Kr.json --recursive
 import json
-import argparse
 import os
-from typing import Any, Dict
+from pathlib import Path
+from typing import Any
+
+base_dir = Path(__file__).parent.resolve()
+
+files_to_process = [
+    base_dir / 'locales' / 'en' / 'en_US.json', 
+    base_dir / 'locales' / 'zh' / 'zh-CN.json', 
+    base_dir / 'locales' / 'ko' / 'ko-Kr.json'
+]
 
 def sort_dict_recursively(data: Any) -> Any:
     """
@@ -73,7 +81,7 @@ def sort_json_file(file_path: str, indent: int = 4, recursive: bool = False):
     else:
         # If the top level is not a dictionary (e.g., a list), skip sorting
         sorted_data = data
-        print("⚠️ Warning: File top level is not a dictionary. Skipping key sorting.")
+        print("Warning: File top level is not a dictionary. Skipping key sorting.")
 
 
     # 3. Write back to file
@@ -91,36 +99,15 @@ def sort_json_file(file_path: str, indent: int = 4, recursive: bool = False):
 
 def main():
     """
-    Main function to handle command-line arguments.
+    Main function to sort predefined i18n files recursively.
     """
-    parser = argparse.ArgumentParser(
-        description="One-click tool to organize specified JSON files (mainly for sorting keys in i18n files)."
-    )
-    parser.add_argument(
-        "files",
-        metavar="FILE_PATH",
-        type=str,
-        nargs='+',
-        help="One or more JSON file paths to be organized."
-    )
-    parser.add_argument(
-        "-i", "--indent",
-        type=int,
-        default=4,
-        help="Number of space characters for JSON output indentation (Default: 4)."
-    )
-    parser.add_argument(
-        "-r", "--recursive",
-        action="store_true",
-        help="Sort keys recursively for all nested objects."
-    )
-
-    args = parser.parse_args()
+    # List of files to process
 
     # Loop through and process all specified files
-    for file in args.files:
+    for file_path in files_to_process:
         # Pass the recursive flag to the sorting function
-        sort_json_file(file, args.indent, args.recursive)
+        # Convert Path object to string just in case, though usually handled
+        sort_json_file(str(file_path), indent=4, recursive=True)
         print("-" * 40) # Separator
 
 if __name__ == "__main__":
