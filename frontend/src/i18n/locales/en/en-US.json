@@ -148,6 +148,7 @@
         "inboundStatement": "Inbound Statement",
         "inoutDate": "In/Out Date",
         "inputPartnerCode": "Enter partner code",
+        "invoice": "Invoice",
         "invoiceTip": "Note: Merge quantity and amount by product model and unit price, suitable for generating receipt details.",
         "networkError": "Network connection failed, check server status.",
         "optional": "Optional",

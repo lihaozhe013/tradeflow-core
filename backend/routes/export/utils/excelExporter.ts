@@ -4,40 +4,31 @@ import {
   ReceivablePayableFilters,
   InvoiceFilters,
   AnalysisExportOptions,
-} from "./types";
-import { getBaseInfoData } from "@/routes/export/utils/basicDataQueries";
-import { generateBaseInfoExcel } from "@/routes/export/utils/baseInfoExporter";
-import { getInboundOutboundData } from "@/routes/export/utils/transactionQueries";
-import {
-  generateTransactionExcel,
-  generateStatementExcel,
-} from "./transactionExporter";
+} from '@/routes/export/utils/types';
+import { getBaseInfoData } from '@/routes/export/utils/basicDataQueries';
+import { generateBaseInfoExcel } from '@/routes/export/utils/baseInfoExporter';
+import { getInboundOutboundData } from '@/routes/export/utils/transactionQueries';
+import { generateTransactionExcel, generateStatementExcel } from '@/routes/export/utils/transactionExporter';
 import {
   getReceivableSummary,
   getReceivableDetails,
   getReceivablePayments,
-} from "./receivableQueries";
-import {
-  getPayableSummary,
-  getPayableDetails,
-  getPayablePayments,
-} from "./payableQueries";
-import { generateFinancialExcel } from "./financialExporter";
-import { generateAnalysisExcel } from "./analysisExporter";
-import { generateAdvancedAnalysisExcel } from "./advancedAnalysisExporter";
-import { getInvoiceData } from "./invoiceQueries";
-import { generateInvoiceExcel } from "./invoiceExporter";
+} from '@/routes/export/utils/receivableQueries';
+import { getPayableSummary, getPayableDetails, getPayablePayments } from '@/routes/export/utils/payableQueries';
+import { generateFinancialExcel } from '@/routes/export/utils/financialExporter';
+import { generateAnalysisExcel } from '@/routes/export/utils/analysisExporter';
+import { generateAdvancedAnalysisExcel } from '@/routes/export/utils/advancedAnalysisExporter';
+import { getInvoiceData } from '@/routes/export/utils/invoiceQueries';
+import { generateInvoiceExcel } from '@/routes/export/utils/invoiceExporter';
+import { getInventoryData } from '@/routes/export/utils/inventoryQueries';
+import { generateInventoryExcel } from '@/routes/export/utils/inventoryExporter';
 
-export async function exportBaseInfo(
-  options: BasicDataFilters = {},
-): Promise<Buffer> {
-  const data = await getBaseInfoData(options.tables || "123");
+export async function exportBaseInfo(options: BasicDataFilters = {}): Promise<Buffer> {
+  const data = await getBaseInfoData(options.tables || '123');
   return generateBaseInfoExcel(data, options);
 }
 
-export async function exportInboundOutbound(
-  options: TransactionFilters = {},
-): Promise<Buffer> {
+export async function exportInboundOutbound(options: TransactionFilters = {}): Promise<Buffer> {
   const data = await getInboundOutboundData(options);
   return generateTransactionExcel(data, options);
 }
@@ -73,16 +64,12 @@ export async function exportReceivablePayable(
   return generateFinancialExcel(data); // Use "data" directly, assuming type compatibility will be checked
 }
 
-export async function exportStatement(
-  options: TransactionFilters = {},
-): Promise<Buffer> {
+export async function exportStatement(options: TransactionFilters = {}): Promise<Buffer> {
   const data = await getInboundOutboundData(options);
   return generateStatementExcel(data, options);
 }
 
-export async function exportAnalysis(
-  options: AnalysisExportOptions,
-): Promise<Buffer> {
+export async function exportAnalysis(options: AnalysisExportOptions): Promise<Buffer> {
   // Purely formatting provided data
   return generateAnalysisExcel(options);
 }
@@ -94,11 +81,9 @@ export async function exportAdvancedAnalysis(
   return await generateAdvancedAnalysisExcel(options);
 }
 
-export async function exportInvoice(
-  options: InvoiceFilters,
-): Promise<Buffer> {
+export async function exportInvoice(options: InvoiceFilters): Promise<Buffer> {
   const { partnerCode, dateFrom, dateTo } = options || {};
-  if (!partnerCode) throw new Error("Partner code is required");
+  if (!partnerCode) throw new Error('Partner code is required');
   const data = await getInvoiceData({
     partnerCode,
     dateFrom,
@@ -107,3 +92,7 @@ export async function exportInvoice(
   return generateInvoiceExcel(data);
 }
 
+export async function exportInventory(): Promise<Buffer> {
+  const data = await getInventoryData();
+  return generateInventoryExcel(data);
+}
