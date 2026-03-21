@@ -1,39 +1,31 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  Card,
-  Row,
-  Col,
-  Button,
-  DatePicker,
-  Space,
-  Form,
-  Input,
-  message
-} from 'antd';
+import { Card, Row, Col, Button, DatePicker, Space, Form, Input, message } from 'antd';
 import { DatabaseOutlined, FileExcelOutlined } from '@ant-design/icons';
 
 const { RangePicker } = DatePicker;
 
-const ExportPanel = ({ 
-  handleExport, 
-  loading, 
-  dateRange, 
+const ExportPanel = ({
+  handleExport,
+  loading,
+  dateRange,
   setDateRange,
   paymentDateRange,
   setPaymentDateRange,
   selectedProduct,
   setSelectedProduct,
   selectedCustomer,
-  setSelectedCustomer
+  setSelectedCustomer,
 }) => {
   const { t } = useTranslation();
   return (
     <div>
       <Row gutter={[16, 16]}>
         <Col span={24}>
-          <Card 
-            title={<span style={{ fontSize: '16px', fontWeight: 'bold' }}>{t('export.baseInfo')}</span>} 
+          <Card
+            title={
+              <span style={{ fontSize: '16px', fontWeight: 'bold' }}>{t('export.baseInfo')}</span>
+            }
             size="small"
           >
             <Space wrap>
@@ -73,22 +65,31 @@ const ExportPanel = ({
               >
                 {t('export.exportProductPrices')}
               </Button>
+              <Button
+                type="default"
+                className="hover-primary"
+                icon={<DatabaseOutlined />}
+                onClick={() => handleExport('inventory', {})}
+                loading={loading}
+              >
+                {t('export.inventoryExport')}
+              </Button>
             </Space>
           </Card>
         </Col>
-        
+
         <Col span={24}>
-          <Card 
-            title={<span style={{ fontSize: '16px', fontWeight: 'bold' }}>{t('export.inboundOutbound')}</span>} 
+          <Card
+            title={
+              <span style={{ fontSize: '16px', fontWeight: 'bold' }}>
+                {t('export.inboundOutbound')}
+              </span>
+            }
             size="small"
           >
             <Form layout="inline" style={{ marginBottom: 16 }}>
               <Form.Item label={t('export.dateRange')}>
-                <RangePicker
-                  value={dateRange}
-                  onChange={setDateRange}
-                  format="YYYY-MM-DD"
-                />
+                <RangePicker value={dateRange} onChange={setDateRange} format="YYYY-MM-DD" />
               </Form.Item>
               <Form.Item label={t('export.productCode')}>
                 <Input
@@ -112,13 +113,15 @@ const ExportPanel = ({
                 type="default"
                 className="hover-primary"
                 icon={<FileExcelOutlined />}
-                onClick={() => handleExport('inbound-outbound', {
-                  tables: '12',
-                  dateFrom: dateRange[0].format('YYYY-MM-DD'),
-                  dateTo: dateRange[1].format('YYYY-MM-DD'),
-                  productCode: selectedProduct || undefined,
-                  customerCode: selectedCustomer || undefined
-                })}
+                onClick={() =>
+                  handleExport('inbound-outbound', {
+                    tables: '12',
+                    dateFrom: dateRange[0].format('YYYY-MM-DD'),
+                    dateTo: dateRange[1].format('YYYY-MM-DD'),
+                    productCode: selectedProduct || undefined,
+                    customerCode: selectedCustomer || undefined,
+                  })
+                }
                 loading={loading}
               >
                 {t('export.exportInboundOutbound')}
@@ -127,13 +130,15 @@ const ExportPanel = ({
                 type="default"
                 className="hover-primary"
                 icon={<FileExcelOutlined />}
-                onClick={() => handleExport('inbound-outbound', {
-                  tables: '1',
-                  dateFrom: dateRange[0].format('YYYY-MM-DD'),
-                  dateTo: dateRange[1].format('YYYY-MM-DD'),
-                  productCode: selectedProduct || undefined,
-                  customerCode: selectedCustomer || undefined
-                })}
+                onClick={() =>
+                  handleExport('inbound-outbound', {
+                    tables: '1',
+                    dateFrom: dateRange[0].format('YYYY-MM-DD'),
+                    dateTo: dateRange[1].format('YYYY-MM-DD'),
+                    productCode: selectedProduct || undefined,
+                    customerCode: selectedCustomer || undefined,
+                  })
+                }
                 loading={loading}
               >
                 {t('export.exportInbound')}
@@ -142,13 +147,15 @@ const ExportPanel = ({
                 type="default"
                 className="hover-primary"
                 icon={<FileExcelOutlined />}
-                onClick={() => handleExport('inbound-outbound', {
-                  tables: '2',
-                  dateFrom: dateRange[0].format('YYYY-MM-DD'),
-                  dateTo: dateRange[1].format('YYYY-MM-DD'),
-                  productCode: selectedProduct || undefined,
-                  customerCode: selectedCustomer || undefined
-                })}
+                onClick={() =>
+                  handleExport('inbound-outbound', {
+                    tables: '2',
+                    dateFrom: dateRange[0].format('YYYY-MM-DD'),
+                    dateTo: dateRange[1].format('YYYY-MM-DD'),
+                    productCode: selectedProduct || undefined,
+                    customerCode: selectedCustomer || undefined,
+                  })
+                }
                 loading={loading}
               >
                 {t('export.exportOutbound')}
@@ -156,19 +163,17 @@ const ExportPanel = ({
             </Space>
           </Card>
         </Col>
-        
+
         <Col span={24}>
-          <Card 
-            title={<span style={{ fontSize: '16px', fontWeight: 'bold' }}>{t('export.statement')}</span>} 
+          <Card
+            title={
+              <span style={{ fontSize: '16px', fontWeight: 'bold' }}>{t('export.statement')}</span>
+            }
             size="small"
           >
             <Form layout="inline" style={{ marginBottom: 16 }}>
               <Form.Item label={t('export.dateRange')}>
-                <RangePicker
-                  value={dateRange}
-                  onChange={setDateRange}
-                  format="YYYY-MM-DD"
-                />
+                <RangePicker value={dateRange} onChange={setDateRange} format="YYYY-MM-DD" />
               </Form.Item>
               <Form.Item label={t('export.productCode')}>
                 <Input
@@ -192,13 +197,15 @@ const ExportPanel = ({
                 type="default"
                 className="hover-primary"
                 icon={<FileExcelOutlined />}
-                onClick={() => handleExport('statement', {
-                  tables: '12',
-                  dateFrom: dateRange[0].format('YYYY-MM-DD'),
-                  dateTo: dateRange[1].format('YYYY-MM-DD'),
-                  productCode: selectedProduct || undefined,
-                  customerCode: selectedCustomer || undefined
-                })}
+                onClick={() =>
+                  handleExport('statement', {
+                    tables: '12',
+                    dateFrom: dateRange[0].format('YYYY-MM-DD'),
+                    dateTo: dateRange[1].format('YYYY-MM-DD'),
+                    productCode: selectedProduct || undefined,
+                    customerCode: selectedCustomer || undefined,
+                  })
+                }
                 loading={loading}
               >
                 {t('export.exportStatement')}
@@ -207,13 +214,15 @@ const ExportPanel = ({
                 type="default"
                 className="hover-primary"
                 icon={<FileExcelOutlined />}
-                onClick={() => handleExport('statement', {
-                  tables: '1',
-                  dateFrom: dateRange[0].format('YYYY-MM-DD'),
-                  dateTo: dateRange[1].format('YYYY-MM-DD'),
-                  productCode: selectedProduct || undefined,
-                  customerCode: selectedCustomer || undefined
-                })}
+                onClick={() =>
+                  handleExport('statement', {
+                    tables: '1',
+                    dateFrom: dateRange[0].format('YYYY-MM-DD'),
+                    dateTo: dateRange[1].format('YYYY-MM-DD'),
+                    productCode: selectedProduct || undefined,
+                    customerCode: selectedCustomer || undefined,
+                  })
+                }
                 loading={loading}
               >
                 {t('export.inboundStatement')}
@@ -222,13 +231,15 @@ const ExportPanel = ({
                 type="default"
                 className="hover-primary"
                 icon={<FileExcelOutlined />}
-                onClick={() => handleExport('statement', {
-                  tables: '2',
-                  dateFrom: dateRange[0].format('YYYY-MM-DD'),
-                  dateTo: dateRange[1].format('YYYY-MM-DD'),
-                  productCode: selectedProduct || undefined,
-                  customerCode: selectedCustomer || undefined
-                })}
+                onClick={() =>
+                  handleExport('statement', {
+                    tables: '2',
+                    dateFrom: dateRange[0].format('YYYY-MM-DD'),
+                    dateTo: dateRange[1].format('YYYY-MM-DD'),
+                    productCode: selectedProduct || undefined,
+                    customerCode: selectedCustomer || undefined,
+                  })
+                }
                 loading={loading}
               >
                 {t('export.outboundStatement')}
@@ -239,19 +250,19 @@ const ExportPanel = ({
             </div>
           </Card>
         </Col>
-        
+
         <Col span={24}>
-          <Card 
-            title={<span style={{ fontSize: '16px', fontWeight: 'bold' }}>{t('export.receivablePayable')}</span>} 
+          <Card
+            title={
+              <span style={{ fontSize: '16px', fontWeight: 'bold' }}>
+                {t('export.receivablePayable')}
+              </span>
+            }
             size="small"
           >
             <Form layout="inline" style={{ marginBottom: 16 }}>
               <Form.Item label={t('export.inoutDate')}>
-                <RangePicker
-                  value={dateRange}
-                  onChange={setDateRange}
-                  format="YYYY-MM-DD"
-                />
+                <RangePicker value={dateRange} onChange={setDateRange} format="YYYY-MM-DD" />
               </Form.Item>
               <Form.Item label={t('export.paymentDate')}>
                 <RangePicker
@@ -267,12 +278,14 @@ const ExportPanel = ({
                 type="default"
                 className="hover-primary"
                 icon={<FileExcelOutlined />}
-                onClick={() => handleExport('receivable-payable', {
-                  outboundFrom: dateRange[0].format('YYYY-MM-DD'),
-                  outboundTo: dateRange[1].format('YYYY-MM-DD'),
-                  paymentFrom: paymentDateRange[0].format('YYYY-MM-DD'),
-                  paymentTo: paymentDateRange[1].format('YYYY-MM-DD')
-                })}
+                onClick={() =>
+                  handleExport('receivable-payable', {
+                    outboundFrom: dateRange[0].format('YYYY-MM-DD'),
+                    outboundTo: dateRange[1].format('YYYY-MM-DD'),
+                    paymentFrom: paymentDateRange[0].format('YYYY-MM-DD'),
+                    paymentTo: paymentDateRange[1].format('YYYY-MM-DD'),
+                  })
+                }
                 loading={loading}
               >
                 {t('export.exportReceivablePayable')}
@@ -280,10 +293,12 @@ const ExportPanel = ({
             </Space>
           </Card>
         </Col>
-        
+
         <Col span={24}>
-          <Card 
-            title={<span style={{ fontSize: '16px', fontWeight: 'bold' }}>{t('export.invoice')}</span>} 
+          <Card
+            title={
+              <span style={{ fontSize: '16px', fontWeight: 'bold' }}>{t('export.invoice')}</span>
+            }
             size="small"
           >
             <Form layout="inline" style={{ marginBottom: 16 }}>
@@ -296,11 +311,7 @@ const ExportPanel = ({
                 />
               </Form.Item>
               <Form.Item label={t('export.dateRange')} required>
-                <RangePicker
-                  value={dateRange}
-                  onChange={setDateRange}
-                  format="YYYY-MM-DD"
-                />
+                <RangePicker value={dateRange} onChange={setDateRange} format="YYYY-MM-DD" />
               </Form.Item>
             </Form>
             <Space wrap>
@@ -316,7 +327,7 @@ const ExportPanel = ({
                   handleExport('invoice', {
                     partnerCode: selectedCustomer,
                     dateFrom: dateRange[0].format('YYYY-MM-DD'),
-                    dateTo: dateRange[1].format('YYYY-MM-DD')
+                    dateTo: dateRange[1].format('YYYY-MM-DD'),
                   });
                 }}
                 loading={loading}

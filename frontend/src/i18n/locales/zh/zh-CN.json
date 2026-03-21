@@ -148,6 +148,7 @@
         "inboundStatement": "入库对账单",
         "inoutDate": "出入库日期",
         "inputPartnerCode": "请输入合作伙伴代号",
+        "inventoryExport": "库存导出",
         "invoice": "发票",
         "invoiceTip": "说明：按产品型号和单价合并数量和金额，适用于生成发票明细",
         "networkError": "网络连接失败，请检查服务器状态",

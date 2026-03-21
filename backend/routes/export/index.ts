@@ -164,7 +164,7 @@ router.post('/advanced-analysis', async (req: Request, res: Response) => {
 });
 
 // Export inventory data
-router.get('/inventory', async (_req: Request, res: Response) => {
+router.post('/inventory', async (_req: Request, res: Response) => {
   const buffer = await ExportService.exportInventory();
   const filename = ExportService.generateFilename('inventory');
 

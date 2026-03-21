@@ -129,6 +129,7 @@
         "search": "Search"
     },
     "export": {
+        "inventoryExport": "Inventory Export",
         "baseInfo": "Base Info",
         "dateRange": "Date Range",
         "emptyFile": "Exported file is empty, check filter or data.",
