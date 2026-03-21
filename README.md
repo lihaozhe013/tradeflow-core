@@ -183,7 +183,7 @@ Key endpoints (high level):
 | Stock | `GET /api/stock` | Real-time stock summary by product |
 | Finance - Receivable | `/api/receivable/payments` (GET, POST, PUT, DELETE) | Track customer payments |
 | Finance - Payable | `/api/payable/payments` (GET, POST, PUT, DELETE) | Track supplier payments |
-| Export | `GET /api/export/:type` | Export configured datasets (e.g., Excel) |
+| Export | `POST /api/export/:type` | Export configured datasets (e.g., inventory, base-info, invoice) |
 
 
 ## Quick Start
