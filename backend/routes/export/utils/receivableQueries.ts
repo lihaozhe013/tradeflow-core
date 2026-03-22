@@ -33,15 +33,16 @@ export async function getReceivableSummary(
   const sql = Prisma.sql`
         SELECT 
           o.customer_code,
-          o.customer_short_name,
-          o.customer_full_name,
+          pa.short_name as customer_short_name,
+          pa.full_name as customer_full_name,
           COALESCE(SUM(o.total_price), 0) as total_sales,
           COALESCE(SUM(p.amount), 0) as total_payments,
           COALESCE(SUM(o.total_price), 0) - COALESCE(SUM(p.amount), 0) as balance
         FROM outbound_records o
         LEFT JOIN receivable_payments p ON o.customer_code = p.customer_code
+        LEFT JOIN partners pa ON o.customer_code = pa.code
         WHERE ${Prisma.join(conditions, " AND ")}
-        GROUP BY o.customer_code, o.customer_short_name, o.customer_full_name
+        GROUP BY o.customer_code, pa.short_name, pa.full_name
         ORDER BY balance DESC
       `;
 

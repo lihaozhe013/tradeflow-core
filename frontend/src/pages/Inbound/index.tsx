@@ -169,7 +169,7 @@ const Inbound: FC = () => {
   const handleEdit = (record: InboundRecord): void => {
     setEditingRecord(record);
     const supplier = partners.find(
-      (partner) => partner.short_name === record.supplier_short_name
+      (partner) => partner.code === record.supplier_code
     );
     const product = products.find(
       (item) => item.product_model === record.product_model
@@ -177,7 +177,8 @@ const Inbound: FC = () => {
 
     form.setFieldsValue({
       ...record,
-      supplier_code: supplier?.code ?? "",
+      supplier_short_name: record.partner?.short_name || supplier?.short_name,
+      supplier_code: record.supplier_code,
       product_code: product?.code ?? "",
       inbound_date: record.inbound_date ? dayjs(record.inbound_date) : null,
       invoice_date: record.invoice_date ? dayjs(record.invoice_date) : null,

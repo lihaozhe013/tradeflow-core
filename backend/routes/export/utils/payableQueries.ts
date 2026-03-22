@@ -33,15 +33,16 @@ export async function getPayableSummary(
   const sql = Prisma.sql`
         SELECT 
           i.supplier_code,
-          i.supplier_short_name,
-          i.supplier_full_name,
+          pa.short_name as supplier_short_name,
+          pa.full_name as supplier_full_name,
           COALESCE(SUM(i.total_price), 0) as total_purchase,
           COALESCE(SUM(p.amount), 0) as total_payments,
           COALESCE(SUM(i.total_price), 0) - COALESCE(SUM(p.amount), 0) as balance
         FROM inbound_records i
         LEFT JOIN payable_payments p ON i.supplier_code = p.supplier_code
+        LEFT JOIN partners pa ON i.supplier_code = pa.code
         WHERE ${Prisma.join(conditions, " AND ")}
-        GROUP BY i.supplier_code, i.supplier_short_name, i.supplier_full_name
+        GROUP BY i.supplier_code, pa.short_name, pa.full_name
         ORDER BY balance DESC
       `;
 

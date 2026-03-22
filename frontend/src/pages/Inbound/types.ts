@@ -16,8 +16,7 @@ export type Product = {
 export type InboundRecord = {
   readonly id: number;
   readonly supplier_code: string;
-  readonly supplier_short_name: string;
-  readonly supplier_full_name?: string | null;
+  readonly partner?: Partner;
   readonly product_code: string;
   readonly product_model: string;
   readonly product_category?: string | null;

@@ -30,8 +30,10 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
   const where: Prisma.OutboundRecordWhereInput = {};
 
   if (isProvided(req.query['customer_short_name'])) {
-    where.customer_short_name = {
-      contains: req.query['customer_short_name'] as string,
+    where.partner = {
+      short_name: {
+        contains: req.query['customer_short_name'] as string,
+      }
     };
   }
   if (isProvided(req.query['product_model'])) {
@@ -68,7 +70,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
   }
 
   const [rows, total] = await prisma.$transaction([
-    prisma.outboundRecord.findMany({ where, orderBy, skip, take: limit }),
+    prisma.outboundRecord.findMany({ where, orderBy, skip, take: limit, include: { partner: true } }),
     prisma.outboundRecord.count({ where }),
   ]);
 
@@ -91,8 +93,6 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
 router.post('/', async (req: Request, res: Response): Promise<void> => {
   const {
     customer_code,
-    customer_short_name,
-    customer_full_name,
     product_code,
     product_model,
     quantity,
@@ -110,8 +110,6 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
   const result = await prisma.outboundRecord.create({
     data: {
       customer_code,
-      customer_short_name,
-      customer_full_name,
       product_code,
       product_model,
       quantity,
@@ -138,8 +136,6 @@ router.put('/:id', async (req: Request, res: Response): Promise<void> => {
   const id = Number(req.params['id']);
   const {
     customer_code,
-    customer_short_name,
-    customer_full_name,
     product_code,
     product_model,
     quantity,
@@ -164,8 +160,6 @@ router.put('/:id', async (req: Request, res: Response): Promise<void> => {
     where: { id },
     data: {
       customer_code,
-      customer_short_name,
-      customer_full_name,
       product_code,
       product_model,
       quantity,
@@ -212,10 +206,8 @@ router.post('/batch', async (req: Request, res: Response): Promise<void> => {
   }
 
   // Mapping
-  const allowedFieldsMap: Record<string, keyof Prisma.OutboundRecordUpdateInput> = {
+  const allowedFieldsMap: Record<string, keyof Prisma.OutboundRecordUncheckedUpdateInput> = {
     customer_code: 'customer_code',
-    customer_short_name: 'customer_short_name',
-    customer_full_name: 'customer_full_name',
     product_code: 'product_code',
     product_model: 'product_model',
     quantity: 'quantity',

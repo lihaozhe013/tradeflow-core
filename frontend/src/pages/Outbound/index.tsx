@@ -170,7 +170,7 @@ const Outbound: FC = () => {
   const handleEdit = (record: OutboundRecord): void => {
     setEditingRecord(record);
     const customer = partners.find(
-      (partner) => partner.short_name === record.customer_short_name
+      (partner) => partner.code === record.customer_code
     );
     const product = products.find(
       (item) => item.product_model === record.product_model
@@ -178,7 +178,8 @@ const Outbound: FC = () => {
 
     form.setFieldsValue({
       ...record,
-      customer_code: customer?.code ?? "",
+      customer_short_name: record.partner?.short_name || customer?.short_name,
+      customer_code: record.customer_code,
       product_code: product?.code ?? "",
       outbound_date: record.outbound_date ? dayjs(record.outbound_date) : null,
       invoice_date: record.invoice_date ? dayjs(record.invoice_date) : null,

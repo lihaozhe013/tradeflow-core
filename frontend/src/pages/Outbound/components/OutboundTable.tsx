@@ -42,11 +42,12 @@ const OutboundTable: FC<OutboundTableProps> = ({
     },
     {
       title: t('outbound.customerShortName'),
-      dataIndex: 'customer_short_name',
-      key: 'customer_short_name',
+      dataIndex: ['partner', 'short_name'],
+      key: 'partner.short_name',
       width: 100,
-      filters: partners.map(partner => ({ text: partner.short_name, value: partner.short_name })),
-      onFilter: (value, record) => record.customer_short_name === value,
+      filters: partners.map(p => ({ text: p.short_name, value: p.short_name })),
+      onFilter: (value, record) => record.partner?.short_name === value,
+      render: (_, record) => record.partner?.short_name,
     },
     {
       title: t('outbound.productModel'),
