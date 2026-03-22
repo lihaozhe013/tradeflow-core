@@ -141,7 +141,6 @@ model SystemLog {
   username    String?
   action      String
   resource    String
-  ip          String?
   user_agent  String?
   params      String?
   created_at  DateTime @default(now())
