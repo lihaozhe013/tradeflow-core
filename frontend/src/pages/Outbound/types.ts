@@ -16,8 +16,7 @@ export type Product = {
 export type OutboundRecord = {
   readonly id: number;
   readonly customer_code: string;
-  readonly customer_short_name: string;
-  readonly customer_full_name?: string | null;
+  readonly partner?: Partner;
   readonly product_code: string;
   readonly product_model: string;
   readonly product_category?: string | null;

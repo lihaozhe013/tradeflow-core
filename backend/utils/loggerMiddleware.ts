@@ -90,7 +90,6 @@ export const requestLogger = (req: Request, res: Response, next: NextFunction): 
               username,
               action: req.method,
               resource: req.originalUrl,
-              ip: req.ip || req.socket.remoteAddress || '',
               user_agent: req.get('User-Agent') || '',
               params: bodyToLog,
             },

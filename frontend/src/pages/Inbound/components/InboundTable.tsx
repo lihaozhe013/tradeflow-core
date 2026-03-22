@@ -42,11 +42,12 @@ const InboundTable: FC<InboundTableProps> = ({
     },
     {
       title: t('inbound.supplierShortName'),
-      dataIndex: 'supplier_short_name',
-      key: 'supplier_short_name',
+      dataIndex: ['partner', 'short_name'],
+      key: 'partner.short_name',
       width: 100,
       filters: partners.map(p => ({ text: p.short_name, value: p.short_name })),
-      onFilter: (value, record) => record.supplier_short_name === value,
+      onFilter: (value, record) => record.partner?.short_name === value,
+      render: (_, record) => record.partner?.short_name,
     },
     {
       title: t('inbound.productModel'),

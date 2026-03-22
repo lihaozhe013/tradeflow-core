@@ -56,7 +56,12 @@ async function calculateFIFOData(startDate: string, endDate: string): Promise<An
         unit_price: true,
         total_price: true,
         customer_code: true,
-        customer_short_name: true,
+        partner: {
+          select: {
+            short_name: true,
+            full_name: true,
+          }
+        }
       },
     }),
     // Partners for resolution
@@ -114,10 +119,10 @@ async function calculateFIFOData(startDate: string, endDate: string): Promise<An
     if (outRecord.customer_code && partnerCodeMap.has(outRecord.customer_code)) {
       partner = partnerCodeMap.get(outRecord.customer_code);
     } else if (
-      outRecord.customer_short_name &&
-      partnerShortMap.has(outRecord.customer_short_name)
+      outRecord.partner?.short_name &&
+      partnerShortMap.has(outRecord.partner.short_name)
     ) {
-      partner = partnerShortMap.get(outRecord.customer_short_name);
+      partner = partnerShortMap.get(outRecord.partner.short_name);
     }
 
     // FIFO consumption
@@ -159,7 +164,7 @@ async function calculateFIFOData(startDate: string, endDate: string): Promise<An
         unit_price: Number(outRecord.unit_price),
         total_price: Number(outRecord.total_price),
         customer_code: outRecord.customer_code,
-        customer_short_name: outRecord.customer_short_name,
+        customer_short_name: outRecord.partner?.short_name || null,
         cost_amount: decimalCalc.toNumber(currentRecordCost, 2), // Decimal
         sales_amount: Number(outRecord.total_price || 0),
         customer_full_name: partner.full_name,

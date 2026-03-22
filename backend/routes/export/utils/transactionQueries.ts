@@ -47,7 +47,7 @@ export async function getInboundData(
     andConditions.push({
       OR: [
         { supplier_code: { contains: filters.customerCode } },
-        { supplier_short_name: { contains: filters.customerCode } },
+        { partner: { short_name: { contains: filters.customerCode } } },
       ],
     });
   }
@@ -86,7 +86,7 @@ export async function getOutboundData(
     andConditions.push({
       OR: [
         { customer_code: { contains: filters.customerCode } },
-        { customer_short_name: { contains: filters.customerCode } },
+        { partner: { short_name: { contains: filters.customerCode } } },
       ],
     });
   }

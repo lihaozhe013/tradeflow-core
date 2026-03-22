@@ -1,11 +1,11 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import path from 'path'
-import frontendConfig from './src/config/frontendConfig.json'
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import path from 'path';
+import frontendConfig from './src/config/frontendConfig.json';
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: "./",
+  base: './',
   plugins: [react()],
   resolve: {
     alias: {
@@ -19,9 +19,6 @@ export default defineConfig({
       '@/i18n': path.resolve(__dirname, './src/i18n'),
       '@/types': path.resolve(__dirname, './src/types'),
     },
-  },
-  esbuild: {
-    target: 'es2024',
   },
   server: {
     host: '0.0.0.0',
@@ -45,10 +42,18 @@ export default defineConfig({
     target: 'es2024',
     rollupOptions: {
       output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom'],
-          antd: ['antd'],
-          router: ['react-router-dom'],
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('antd')) {
+              return 'antd';
+            }
+            if (id.includes('react-router-dom')) {
+              return 'router';
+            }
+            if (id.includes('react') || id.includes('react-dom')) {
+              return 'vendor';
+            }
+          }
         },
       },
     },
@@ -62,7 +67,7 @@ export default defineConfig({
         target: frontendConfig.server.url,
         changeOrigin: true,
         secure: false,
-      }
+      },
     },
   },
-})
+});

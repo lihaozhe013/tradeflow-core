@@ -1,5 +1,10 @@
 # Change Log
 
+## v0.8.1
+
+- redesign the schema, removed useless columns
+- update packages
+
 ## v0.8.0
 
 - Inventory Export feature

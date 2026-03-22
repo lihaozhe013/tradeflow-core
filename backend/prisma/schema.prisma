@@ -14,41 +14,39 @@ datasource db {
 // ----------------------------------------------------
 
 model InboundRecord {
-  id                  Int     @id @default(autoincrement())
-  supplier_code       String?
-  supplier_short_name String?
-  supplier_full_name  String?
-  product_code        String?
-  product_model       String?
-  quantity            Int?
-  unit_price          Float?
-  total_price         Float?
-  inbound_date        String?
-  invoice_date        String?
-  invoice_number      String?
-  receipt_number      String?
-  order_number        String?
-  remark              String?
+  id             Int     @id @default(autoincrement())
+  supplier_code  String
+  partner        Partner @relation(fields: [supplier_code], references: [code])
+  product_code   String?
+  product_model  String?
+  quantity       Int?
+  unit_price     Float?
+  total_price    Float?
+  inbound_date   String?
+  invoice_date   String?
+  invoice_number String?
+  receipt_number String?
+  order_number   String?
+  remark         String?
 
   @@map("inbound_records")
 }
 
 model OutboundRecord {
-  id                  Int     @id @default(autoincrement())
-  customer_code       String?
-  customer_short_name String?
-  customer_full_name  String?
-  product_code        String?
-  product_model       String?
-  quantity            Int?
-  unit_price          Float?
-  total_price         Float?
-  outbound_date       String?
-  invoice_date        String?
-  invoice_number      String?
-  receipt_number      String?
-  order_number        String?
-  remark              String?
+  id             Int     @id @default(autoincrement())
+  customer_code  String
+  partner        Partner @relation(fields: [customer_code], references: [code])
+  product_code   String?
+  product_model  String?
+  quantity       Int?
+  unit_price     Float?
+  total_price    Float?
+  outbound_date  String?
+  invoice_date   String?
+  invoice_number String?
+  receipt_number String?
+  order_number   String?
+  remark         String?
 
   @@map("outbound_records")
 }
@@ -73,13 +71,15 @@ model InventoryLedger {
 }
 
 model Partner {
-  code           String? @unique
-  short_name     String  @id
-  full_name      String?
-  address        String?
-  contact_person String?
-  contact_phone  String?
-  type           Int?
+  code            String           @unique
+  short_name      String           @id
+  full_name       String?
+  address         String?
+  contact_person  String?
+  contact_phone   String?
+  type            Int?
+  inboundRecords  InboundRecord[]
+  outboundRecords OutboundRecord[]
 
   @@map("partners")
 }
@@ -141,7 +141,6 @@ model SystemLog {
   username    String?
   action      String
   resource    String
-  ip          String?
   user_agent  String?
   params      String?
   created_at  DateTime @default(now())

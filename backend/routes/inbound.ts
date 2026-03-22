@@ -29,8 +29,10 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
   const where: Prisma.InboundRecordWhereInput = {};
 
   if (isProvided(req.query['supplier_short_name'])) {
-    where.supplier_short_name = {
-      contains: req.query['supplier_short_name'] as string,
+    where.partner = {
+      short_name: {
+        contains: req.query['supplier_short_name'] as string,
+      }
     };
   }
   if (isProvided(req.query['product_model'])) {
@@ -73,6 +75,9 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       orderBy,
       skip,
       take: limit,
+      include: {
+        partner: true,
+      },
     }),
     prisma.inboundRecord.count({ where }),
   ]);
@@ -94,8 +99,6 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
 router.post('/', async (req: Request, res: Response): Promise<void> => {
   const {
     supplier_code,
-    supplier_short_name,
-    supplier_full_name,
     product_code,
     product_model,
     quantity,
@@ -113,8 +116,6 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
   const result = await prisma.inboundRecord.create({
     data: {
       supplier_code,
-      supplier_short_name,
-      supplier_full_name,
       product_code,
       product_model,
       quantity,
@@ -140,8 +141,6 @@ router.put('/:id', async (req: Request, res: Response): Promise<void> => {
   const id = Number(req.params['id']);
   const {
     supplier_code,
-    supplier_short_name,
-    supplier_full_name,
     product_code,
     product_model,
     quantity,
@@ -164,8 +163,6 @@ router.put('/:id', async (req: Request, res: Response): Promise<void> => {
     where: { id },
     data: {
       supplier_code,
-      supplier_short_name,
-      supplier_full_name,
       product_code,
       product_model,
       quantity,
@@ -209,10 +206,8 @@ router.post('/batch', async (req: Request, res: Response): Promise<void> => {
     return;
   }
 
-  const allowedFieldsMap: Record<string, keyof Prisma.InboundRecordUpdateInput> = {
+  const allowedFieldsMap: Record<string, keyof Prisma.InboundRecordUncheckedUpdateInput> = {
     supplier_code: 'supplier_code',
-    supplier_short_name: 'supplier_short_name',
-    supplier_full_name: 'supplier_full_name',
     product_code: 'product_code',
     product_model: 'product_model',
     quantity: 'quantity',
