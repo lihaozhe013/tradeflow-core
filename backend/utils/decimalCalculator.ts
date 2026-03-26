@@ -100,9 +100,8 @@ class DecimalCalculator {
       return defaultValue;
     }
     // Handle BigInt by converting to string first
-    const val: number | string | Decimal = typeof sqlResult === 'bigint'
-      ? sqlResult.toString()
-      : sqlResult;
+    const val: number | string | Decimal =
+      typeof sqlResult === 'bigint' ? sqlResult.toString() : sqlResult;
     const decimal = this.decimal(val);
     return this.toNumber(decimal, decimalPlaces);
   }

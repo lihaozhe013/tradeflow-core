@@ -1,15 +1,10 @@
-import React, { useState } from "react";
-import { Form, Input, Button, Card, Alert, Spin, Select, Space } from "antd";
-import {
-  UserOutlined,
-  LockOutlined,
-  LoginOutlined,
-  GlobalOutlined,
-} from "@ant-design/icons";
-import { useAuth } from "@/auth/useAuth";
-import { useNavigate, useLocation } from "react-router-dom";
-import "@/pages/Login/LoginPage.css";
-import { useTranslation } from "react-i18next";
+import React, { useState } from 'react';
+import { Form, Input, Button, Card, Alert, Spin, Select, Space } from 'antd';
+import { UserOutlined, LockOutlined, LoginOutlined, GlobalOutlined } from '@ant-design/icons';
+import { useAuth } from '@/auth/useAuth';
+import { useNavigate, useLocation } from 'react-router-dom';
+import '@/pages/Login/LoginPage.css';
+import { useTranslation } from 'react-i18next';
 
 /**
  * 登录表单值接口
@@ -39,28 +34,21 @@ const LoginPage: React.FC = () => {
 
   // 获取重定向路径
   const from =
-    (location.state as { from?: { pathname?: string } } | undefined)?.from
-      ?.pathname ?? "/";
+    (location.state as { from?: { pathname?: string } } | undefined)?.from?.pathname ?? '/';
 
   // 语言选项
-  type LanguageValue = "zh" | "en" | "ko";
-  const supportedLanguages: readonly LanguageValue[] = [
-    "zh",
-    "en",
-    "ko",
-  ] as const;
+  type LanguageValue = 'zh' | 'en' | 'ko';
+  const supportedLanguages: readonly LanguageValue[] = ['zh', 'en', 'ko'] as const;
 
   const languageOptions = [
-    { value: "zh", label: "🇨🇳 中文", flag: "🇨🇳" },
-    { value: "en", label: "🇺🇸 English", flag: "🇺🇸" },
-    { value: "ko", label: "🇰🇷 한국어", flag: "🇰🇷" },
+    { value: 'zh', label: '🇨🇳 中文', flag: '🇨🇳' },
+    { value: 'en', label: '🇺🇸 English', flag: '🇺🇸' },
+    { value: 'ko', label: '🇰🇷 한국어', flag: '🇰🇷' },
   ];
 
-  const currentLanguage = supportedLanguages.includes(
-    i18n.language as LanguageValue
-  )
+  const currentLanguage = supportedLanguages.includes(i18n.language as LanguageValue)
     ? (i18n.language as LanguageValue)
-    : "zh";
+    : 'zh';
 
   const handleLanguageChange = (value: LanguageValue) => {
     void i18n.changeLanguage(value);
@@ -100,7 +88,7 @@ const LoginPage: React.FC = () => {
       <div className="login-container">
         <div className="login-loading">
           <Spin size="large" />
-          <p>{t("auth.verifying")}</p>
+          <p>{t('auth.verifying')}</p>
         </div>
       </div>
     );
@@ -114,8 +102,8 @@ const LoginPage: React.FC = () => {
             <div className="login-logo">
               <img src="/logo.svg" alt="Logo" className="logo-image" />
             </div>
-            <h1 className="login-title">{t("auth.title")}</h1>
-            <p className="login-subtitle">{t("auth.subtitle")}</p>
+            <h1 className="login-title">{t('auth.title')}</h1>
+            <p className="login-subtitle">{t('auth.subtitle')}</p>
           </div>
 
           {error && (
@@ -141,13 +129,13 @@ const LoginPage: React.FC = () => {
               rules={[
                 {
                   required: true,
-                  message: t("auth.usernameRequired"),
+                  message: t('auth.usernameRequired'),
                 },
               ]}
             >
               <Input
                 prefix={<UserOutlined />}
-                placeholder={t("auth.username")}
+                placeholder={t('auth.username')}
                 onChange={handleUsernameChange}
                 autoComplete="username"
               />
@@ -158,13 +146,13 @@ const LoginPage: React.FC = () => {
               rules={[
                 {
                   required: true,
-                  message: t("auth.passwordRequired"),
+                  message: t('auth.passwordRequired'),
                 },
               ]}
             >
               <Input.Password
                 prefix={<LockOutlined />}
-                placeholder={t("auth.password")}
+                placeholder={t('auth.password')}
                 autoComplete="current-password"
               />
             </Form.Item>
@@ -178,15 +166,15 @@ const LoginPage: React.FC = () => {
                 icon={<LoginOutlined />}
                 block
               >
-                {loginLoading ? t("auth.loggingIn") : t("auth.login")}
+                {loginLoading ? t('auth.loggingIn') : t('auth.login')}
               </Button>
             </Form.Item>
           </Form>
         </Card>
       </div>
-      <div style={{ position: "absolute", top: 16, right: 16 }}>
+      <div style={{ position: 'absolute', top: 16, right: 16 }}>
         <Space>
-          <GlobalOutlined style={{ color: "#666" }} />
+          <GlobalOutlined style={{ color: '#666' }} />
           <Select
             value={currentLanguage}
             onChange={handleLanguageChange}

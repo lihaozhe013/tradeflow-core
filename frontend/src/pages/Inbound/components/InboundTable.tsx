@@ -6,7 +6,7 @@ import { EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import type { FC, Key, Dispatch, SetStateAction } from 'react';
 import type { InboundRecord, Partner, Product } from '../types';
-import { currency_unit_symbol } from "@/config/types";
+import { currency_unit_symbol } from '@/config/types';
 interface InboundTableProps {
   readonly inboundRecords: InboundRecord[];
   readonly loading: boolean;
@@ -45,7 +45,7 @@ const InboundTable: FC<InboundTableProps> = ({
       dataIndex: ['partner', 'short_name'],
       key: 'partner.short_name',
       width: 100,
-      filters: partners.map(p => ({ text: p.short_name, value: p.short_name })),
+      filters: partners.map((p) => ({ text: p.short_name, value: p.short_name })),
       onFilter: (value, record) => record.partner?.short_name === value,
       render: (_, record) => record.partner?.short_name,
     },
@@ -54,7 +54,7 @@ const InboundTable: FC<InboundTableProps> = ({
       dataIndex: 'product_model',
       key: 'product_model',
       width: 180,
-      filters: products.map(p => ({ text: p.product_model, value: p.product_model })),
+      filters: products.map((p) => ({ text: p.product_model, value: p.product_model })),
       onFilter: (value, record) => record.product_model === value,
     },
     {
@@ -68,7 +68,7 @@ const InboundTable: FC<InboundTableProps> = ({
       dataIndex: 'unit_price',
       key: 'unit_price',
       width: 100,
-      render: price => `${currency_unit_symbol}${price}`,
+      render: (price) => `${currency_unit_symbol}${price}`,
       sorter: true,
     },
     {
@@ -76,7 +76,7 @@ const InboundTable: FC<InboundTableProps> = ({
       dataIndex: 'total_price',
       key: 'total_price',
       width: 100,
-      render: price => `${currency_unit_symbol}${price}`,
+      render: (price) => `${currency_unit_symbol}${price}`,
       sorter: true,
     },
     {
@@ -110,12 +110,7 @@ const InboundTable: FC<InboundTableProps> = ({
       width: 80,
       render: (_value, record) => (
         <Space size="small">
-          <Button
-            type="link"
-            icon={<EditOutlined />}
-            onClick={() => onEdit(record)}
-            size="small"
-          >
+          <Button type="link" icon={<EditOutlined />} onClick={() => onEdit(record)} size="small">
             {t('common.edit')}
           </Button>
           <Popconfirm
@@ -124,12 +119,7 @@ const InboundTable: FC<InboundTableProps> = ({
             okText={t('common.confirm')}
             cancelText={t('common.cancel')}
           >
-            <Button
-              type="link"
-              danger
-              icon={<DeleteOutlined />}
-              size="small"
-            >
+            <Button type="link" danger icon={<DeleteOutlined />} size="small">
               {t('common.delete')}
             </Button>
           </Popconfirm>

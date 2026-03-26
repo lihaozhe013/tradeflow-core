@@ -1,12 +1,12 @@
-import { Prisma } from "@prisma/client";
-import { prisma } from "@/prismaClient";
-import decimalCalc from "@/utils/decimalCalculator";
+import { Prisma } from '@prisma/client';
+import { prisma } from '@/prismaClient';
+import decimalCalc from '@/utils/decimalCalculator';
 import {
   ReceivablePayableFilters as ReceivableFilters,
   ReceivablePaymentDto,
   ReceivableSummaryDto,
   OutboundRecordDto,
-} from "@/routes/export/utils/types";
+} from '@/routes/export/utils/types';
 
 export async function getReceivableSummary(
   filters: ReceivableFilters = {},
@@ -20,14 +20,10 @@ export async function getReceivableSummary(
     conditions.push(Prisma.sql`o.outbound_date <= ${filters.outboundTo}`);
   }
   if (filters.paymentFrom) {
-    conditions.push(
-      Prisma.sql`(p.pay_date IS NULL OR p.pay_date >= ${filters.paymentFrom})`,
-    );
+    conditions.push(Prisma.sql`(p.pay_date IS NULL OR p.pay_date >= ${filters.paymentFrom})`);
   }
   if (filters.paymentTo) {
-    conditions.push(
-      Prisma.sql`(p.pay_date IS NULL OR p.pay_date <= ${filters.paymentTo})`,
-    );
+    conditions.push(Prisma.sql`(p.pay_date IS NULL OR p.pay_date <= ${filters.paymentTo})`);
   }
 
   const sql = Prisma.sql`
@@ -41,7 +37,7 @@ export async function getReceivableSummary(
         FROM outbound_records o
         LEFT JOIN receivable_payments p ON o.customer_code = p.customer_code
         LEFT JOIN partners pa ON o.customer_code = pa.code
-        WHERE ${Prisma.join(conditions, " AND ")}
+        WHERE ${Prisma.join(conditions, ' AND ')}
         GROUP BY o.customer_code, pa.short_name, pa.full_name
         ORDER BY balance DESC
       `;
@@ -89,7 +85,7 @@ export async function getReceivableDetails(
 
   const rows = await prisma.outboundRecord.findMany({
     where,
-    orderBy: [{ outbound_date: "desc" }, { id: "desc" }],
+    orderBy: [{ outbound_date: 'desc' }, { id: 'desc' }],
   });
   return rows.map((r) => ({ ...r, record_id: r.id }));
 }
@@ -113,6 +109,6 @@ export async function getReceivablePayments(
 
   return await prisma.receivablePayment.findMany({
     where,
-    orderBy: [{ pay_date: "desc" }, { id: "desc" }],
+    orderBy: [{ pay_date: 'desc' }, { id: 'desc' }],
   });
 }

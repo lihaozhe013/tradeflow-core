@@ -1,34 +1,27 @@
-import { Card, Spin, Alert } from "antd";
-import {
-  PieChart,
-  Pie,
-  Cell,
-  ResponsiveContainer,
-  Legend,
-  Tooltip,
-} from "recharts";
-import type { PieLabelRenderProps } from "recharts";
-import { useTranslation } from "react-i18next";
-import { useSimpleApiData } from "@/hooks/useSimpleApi";
-import { DEFAULT_TOP_SALES_RESPONSE } from "@/pages/Overview/types";
-import type { TopSalesResponse } from "@/pages/Overview/types";
+import { Card, Spin, Alert } from 'antd';
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+import type { PieLabelRenderProps } from 'recharts';
+import { useTranslation } from 'react-i18next';
+import { useSimpleApiData } from '@/hooks/useSimpleApi';
+import { DEFAULT_TOP_SALES_RESPONSE } from '@/pages/Overview/types';
+import type { TopSalesResponse } from '@/pages/Overview/types';
 
 const TopSalesPieChart = () => {
   const { t } = useTranslation();
 
   // 预定义颜色数组
   const COLORS = [
-    "#0088FE",
-    "#00C49F",
-    "#FFBB28",
-    "#FF8042",
-    "#8884D8",
-    "#82CA9D",
-    "#FFC658",
-    "#FF7C7C",
-    "#8DD1E1",
-    "#D084D0",
-    "#D9D9D9",
+    '#0088FE',
+    '#00C49F',
+    '#FFBB28',
+    '#FF8042',
+    '#8884D8',
+    '#82CA9D',
+    '#FFC658',
+    '#FF7C7C',
+    '#8DD1E1',
+    '#D084D0',
+    '#D9D9D9',
   ] as const;
 
   // 使用useSimpleApiData获取销售数据
@@ -37,8 +30,8 @@ const TopSalesPieChart = () => {
     loading,
     error,
   } = useSimpleApiData<TopSalesResponse>(
-    "/overview/top-sales-products",
-    DEFAULT_TOP_SALES_RESPONSE
+    '/overview/top-sales-products',
+    DEFAULT_TOP_SALES_RESPONSE,
   );
 
   const resolvedResponse = salesResponse ?? DEFAULT_TOP_SALES_RESPONSE;
@@ -63,11 +56,7 @@ const TopSalesPieChart = () => {
     percent = 0,
   }: PieLabelRenderProps) => {
     const percentNumber =
-      typeof percent === "number"
-        ? percent
-        : typeof percent === "string"
-        ? parseFloat(percent)
-        : 0;
+      typeof percent === 'number' ? percent : typeof percent === 'string' ? parseFloat(percent) : 0;
 
     if (Number.isNaN(percentNumber) || percentNumber < 0.05) return null; // 小于5%不显示标签
 
@@ -86,7 +75,7 @@ const TopSalesPieChart = () => {
         x={x}
         y={y}
         fill="white"
-        textAnchor={x > centerX ? "start" : "end"}
+        textAnchor={x > centerX ? 'start' : 'end'}
         dominantBaseline="central"
         fontSize={12}
       >
@@ -100,9 +89,9 @@ const TopSalesPieChart = () => {
       <Card
         style={{
           minHeight: 280,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
         }}
       >
         <Spin />
@@ -115,18 +104,16 @@ const TopSalesPieChart = () => {
 
   return (
     <Card
-      title={t("overview.topSalesDistribution")}
+      title={t('overview.topSalesDistribution')}
       style={{
-        borderRadius: "16px",
-        boxShadow: "0 8px 32px rgba(0,0,0,0.1)",
+        borderRadius: '16px',
+        boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
         minHeight: 270,
       }}
-      bodyStyle={{ padding: "8px" }}
+      bodyStyle={{ padding: '8px' }}
     >
-      <div
-        style={{ color: "#999", fontSize: 12, marginBottom: 8, marginLeft: 17 }}
-      >
-        {t("overview.includesOnlyTheModtRecentYear")}
+      <div style={{ color: '#999', fontSize: 12, marginBottom: 8, marginLeft: 17 }}>
+        {t('overview.includesOnlyTheModtRecentYear')}
       </div>
       <ResponsiveContainer width="100%" height={500}>
         <PieChart>
@@ -145,9 +132,9 @@ const TopSalesPieChart = () => {
               <Cell
                 key={`cell-${index}`}
                 fill={
-                  (entry.name === t("overview.other")
-                    ? "#d9d9d9"
-                    : COLORS[index % COLORS.length]) || "#0088FE"
+                  (entry.name === t('overview.other')
+                    ? '#d9d9d9'
+                    : COLORS[index % COLORS.length]) || '#0088FE'
                 }
               />
             ))}
@@ -159,16 +146,11 @@ const TopSalesPieChart = () => {
                 | string
                 | Array<number | string>
                 | ReadonlyArray<number | string>
-                | undefined
-            ) => [value, t("overview.salesAmount")]}
-            labelFormatter={(label: any) =>
-              `${t("overview.product")}: ${label}`
-            }
+                | undefined,
+            ) => [value, t('overview.salesAmount')]}
+            labelFormatter={(label: any) => `${t('overview.product')}: ${label}`}
           />
-          <Legend
-            wrapperStyle={{ fontSize: "12px", paddingTop: "10px" }}
-            iconSize={8}
-          />
+          <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} iconSize={8} />
         </PieChart>
       </ResponsiveContainer>
     </Card>

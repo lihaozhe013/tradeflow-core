@@ -1,12 +1,12 @@
-import { Prisma } from "@prisma/client";
-import { prisma } from "@/prismaClient";
-import decimalCalc from "@/utils/decimalCalculator";
+import { Prisma } from '@prisma/client';
+import { prisma } from '@/prismaClient';
+import decimalCalc from '@/utils/decimalCalculator';
 import {
   ReceivablePayableFilters as PayableFilters,
   PayablePaymentDto,
   PayableSummaryDto,
   InboundRecordDto,
-} from "@/routes/export/utils/types";
+} from '@/routes/export/utils/types';
 
 export async function getPayableSummary(
   filters: PayableFilters = {},
@@ -20,14 +20,10 @@ export async function getPayableSummary(
     conditions.push(Prisma.sql`i.inbound_date <= ${filters.outboundTo}`);
   }
   if (filters.paymentFrom) {
-    conditions.push(
-      Prisma.sql`(p.pay_date IS NULL OR p.pay_date >= ${filters.paymentFrom})`,
-    );
+    conditions.push(Prisma.sql`(p.pay_date IS NULL OR p.pay_date >= ${filters.paymentFrom})`);
   }
   if (filters.paymentTo) {
-    conditions.push(
-      Prisma.sql`(p.pay_date IS NULL OR p.pay_date <= ${filters.paymentTo})`,
-    );
+    conditions.push(Prisma.sql`(p.pay_date IS NULL OR p.pay_date <= ${filters.paymentTo})`);
   }
 
   const sql = Prisma.sql`
@@ -41,7 +37,7 @@ export async function getPayableSummary(
         FROM inbound_records i
         LEFT JOIN payable_payments p ON i.supplier_code = p.supplier_code
         LEFT JOIN partners pa ON i.supplier_code = pa.code
-        WHERE ${Prisma.join(conditions, " AND ")}
+        WHERE ${Prisma.join(conditions, ' AND ')}
         GROUP BY i.supplier_code, pa.short_name, pa.full_name
         ORDER BY balance DESC
       `;
@@ -89,7 +85,7 @@ export async function getPayableDetails(
 
   const rows = await prisma.inboundRecord.findMany({
     where,
-    orderBy: [{ inbound_date: "desc" }, { id: "desc" }],
+    orderBy: [{ inbound_date: 'desc' }, { id: 'desc' }],
   });
 
   return rows.map((r) => ({ ...r, record_id: r.id }));
@@ -114,6 +110,6 @@ export async function getPayablePayments(
 
   return await prisma.payablePayment.findMany({
     where,
-    orderBy: [{ pay_date: "desc" }, { id: "desc" }],
+    orderBy: [{ pay_date: 'desc' }, { id: 'desc' }],
   });
 }

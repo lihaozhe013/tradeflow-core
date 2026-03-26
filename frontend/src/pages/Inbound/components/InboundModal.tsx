@@ -16,13 +16,8 @@ import type { FormInstance } from 'antd/es/form';
 import type { RadioChangeEvent } from 'antd/es/radio';
 import type { DefaultOptionType } from 'antd/es/select';
 import type { Dayjs } from 'dayjs';
-import { currency_unit_symbol } from "@/config/types";
-import type {
-  InboundFormValues,
-  InboundRecord,
-  Partner,
-  Product,
-} from '../types';
+import { currency_unit_symbol } from '@/config/types';
+import type { InboundFormValues, InboundRecord, Partner, Product } from '../types';
 
 interface InboundModalProps {
   readonly modalVisible: boolean;
@@ -84,11 +79,7 @@ const InboundModal: FC<InboundModalProps> = ({
       footer={null}
       width={800}
     >
-      <Form<InboundFormValues>
-        form={form}
-        layout="vertical"
-        onFinish={onSave}
-      >
+      <Form<InboundFormValues> form={form} layout="vertical" onFinish={onSave}>
         <Row gutter={16}>
           <Col span={8}>
             <Form.Item
@@ -98,8 +89,8 @@ const InboundModal: FC<InboundModalProps> = ({
             >
               <AutoComplete
                 placeholder={t('inbound.inputSupplierCode') ?? ''}
-                onChange={value => onSupplierCodeChange(value ?? '')}
-                options={partners.map(partner => ({
+                onChange={(value) => onSupplierCodeChange(value ?? '')}
+                options={partners.map((partner) => ({
                   value: partner.code ?? '',
                   label: `${partner.code ?? ''} - ${partner.short_name}`,
                 }))}
@@ -115,8 +106,8 @@ const InboundModal: FC<InboundModalProps> = ({
             >
               <AutoComplete
                 placeholder={t('inbound.inputSupplierShortName') ?? ''}
-                onChange={value => onSupplierShortNameChange(value ?? '')}
-                options={partners.map(partner => ({
+                onChange={(value) => onSupplierShortNameChange(value ?? '')}
+                options={partners.map((partner) => ({
                   value: partner.short_name,
                   label: `${partner.short_name} - ${partner.code ?? ''}`,
                 }))}
@@ -125,10 +116,7 @@ const InboundModal: FC<InboundModalProps> = ({
             </Form.Item>
           </Col>
           <Col span={8}>
-            <Form.Item
-              label={t('inbound.supplierFullName')}
-              name="supplier_full_name"
-            >
+            <Form.Item label={t('inbound.supplierFullName')} name="supplier_full_name">
               <Input placeholder={t('inbound.autoFill') ?? ''} disabled />
             </Form.Item>
           </Col>
@@ -143,8 +131,8 @@ const InboundModal: FC<InboundModalProps> = ({
             >
               <AutoComplete
                 placeholder={t('inbound.inputProductCode') ?? ''}
-                onChange={value => onProductCodeChange(value ?? '')}
-                options={products.map(product => ({
+                onChange={(value) => onProductCodeChange(value ?? '')}
+                options={products.map((product) => ({
                   value: product.code ?? '',
                   label: `${product.code ?? ''} - ${product.product_model}`,
                 }))}
@@ -160,8 +148,8 @@ const InboundModal: FC<InboundModalProps> = ({
             >
               <AutoComplete
                 placeholder={t('inbound.inputProductModel') ?? ''}
-                onChange={value => onProductModelChange(value ?? '')}
-                options={products.map(product => ({
+                onChange={(value) => onProductModelChange(value ?? '')}
+                options={products.map((product) => ({
                   value: product.product_model,
                   label: `${product.product_model} - ${product.code ?? ''}`,
                 }))}
@@ -224,10 +212,7 @@ const InboundModal: FC<InboundModalProps> = ({
             <Form.Item
               label={t('inbound.unitPrice')}
               name="unit_price"
-              rules={[
-                { required: true, message: t('inbound.inputUnitPrice') },
-                { type: 'number' },
-              ]}
+              rules={[{ required: true, message: t('inbound.inputUnitPrice') }, { type: 'number' }]}
             >
               <InputNumber
                 style={{ width: '100%' }}
@@ -243,10 +228,7 @@ const InboundModal: FC<InboundModalProps> = ({
 
         <Row gutter={16}>
           <Col span={8}>
-            <Form.Item
-              label={t('inbound.totalPrice')}
-              name="total_price"
-            >
+            <Form.Item label={t('inbound.totalPrice')} name="total_price">
               <InputNumber
                 style={{ width: '100%' }}
                 placeholder={t('inbound.autoCalc') ?? ''}
@@ -257,10 +239,7 @@ const InboundModal: FC<InboundModalProps> = ({
             </Form.Item>
           </Col>
           <Col span={8}>
-            <Form.Item
-              label={t('inbound.invoiceDate')}
-              name="invoice_date"
-            >
+            <Form.Item label={t('inbound.invoiceDate')} name="invoice_date">
               <DatePicker
                 style={{ width: '100%' }}
                 placeholder={t('inbound.selectInvoiceDate') ?? ''}
@@ -269,10 +248,7 @@ const InboundModal: FC<InboundModalProps> = ({
             </Form.Item>
           </Col>
           <Col span={8}>
-            <Form.Item
-              label={t('inbound.invoiceNumber')}
-              name="invoice_number"
-            >
+            <Form.Item label={t('inbound.invoiceNumber')} name="invoice_number">
               <Input placeholder={t('inbound.inputInvoiceNumber') ?? ''} />
             </Form.Item>
           </Col>
@@ -280,37 +256,23 @@ const InboundModal: FC<InboundModalProps> = ({
 
         <Row gutter={16}>
           <Col span={8}>
-            <Form.Item
-              label={t('inbound.orderNumber')}
-              name="order_number"
-            >
+            <Form.Item label={t('inbound.orderNumber')} name="order_number">
               <Input placeholder={t('inbound.inputOrderNumber') ?? ''} />
             </Form.Item>
           </Col>
           <Col span={8}>
-            <Form.Item
-              label={t('inbound.receiptNumber')}
-              name="receipt_number"
-            >
+            <Form.Item label={t('inbound.receiptNumber')} name="receipt_number">
               <Input placeholder={t('inbound.inputReceiptNumber') ?? ''} />
             </Form.Item>
           </Col>
         </Row>
 
-        <Form.Item
-          label={t('inbound.remark')}
-          name="remark"
-        >
-          <Input.TextArea
-            placeholder={t('inbound.inputRemark') ?? ''}
-            rows={3}
-          />
+        <Form.Item label={t('inbound.remark')} name="remark">
+          <Input.TextArea placeholder={t('inbound.inputRemark') ?? ''} rows={3} />
         </Form.Item>
 
         <div className="form-actions">
-          <Button onClick={() => setModalVisible(false)}>
-            {t('common.cancel')}
-          </Button>
+          <Button onClick={() => setModalVisible(false)}>{t('common.cancel')}</Button>
           <Button type="primary" htmlType="submit">
             {editingRecord ? t('common.save') : t('common.add')}
           </Button>

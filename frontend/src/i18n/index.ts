@@ -16,7 +16,7 @@ const resources = {
   },
   ko: {
     translation: koTranslation,
-  }
+  },
 };
 
 i18n

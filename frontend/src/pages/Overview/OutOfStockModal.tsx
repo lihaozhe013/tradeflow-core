@@ -24,7 +24,7 @@ const OutOfStockModal = ({ visible, onClose, products }: OutOfStockModalProps) =
       {products && products.length > 0 ? (
         <List<OutOfStockProduct>
           dataSource={products}
-          renderItem={item => (
+          renderItem={(item) => (
             <List.Item>
               <Text>{item.product_model}</Text>
             </List.Item>

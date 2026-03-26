@@ -4,18 +4,8 @@
  */
 
 import { tokenManager } from '../auth/auth';
-import type {
-  RequestOptions,
-  UploadOptions,
-  DownloadOptions,
-  RequestInstance,
-} from './types';
-import {
-  RequestError,
-  NetworkError,
-  AuthenticationError,
-  AuthorizationError,
-} from './types';
+import type { RequestOptions, UploadOptions, DownloadOptions, RequestInstance } from './types';
+import { RequestError, NetworkError, AuthenticationError, AuthorizationError } from './types';
 
 /**
  * 创建请求实例
@@ -29,10 +19,7 @@ const createRequest = (baseURL = ''): RequestInstance => {
    * @param options - 请求选项
    * @returns Promise 响应数据
    */
-  const request = async <T = unknown>(
-    url: string,
-    options: RequestOptions = {}
-  ): Promise<T> => {
+  const request = async <T = unknown>(url: string, options: RequestOptions = {}): Promise<T> => {
     const token = tokenManager.getToken();
     const { responseType = 'json', body: requestBody, ...fetchOptions } = options;
 
@@ -95,15 +82,9 @@ const createRequest = (baseURL = ''): RequestInstance => {
         }
 
         const errorMessage =
-          (errorData as { message?: string }).message ??
-          `HTTP Error: ${response.status}`;
+          (errorData as { message?: string }).message ?? `HTTP Error: ${response.status}`;
 
-        throw new RequestError(
-          errorMessage,
-          response.status,
-          response.statusText,
-          errorData
-        );
+        throw new RequestError(errorMessage, response.status, response.statusText, errorData);
       }
 
       // 根据 responseType 处理响应
@@ -145,16 +126,14 @@ const createRequest = (baseURL = ''): RequestInstance => {
       }
 
       // 包装未知错误
-      throw new RequestError(
-        error instanceof Error ? error.message : '请求失败'
-      );
+      throw new RequestError(error instanceof Error ? error.message : '请求失败');
     }
   };
 
   // 便捷方法
   request.get = <T = unknown>(
     url: string,
-    options: Omit<RequestOptions, 'method' | 'body'> = {}
+    options: Omit<RequestOptions, 'method' | 'body'> = {},
   ): Promise<T> => {
     return request<T>(url, { method: 'GET', ...options });
   };
@@ -162,7 +141,7 @@ const createRequest = (baseURL = ''): RequestInstance => {
   request.post = <T = unknown>(
     url: string,
     data?: unknown,
-    options: Omit<RequestOptions, 'method' | 'body'> = {}
+    options: Omit<RequestOptions, 'method' | 'body'> = {},
   ): Promise<T> => {
     return request<T>(url, {
       method: 'POST',
@@ -174,7 +153,7 @@ const createRequest = (baseURL = ''): RequestInstance => {
   request.put = <T = unknown>(
     url: string,
     data?: unknown,
-    options: Omit<RequestOptions, 'method' | 'body'> = {}
+    options: Omit<RequestOptions, 'method' | 'body'> = {},
   ): Promise<T> => {
     return request<T>(url, {
       method: 'PUT',
@@ -185,7 +164,7 @@ const createRequest = (baseURL = ''): RequestInstance => {
 
   request.delete = <T = unknown>(
     url: string,
-    options: Omit<RequestOptions, 'method' | 'body'> = {}
+    options: Omit<RequestOptions, 'method' | 'body'> = {},
   ): Promise<T> => {
     return request<T>(url, { method: 'DELETE', ...options });
   };
@@ -194,7 +173,7 @@ const createRequest = (baseURL = ''): RequestInstance => {
   request.upload = <T = unknown>(
     url: string,
     formData: FormData,
-    options: UploadOptions = {}
+    options: UploadOptions = {},
   ): Promise<T> => {
     const { onProgress, ...restOptions } = options;
 
@@ -219,7 +198,7 @@ const createRequest = (baseURL = ''): RequestInstance => {
   request.download = async (
     url: string,
     filename?: string,
-    options: DownloadOptions = {}
+    options: DownloadOptions = {},
   ): Promise<void> => {
     const { onProgress, ...restOptions } = options;
 
@@ -253,12 +232,7 @@ export const apiRequest = createRequest('/api');
 export { createRequest };
 
 // 导出错误类
-export {
-  RequestError,
-  NetworkError,
-  AuthenticationError,
-  AuthorizationError,
-} from '@/utils/types';
+export { RequestError, NetworkError, AuthenticationError, AuthorizationError } from '@/utils/types';
 
 // 导出类型
 export type {

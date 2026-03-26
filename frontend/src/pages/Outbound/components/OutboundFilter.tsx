@@ -15,7 +15,13 @@ interface OutboundFilterProps {
   readonly onFilter: () => void;
 }
 
-const OutboundFilter: FC<OutboundFilterProps> = ({ filters, setFilters, partners, products, onFilter }) => {
+const OutboundFilter: FC<OutboundFilterProps> = ({
+  filters,
+  setFilters,
+  partners,
+  products,
+  onFilter,
+}) => {
   const { t } = useTranslation();
 
   const rangeValue = useMemo<[Dayjs | null, Dayjs | null] | null>(() => {
@@ -26,10 +32,12 @@ const OutboundFilter: FC<OutboundFilterProps> = ({ filters, setFilters, partners
     return [start ? dayjs(start) : null, end ? dayjs(end) : null];
   }, [filters.dateRange]);
 
-  const handleDateChange: RangePickerProps['onChange'] = dates => {
-    setFilters(prev => ({
+  const handleDateChange: RangePickerProps['onChange'] = (dates) => {
+    setFilters((prev) => ({
       ...prev,
-      dateRange: dates ? [dates[0]?.format('YYYY-MM-DD') ?? null, dates[1]?.format('YYYY-MM-DD') ?? null] : [null, null],
+      dateRange: dates
+        ? [dates[0]?.format('YYYY-MM-DD') ?? null, dates[1]?.format('YYYY-MM-DD') ?? null]
+        : [null, null],
     }));
   };
 
@@ -47,13 +55,16 @@ const OutboundFilter: FC<OutboundFilterProps> = ({ filters, setFilters, partners
           placeholder={t('outbound.selectCustomer') ?? ''}
           style={{ width: '100%' }}
           value={filters.customer_short_name}
-          onChange={value =>
-            setFilters(prev => ({
+          onChange={(value) =>
+            setFilters((prev) => ({
               ...prev,
               customer_short_name: value ?? undefined,
             }))
           }
-          options={partners.map(partner => ({ label: `${partner.short_name}(${partner.code ?? ''})`, value: partner.short_name }))}
+          options={partners.map((partner) => ({
+            label: `${partner.short_name}(${partner.code ?? ''})`,
+            value: partner.short_name,
+          }))}
           filterOption={filterByLabel}
         />
       </Col>
@@ -64,13 +75,16 @@ const OutboundFilter: FC<OutboundFilterProps> = ({ filters, setFilters, partners
           placeholder={t('outbound.selectProductModel') ?? ''}
           style={{ width: '100%' }}
           value={filters.product_model}
-          onChange={value =>
-            setFilters(prev => ({
+          onChange={(value) =>
+            setFilters((prev) => ({
               ...prev,
               product_model: value ?? undefined,
             }))
           }
-          options={products.map(product => ({ label: `${product.product_model}(${product.code ?? ''})`, value: product.product_model }))}
+          options={products.map((product) => ({
+            label: `${product.product_model}(${product.code ?? ''})`,
+            value: product.product_model,
+          }))}
           filterOption={filterByLabel}
         />
       </Col>

@@ -2,29 +2,25 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { message } from 'antd';
 import { apiRequest } from '@/utils';
 import type { RequestOptions } from '@/utils';
-import type {
-  UseSimpleApiDataReturn,
-  UseSimpleApiReturn,
-  ApiRequestOptions,
-} from '@/hooks/types';
+import type { UseSimpleApiDataReturn, UseSimpleApiReturn, ApiRequestOptions } from '@/hooks/types';
 
 /**
  * 简化版的 API 数据获取 Hook
- * 
+ *
  * 避免无限循环问题，适合简单的数据获取场景
- * 
+ *
  * @example
  * ```typescript
  * const { data, loading, refetch } = useSimpleApiData<User[]>('/api/users');
  * ```
- * 
+ *
  * @param url - API 地址
  * @param defaultData - 默认数据
  * @returns 数据状态和刷新方法
  */
 export const useSimpleApiData = <T = unknown>(
   url: string,
-  defaultData: T | null = null
+  defaultData: T | null = null,
 ): UseSimpleApiDataReturn<T> => {
   const [data, setData] = useState<T | null>(defaultData);
   const [loading, setLoading] = useState(false);
@@ -71,17 +67,17 @@ export const useSimpleApiData = <T = unknown>(
 
 /**
  * 简化版的 API 操作 Hook
- * 
+ *
  * 提供基础的 HTTP 请求方法，不包含复杂的状态管理
- * 
+ *
  * @example
  * ```typescript
  * const { loading, get, post } = useSimpleApi();
- * 
+ *
  * const users = await get<User[]>('/api/users');
  * await post('/api/users', { name: 'John' });
  * ```
- * 
+ *
  * @returns API 操作方法和加载状态
  */
 export const useSimpleApi = (): UseSimpleApiReturn => {
@@ -104,25 +100,28 @@ export const useSimpleApi = (): UseSimpleApiReturn => {
         setLoading(false);
       }
     },
-    []
+    [],
   );
 
   /**
    * Blob 请求方法（用于文件下载等）
    */
-  const requestBlob = useCallback(async (url: string, options: RequestOptions = {}): Promise<Blob> => {
-    try {
-      setLoading(true);
-      const response = await apiRequest<Blob>(url, { ...options, responseType: 'blob' });
-      return response;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : '请求失败';
-      message.error(errorMessage);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const requestBlob = useCallback(
+    async (url: string, options: RequestOptions = {}): Promise<Blob> => {
+      try {
+        setLoading(true);
+        const response = await apiRequest<Blob>(url, { ...options, responseType: 'blob' });
+        return response;
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : '请求失败';
+        message.error(errorMessage);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
 
   /**
    * GET 请求
@@ -131,7 +130,7 @@ export const useSimpleApi = (): UseSimpleApiReturn => {
     <T = unknown>(url: string, options: ApiRequestOptions = {}): Promise<T> => {
       return request<T>(url, { method: 'GET', ...options });
     },
-    [request]
+    [request],
   );
 
   /**
@@ -145,7 +144,7 @@ export const useSimpleApi = (): UseSimpleApiReturn => {
         ...options,
       });
     },
-    [request]
+    [request],
   );
 
   /**
@@ -159,7 +158,7 @@ export const useSimpleApi = (): UseSimpleApiReturn => {
         ...options,
       });
     },
-    [requestBlob]
+    [requestBlob],
   );
 
   /**
@@ -173,7 +172,7 @@ export const useSimpleApi = (): UseSimpleApiReturn => {
         ...options,
       });
     },
-    [request]
+    [request],
   );
 
   /**
@@ -183,7 +182,7 @@ export const useSimpleApi = (): UseSimpleApiReturn => {
     <T = unknown>(url: string, options: ApiRequestOptions = {}): Promise<T> => {
       return request<T>(url, { method: 'DELETE', ...options });
     },
-    [request]
+    [request],
   );
 
   return {

@@ -41,22 +41,22 @@ export interface UsePermissionsReturn {
 
 /**
  * 权限管理 Hook
- * 
+ *
  * 提供基于角色的权限检查功能
- * 
+ *
  * @example
  * ```typescript
  * const { canEdit, getButtonProps } = usePermissions();
- * 
+ *
  * // 检查是否可以编辑
  * if (canEdit()) {
  *   console.log('有编辑权限');
  * }
- * 
+ *
  * // 获取按钮属性（带权限控制）
  * <Button {...getButtonProps('editor')}>编辑</Button>
  * ```
- * 
+ *
  * @returns 权限管理相关的方法和状态
  */
 export const usePermissions = (): UsePermissionsReturn => {
@@ -92,7 +92,7 @@ export const usePermissions = (): UsePermissionsReturn => {
 
     /**
      * 权限相关的样式类
-     * 
+     *
      * @param requiredRole - 所需角色，默认为 'reader'
      * @returns CSS 类名
      */
@@ -102,7 +102,7 @@ export const usePermissions = (): UsePermissionsReturn => {
 
     /**
      * 权限相关的按钮属性
-     * 
+     *
      * @param requiredRole - 所需角色，默认为 'editor'
      * @returns 按钮属性对象
      */
@@ -111,10 +111,7 @@ export const usePermissions = (): UsePermissionsReturn => {
       title: hasPermission(requiredRole)
         ? ''
         : t('auth.permission.needPermission', {
-            action:
-              requiredRole === 'editor'
-                ? t('common.edit')
-                : t('auth.permission.view'),
+            action: requiredRole === 'editor' ? t('common.edit') : t('auth.permission.view'),
           }),
     }),
   };

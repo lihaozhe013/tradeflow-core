@@ -1,7 +1,7 @@
 import { useMemo, type FC } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Modal, Form, Input, InputNumber, DatePicker, Select } from 'antd';
-import { currency_unit_symbol } from "@/config/types";
+import { currency_unit_symbol } from '@/config/types';
 import type { FormInstance } from 'antd/es/form';
 import type { DefaultOptionType } from 'antd/es/select';
 import { PAYMENT_METHODS, DEFAULT_PAYMENT_METHOD } from '@/config';
@@ -37,17 +37,17 @@ const PayableModal: FC<PayableModalProps> = ({
 
   const supplierOptions = useMemo<DefaultOptionType[]>(
     () =>
-      suppliers.map(supplier => ({
+      suppliers.map((supplier) => ({
         value: supplier.code,
         label: `${supplier.code} - ${supplier.short_name}`,
       })),
-    [suppliers]
+    [suppliers],
   );
 
   const handleSubmit = async (): Promise<void> => {
     try {
-  const values = (await form.validateFields()) as PayablePaymentFormValues;
-  await onSave(values);
+      const values = (await form.validateFields()) as PayablePaymentFormValues;
+      await onSave(values);
       form.resetFields();
     } catch (error) {
       console.error('表单验证失败:', error);
@@ -107,12 +107,12 @@ const PayableModal: FC<PayableModalProps> = ({
             placeholder={t('payable.inputAmount') ?? ''}
             style={{ width: '100%' }}
             precision={2}
-            formatter={value =>
+            formatter={(value) =>
               value !== undefined && value !== null
                 ? `${currency_unit_symbol} ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
                 : ''
             }
-            parser={value => {
+            parser={(value) => {
               if (!value) return '';
               const symbol = currency_unit_symbol ?? '';
               // Escape regex special chars in symbol (e.g., $, ¥, €, /, etc.)
@@ -143,7 +143,7 @@ const PayableModal: FC<PayableModalProps> = ({
         >
           <Select
             placeholder={t('payable.selectMethod') ?? ''}
-            options={PAYMENT_METHODS.map(method => ({ value: method, label: method }))}
+            options={PAYMENT_METHODS.map((method) => ({ value: method, label: method }))}
           />
         </Form.Item>
 

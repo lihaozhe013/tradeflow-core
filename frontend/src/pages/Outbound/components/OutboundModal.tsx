@@ -15,14 +15,9 @@ import type { FC, Dispatch, SetStateAction } from 'react';
 import type { FormInstance } from 'antd/es/form';
 import type { RadioChangeEvent } from 'antd/es/radio';
 import type { DefaultOptionType } from 'antd/es/select';
-import { currency_unit_symbol } from "@/config/types";
+import { currency_unit_symbol } from '@/config/types';
 import type { Dayjs } from 'dayjs';
-import type {
-  OutboundFormValues,
-  OutboundRecord,
-  Partner,
-  Product,
-} from '../types';
+import type { OutboundFormValues, OutboundRecord, Partner, Product } from '../types';
 
 interface OutboundModalProps {
   readonly modalVisible: boolean;
@@ -84,11 +79,7 @@ const OutboundModal: FC<OutboundModalProps> = ({
       footer={null}
       width={800}
     >
-      <Form<OutboundFormValues>
-        form={form}
-        layout="vertical"
-        onFinish={onSave}
-      >
+      <Form<OutboundFormValues> form={form} layout="vertical" onFinish={onSave}>
         <Row gutter={16}>
           <Col span={8}>
             <Form.Item
@@ -98,8 +89,8 @@ const OutboundModal: FC<OutboundModalProps> = ({
             >
               <AutoComplete
                 placeholder={t('outbound.inputCustomerCode') ?? ''}
-                onChange={value => onCustomerCodeChange(value ?? '')}
-                options={partners.map(partner => ({
+                onChange={(value) => onCustomerCodeChange(value ?? '')}
+                options={partners.map((partner) => ({
                   value: partner.code ?? '',
                   label: `${partner.code ?? ''} - ${partner.short_name}`,
                 }))}
@@ -115,8 +106,8 @@ const OutboundModal: FC<OutboundModalProps> = ({
             >
               <AutoComplete
                 placeholder={t('outbound.inputCustomerShortName') ?? ''}
-                onChange={value => onCustomerShortNameChange(value ?? '')}
-                options={partners.map(partner => ({
+                onChange={(value) => onCustomerShortNameChange(value ?? '')}
+                options={partners.map((partner) => ({
                   value: partner.short_name,
                   label: `${partner.short_name} - ${partner.code ?? ''}`,
                 }))}
@@ -125,10 +116,7 @@ const OutboundModal: FC<OutboundModalProps> = ({
             </Form.Item>
           </Col>
           <Col span={8}>
-            <Form.Item
-              label={t('outbound.customerFullName')}
-              name="customer_full_name"
-            >
+            <Form.Item label={t('outbound.customerFullName')} name="customer_full_name">
               <Input placeholder={t('outbound.autoFill') ?? ''} disabled />
             </Form.Item>
           </Col>
@@ -143,8 +131,8 @@ const OutboundModal: FC<OutboundModalProps> = ({
             >
               <AutoComplete
                 placeholder={t('outbound.inputProductCode') ?? ''}
-                onChange={value => onProductCodeChange(value ?? '')}
-                options={products.map(product => ({
+                onChange={(value) => onProductCodeChange(value ?? '')}
+                options={products.map((product) => ({
                   value: product.code ?? '',
                   label: `${product.code ?? ''} - ${product.product_model}`,
                 }))}
@@ -160,8 +148,8 @@ const OutboundModal: FC<OutboundModalProps> = ({
             >
               <AutoComplete
                 placeholder={t('outbound.inputProductModel') ?? ''}
-                onChange={value => onProductModelChange(value ?? '')}
-                options={products.map(product => ({
+                onChange={(value) => onProductModelChange(value ?? '')}
+                options={products.map((product) => ({
                   value: product.product_model,
                   label: `${product.product_model} - ${product.code ?? ''}`,
                 }))}
@@ -243,10 +231,7 @@ const OutboundModal: FC<OutboundModalProps> = ({
 
         <Row gutter={16}>
           <Col span={8}>
-            <Form.Item
-              label={t('outbound.totalPrice')}
-              name="total_price"
-            >
+            <Form.Item label={t('outbound.totalPrice')} name="total_price">
               <InputNumber
                 style={{ width: '100%' }}
                 placeholder={t('outbound.autoCalc') ?? ''}
@@ -257,10 +242,7 @@ const OutboundModal: FC<OutboundModalProps> = ({
             </Form.Item>
           </Col>
           <Col span={8}>
-            <Form.Item
-              label={t('outbound.invoiceDate')}
-              name="invoice_date"
-            >
+            <Form.Item label={t('outbound.invoiceDate')} name="invoice_date">
               <DatePicker
                 style={{ width: '100%' }}
                 placeholder={t('outbound.selectInvoiceDate') ?? ''}
@@ -269,10 +251,7 @@ const OutboundModal: FC<OutboundModalProps> = ({
             </Form.Item>
           </Col>
           <Col span={8}>
-            <Form.Item
-              label={t('outbound.invoiceNumber')}
-              name="invoice_number"
-            >
+            <Form.Item label={t('outbound.invoiceNumber')} name="invoice_number">
               <Input placeholder={t('outbound.inputInvoiceNumber') ?? ''} />
             </Form.Item>
           </Col>
@@ -280,37 +259,23 @@ const OutboundModal: FC<OutboundModalProps> = ({
 
         <Row gutter={16}>
           <Col span={8}>
-            <Form.Item
-              label={t('outbound.orderNumber')}
-              name="order_number"
-            >
+            <Form.Item label={t('outbound.orderNumber')} name="order_number">
               <Input placeholder={t('outbound.inputOrderNumber') ?? ''} />
             </Form.Item>
           </Col>
           <Col span={8}>
-            <Form.Item
-              label={t('outbound.receiptNumber')}
-              name="receipt_number"
-            >
+            <Form.Item label={t('outbound.receiptNumber')} name="receipt_number">
               <Input placeholder={t('outbound.inputReceiptNumber') ?? ''} />
             </Form.Item>
           </Col>
         </Row>
 
-        <Form.Item
-          label={t('outbound.remark')}
-          name="remark"
-        >
-          <Input.TextArea
-            placeholder={t('outbound.inputRemark') ?? ''}
-            rows={3}
-          />
+        <Form.Item label={t('outbound.remark')} name="remark">
+          <Input.TextArea placeholder={t('outbound.inputRemark') ?? ''} rows={3} />
         </Form.Item>
 
         <div className="form-actions">
-          <Button onClick={() => setModalVisible(false)}>
-            {t('common.cancel')}
-          </Button>
+          <Button onClick={() => setModalVisible(false)}>{t('common.cancel')}</Button>
           <Button type="primary" htmlType="submit">
             {editingRecord ? t('common.save') : t('common.add')}
           </Button>

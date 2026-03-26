@@ -18,16 +18,16 @@ interface ProtectedRouteProps {
 
 /**
  * 受保护的路由组件
- * 
+ *
  * 用于保护需要认证和权限的页面
- * 
+ *
  * @example
  * ```tsx
  * // 需要登录即可访问
  * <ProtectedRoute>
  *   <Dashboard />
  * </ProtectedRoute>
- * 
+ *
  * // 需要编辑权限才能访问
  * <ProtectedRoute requireRole="editor">
  *   <EditPage />

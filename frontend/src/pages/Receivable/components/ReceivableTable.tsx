@@ -1,7 +1,19 @@
 import { useState, useMemo, type FC, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Table, Button, Popconfirm, Tag, message, Modal, Input, Space, Typography, Row, Col } from 'antd';
-import { currency_unit_symbol } from "@/config/types";
+import {
+  Table,
+  Button,
+  Popconfirm,
+  Tag,
+  message,
+  Modal,
+  Input,
+  Space,
+  Typography,
+  Row,
+  Col,
+} from 'antd';
+import { currency_unit_symbol } from '@/config/types';
 import type { ColumnsType, TablePaginationConfig } from 'antd/es/table';
 import type { TableProps } from 'antd/es/table';
 import type { SortOrder } from 'antd/es/table/interface';
@@ -75,18 +87,24 @@ const ReceivableTable: FC<ReceivableTableProps> = ({
   const [selectedCustomer, setSelectedCustomer] = useState<ReceivableRecord | null>(null);
   const [customerDetails, setCustomerDetails] = useState<ReceivableDetailResponse | null>(null);
   const [detailsLoading, setDetailsLoading] = useState(false);
-  const [paymentPagination, setPaymentPagination] = useState<ModalPaginationState>(DEFAULT_MODAL_PAGINATION);
-  const [outboundPagination, setOutboundPagination] = useState<ModalPaginationState>(DEFAULT_MODAL_PAGINATION);
+  const [paymentPagination, setPaymentPagination] =
+    useState<ModalPaginationState>(DEFAULT_MODAL_PAGINATION);
+  const [outboundPagination, setOutboundPagination] =
+    useState<ModalPaginationState>(DEFAULT_MODAL_PAGINATION);
   const [invoicedModalVisible, setInvoicedModalVisible] = useState(false);
 
   const getBalanceTag = (balance: number | null | undefined): ReactNode => {
     const numeric = Number(balance ?? 0);
     if (numeric > 0) {
-      return <Tag color="volcano">{t('receivable.unpaid', { amount: formatCurrency(numeric) })}</Tag>;
+      return (
+        <Tag color="volcano">{t('receivable.unpaid', { amount: formatCurrency(numeric) })}</Tag>
+      );
     }
     if (numeric < 0) {
       return (
-        <Tag color="green">{t('receivable.overpaid', { amount: formatCurrency(Math.abs(numeric)) })}</Tag>
+        <Tag color="green">
+          {t('receivable.overpaid', { amount: formatCurrency(Math.abs(numeric)) })}
+        </Tag>
       );
     }
     return <Tag color="blue">{t('receivable.paid')}</Tag>;
@@ -95,7 +113,7 @@ const ReceivableTable: FC<ReceivableTableProps> = ({
   const fetchCustomerDetails = async (
     customerCode: string,
     paymentPage = 1,
-    outboundPage = 1
+    outboundPage = 1,
   ): Promise<void> => {
     try {
       const outboundQuery = new URLSearchParams({
@@ -105,18 +123,24 @@ const ReceivableTable: FC<ReceivableTableProps> = ({
 
       // Fetch payment records from details endpoint
       const detailsResult = await apiInstance.get<ReceivableDetailResponse>(
-        `/receivable/details/${customerCode}?payment_page=${paymentPage}&payment_limit=${DEFAULT_MODAL_PAGINATION.pageSize}`
+        `/receivable/details/${customerCode}?payment_page=${paymentPage}&payment_limit=${DEFAULT_MODAL_PAGINATION.pageSize}`,
       );
 
       // Fetch uninvoiced records
-      const uninvoicedResult = await apiInstance.get<{ data: any[], total: number, page: number, limit: number }>(
-        `/receivable/uninvoiced/${customerCode}?${outboundQuery.toString()}`
-      );
+      const uninvoicedResult = await apiInstance.get<{
+        data: any[];
+        total: number;
+        page: number;
+        limit: number;
+      }>(`/receivable/uninvoiced/${customerCode}?${outboundQuery.toString()}`);
 
       const result = {
         ...detailsResult,
         outbound_records: { data: uninvoicedResult?.data ?? [] },
-        outbound_pagination: { page: uninvoicedResult?.page ?? outboundPage, total: uninvoicedResult?.total ?? 0 },
+        outbound_pagination: {
+          page: uninvoicedResult?.page ?? outboundPage,
+          total: uninvoicedResult?.total ?? 0,
+        },
       };
 
       setCustomerDetails(result ?? null);
@@ -182,13 +206,13 @@ const ReceivableTable: FC<ReceivableTableProps> = ({
       await fetchCustomerDetails(
         selectedCustomer.customer_code,
         paymentPagination.current,
-        outboundPagination.current
+        outboundPagination.current,
       );
     }
   };
 
   const getColumnSortOrder = (field: ReceivableSorterState['field']): SortOrder =>
-    sorter.field === field ? sorter.order ?? null : null;
+    sorter.field === field ? (sorter.order ?? null) : null;
 
   const tableColumns: ColumnsType<ReceivableRecord> = [
     {
@@ -222,7 +246,7 @@ const ReceivableTable: FC<ReceivableTableProps> = ({
       align: 'right',
       sorter: true,
       sortOrder: getColumnSortOrder('total_receivable'),
-      render: value => formatCurrency(value),
+      render: (value) => formatCurrency(value),
     },
     {
       title: t('receivable.totalPaid'),
@@ -232,7 +256,7 @@ const ReceivableTable: FC<ReceivableTableProps> = ({
       align: 'right',
       sorter: true,
       sortOrder: getColumnSortOrder('total_paid'),
-      render: value => formatCurrency(value),
+      render: (value) => formatCurrency(value),
     },
     {
       title: t('receivable.balance'),
@@ -242,7 +266,7 @@ const ReceivableTable: FC<ReceivableTableProps> = ({
       align: 'right',
       sorter: true,
       sortOrder: getColumnSortOrder('balance'),
-      render: value => getBalanceTag(value),
+      render: (value) => getBalanceTag(value),
     },
     {
       title: t('receivable.lastPaymentDate'),
@@ -251,14 +275,14 @@ const ReceivableTable: FC<ReceivableTableProps> = ({
       width: 120,
       sorter: true,
       sortOrder: getColumnSortOrder('last_payment_date'),
-      render: value => value ?? '-',
+      render: (value) => value ?? '-',
     },
     {
       title: t('receivable.lastPaymentMethod'),
       dataIndex: 'last_payment_method',
       key: 'last_payment_method',
       width: 100,
-      render: value => value ?? '-',
+      render: (value) => value ?? '-',
     },
     {
       title: t('receivable.action'),
@@ -267,10 +291,20 @@ const ReceivableTable: FC<ReceivableTableProps> = ({
       fixed: 'right',
       render: (_value, record) => (
         <Space>
-          <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => handleViewDetails(record)}>
+          <Button
+            type="link"
+            size="small"
+            icon={<EyeOutlined />}
+            onClick={() => handleViewDetails(record)}
+          >
             {t('receivable.details')}
           </Button>
-          <Button type="primary" size="small" icon={<PlusOutlined />} onClick={() => onAddPayment(record)}>
+          <Button
+            type="primary"
+            size="small"
+            icon={<PlusOutlined />}
+            onClick={() => onAddPayment(record)}
+          >
             {t('receivable.addPayment')}
           </Button>
         </Space>
@@ -290,7 +324,8 @@ const ReceivableTable: FC<ReceivableTableProps> = ({
   const tablePagination: TablePaginationConfig = {
     ...pagination,
     showQuickJumper: true,
-    showTotal: (total, range) => t('receivable.paginationTotal', { start: range[0], end: range[1], total }),
+    showTotal: (total, range) =>
+      t('receivable.paginationTotal', { start: range[0], end: range[1], total }),
   };
 
   return (
@@ -358,14 +393,14 @@ const ReceivableTable: FC<ReceivableTableProps> = ({
               <Title level={5}>{t('receivable.summary')}</Title>
               <Row gutter={16}>
                 <Col span={8}>
-                  {t('receivable.totalReceivable')}: {formatCurrency(customerDetails.summary?.total_receivable)}
+                  {t('receivable.totalReceivable')}:{' '}
+                  {formatCurrency(customerDetails.summary?.total_receivable)}
                 </Col>
                 <Col span={8}>
                   {t('receivable.totalPaid')}: {formatCurrency(customerDetails.summary?.total_paid)}
                 </Col>
                 <Col span={8}>
-                  {t('receivable.balance')}:
-                  {getBalanceTag(customerDetails.summary?.balance)}
+                  {t('receivable.balance')}:{getBalanceTag(customerDetails.summary?.balance)}
                 </Col>
               </Row>
             </div>
@@ -404,7 +439,7 @@ const ReceivableTable: FC<ReceivableTableProps> = ({
                   {
                     title: t('receivable.paymentAmount'),
                     dataIndex: 'amount',
-                    render: value => formatCurrency(value),
+                    render: (value) => formatCurrency(value),
                   },
                   { title: t('receivable.paymentDate'), dataIndex: 'pay_date' },
                   { title: t('receivable.paymentMethod'), dataIndex: 'pay_method' },
@@ -466,22 +501,32 @@ const ReceivableTable: FC<ReceivableTableProps> = ({
                 columns={[
                   { title: t('receivable.outboundDate'), dataIndex: 'outbound_date', width: 100 },
                   { title: t('receivable.productModel'), dataIndex: 'product_model', width: 120 },
-                  { title: t('receivable.quantity'), dataIndex: 'quantity', width: 80, align: 'right' },
+                  {
+                    title: t('receivable.quantity'),
+                    dataIndex: 'quantity',
+                    width: 80,
+                    align: 'right',
+                  },
                   {
                     title: t('receivable.unitPrice'),
                     dataIndex: 'unit_price',
                     width: 100,
                     align: 'right',
-                    render: value => formatCurrency(value),
+                    render: (value) => formatCurrency(value),
                   },
                   {
                     title: t('receivable.totalPrice'),
                     dataIndex: 'total_price',
                     width: 100,
                     align: 'right',
-                    render: value => formatCurrency(value),
+                    render: (value) => formatCurrency(value),
                   },
-                  { title: t('receivable.orderNumber'), dataIndex: 'order_number', width: 120, ellipsis: true },
+                  {
+                    title: t('receivable.orderNumber'),
+                    dataIndex: 'order_number',
+                    width: 120,
+                    ellipsis: true,
+                  },
                   { title: t('receivable.remark'), dataIndex: 'remark', ellipsis: true },
                 ]}
               />

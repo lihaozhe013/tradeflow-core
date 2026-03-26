@@ -151,9 +151,11 @@ const Products: FC = () => {
     },
   ];
 
-  const handleProductFieldChange: FormProps<ProductFormValues>['onValuesChange'] = changedValues => {
+  const handleProductFieldChange: FormProps<ProductFormValues>['onValuesChange'] = (
+    changedValues,
+  ) => {
     if (changedValues?.code) {
-      const match = productOptions.find(product => product.code === changedValues.code);
+      const match = productOptions.find((product) => product.code === changedValues.code);
       if (match) {
         form.setFieldsValue({ product_model: match.product_model });
       }
@@ -161,7 +163,9 @@ const Products: FC = () => {
     }
 
     if (changedValues?.product_model) {
-      const match = productOptions.find(product => product.product_model === changedValues.product_model);
+      const match = productOptions.find(
+        (product) => product.product_model === changedValues.product_model,
+      );
       if (match) {
         form.setFieldsValue({ code: match.code });
       }
@@ -257,7 +261,7 @@ const Products: FC = () => {
               showSearch
               allowClear
               placeholder={t('products.selectCategory')}
-              options={PRODUCT_CATEGORIES.map(name => ({ value: name, label: name }))}
+              options={PRODUCT_CATEGORIES.map((name) => ({ value: name, label: name }))}
               filterOption={(input, option) => {
                 const label = typeof option?.label === 'string' ? option.label : '';
                 return label.toLowerCase().includes(input.toLowerCase());
@@ -274,9 +278,7 @@ const Products: FC = () => {
           </Form.Item>
 
           <div className="form-actions">
-            <Button onClick={() => setModalVisible(false)}>
-              {t('common.cancel')}
-            </Button>
+            <Button onClick={() => setModalVisible(false)}>{t('common.cancel')}</Button>
             <Button type="primary" htmlType="submit">
               {editingProduct ? t('common.save') : t('common.add')}
             </Button>

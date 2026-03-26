@@ -132,7 +132,7 @@ const Partners: FC = () => {
       dataIndex: 'type',
       key: 'type',
       width: 80,
-      render: type => (type === 0 ? t('partners.supplier') : t('partners.customer')),
+      render: (type) => (type === 0 ? t('partners.supplier') : t('partners.customer')),
     },
     {
       title: t('partners.address'),
@@ -181,9 +181,11 @@ const Partners: FC = () => {
     },
   ];
 
-  const handlePartnerFieldChange: FormProps<PartnerFormValues>['onValuesChange'] = changedValues => {
+  const handlePartnerFieldChange: FormProps<PartnerFormValues>['onValuesChange'] = (
+    changedValues,
+  ) => {
     if (changedValues?.code) {
-      const match = partnerOptions.find(partner => partner.code === changedValues.code);
+      const match = partnerOptions.find((partner) => partner.code === changedValues.code);
       if (match) {
         form.setFieldsValue({ short_name: match.short_name, full_name: match.full_name });
       }
@@ -191,7 +193,9 @@ const Partners: FC = () => {
     }
 
     if (changedValues?.short_name) {
-      const match = partnerOptions.find(partner => partner.short_name === changedValues.short_name);
+      const match = partnerOptions.find(
+        (partner) => partner.short_name === changedValues.short_name,
+      );
       if (match) {
         form.setFieldsValue({ code: match.code, full_name: match.full_name });
       }
@@ -199,7 +203,7 @@ const Partners: FC = () => {
     }
 
     if (changedValues?.full_name) {
-      const match = partnerOptions.find(partner => partner.full_name === changedValues.full_name);
+      const match = partnerOptions.find((partner) => partner.full_name === changedValues.full_name);
       if (match) {
         form.setFieldsValue({ code: match.code, short_name: match.short_name });
       }
@@ -261,9 +265,7 @@ const Partners: FC = () => {
           <Form.Item
             label={t('partners.code')}
             name="code"
-            rules={[
-              { max: 50, message: t('partners.codeMax') },
-            ]}
+            rules={[{ max: 50, message: t('partners.codeMax') }]}
           >
             <Input placeholder={t('partners.inputCode')} disabled={Boolean(editingPartner)} />
           </Form.Item>
@@ -326,9 +328,7 @@ const Partners: FC = () => {
           </Form.Item>
 
           <div className="form-actions">
-            <Button onClick={() => setModalVisible(false)}>
-              {t('common.cancel')}
-            </Button>
+            <Button onClick={() => setModalVisible(false)}>{t('common.cancel')}</Button>
             <Button type="primary" htmlType="submit">
               {editingPartner ? t('common.save') : t('common.add')}
             </Button>

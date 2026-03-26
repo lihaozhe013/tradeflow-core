@@ -48,12 +48,18 @@ const Receivable: FC = () => {
   const [form] = Form.useForm<ReceivablePaymentFormValues>();
   const [pagination, setPagination] = useState<PaginationState>(DEFAULT_PAGINATION);
   const [filters, setFilters] = useState<ReceivableFilters>({});
-  const [sorter, setSorter] = useState<ReceivableSorterState>({ field: 'balance', order: 'descend' });
+  const [sorter, setSorter] = useState<ReceivableSorterState>({
+    field: 'balance',
+    order: 'descend',
+  });
 
   const apiInstance = useSimpleApi();
-  const { data: customersResponse } = useSimpleApiData<ApiListResponse<Customer>>('/partners?type=1', {
-    data: [],
-  });
+  const { data: customersResponse } = useSimpleApiData<ApiListResponse<Customer>>(
+    '/partners?type=1',
+    {
+      data: [],
+    },
+  );
 
   const customers = useMemo<Customer[]>(() => {
     const list = customersResponse?.data;
@@ -66,8 +72,8 @@ const Receivable: FC = () => {
         setLoading(true);
         const page = params.page ?? pagination.current;
         const limit = params.limit ?? pagination.pageSize;
-        const customerName = params.customer_short_name ?? (filters.customer_short_name ?? '');
-        const field = params.sort_field ?? (sorter.field ?? 'balance');
+        const customerName = params.customer_short_name ?? filters.customer_short_name ?? '';
+        const field = params.sort_field ?? sorter.field ?? 'balance';
         const order = params.sort_order ?? toApiSortOrder(sorter.order);
 
         const query = new URLSearchParams({
@@ -78,10 +84,12 @@ const Receivable: FC = () => {
           sort_order: order,
         });
 
-        const result = await apiInstance.get<ReceivableListResponse>(`/receivable?${query.toString()}`);
+        const result = await apiInstance.get<ReceivableListResponse>(
+          `/receivable?${query.toString()}`,
+        );
 
         setReceivableRecords(Array.isArray(result?.data) ? result.data : []);
-        setPagination(prev => ({
+        setPagination((prev) => ({
           ...prev,
           current: result?.page ?? page,
           total: result?.total ?? prev.total,
@@ -94,25 +102,31 @@ const Receivable: FC = () => {
         setLoading(false);
       }
     },
-    [apiInstance, t, pagination, filters, sorter]
+    [apiInstance, t, pagination, filters, sorter],
   );
 
   useEffect(() => {
     fetchReceivableRecords();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pagination.current, pagination.pageSize, filters.customer_short_name, sorter.field, sorter.order]);
+  }, [
+    pagination.current,
+    pagination.pageSize,
+    filters.customer_short_name,
+    sorter.field,
+    sorter.order,
+  ]);
 
   const handleFilter = (filterValues: ReceivableFilters): void => {
     setFilters(filterValues);
-    setPagination(prev => ({ ...prev, current: 1 }));
+    setPagination((prev) => ({ ...prev, current: 1 }));
   };
 
   const handleTableChange: TableProps<ReceivableRecord>['onChange'] = (
     paginationConfig,
     _filtersConfig,
-    sorterConfig
+    sorterConfig,
   ) => {
-    setPagination(prev => ({
+    setPagination((prev) => ({
       ...prev,
       current: paginationConfig.current ?? prev.current,
       pageSize: DEFAULT_PAGINATION.pageSize,
@@ -144,7 +158,7 @@ const Receivable: FC = () => {
 
   const handleEditPayment = (
     paymentRecord: ReceivablePaymentRecord,
-    customerRecord: ReceivableRecord
+    customerRecord: ReceivableRecord,
   ): void => {
     setSelectedCustomer(customerRecord);
     setEditingPayment(paymentRecord);
@@ -174,7 +188,7 @@ const Receivable: FC = () => {
       message.success(
         t('receivable.saveSuccess', {
           action: editingPayment ? t('common.edit') : t('common.add'),
-        })
+        }),
       );
       setModalVisible(false);
       fetchReceivableRecords();
@@ -210,7 +224,12 @@ const Receivable: FC = () => {
             </Title>
           </Col>
           <Col>
-            <Button type="primary" icon={<ReloadOutlined />} onClick={handleRefresh} style={{ marginRight: 8 }}>
+            <Button
+              type="primary"
+              icon={<ReloadOutlined />}
+              onClick={handleRefresh}
+              style={{ marginRight: 8 }}
+            >
               {t('receivable.refresh')}
             </Button>
           </Col>

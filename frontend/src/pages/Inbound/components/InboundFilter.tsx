@@ -15,7 +15,13 @@ interface InboundFilterProps {
   readonly onFilter: () => void;
 }
 
-const InboundFilter: FC<InboundFilterProps> = ({ filters, setFilters, partners, products, onFilter }) => {
+const InboundFilter: FC<InboundFilterProps> = ({
+  filters,
+  setFilters,
+  partners,
+  products,
+  onFilter,
+}) => {
   const { t } = useTranslation();
   const rangeValue = useMemo<[Dayjs | null, Dayjs | null] | null>(() => {
     const [start, end] = filters.dateRange;
@@ -25,10 +31,12 @@ const InboundFilter: FC<InboundFilterProps> = ({ filters, setFilters, partners, 
     return [start ? dayjs(start) : null, end ? dayjs(end) : null];
   }, [filters.dateRange]);
 
-  const handleDateChange: RangePickerProps['onChange'] = dates => {
-    setFilters(prev => ({
+  const handleDateChange: RangePickerProps['onChange'] = (dates) => {
+    setFilters((prev) => ({
       ...prev,
-      dateRange: dates ? [dates[0]?.format('YYYY-MM-DD') ?? null, dates[1]?.format('YYYY-MM-DD') ?? null] : [null, null],
+      dateRange: dates
+        ? [dates[0]?.format('YYYY-MM-DD') ?? null, dates[1]?.format('YYYY-MM-DD') ?? null]
+        : [null, null],
     }));
   };
 
@@ -46,13 +54,16 @@ const InboundFilter: FC<InboundFilterProps> = ({ filters, setFilters, partners, 
           placeholder={t('inbound.selectSupplier')}
           style={{ width: '100%' }}
           value={filters.supplier_short_name}
-          onChange={value =>
-            setFilters(prev => ({
+          onChange={(value) =>
+            setFilters((prev) => ({
               ...prev,
               supplier_short_name: value ?? undefined,
             }))
           }
-          options={partners.map(p => ({ label: `${p.short_name}(${p.code})`, value: p.short_name }))}
+          options={partners.map((p) => ({
+            label: `${p.short_name}(${p.code})`,
+            value: p.short_name,
+          }))}
           filterOption={filterByLabel}
         />
       </Col>
@@ -63,13 +74,16 @@ const InboundFilter: FC<InboundFilterProps> = ({ filters, setFilters, partners, 
           placeholder={t('inbound.selectProductModel')}
           style={{ width: '100%' }}
           value={filters.product_model}
-          onChange={value =>
-            setFilters(prev => ({
+          onChange={(value) =>
+            setFilters((prev) => ({
               ...prev,
               product_model: value ?? undefined,
             }))
           }
-          options={products.map(p => ({ label: `${p.product_model}(${p.code})`, value: p.product_model }))}
+          options={products.map((p) => ({
+            label: `${p.product_model}(${p.code})`,
+            value: p.product_model,
+          }))}
           filterOption={filterByLabel}
         />
       </Col>

@@ -51,9 +51,12 @@ const Payable: FC = () => {
   const [sorter, setSorter] = useState<PayableSorterState>({ field: 'balance', order: 'descend' });
 
   const apiInstance = useSimpleApi();
-  const { data: suppliersResponse } = useSimpleApiData<ApiListResponse<Supplier>>('/partners?type=0', {
-    data: [],
-  });
+  const { data: suppliersResponse } = useSimpleApiData<ApiListResponse<Supplier>>(
+    '/partners?type=0',
+    {
+      data: [],
+    },
+  );
 
   const suppliers = useMemo<Supplier[]>(() => {
     const list = suppliersResponse?.data;
@@ -66,8 +69,8 @@ const Payable: FC = () => {
         setLoading(true);
         const page = params.page ?? pagination.current;
         const limit = params.limit ?? pagination.pageSize;
-        const supplierName = params.supplier_short_name ?? (filters.supplier_short_name ?? '');
-        const field = params.sort_field ?? (sorter.field ?? 'balance');
+        const supplierName = params.supplier_short_name ?? filters.supplier_short_name ?? '';
+        const field = params.sort_field ?? sorter.field ?? 'balance';
         const order = params.sort_order ?? toApiSortOrder(sorter.order);
 
         const query = new URLSearchParams({
@@ -81,7 +84,7 @@ const Payable: FC = () => {
         const result = await apiInstance.get<PayableListResponse>(`/payable?${query.toString()}`);
 
         setPayableRecords(Array.isArray(result?.data) ? result.data : []);
-        setPagination(prev => ({
+        setPagination((prev) => ({
           ...prev,
           current: result?.page ?? page,
           total: result?.total ?? prev.total,
@@ -94,21 +97,31 @@ const Payable: FC = () => {
         setLoading(false);
       }
     },
-    [apiInstance, t, pagination, filters, sorter]
+    [apiInstance, t, pagination, filters, sorter],
   );
 
   useEffect(() => {
     fetchPayableRecords();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pagination.current, pagination.pageSize, filters.supplier_short_name, sorter.field, sorter.order]);
+  }, [
+    pagination.current,
+    pagination.pageSize,
+    filters.supplier_short_name,
+    sorter.field,
+    sorter.order,
+  ]);
 
   const handleFilter = (filterValues: PayableFilters): void => {
     setFilters(filterValues);
-    setPagination(prev => ({ ...prev, current: 1 }));
+    setPagination((prev) => ({ ...prev, current: 1 }));
   };
 
-  const handleTableChange: TableProps<PayableRecord>['onChange'] = (paginationConfig, _filtersConfig, sorterConfig) => {
-    setPagination(prev => ({
+  const handleTableChange: TableProps<PayableRecord>['onChange'] = (
+    paginationConfig,
+    _filtersConfig,
+    sorterConfig,
+  ) => {
+    setPagination((prev) => ({
       ...prev,
       current: paginationConfig.current ?? prev.current,
       pageSize: DEFAULT_PAGINATION.pageSize,
@@ -138,7 +151,10 @@ const Payable: FC = () => {
     });
   };
 
-  const handleEditPayment = (paymentRecord: PayablePaymentRecord, supplierRecord: PayableRecord): void => {
+  const handleEditPayment = (
+    paymentRecord: PayablePaymentRecord,
+    supplierRecord: PayableRecord,
+  ): void => {
     setSelectedSupplier(supplierRecord);
     setEditingPayment(paymentRecord);
     setModalVisible(true);
@@ -167,7 +183,7 @@ const Payable: FC = () => {
       message.success(
         t('payable.saveSuccess', {
           action: editingPayment ? t('payable.editPayment') : t('payable.addPayment'),
-        })
+        }),
       );
       setModalVisible(false);
       fetchPayableRecords();
@@ -203,7 +219,12 @@ const Payable: FC = () => {
             </Title>
           </Col>
           <Col>
-            <Button type="primary" icon={<ReloadOutlined />} onClick={handleRefresh} style={{ marginRight: 8 }}>
+            <Button
+              type="primary"
+              icon={<ReloadOutlined />}
+              onClick={handleRefresh}
+              style={{ marginRight: 8 }}
+            >
               {t('payable.refresh')}
             </Button>
           </Col>

@@ -106,9 +106,9 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 /**
  * AuthProvider
- * 
+ *
  * Provide authentication context and manage user authentication status
- * 
+ *
  * @example
  * ```tsx
  * <AuthProvider>

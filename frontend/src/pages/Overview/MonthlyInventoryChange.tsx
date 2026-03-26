@@ -1,13 +1,11 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useMemo } from 'react';
-import { 
-  Card, Select, Statistic, Row, Col, Spin, Alert, Typography 
-} from 'antd';
-import { 
-  ArrowUpOutlined, 
+import { Card, Select, Statistic, Row, Col, Spin, Alert, Typography } from 'antd';
+import {
+  ArrowUpOutlined,
   ArrowDownOutlined,
   InboxOutlined,
-  StockOutlined
+  StockOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useSimpleApi, useSimpleApiData } from '@/hooks/useSimpleApi';
@@ -40,16 +38,16 @@ const MonthlyInventoryChange = () => {
   const [inventoryData, setInventoryData] = useState<MonthlyInventoryChangeData | null>(null);
   const [inventoryLoading, setInventoryLoading] = useState(false);
   const [inventoryError, setInventoryError] = useState<string | null>(null);
-  
+
   const { get } = useSimpleApi();
-  
+
   // 使用useSimpleApiData获取产品列表
   type Product = { product_model: string };
   type ProductsResponse = { data?: Product[] };
   const {
     data: productsResponse,
     loading: productsLoading,
-    error: productsError
+    error: productsError,
   } = useSimpleApiData<ProductsResponse>('/products');
 
   const products = useMemo(() => productsResponse?.data ?? [], [productsResponse]);
@@ -62,28 +60,31 @@ const MonthlyInventoryChange = () => {
   }, [products, selectedProduct]);
 
   // 获取月度库存变化数据
-  const fetchMonthlyInventoryChange = useCallback(async (productModel: string) => {
-    try {
-      setInventoryLoading(true);
-      setInventoryError(null);
-      
-      const result = await get<MonthlyInventoryChangeResponse>(
-        `/overview/monthly-inventory-change/${encodeURIComponent(productModel)}`
-      );
-      
-      if (result.success && result.data) {
-        setInventoryData(result.data);
-      } else {
-  setInventoryData(null);
-  setInventoryError((result.message ?? result.error) ?? t('overview.inventoryChangeFailed'));
+  const fetchMonthlyInventoryChange = useCallback(
+    async (productModel: string) => {
+      try {
+        setInventoryLoading(true);
+        setInventoryError(null);
+
+        const result = await get<MonthlyInventoryChangeResponse>(
+          `/overview/monthly-inventory-change/${encodeURIComponent(productModel)}`,
+        );
+
+        if (result.success && result.data) {
+          setInventoryData(result.data);
+        } else {
+          setInventoryData(null);
+          setInventoryError(result.message ?? result.error ?? t('overview.inventoryChangeFailed'));
+        }
+      } catch (err) {
+        console.error(t('overview.inventoryChangeFailed'), err);
+        setInventoryError(t('overview.inventoryChangeFailed'));
+      } finally {
+        setInventoryLoading(false);
       }
-    } catch (err) {
-      console.error(t('overview.inventoryChangeFailed'), err);
-      setInventoryError(t('overview.inventoryChangeFailed'));
-    } finally {
-      setInventoryLoading(false);
-    }
-  }, [get, t]);
+    },
+    [get, t],
+  );
 
   // 当选择的产品改变时，获取库存变化数据
   const handleProductChange = useCallback((productModel: string) => {
@@ -134,7 +135,7 @@ const MonthlyInventoryChange = () => {
               .includes(input.toLowerCase())
           }
         >
-          {products.map(product => (
+          {products.map((product) => (
             <Option key={product.product_model} value={product.product_model}>
               {product.product_model}
             </Option>
@@ -180,7 +181,13 @@ const MonthlyInventoryChange = () => {
               title={t('overview.monthlyChange')}
               value={Math.abs(inventoryData.monthly_change || 0)}
               prefix={getTrendIcon(inventoryData.monthly_change)}
-              suffix={inventoryData.monthly_change > 0 ? t('overview.increase') : inventoryData.monthly_change < 0 ? t('overview.decrease') : t('overview.noChange')}
+              suffix={
+                inventoryData.monthly_change > 0
+                  ? t('overview.increase')
+                  : inventoryData.monthly_change < 0
+                    ? t('overview.decrease')
+                    : t('overview.noChange')
+              }
               valueStyle={{ color: getTrendColor(inventoryData.monthly_change), fontSize: '16px' }}
             />
           </Col>
