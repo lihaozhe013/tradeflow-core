@@ -1,7 +1,7 @@
-import * as XLSX from "xlsx";
-import ExportUtils from "@/routes/export/utils/exportUtils";
-import { TEMPLATES } from "@/routes/export/utils/exportTemplates";
-import { ReceivablePayableData } from "@/routes/export/utils/types";
+import * as XLSX from 'xlsx';
+import ExportUtils from '@/routes/export/utils/exportUtils';
+import { TEMPLATES } from '@/routes/export/utils/exportTemplates';
+import { ReceivablePayableData } from '@/routes/export/utils/types';
 
 export function generateFinancialExcel(data: ReceivablePayableData): Buffer {
   const workbook = XLSX.utils.book_new();
@@ -18,10 +18,7 @@ export function generateFinancialExcel(data: ReceivablePayableData): Buffer {
   }
   if (data.receivable_payments && data.receivable_payments.length > 0) {
     const template = TEMPLATES.receivable_payments;
-    const worksheet = ExportUtils.createWorksheet(
-      data.receivable_payments,
-      template,
-    );
+    const worksheet = ExportUtils.createWorksheet(data.receivable_payments, template);
     XLSX.utils.book_append_sheet(workbook, worksheet, template.sheetName);
   }
   if (data.payable_summary && data.payable_summary.length > 0) {
@@ -40,7 +37,7 @@ export function generateFinancialExcel(data: ReceivablePayableData): Buffer {
     XLSX.utils.book_append_sheet(workbook, worksheet, template.sheetName);
   }
   return XLSX.write(workbook, {
-    type: "buffer",
-    bookType: "xlsx",
+    type: 'buffer',
+    bookType: 'xlsx',
   }) as unknown as Buffer;
 }
