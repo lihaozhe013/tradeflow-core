@@ -3,7 +3,7 @@ const argon2 = require('argon2');
 async function generateHash() {
   const password = 'admin123'; // Test password
   try {
-    const hash = await argon2.hash(password, { 
+    const hash = await argon2.hash(password, {
       type: argon2.argon2id,
       memoryCost: 2 ** 16, // 64 MB
       timeCost: 3,

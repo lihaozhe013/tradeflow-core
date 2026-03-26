@@ -1,4 +1,4 @@
-import * as XLSX from "xlsx";
+import * as XLSX from 'xlsx';
 
 export type ExportColumn = { key: string; label: string };
 export type ExportTemplate = { sheetName: string; columns: ExportColumn[] };
@@ -7,14 +7,14 @@ export type ExportTemplate = { sheetName: string; columns: ExportColumn[] };
  * Generate export filename with timestamp
  */
 export function generateFilename(exportType: string): string {
-  const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
   const typeMap: Record<string, string> = {
-    "base-info": "Base-Info-Export",
-    "inbound-outbound": "Inbound-Outbound-Export",
-    "receivable-payable": "Receivable-Payable-Export",
-    invoice: "Invoice-Export",
-    statement: "Statement-Export",
-    analysis: "Analysis-Export",
+    'base-info': 'Base-Info-Export',
+    'inbound-outbound': 'Inbound-Outbound-Export',
+    'receivable-payable': 'Receivable-Payable-Export',
+    invoice: 'Invoice-Export',
+    statement: 'Statement-Export',
+    analysis: 'Analysis-Export',
   };
   const typeName = typeMap[exportType] || exportType;
   return `${typeName}_${timestamp}.xlsx`;
@@ -30,17 +30,14 @@ export function createWorksheet(data: unknown[], template: ExportTemplate) {
     template.columns.map((col) => {
       const row = item as Record<string, unknown>;
       // Handle nested properties if key contains dot
-      if (col.key.includes(".")) {
+      if (col.key.includes('.')) {
         return (
           col.key
-            .split(".")
-            .reduce<unknown>(
-              (obj, key) => (obj as Record<string, unknown>)?.[key],
-              row,
-            ) ?? ""
+            .split('.')
+            .reduce<unknown>((obj, key) => (obj as Record<string, unknown>)?.[key], row) ?? ''
         );
       }
-      return row[col.key] ?? "";
+      return row[col.key] ?? '';
     }),
   );
 
@@ -49,7 +46,7 @@ export function createWorksheet(data: unknown[], template: ExportTemplate) {
 
   // Set column widths
   const colWidths = template.columns.map(() => ({ wch: 15 }));
-  worksheet["!cols"] = colWidths;
+  worksheet['!cols'] = colWidths;
 
   return worksheet;
 }

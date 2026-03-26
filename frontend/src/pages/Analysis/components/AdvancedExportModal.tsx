@@ -12,46 +12,46 @@ interface AdvancedExportModalProps {
   analysisType: AnalysisType;
 }
 
-const AdvancedExportModal: React.FC<AdvancedExportModalProps> = ({ 
-    visible, 
-    onCancel, 
-    onExport, 
-    exporting,
-    analysisType 
+const AdvancedExportModal: React.FC<AdvancedExportModalProps> = ({
+  visible,
+  onCancel,
+  onExport,
+  exporting,
+  analysisType,
 }) => {
   const { t } = useTranslation();
 
   return (
     <Modal
-      title={t('analysis.advancedExport.title') || "Advanced Export"}
+      title={t('analysis.advancedExport.title') || 'Advanced Export'}
       open={visible}
       onCancel={onCancel}
       footer={null}
       width={500}
     >
       {/* <p>{t('analysis.advancedExport.exportMethod') || "Please select export grouping type:"}</p> */}
-      
+
       <Space direction="vertical" style={{ width: '100%', marginTop: 20 }}>
-        <Button 
-          block 
-          size="large" 
+        <Button
+          block
+          size="large"
           icon={<UserOutlined />}
           onClick={() => onExport('customer')}
           loading={exporting}
         >
-          {analysisType === 'outbound' 
-            ? (t('analysis.advancedExport.byCustomer') || "Export by Customer") 
-            : (t('analysis.advancedExport.bySupplier') || "Export by Supplier")}
+          {analysisType === 'outbound'
+            ? t('analysis.advancedExport.byCustomer') || 'Export by Customer'
+            : t('analysis.advancedExport.bySupplier') || 'Export by Supplier'}
         </Button>
-        
-        <Button 
-          block 
-          size="large" 
+
+        <Button
+          block
+          size="large"
           icon={<AppstoreOutlined />}
           onClick={() => onExport('product')}
           loading={exporting}
         >
-          {t('analysis.advancedExport.byProduct') || "Export by Product"}
+          {t('analysis.advancedExport.byProduct') || 'Export by Product'}
         </Button>
       </Space>
     </Modal>

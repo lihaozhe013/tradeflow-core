@@ -16,20 +16,20 @@ const AnalysisStatistics: React.FC<AnalysisStatisticsProps> = ({ data, loading, 
   if (!data) return null;
 
   if (analysisType === 'inbound') {
-      return (
-        <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-          <Col xs={24} sm={12} md={8}>
-            <Card loading={loading}>
-              <Statistic
-                title={t('analysis.purchaseAmount') || "Total Purchase Amount"}
-                value={data.purchase_amount ?? 0}
-                precision={2}
-                prefix="¥"
-              />
-            </Card>
-          </Col>
-        </Row>
-      );
+    return (
+      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+        <Col xs={24} sm={12} md={8}>
+          <Card loading={loading}>
+            <Statistic
+              title={t('analysis.purchaseAmount') || 'Total Purchase Amount'}
+              value={data.purchase_amount ?? 0}
+              precision={2}
+              prefix="¥"
+            />
+          </Card>
+        </Col>
+      </Row>
+    );
   }
 
   // Outbound

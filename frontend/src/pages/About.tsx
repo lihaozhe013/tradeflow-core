@@ -9,25 +9,25 @@ function About() {
   const {
     data: aboutData,
     loading,
-    error
+    error,
   } = useSimpleApiData('/about', {
     title: '',
     company: {
       name: '',
       description: '',
-      slogan: ''
+      slogan: '',
     },
     system: {
       version: '0.1.0',
       releaseDate: '2025-01-01',
       techStack: 'React + Node.js + SQLite',
-      team: ''
+      team: '',
     },
     contact: {
       email: 'example@example.com',
       phone: '+1 xxx-xxx-xxxx',
-      address: ''
-    }
+      address: '',
+    },
   });
 
   if (loading) {
@@ -57,7 +57,7 @@ function About() {
           <Title level={1} style={{ color: '#1890ff', marginBottom: '24px' }}>
             {aboutData?.title ?? t('about.title')}
           </Title>
-          
+
           <div style={{ marginBottom: '32px' }}>
             <Title level={3} style={{ color: '#333' }}>
               {aboutData?.company?.name ?? t('about.companyProfile')}
@@ -96,38 +96,44 @@ function About() {
               {t('about.contact')}
             </Title>
             <Paragraph style={{ fontSize: '16px', lineHeight: '1.8', color: '#555' }}>
-              <Text strong>{t('about.email')}: </Text>{aboutData?.contact?.email ?? 'example@example.com'}<br />
-              <Text strong>{t('about.phone')}: </Text>{aboutData?.contact?.phone ?? '+1 xxx-xxx-xxxx'}<br />
-              <Text strong>{t('about.address')}: </Text>{aboutData?.contact?.address ?? t('about.defaultAddress')}
+              <Text strong>{t('about.email')}: </Text>
+              {aboutData?.contact?.email ?? 'example@example.com'}
+              <br />
+              <Text strong>{t('about.phone')}: </Text>
+              {aboutData?.contact?.phone ?? '+1 xxx-xxx-xxxx'}
+              <br />
+              <Text strong>{t('about.address')}: </Text>
+              {aboutData?.contact?.address ?? t('about.defaultAddress')}
             </Paragraph>
           </div>
         </Col>
-        
+
         <Col xs={24} md={8} style={{ textAlign: 'center' }}>
           <Card
-            style={{ 
-              background: 'linear-gradient(135deg, rgba(223, 218, 215, 0.2) 0%, rgba(223, 218, 215, 0.2) 100%)',
+            style={{
+              background:
+                'linear-gradient(135deg, rgba(223, 218, 215, 0.2) 0%, rgba(223, 218, 215, 0.2) 100%)',
               border: 'none',
               borderRadius: '12px',
-              padding: '20px'
+              padding: '20px',
             }}
           >
             <Image
               src="/logo.svg"
               alt="Company Logo"
-              style={{ 
+              style={{
                 width: '300px',
                 height: '300px',
-                objectFit: 'contain'
+                objectFit: 'contain',
               }}
               preview={false}
             />
-            <Title 
-              level={4} 
-              style={{ 
-                color: '#000000ff', 
+            <Title
+              level={4}
+              style={{
+                color: '#000000ff',
                 marginTop: '20px',
-                textAlign: 'center' 
+                textAlign: 'center',
               }}
             >
               {aboutData?.company?.name ?? t('about.systemName')}

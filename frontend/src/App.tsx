@@ -154,10 +154,7 @@ function UserMenu(): React.ReactElement {
   return (
     <Space>
       <Tag color={getRoleColor(user?.role)}>{getRoleText(user?.role)}</Tag>
-      <Dropdown
-        menu={{ items: userMenuItems, onClick: handleMenuClick }}
-        placement="bottomRight"
-      >
+      <Dropdown menu={{ items: userMenuItems, onClick: handleMenuClick }} placement="bottomRight">
         <Button type="text" style={{ color: 'white' }}>
           <Space>
             <UserOutlined />
@@ -188,21 +185,17 @@ function LanguageSelector(): React.ReactElement {
     { value: 'ko', label: t('common.korean'), flag: '🇰🇷' },
   ];
 
-  const selectOptions: SelectProps<LanguageValue>['options'] = languageOptions.map(
-    (option) => ({
-      value: option.value,
-      label: (
-        <Space>
-          <span>{option.flag}</span>
-          <span>{option.label}</span>
-        </Space>
-      ),
-    }),
-  );
+  const selectOptions: SelectProps<LanguageValue>['options'] = languageOptions.map((option) => ({
+    value: option.value,
+    label: (
+      <Space>
+        <span>{option.flag}</span>
+        <span>{option.label}</span>
+      </Space>
+    ),
+  }));
 
-  const currentLanguage = supportedLanguages.includes(
-    i18n.language as LanguageValue,
-  )
+  const currentLanguage = supportedLanguages.includes(i18n.language as LanguageValue)
     ? (i18n.language as LanguageValue)
     : 'zh';
 
@@ -438,11 +431,11 @@ function App(): React.ReactElement {
           <Route path="/login" element={<LoginPage />} />
           <Route
             path="*"
-            element={(
+            element={
               <ProtectedRoute>
                 <AppContent />
               </ProtectedRoute>
-            )}
+            }
           />
         </Routes>
       </AuthProvider>

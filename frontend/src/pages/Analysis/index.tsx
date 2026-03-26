@@ -17,7 +17,7 @@ import type { AnalysisType } from '@/types/analysis';
 
 const Analysis: React.FC = () => {
   const { t } = useTranslation();
-  
+
   // Custom Hooks
   const {
     loading,
@@ -29,24 +29,20 @@ const Analysis: React.FC = () => {
     detailData,
     fetchFilterOptions,
     fetchAnalysisData,
-    refreshAnalysisData
+    refreshAnalysisData,
   } = useAnalysisData();
 
-  const {
-    exporting,
-    performNormalExport,
-    performAdvancedExport
-  } = useAnalysisExport();
+  const { exporting, performNormalExport, performAdvancedExport } = useAnalysisExport();
 
   // Local State
   const [advancedExportModalVisible, setAdvancedExportModalVisible] = useState(false);
-  
+
   // Filters
   const [dateRange, setDateRange] = useState<[Dayjs, Dayjs]>([
-    dayjs().subtract(1, 'month').startOf('month'), 
-    dayjs().subtract(1, 'month').endOf('month')
+    dayjs().subtract(1, 'month').startOf('month'),
+    dayjs().subtract(1, 'month').endOf('month'),
   ]);
-  const [selectedPartner, setSelectedPartner] = useState<string | null>(null); 
+  const [selectedPartner, setSelectedPartner] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
   const [analysisType, setAnalysisType] = useState<AnalysisType>('outbound');
 
@@ -54,18 +50,18 @@ const Analysis: React.FC = () => {
   useEffect(() => {
     fetchFilterOptions();
   }, [fetchFilterOptions]);
-  
+
   // Auto-fetch cached data
   useEffect(() => {
-     if (dateRange?.[0] && dateRange?.[1]) {
-         fetchAnalysisData(dateRange, selectedPartner, selectedProduct, analysisType);
-     }
+    if (dateRange?.[0] && dateRange?.[1]) {
+      fetchAnalysisData(dateRange, selectedPartner, selectedProduct, analysisType);
+    }
   }, [dateRange, selectedPartner, selectedProduct, analysisType, fetchAnalysisData]);
 
   const handleAnalysisTypeChange = (type: AnalysisType) => {
-      setAnalysisType(type);
-      setSelectedPartner(null);
-      setSelectedProduct(null);
+    setAnalysisType(type);
+    setSelectedPartner(null);
+    setSelectedProduct(null);
   };
 
   const activePartners = analysisType === 'outbound' ? customers : suppliers;
@@ -82,20 +78,22 @@ const Analysis: React.FC = () => {
       return;
     }
 
-    if ((!selectedPartner && !selectedProduct) || 
-        (selectedPartner === 'All' && selectedProduct === 'All')) {
+    if (
+      (!selectedPartner && !selectedProduct) ||
+      (selectedPartner === 'All' && selectedProduct === 'All')
+    ) {
       setAdvancedExportModalVisible(true);
       return;
     }
 
     await performNormalExport(
-      analysisData, 
-      detailData, 
-      dateRange, 
-      selectedPartner, 
-      selectedProduct, 
+      analysisData,
+      detailData,
+      dateRange,
+      selectedPartner,
+      selectedProduct,
       activePartners,
-      analysisType
+      analysisType,
     );
   };
 
@@ -104,10 +102,10 @@ const Analysis: React.FC = () => {
       message.warning(t('analysis.selectTimeRange'));
       return;
     }
-    
+
     if (!selectedPartner && !selectedProduct) {
-       message.warning(t('analysis.selectFilterCondition'));
-       return;
+      message.warning(t('analysis.selectFilterCondition'));
+      return;
     }
 
     await refreshAnalysisData(dateRange, selectedPartner, selectedProduct, analysisType);
@@ -121,7 +119,7 @@ const Analysis: React.FC = () => {
   return (
     <div style={{ padding: 24 }}>
       <Typography.Title level={2}>{t('analysis.title')}</Typography.Title>
-      
+
       <Card bordered={false}>
         <AnalysisFilters
           dateRange={dateRange}
@@ -144,22 +142,18 @@ const Analysis: React.FC = () => {
         <Divider />
 
         <Spin spinning={loading}>
-          <AnalysisConditions 
+          <AnalysisConditions
             dateRange={dateRange}
             selectedPartner={selectedPartner}
             selectedProduct={selectedProduct}
             partners={activePartners}
             analysisType={analysisType}
           />
-          
-          <AnalysisStatistics 
-            data={analysisData} 
-            loading={loading}
-            analysisType={analysisType}
-          />
-          
-          <AnalysisDetailTable 
-            data={detailData} 
+
+          <AnalysisStatistics data={analysisData} loading={loading} analysisType={analysisType} />
+
+          <AnalysisDetailTable
+            data={detailData}
             loading={loading}
             partners={activePartners}
             selectedPartner={selectedPartner}

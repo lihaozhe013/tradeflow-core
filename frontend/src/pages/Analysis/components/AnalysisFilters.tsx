@@ -9,12 +9,15 @@ const { RangePicker } = DatePicker;
 
 interface AnalysisFiltersProps {
   dateRange: [Dayjs, Dayjs];
-  onDateRangeChange: (dates: [Dayjs | null, Dayjs | null] | null, dateStrings: [string, string]) => void;
+  onDateRangeChange: (
+    dates: [Dayjs | null, Dayjs | null] | null,
+    dateStrings: [string, string],
+  ) => void;
   selectedPartner: string | null;
   onPartnerChange: (value: string | null) => void;
   selectedProduct: string | null;
   onProductChange: (value: string | null) => void;
-  partners: PartnerOption[]; 
+  partners: PartnerOption[];
   products: ProductOption[];
   onRefresh: () => void;
   onExport: () => void;
@@ -40,28 +43,28 @@ const AnalysisFilters: React.FC<AnalysisFiltersProps> = ({
   exporting,
   hasData,
   analysisType,
-  onAnalysisTypeChange
+  onAnalysisTypeChange,
 }) => {
   const { t } = useTranslation();
 
   return (
     <>
       <Row style={{ marginBottom: 16 }}>
-          <Col>
-            <Space size="large">
-             <Space>
-                <strong>{t('analysis.type')}:</strong> 
-                <Segmented 
-                    options={[
-                        { label: t('analysis.sales') || 'Outbound (Sales)', value: 'outbound' },
-                        { label: t('analysis.purchase') || 'Inbound (Purchase)', value: 'inbound' }
-                    ]}
-                    value={analysisType}
-                    onChange={(val) => onAnalysisTypeChange(val as AnalysisType)}
-                />
-             </Space>
+        <Col>
+          <Space size="large">
+            <Space>
+              <strong>{t('analysis.type')}:</strong>
+              <Segmented
+                options={[
+                  { label: t('analysis.sales') || 'Outbound (Sales)', value: 'outbound' },
+                  { label: t('analysis.purchase') || 'Inbound (Purchase)', value: 'inbound' },
+                ]}
+                value={analysisType}
+                onChange={(val) => onAnalysisTypeChange(val as AnalysisType)}
+              />
             </Space>
-          </Col>
+          </Space>
+        </Col>
       </Row>
 
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
@@ -77,19 +80,27 @@ const AnalysisFilters: React.FC<AnalysisFiltersProps> = ({
             placeholder={[t('analysis.startDate'), t('analysis.endDate')]}
           />
         </Col>
-        
+
         <Col xs={24} sm={12} md={8}>
           <div style={{ marginBottom: 8 }}>
-            <strong>{analysisType === 'outbound' ? t('analysis.customer') : (t('analysis.supplier') || "Supplier")}</strong>
+            <strong>
+              {analysisType === 'outbound'
+                ? t('analysis.customer')
+                : t('analysis.supplier') || 'Supplier'}
+            </strong>
           </div>
           <AutoComplete
             value={selectedPartner}
             onChange={onPartnerChange}
             style={{ width: '100%' }}
-            placeholder={analysisType === 'outbound' ? t('analysis.selectCustomer') : (t('analysis.selectSupplier') || "Select Supplier")}
-            options={partners.map(p => ({
+            placeholder={
+              analysisType === 'outbound'
+                ? t('analysis.selectCustomer')
+                : t('analysis.selectSupplier') || 'Select Supplier'
+            }
+            options={partners.map((p) => ({
               value: p.code,
-              label: `${p.code} - ${p.name}`
+              label: `${p.code} - ${p.name}`,
             }))}
             filterOption={(inputValue, option) =>
               (option?.label ?? '').toLowerCase().includes(inputValue.toLowerCase())
@@ -97,7 +108,7 @@ const AnalysisFilters: React.FC<AnalysisFiltersProps> = ({
             allowClear
           />
         </Col>
-        
+
         <Col xs={24} sm={12} md={8}>
           <div style={{ marginBottom: 8 }}>
             <strong>{t('analysis.product')}</strong>
@@ -107,9 +118,9 @@ const AnalysisFilters: React.FC<AnalysisFiltersProps> = ({
             onChange={onProductChange}
             style={{ width: '100%' }}
             placeholder={t('analysis.selectProduct')}
-            options={products.map(product => ({
+            options={products.map((product) => ({
               value: product.model,
-              label: `${product.model} - ${product.name}`
+              label: `${product.model} - ${product.name}`,
             }))}
             filterOption={(inputValue, option) =>
               (option?.label ?? '').toLowerCase().includes(inputValue.toLowerCase())

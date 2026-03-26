@@ -1,6 +1,6 @@
 /**
  * Hooks 模块类型定义
- * 
+ *
  * 为所有自定义 React Hooks 提供 TypeScript 类型支持
  */
 
@@ -27,13 +27,25 @@ export interface UseApiReturn {
   /** GET 请求 */
   readonly get: <T = unknown>(url: string, options?: ApiRequestOptions) => Promise<T>;
   /** POST 请求 */
-  readonly post: <T = unknown>(url: string, data?: unknown, options?: ApiRequestOptions) => Promise<T>;
+  readonly post: <T = unknown>(
+    url: string,
+    data?: unknown,
+    options?: ApiRequestOptions,
+  ) => Promise<T>;
   /** PUT 请求 */
-  readonly put: <T = unknown>(url: string, data?: unknown, options?: ApiRequestOptions) => Promise<T>;
+  readonly put: <T = unknown>(
+    url: string,
+    data?: unknown,
+    options?: ApiRequestOptions,
+  ) => Promise<T>;
   /** DELETE 请求 */
   readonly delete: <T = unknown>(url: string, options?: ApiRequestOptions) => Promise<T>;
   /** 文件上传 */
-  readonly upload: <T = unknown>(url: string, formData: FormData, options?: ApiRequestOptions) => Promise<T>;
+  readonly upload: <T = unknown>(
+    url: string,
+    formData: FormData,
+    options?: ApiRequestOptions,
+  ) => Promise<T>;
   /** 文件下载 */
   readonly download: (url: string, filename?: string, options?: ApiRequestOptions) => Promise<void>;
   /** 清除错误状态 */
@@ -99,11 +111,19 @@ export interface UseSimpleApiReturn {
   /** GET 请求 */
   readonly get: <T = unknown>(url: string, options?: ApiRequestOptions) => Promise<T>;
   /** POST 请求 */
-  readonly post: <T = unknown>(url: string, data?: unknown, options?: ApiRequestOptions) => Promise<T>;
+  readonly post: <T = unknown>(
+    url: string,
+    data?: unknown,
+    options?: ApiRequestOptions,
+  ) => Promise<T>;
   /** POST 请求（返回 Blob） */
   readonly postBlob: (url: string, data?: unknown, options?: ApiRequestOptions) => Promise<Blob>;
   /** PUT 请求 */
-  readonly put: <T = unknown>(url: string, data?: unknown, options?: ApiRequestOptions) => Promise<T>;
+  readonly put: <T = unknown>(
+    url: string,
+    data?: unknown,
+    options?: ApiRequestOptions,
+  ) => Promise<T>;
   /** DELETE 请求 */
   readonly delete: <T = unknown>(url: string, options?: ApiRequestOptions) => Promise<T>;
 }

@@ -1,6 +1,6 @@
 /**
  * useAuth Hook 类型声明
- * 
+ *
  * 为 useAuth.js 提供 TypeScript 类型支持
  */
 
@@ -43,17 +43,17 @@ export interface AuthContextValue extends AuthContextState {
    * @returns 登录结果
    */
   login: (username: string, password: string) => Promise<LoginResult>;
-  
+
   /**
    * 登出
    */
   logout: () => void;
-  
+
   /**
    * 清除错误
    */
   clearError: () => void;
-  
+
   /**
    * 检查权限
    * @param requiredRole - 所需角色
@@ -64,7 +64,7 @@ export interface AuthContextValue extends AuthContextState {
 
 /**
  * useAuth Hook
- * 
+ *
  * @returns 认证上下文值
  * @throws 如果在 AuthProvider 外部使用
  */

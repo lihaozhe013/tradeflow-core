@@ -29,13 +29,21 @@ export interface DownloadOptions extends Omit<RequestOptions, 'method'> {
 export interface RequestInstance {
   // 基础请求方法
   <T = unknown>(url: string, options?: RequestOptions): Promise<T>;
-  
+
   // 便捷方法
   get<T = unknown>(url: string, options?: Omit<RequestOptions, 'method' | 'body'>): Promise<T>;
-  post<T = unknown>(url: string, data?: unknown, options?: Omit<RequestOptions, 'method' | 'body'>): Promise<T>;
-  put<T = unknown>(url: string, data?: unknown, options?: Omit<RequestOptions, 'method' | 'body'>): Promise<T>;
+  post<T = unknown>(
+    url: string,
+    data?: unknown,
+    options?: Omit<RequestOptions, 'method' | 'body'>,
+  ): Promise<T>;
+  put<T = unknown>(
+    url: string,
+    data?: unknown,
+    options?: Omit<RequestOptions, 'method' | 'body'>,
+  ): Promise<T>;
   delete<T = unknown>(url: string, options?: Omit<RequestOptions, 'method' | 'body'>): Promise<T>;
-  
+
   // 文件操作方法
   upload<T = unknown>(url: string, formData: FormData, options?: UploadOptions): Promise<T>;
   download(url: string, filename?: string, options?: DownloadOptions): Promise<void>;
@@ -47,11 +55,11 @@ export class RequestError extends Error {
     message: string,
     public readonly status?: number,
     public readonly statusText?: string,
-    public readonly data?: unknown
+    public readonly data?: unknown,
   ) {
     super(message);
     this.name = 'RequestError';
-    
+
     // 维护正确的原型链
     Object.setPrototypeOf(this, RequestError.prototype);
   }
@@ -62,7 +70,7 @@ export class NetworkError extends Error {
   constructor(message = '网络错误，请检查您的网络连接') {
     super(message);
     this.name = 'NetworkError';
-    
+
     Object.setPrototypeOf(this, NetworkError.prototype);
   }
 }
@@ -72,7 +80,7 @@ export class AuthenticationError extends Error {
   constructor(message = '认证失败，请重新登录') {
     super(message);
     this.name = 'AuthenticationError';
-    
+
     Object.setPrototypeOf(this, AuthenticationError.prototype);
   }
 }
@@ -82,7 +90,7 @@ export class AuthorizationError extends Error {
   constructor(message = '权限不足，无法执行此操作') {
     super(message);
     this.name = 'AuthorizationError';
-    
+
     Object.setPrototypeOf(this, AuthorizationError.prototype);
   }
 }

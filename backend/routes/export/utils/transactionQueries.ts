@@ -1,22 +1,22 @@
-import { prisma } from "@/prismaClient";
-import { Prisma } from "@prisma/client";
+import { prisma } from '@/prismaClient';
+import { Prisma } from '@prisma/client';
 import {
   InboundOutboundData,
   InboundRecordDto,
   OutboundRecordDto,
   TransactionFilters,
-} from "@/routes/export/utils/types";
+} from '@/routes/export/utils/types';
 
 export async function getInboundOutboundData(
   filters: TransactionFilters = {},
 ): Promise<InboundOutboundData> {
-  const { tables = "12" } = filters;
+  const { tables = '12' } = filters;
   const result: InboundOutboundData = {};
 
-  if (tables.includes("1")) {
+  if (tables.includes('1')) {
     result.inbound = await getInboundData(filters);
   }
-  if (tables.includes("2")) {
+  if (tables.includes('2')) {
     result.outbound = await getOutboundData(filters);
   }
   return result;
@@ -57,7 +57,7 @@ export async function getInboundData(
 
   return await prisma.inboundRecord.findMany({
     where,
-    orderBy: [{ inbound_date: "desc" }, { id: "desc" }],
+    orderBy: [{ inbound_date: 'desc' }, { id: 'desc' }],
   });
 }
 
@@ -96,7 +96,6 @@ export async function getOutboundData(
 
   return await prisma.outboundRecord.findMany({
     where,
-    orderBy: [{ outbound_date: "desc" }, { id: "desc" }],
+    orderBy: [{ outbound_date: 'desc' }, { id: 'desc' }],
   });
 }
-

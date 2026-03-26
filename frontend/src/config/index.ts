@@ -20,7 +20,7 @@ export const DEFAULT_PRODUCT_CATEGORY = typedConfigData.productCategories.defaul
  * @returns 付款方式选项数组
  */
 export const getPaymentMethodOptions = (): readonly SelectOption<PaymentMethod>[] => {
-  return PAYMENT_METHODS.map(method => ({
+  return PAYMENT_METHODS.map((method) => ({
     value: method,
     label: method,
   }));
@@ -40,7 +40,7 @@ export const getPaymentMethodLabel = (value: PaymentMethod | null | undefined): 
  * @returns 产品类别选项数组
  */
 export const getProductCategoryOptions = (): readonly SelectOption<ProductCategory>[] => {
-  return PRODUCT_CATEGORIES.map(category => ({
+  return PRODUCT_CATEGORIES.map((category) => ({
     value: category,
     label: category,
   }));
@@ -69,10 +69,10 @@ export const isValidProductCategory = (category: string): category is ProductCat
  * @param method - 付款方式
  * @returns 付款方式配置，如果不存在则返回 undefined
  */
-export const getPaymentMethodConfig = (
-  method: PaymentMethod
-): PaymentMethodConfig | undefined => {
-  const configKey = method.toLowerCase().replace(/['\s]/g, '_') as keyof typeof PAYMENT_METHOD_CONFIG;
+export const getPaymentMethodConfig = (method: PaymentMethod): PaymentMethodConfig | undefined => {
+  const configKey = method
+    .toLowerCase()
+    .replace(/['\s]/g, '_') as keyof typeof PAYMENT_METHOD_CONFIG;
   return PAYMENT_METHOD_CONFIG[configKey];
 };
 

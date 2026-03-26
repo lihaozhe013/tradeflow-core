@@ -16,7 +16,7 @@ export interface AnalysisData {
   cost_amount?: number;
   profit_amount?: number;
   profit_rate?: number;
-  
+
   // Inbound
   purchase_amount?: number;
   normal_purchase?: number;
@@ -26,7 +26,7 @@ export interface AnalysisData {
   normal_amount?: number;
   special_amount?: number;
   total_amount?: number;
-  
+
   last_updated?: string;
 }
 
@@ -36,7 +36,7 @@ export interface DetailItem {
   supplier_code?: string;
   partner_code?: string;
   product_model?: string;
-  
+
   sales_amount?: number;
   cost_amount?: number;
   profit_amount?: number;
@@ -47,11 +47,11 @@ export interface DetailItem {
 }
 
 export interface AnalysisApiResult<T> {
-    success: boolean;
-    data?: T;
-    message?: string;
-    customers?: PartnerOption[];
-    suppliers?: PartnerOption[];
-    products?: ProductOption[];
-    status?: number;
+  success: boolean;
+  data?: T;
+  message?: string;
+  customers?: PartnerOption[];
+  suppliers?: PartnerOption[];
+  products?: ProductOption[];
+  status?: number;
 }

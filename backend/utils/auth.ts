@@ -77,10 +77,10 @@ export function ensureJwtSecret(): string {
 
 export async function getAllUsers(): Promise<User[]> {
   try {
-     return await prisma.user.findMany();
+    return await prisma.user.findMany();
   } catch (e) {
-     logger.error("Failed to fetch users", { error: (e as Error).message });
-     return [];
+    logger.error('Failed to fetch users', { error: (e as Error).message });
+    return [];
   }
 }
 
@@ -181,7 +181,11 @@ export function loginRateLimiter(req: Request, res: Response, next: NextFunction
   next();
 }
 
-export async function authenticateToken(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function authenticateToken(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   const { enabled } = getAuthConfig();
   if (!enabled) {
     // Auth disabled: inject a dev user
@@ -212,10 +216,10 @@ export async function authenticateToken(req: Request, res: Response, next: NextF
     const decoded = jwt.verify(token, secret, {
       algorithms: ['HS256'],
     }) as JWTPayload;
-    
+
     // Check DB
     const user = await findUser(decoded.sub);
-    
+
     if (!user || user.enabled === false) {
       res.status(401).json({ success: false, message: 'Unauthorized' });
       return;

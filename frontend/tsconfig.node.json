@@ -11,8 +11,5 @@
     "lib": ["ES2024"],
     "verbatimModuleSyntax": true
   },
-  "include": [
-    "vite.config.ts",
-    "eslint.config.ts"
-  ]
+  "include": ["vite.config.ts", "eslint.config.ts"]
 }
