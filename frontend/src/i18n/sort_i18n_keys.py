@@ -107,7 +107,7 @@ def main():
     for file_path in files_to_process:
         # Pass the recursive flag to the sorting function
         # Convert Path object to string just in case, though usually handled
-        sort_json_file(str(file_path), indent=4, recursive=True)
+        sort_json_file(str(file_path), indent=2, recursive=True)
         print("-" * 40) # Separator
 
 if __name__ == "__main__":
