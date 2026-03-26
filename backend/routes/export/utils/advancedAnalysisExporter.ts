@@ -1,17 +1,14 @@
-import * as XLSX from "xlsx";
-import ExportUtils from "@/routes/export/utils/exportUtils";
-import { TEMPLATES } from "@/routes/export/utils/exportTemplates";
-import { currency_unit_symbol } from "@/utils/paths";
-import {
-  getCustomerAnalysisData,
-  getProductAnalysisData,
-} from "./analysisQueries";
+import * as XLSX from 'xlsx';
+import ExportUtils from '@/routes/export/utils/exportUtils';
+import { TEMPLATES } from '@/routes/export/utils/exportTemplates';
+import { currency_unit_symbol } from '@/utils/paths';
+import { getCustomerAnalysisData, getProductAnalysisData } from './analysisQueries';
 
 /**
  * Format currency value for display
  */
 function formatCurrency(value: number): string {
-  return `${currency_unit_symbol}${Number(value || 0).toLocaleString("zh-CN", {
+  return `${currency_unit_symbol}${Number(value || 0).toLocaleString('zh-CN', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`;
@@ -56,14 +53,14 @@ export async function generateAdvancedAnalysisExcel(
 ): Promise<Buffer> {
   const { exportType, startDate, endDate } = options;
 
-  if (!exportType || !["customer", "product"].includes(exportType)) {
-    throw new Error("Export type must be customer or product");
+  if (!exportType || !['customer', 'product'].includes(exportType)) {
+    throw new Error('Export type must be customer or product');
   }
 
   const workbook = XLSX.utils.book_new();
 
-  if (exportType === "customer") {
-    const customerData = await getCustomerAnalysisData(startDate || "", endDate || "");
+  if (exportType === 'customer') {
+    const customerData = await getCustomerAnalysisData(startDate || '', endDate || '');
     const summaryLabels = TEMPLATES.analysis_customer_summary.labels || {};
     const detailLabels = TEMPLATES.analysis_customer_detail.labels || {};
 
@@ -86,15 +83,9 @@ export async function generateAdvancedAnalysisExcel(
         );
         const summarySheetName = getUniqueSheetName(
           workbook,
-          `${customer.customer_name}-${
-            summaryLabels.summary_suffix || "Summary"
-          }`,
+          `${customer.customer_name}-${summaryLabels.summary_suffix || 'Summary'}`,
         );
-        XLSX.utils.book_append_sheet(
-          workbook,
-          summaryWorksheet,
-          summarySheetName,
-        );
+        XLSX.utils.book_append_sheet(workbook, summaryWorksheet, summarySheetName);
 
         // Create detail sheet if product details exist
         if (customer.product_details && customer.product_details.length > 0) {
@@ -115,22 +106,16 @@ export async function generateAdvancedAnalysisExcel(
             );
             const detailSheetName = getUniqueSheetName(
               workbook,
-              `${customer.customer_name}-${
-                detailLabels.detail_suffix || "Details"
-              }`,
+              `${customer.customer_name}-${detailLabels.detail_suffix || 'Details'}`,
             );
-            XLSX.utils.book_append_sheet(
-              workbook,
-              detailWorksheet,
-              detailSheetName,
-            );
+            XLSX.utils.book_append_sheet(workbook, detailWorksheet, detailSheetName);
           }
         }
       }
     }
   } else {
     // Product export
-    const productData = await getProductAnalysisData(startDate || "", endDate || "");
+    const productData = await getProductAnalysisData(startDate || '', endDate || '');
     const summaryLabels = TEMPLATES.analysis_product_summary.labels || {};
     const detailLabels = TEMPLATES.analysis_product_detail.labels || {};
 
@@ -151,15 +136,9 @@ export async function generateAdvancedAnalysisExcel(
         );
         const summarySheetName = getUniqueSheetName(
           workbook,
-          `${product.product_model}-${
-            summaryLabels.summary_suffix || "Summary"
-          }`,
+          `${product.product_model}-${summaryLabels.summary_suffix || 'Summary'}`,
         );
-        XLSX.utils.book_append_sheet(
-          workbook,
-          summaryWorksheet,
-          summarySheetName,
-        );
+        XLSX.utils.book_append_sheet(workbook, summaryWorksheet, summarySheetName);
 
         if (product.customer_details && product.customer_details.length > 0) {
           const detailData = product.customer_details
@@ -180,15 +159,9 @@ export async function generateAdvancedAnalysisExcel(
             );
             const detailSheetName = getUniqueSheetName(
               workbook,
-              `${product.product_model}-${
-                detailLabels.detail_suffix || "Details"
-              }`,
+              `${product.product_model}-${detailLabels.detail_suffix || 'Details'}`,
             );
-            XLSX.utils.book_append_sheet(
-              workbook,
-              detailWorksheet,
-              detailSheetName,
-            );
+            XLSX.utils.book_append_sheet(workbook, detailWorksheet, detailSheetName);
           }
         }
       }
@@ -196,7 +169,7 @@ export async function generateAdvancedAnalysisExcel(
   }
 
   return XLSX.write(workbook, {
-    type: "buffer",
-    bookType: "xlsx",
+    type: 'buffer',
+    bookType: 'xlsx',
   }) as unknown as Buffer;
 }

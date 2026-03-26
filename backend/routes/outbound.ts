@@ -33,7 +33,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     where.partner = {
       short_name: {
         contains: req.query['customer_short_name'] as string,
-      }
+      },
     };
   }
   if (isProvided(req.query['product_model'])) {
@@ -70,7 +70,13 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
   }
 
   const [rows, total] = await prisma.$transaction([
-    prisma.outboundRecord.findMany({ where, orderBy, skip, take: limit, include: { partner: true } }),
+    prisma.outboundRecord.findMany({
+      where,
+      orderBy,
+      skip,
+      take: limit,
+      include: { partner: true },
+    }),
     prisma.outboundRecord.count({ where }),
   ]);
 

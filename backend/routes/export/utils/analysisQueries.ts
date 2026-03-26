@@ -1,6 +1,10 @@
 import { prisma } from '@/prismaClient';
 import decimalCalc from '@/utils/decimalCalculator';
-import { AnalysisCustomerData, AnalysisProductData, AnalysisRecord } from '@/routes/export/utils/types';
+import {
+  AnalysisCustomerData,
+  AnalysisProductData,
+  AnalysisRecord,
+} from '@/routes/export/utils/types';
 
 interface Batch {
   quantity_remaining: number;
@@ -60,8 +64,8 @@ async function calculateFIFOData(startDate: string, endDate: string): Promise<An
           select: {
             short_name: true,
             full_name: true,
-          }
-        }
+          },
+        },
       },
     }),
     // Partners for resolution
@@ -77,12 +81,12 @@ async function calculateFIFOData(startDate: string, endDate: string): Promise<An
     if (p.code)
       partnerCodeMap.set(p.code, {
         code: p.code,
-        full_name: p.full_name || "",
+        full_name: p.full_name || '',
       });
     if (p.short_name)
       partnerShortMap.set(p.short_name, {
-        code: p.code || "",
-        full_name: p.full_name || "",
+        code: p.code || '',
+        full_name: p.full_name || '',
       });
   });
 
@@ -118,10 +122,7 @@ async function calculateFIFOData(startDate: string, endDate: string): Promise<An
     let partner = null;
     if (outRecord.customer_code && partnerCodeMap.has(outRecord.customer_code)) {
       partner = partnerCodeMap.get(outRecord.customer_code);
-    } else if (
-      outRecord.partner?.short_name &&
-      partnerShortMap.has(outRecord.partner.short_name)
-    ) {
+    } else if (outRecord.partner?.short_name && partnerShortMap.has(outRecord.partner.short_name)) {
       partner = partnerShortMap.get(outRecord.partner.short_name);
     }
 

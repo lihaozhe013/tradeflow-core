@@ -32,7 +32,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     where.partner = {
       short_name: {
         contains: req.query['supplier_short_name'] as string,
-      }
+      },
     };
   }
   if (isProvided(req.query['product_model'])) {
@@ -130,7 +130,7 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
     },
   });
 
-  await inventoryService.onInboundCreate(result)
+  await inventoryService.onInboundCreate(result);
   res.json({ id: result.id, message: 'Inbound record created!' });
 });
 

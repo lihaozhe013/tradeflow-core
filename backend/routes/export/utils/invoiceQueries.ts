@@ -1,12 +1,10 @@
-import { Prisma } from "@prisma/client";
-import { prisma } from "@/prismaClient";
-import { InvoiceFilters, InvoiceItemDto } from "@/routes/export/utils/types";
+import { Prisma } from '@prisma/client';
+import { prisma } from '@/prismaClient';
+import { InvoiceFilters, InvoiceItemDto } from '@/routes/export/utils/types';
 
-export async function getInvoiceData(
-  filters: InvoiceFilters,
-): Promise<InvoiceItemDto[]> {
+export async function getInvoiceData(filters: InvoiceFilters): Promise<InvoiceItemDto[]> {
   const { partnerCode, dateFrom, dateTo } = filters;
-  if (!partnerCode) throw new Error("Partner Code is required");
+  if (!partnerCode) throw new Error('Partner Code is required');
 
   // Inbound query conditions
   const inboundConditions: Prisma.Sql[] = [
@@ -40,7 +38,7 @@ export async function getInvoiceData(
         quantity,
         total_price
       FROM inbound_records 
-      WHERE ${Prisma.join(inboundConditions, " AND ")}
+      WHERE ${Prisma.join(inboundConditions, ' AND ')}
       UNION ALL
       SELECT 
         product_model,
@@ -48,7 +46,7 @@ export async function getInvoiceData(
         quantity,
         total_price
       FROM outbound_records 
-      WHERE ${Prisma.join(outboundConditions, " AND ")}
+      WHERE ${Prisma.join(outboundConditions, ' AND ')}
     ) as combined_records
     GROUP BY product_model, unit_price
     ORDER BY product_model, unit_price
@@ -66,8 +64,8 @@ export async function getInvoiceData(
   return rows.map((row) => ({
     product_model: row.product_model,
     unit_price: Number(row.unit_price),
-    quantity: typeof row.quantity === "bigint" ? Number(row.quantity) : Number(row.quantity),
+    quantity: typeof row.quantity === 'bigint' ? Number(row.quantity) : Number(row.quantity),
     total_price:
-      typeof row.total_price === "bigint" ? Number(row.total_price) : Number(row.total_price),
+      typeof row.total_price === 'bigint' ? Number(row.total_price) : Number(row.total_price),
   }));
 }
