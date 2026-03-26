@@ -6,16 +6,30 @@ export async function getInvoiceData(filters: InvoiceFilters): Promise<InvoiceIt
   const { partnerCode, dateFrom, dateTo } = filters;
   if (!partnerCode) throw new Error('Partner Code is required');
 
+  // Resolve partner codes (match against code or short_name)
+  const partners = await prisma.partner.findMany({
+    where: {
+      OR: [{ code: partnerCode }, { short_name: partnerCode }],
+    },
+    select: { code: true },
+  });
+
+  if (partners.length === 0) {
+    return [];
+  }
+
+  const partnerCodes = partners.map((p) => p.code);
+
   // Inbound query conditions
   const inboundConditions: Prisma.Sql[] = [
-    Prisma.sql`(supplier_code = ${partnerCode} OR supplier_short_name = ${partnerCode})`,
+    Prisma.sql`supplier_code IN (${Prisma.join(partnerCodes)})`,
   ];
   if (dateFrom) inboundConditions.push(Prisma.sql`inbound_date >= ${dateFrom}`);
   if (dateTo) inboundConditions.push(Prisma.sql`inbound_date <= ${dateTo}`);
 
   // Outbound query conditions
   const outboundConditions: Prisma.Sql[] = [
-    Prisma.sql`(customer_code = ${partnerCode} OR customer_short_name = ${partnerCode})`,
+    Prisma.sql`customer_code IN (${Prisma.join(partnerCodes)})`,
   ];
   if (dateFrom) outboundConditions.push(Prisma.sql`outbound_date >= ${dateFrom}`);
   if (dateTo) outboundConditions.push(Prisma.sql`outbound_date <= ${dateTo}`);
