@@ -1,4 +1,4 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, type Router as ExpressRouter } from 'express';
 import decimalCalc from '@/utils/decimalCalculator';
 import {
   calculateFilteredSoldGoodsCost,
@@ -15,7 +15,7 @@ import {
 } from '@/routes/analysis/utils';
 import type { DetailItem, AnalysisType } from '@/routes/analysis/utils/types';
 
-const router = Router();
+const router: ExpressRouter = Router();
 
 // GET /api/analysis/data
 router.get('/data', (req: Request, res: Response) => {

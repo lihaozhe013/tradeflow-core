@@ -1,4 +1,4 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, type Router as ExpressRouter } from 'express';
 import { logger } from '@/utils/logger';
 import * as ExportService from '@/routes/export/utils';
 import {
@@ -9,7 +9,7 @@ import {
   AnalysisExportOptions,
 } from '@/routes/export/utils/types';
 
-const router = Router();
+const router: ExpressRouter = Router();
 
 // Export base information
 router.post('/base-info', async (req: Request, res: Response) => {

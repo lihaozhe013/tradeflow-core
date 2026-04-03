@@ -7,14 +7,16 @@
   "type": "module",
   "main": "dist/server.js",
   "scripts": {
+    "preinstall": "npx only-allow pnpm",
     "build": "node ./scripts/bundle.mjs",
     "dev": "tsx watch server.ts",
     "dev:debug": "tsx watch --inspect server.ts",
     "lint": "eslint ."
   },
   "dependencies": {
-    "@prisma/adapter-pg": "^7.5.0",
-    "@prisma/client": "^7.5.0",
+    "@prisma/adapter-pg": "^7.6.0",
+    "@prisma/client": "^7.6.0",
+    "@prisma/client-runtime-utils": "^7.6.0",
     "@types/js-yaml": "^4.0.9",
     "argon2": "^0.44.0",
     "cors": "^2.8.6",

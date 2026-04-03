@@ -10,7 +10,7 @@ ENV NODE_ENV=production
 
 COPY dist/ .
 
-RUN npm install --omit=dev
+RUN npm install -g pnpm && pnpm install --prod
 
 EXPOSE 8000
 

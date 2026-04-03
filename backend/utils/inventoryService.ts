@@ -1,5 +1,5 @@
 import { prisma } from '@/prismaClient';
-import { Prisma } from '@prisma/client';
+import { Prisma } from '@/prisma/client';
 
 export type ChangeType = 'INBOUND' | 'OUTBOUND' | 'ADJUSTMENT';
 

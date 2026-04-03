@@ -1,4 +1,4 @@
-import { Prisma } from '@prisma/client';
+import { Prisma } from '@/prisma/client';
 import { prisma } from '@/prismaClient';
 import { InvoiceFilters, InvoiceItemDto } from '@/routes/export/utils/types';
 

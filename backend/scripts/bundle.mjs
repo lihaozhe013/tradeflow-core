@@ -27,11 +27,19 @@ async function main() {
     format: 'esm',
     sourcemap: false,
     minify: true,
-    external: ['argon2', '@prisma/client', 'prisma'],
+    external: ['argon2', 'prisma'],
     banner: {
       js: "import { createRequire } from 'module'; const require = createRequire(import.meta.url);",
     },
     plugins: [
+      {
+        name: 'prisma-client-rewrite',
+        setup(build) {
+          build.onResolve({ filter: /^@prisma\/client$/ }, () => {
+            return { path: '../prisma/client/index.js', external: true };
+          });
+        },
+      },
       {
         name: 'alias-atslash',
         setup(build) {

@@ -36,7 +36,8 @@
       "@/*": ["./*"],
       "@/types/*": ["./types/*"],
       "@/utils/*": ["./utils/*"],
-      "@/routes/*": ["./routes/*"]
+      "@/routes/*": ["./routes/*"],
+      "@/prisma/client/*": ["./prisma/client/*"]
     }
   },
   "include": ["**/*.ts"],

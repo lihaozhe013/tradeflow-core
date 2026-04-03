@@ -1,4 +1,4 @@
-import { PrismaClient, Prisma } from '@prisma/client';
+import { PrismaClient, Prisma } from '@/prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
 import { config } from '@/utils/paths';
@@ -29,8 +29,6 @@ function createPrismaClient() {
     connectionTimeoutMillis: 5000,
   });
 
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-expect-error
   const adapter = new PrismaPg(pool);
 
   const log: Prisma.LogLevel[] =

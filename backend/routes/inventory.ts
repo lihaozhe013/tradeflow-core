@@ -1,7 +1,7 @@
 import express, { type Router, type Request, type Response } from 'express';
 import { prisma } from '@/prismaClient';
 import { inventoryService } from '@/utils/inventoryService';
-import { Prisma } from '@prisma/client';
+import { Prisma } from '@/prisma/client';
 import decimalCalc from '@/utils/decimalCalculator';
 import { pagination_limit } from '@/utils/paths';
 

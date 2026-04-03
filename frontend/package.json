@@ -5,6 +5,7 @@
   "type": "module",
   "description": "frontend",
   "scripts": {
+    "preinstall": "npx only-allow pnpm",
     "dev": "vite --host 0.0.0.0 --port 5173",
     "build": "tsc && vite build",
     "start": "vite preview --host 0.0.0.0 --port 8080",
@@ -14,6 +15,7 @@
     "type-check:watch": "tsc --noEmit --watch"
   },
   "dependencies": {
+    "@ant-design/icons": "^6.1.1",
     "antd": "^6.3.3",
     "dayjs": "^1.11.20",
     "i18next": "^25.10.4",

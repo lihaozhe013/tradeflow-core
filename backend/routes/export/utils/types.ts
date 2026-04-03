@@ -6,7 +6,7 @@ import {
   Product,
   ProductPrice,
   ReceivablePayment,
-} from '@prisma/client';
+} from '@/prisma/client';
 
 export interface BasicDataFilters {
   tables?: string;

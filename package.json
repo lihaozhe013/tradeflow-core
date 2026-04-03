@@ -4,16 +4,16 @@
   "version": "0.8.1",
   "description": "a lightweight tradeflow system core",
   "scripts": {
-    "install:all": "npm install && cd frontend && npm install && cd ../backend && npm install && npx prisma generate",
-    "ci:all": "npm ci && cd frontend && npm ci && cd ../backend && npm ci && npx prisma generate",
+    "preinstall": "npx only-allow pnpm",
+    "install:all": "pnpm install && cd frontend && pnpm install && cd ../backend && pnpm install && pnpm prisma generate",
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
     "dev:frontend": "cd frontend && npm run dev",
     "dev:backend": "cd backend && npm run dev",
     "build": "uv run build.py",
-    "start": "cd dist && cross-env NODE_ENV=production backend/server/.js"
+    "start": "cd dist && cross-env NODE_ENV=production backend/server/.js",
+    "format": "prettier --write ."
   },
   "devDependencies": {
-    "argon2": "^0.44.0",
     "concurrently": "^9.2.1",
     "cross-env": "^10.1.0",
     "prettier": "^3.8.1"

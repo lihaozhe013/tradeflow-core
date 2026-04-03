@@ -1,5 +1,5 @@
 import express, { type Router, type Request, type Response } from 'express';
-import { Prisma } from '@prisma/client';
+import { Prisma } from '@/prisma/client';
 import { prisma } from '@/prismaClient';
 import { authorize, hashPassword } from '@/utils/auth';
 

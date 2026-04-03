@@ -7,7 +7,7 @@ import { Request, Response, NextFunction } from 'express';
 import { logger } from '@/utils/logger';
 import { resolveFilesInDataPath, config } from '@/utils/paths';
 import { prisma } from '../prismaClient';
-import type { User } from '@prisma/client';
+import type { User } from '@/prisma/client';
 
 const secretPath: string = resolveFilesInDataPath('jwt-secret.txt');
 
