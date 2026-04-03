@@ -1,0 +1,281 @@
+{
+  "partners": {
+    "sheetName": "Suppliers and Customers",
+    "columns": [
+      { "label": "Code", "key": "code" },
+      { "label": "Short Name", "key": "short_name" },
+      { "label": "Full Name", "key": "full_name" },
+      { "label": "Type", "key": "type_name" },
+      { "label": "Address", "key": "address" },
+      { "label": "Contact Person", "key": "contact_person" },
+      { "label": "Contact Phone", "key": "contact_phone" }
+    ]
+  },
+  "products": {
+    "sheetName": "Product Info",
+    "columns": [
+      { "label": "Code", "key": "code" },
+      { "label": "Category", "key": "category" },
+      { "label": "Product Model", "key": "product_model" },
+      { "label": "Remark", "key": "remark" }
+    ]
+  },
+  "inventory": {
+    "sheetName": "Inventory Data",
+    "columns": [
+      { "label": "Product Model", "key": "product_model" },
+      { "label": "Quantity", "key": "quantity" },
+      { "label": "Estimated Unit Cost", "key": "unit_cost" },
+      { "label": "Total Value", "key": "total_value" }
+    ]
+  },
+  "prices": {
+    "sheetName": "Product Prices",
+    "columns": [
+      { "label": "Partner Short Name", "key": "partner_short_name" },
+      { "label": "Product Model", "key": "product_model" },
+      { "label": "Effective Date", "key": "effective_date" },
+      { "label": "Expiry Date", "key": "expiry_date" },
+      { "label": "Unit Price", "key": "unit_price" }
+    ]
+  },
+  "inbound": {
+    "sheetName": "Inbound Records",
+    "columns": [
+      { "label": "Inbound Date", "key": "inbound_date" },
+      { "label": "Supplier Code", "key": "supplier_code" },
+      { "label": "Supplier Short Name", "key": "supplier_short_name" },
+      { "label": "Product Code", "key": "product_code" },
+      { "label": "Product Model", "key": "product_model" },
+      { "label": "Quantity", "key": "quantity" },
+      { "label": "Unit Price", "key": "unit_price" },
+      { "label": "Total Price", "key": "total_price" }
+    ]
+  },
+  "outbound": {
+    "sheetName": "Outbound Records",
+    "columns": [
+      { "label": "Outbound Date", "key": "outbound_date" },
+      { "label": "Invoice Number", "key": "invoice_number" },
+      { "label": "Customer Code", "key": "customer_code" },
+      { "label": "Customer Short Name", "key": "customer_short_name" },
+      { "label": "Product Code", "key": "product_code" },
+      { "label": "Product Model", "key": "product_model" },
+      { "label": "Quantity", "key": "quantity" },
+      { "label": "Unit Price", "key": "unit_price" },
+      { "label": "Total Price", "key": "total_price" },
+      { "label": "Order Number", "key": "order_number" }
+    ]
+  },
+  "receivable_summary": {
+    "sheetName": "Receivable Summary",
+    "columns": [
+      { "label": "Customer Code", "key": "customer_code" },
+      { "label": "Customer Short Name", "key": "customer_short_name" },
+      { "label": "Customer Full Name", "key": "customer_full_name" },
+      { "label": "Total Sales", "key": "total_sales" },
+      { "label": "Total Payments", "key": "total_payments" },
+      { "label": "Balance", "key": "balance" }
+    ]
+  },
+  "receivable_details": {
+    "sheetName": "Receivable Details",
+    "columns": [
+      { "label": "Outbound Record ID", "key": "record_id" },
+      { "label": "Customer Code", "key": "customer_code" },
+      { "label": "Customer Short Name", "key": "customer_short_name" },
+      { "label": "Product Model", "key": "product_model" },
+      { "label": "Total Price", "key": "total_price" },
+      { "label": "Outbound Date", "key": "outbound_date" },
+      { "label": "Remark", "key": "remark" }
+    ]
+  },
+  "receivable_payments": {
+    "sheetName": "Receivable Payments",
+    "columns": [
+      { "label": "Payment ID", "key": "id" },
+      { "label": "Customer Code", "key": "customer_code" },
+      { "label": "Payment Amount", "key": "amount" },
+      { "label": "Payment Date", "key": "pay_date" },
+      { "label": "Payment Method", "key": "pay_method" },
+      { "label": "Remark", "key": "remark" }
+    ]
+  },
+  "payable_summary": {
+    "sheetName": "Payable Summary",
+    "columns": [
+      { "label": "Supplier Full Name", "key": "supplier_full_name" },
+      { "label": "Total Purchases", "key": "total_purchases" },
+      { "label": "Total Payments", "key": "total_payments" },
+      { "label": "Balance", "key": "balance" }
+    ]
+  },
+  "payable_details": {
+    "sheetName": "Payable Details",
+    "columns": [
+      { "label": "Inbound Record ID", "key": "record_id" },
+      { "label": "Supplier Short Name", "key": "supplier_short_name" },
+      { "label": "Product Model", "key": "product_model" },
+      { "label": "Total Price", "key": "total_price" },
+      { "label": "Inbound Date", "key": "inbound_date" },
+      { "label": "Remark", "key": "remark" }
+    ]
+  },
+  "payable_payments": {
+    "sheetName": "Payable Payments",
+    "columns": [
+      { "label": "Payment ID", "key": "id" },
+      { "label": "Supplier Code", "key": "supplier_code" },
+      { "label": "Payment Amount", "key": "amount" },
+      { "label": "Payment Date", "key": "pay_date" },
+      { "label": "Payment Method", "key": "pay_method" },
+      { "label": "Remark", "key": "remark" }
+    ]
+  },
+  "invoice": {
+    "sheetName": "Invoice Details",
+    "columns": [
+      { "label": "Product Model", "key": "product_model" },
+      { "label": "Quantity", "key": "quantity" },
+      { "label": "Unit Price", "key": "unit_price" },
+      { "label": "Total Price", "key": "total_price" }
+    ]
+  },
+  "inbound_statement": {
+    "sheetName": "Inbound Records",
+    "columns": [
+      { "label": "Inbound Date", "key": "inbound_date" },
+      { "label": "Order Number", "key": "order_number" },
+      { "label": "Supplier Full Name", "key": "supplier_full_name" },
+      { "label": "Product Model", "key": "product_model" },
+      { "label": "Quantity", "key": "quantity" },
+      { "label": "Unit Price", "key": "unit_price" },
+      { "label": "Total Price", "key": "total_price" },
+      { "label": "Invoice Number", "key": "invoice_number" }
+    ]
+  },
+  "outbound_statement": {
+    "sheetName": "Outbound Records",
+    "columns": [
+      { "label": "Outbound Date", "key": "outbound_date" },
+      { "label": "Order Number", "key": "order_number" },
+      { "label": "Customer Full Name", "key": "customer_full_name" },
+      { "label": "Product Model", "key": "product_model" },
+      { "label": "Quantity", "key": "quantity" },
+      { "label": "Unit Price", "key": "unit_price" },
+      { "label": "Total Price", "key": "total_price" },
+      { "label": "Invoice Number", "key": "invoice_number" }
+    ]
+  },
+  "analysis_summary": {
+    "sheetName": "Analysis Summary",
+    "columns": [
+      { "label": "Analysis Item", "key": "metric_name" },
+      { "label": "Amount", "key": "amount" },
+      { "label": "Remark", "key": "remark" }
+    ],
+    "labels": {
+      "sales_amount": "Sales Amount",
+      "cost_amount": "Cost Amount",
+      "profit_amount": "Profit Amount",
+      "profit_rate": "Profit Margin",
+      "time_period": "Time Period",
+      "customer_filter": "Customer Filter",
+      "product_filter": "Product Filter",
+      "all": "All",
+      "last_updated": "Last Updated",
+      "calculation_method": "Calculated using weighted average cost method"
+    }
+  },
+  "analysis_detail": {
+    "sheetName": "Detailed Analysis",
+    "columns": [
+      { "label": "Customer Code", "key": "customer_code" },
+      { "label": "Customer Name", "key": "customer_name" },
+      { "label": "Product Model", "key": "product_model" },
+      { "label": "Sales Amount", "key": "sales_amount" },
+      { "label": "Cost", "key": "cost_amount" },
+      { "label": "Profit", "key": "profit_amount" },
+      { "label": "Profit Margin (%)", "key": "profit_rate" }
+    ]
+  },
+  "analysis_customer_summary": {
+    "sheetName": "Customer Sales Summary",
+    "columns": [
+      { "label": "Customer Code", "key": "customer_code" },
+      { "label": "Customer Name", "key": "customer_name" },
+      { "label": "Sales Amount", "key": "sales_amount" },
+      { "label": "Cost", "key": "cost_amount" },
+      { "label": "Profit", "key": "profit_amount" },
+      { "label": "Profit Margin (%)", "key": "profit_rate" }
+    ],
+    "labels": {
+      "summary_suffix": "Summary",
+      "detail_suffix": "Details"
+    }
+  },
+  "analysis_customer_detail": {
+    "sheetName": "Product Sales Detail",
+    "columns": [
+      { "label": "Product Model", "key": "product_model" },
+      { "label": "Sales Amount", "key": "sales_amount" },
+      { "label": "Cost", "key": "cost_amount" },
+      { "label": "Profit", "key": "profit_amount" },
+      { "label": "Profit Margin (%)", "key": "profit_rate" }
+    ],
+    "labels": {
+      "summary_suffix": "Summary",
+      "detail_suffix": "Details"
+    }
+  },
+  "analysis_product_summary": {
+    "sheetName": "Product Sales Summary",
+    "columns": [
+      { "label": "Product Model", "key": "product_model" },
+      { "label": "Sales Amount", "key": "sales_amount" },
+      { "label": "Cost", "key": "cost_amount" },
+      { "label": "Profit", "key": "profit_amount" },
+      { "label": "Profit Margin (%)", "key": "profit_rate" }
+    ],
+    "labels": {
+      "summary_suffix": "Summary",
+      "detail_suffix": "Details"
+    }
+  },
+  "analysis_product_detail": {
+    "sheetName": "Customer Sales Detail",
+    "columns": [
+      { "label": "Customer Code", "key": "customer_code" },
+      { "label": "Customer Name", "key": "customer_name" },
+      { "label": "Sales Amount", "key": "sales_amount" },
+      { "label": "Cost", "key": "cost_amount" },
+      { "label": "Profit", "key": "profit_amount" },
+      { "label": "Profit Margin (%)", "key": "profit_rate" }
+    ],
+    "labels": {
+      "summary_suffix": "Summary",
+      "detail_suffix": "Details"
+    }
+  },
+  "analysis_detail_by_product": {
+    "sheetName": "Product Analysis",
+    "columns": [
+      { "label": "Product Model", "key": "product_model" },
+      { "label": "Sales Amount", "key": "sales_amount" },
+      { "label": "Cost", "key": "cost_amount" },
+      { "label": "Profit", "key": "profit_amount" },
+      { "label": "Profit Margin (%)", "key": "profit_rate" }
+    ]
+  },
+  "analysis_detail_by_customer": {
+    "sheetName": "Customer Analysis",
+    "columns": [
+      { "label": "Customer Code", "key": "customer_code" },
+      { "label": "Customer Name", "key": "customer_name" },
+      { "label": "Sales Amount", "key": "sales_amount" },
+      { "label": "Cost", "key": "cost_amount" },
+      { "label": "Profit", "key": "profit_amount" },
+      { "label": "Profit Margin (%)", "key": "profit_rate" }
+    ]
+  }
+}

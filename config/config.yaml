@@ -1,0 +1,23 @@
+currency_unit_symbol: '$'
+pagination_limit: 20
+database:
+  type: postgresql
+  host: localhost
+  port: 5432
+  user: postgres
+  password: postgres
+  dbName: tradeflow
+  maxConnections: 5
+auth:
+  enabled: true
+  tokenExpiresInHours: 12
+  loginRateLimit:
+    windowMinutes: 5
+    maxAttempts: 20
+  allowExportsForReader: true
+server:
+  httpPort: 8000
+frontend:
+  hostByBackend: true
+  distPath: ./frontend
+  fallbackToIndex: true
