@@ -55,10 +55,19 @@ export async function getInboundData(
   const where: Prisma.InboundRecordWhereInput =
     andConditions.length > 0 ? { AND: andConditions } : {};
 
-  return await prisma.inboundRecord.findMany({
+  const records = await prisma.inboundRecord.findMany({
     where,
+    include: {
+      partner: true,
+    },
     orderBy: [{ inbound_date: 'desc' }, { id: 'desc' }],
   });
+
+  return records.map((record) => ({
+    ...record,
+    supplier_short_name: record.partner?.short_name || '',
+    supplier_full_name: record.partner?.full_name || '',
+  })) as unknown as InboundRecordDto[];
 }
 
 export async function getOutboundData(
@@ -94,8 +103,17 @@ export async function getOutboundData(
   const where: Prisma.OutboundRecordWhereInput =
     andConditions.length > 0 ? { AND: andConditions } : {};
 
-  return await prisma.outboundRecord.findMany({
+  const records = await prisma.outboundRecord.findMany({
     where,
+    include: {
+      partner: true,
+    },
     orderBy: [{ outbound_date: 'desc' }, { id: 'desc' }],
   });
+
+  return records.map((record) => ({
+    ...record,
+    customer_short_name: record.partner?.short_name || '',
+    customer_full_name: record.partner?.full_name || '',
+  })) as unknown as OutboundRecordDto[];
 }
