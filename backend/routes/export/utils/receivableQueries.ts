@@ -85,9 +85,15 @@ export async function getReceivableDetails(
 
   const rows = await prisma.outboundRecord.findMany({
     where,
+    include: { partner: true },
     orderBy: [{ outbound_date: 'desc' }, { id: 'desc' }],
   });
-  return rows.map((r) => ({ ...r, record_id: r.id }));
+  return rows.map((r) => ({
+    ...r,
+    record_id: r.id,
+    customer_short_name: r.partner?.short_name || '',
+    customer_full_name: r.partner?.full_name || '',
+  })) as unknown as (OutboundRecordDto & { record_id: number })[];
 }
 
 export async function getReceivablePayments(
