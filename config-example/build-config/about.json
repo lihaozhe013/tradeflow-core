@@ -1,0 +1,20 @@
+{
+  "title": "About Us",
+  "company": {
+    "name": "Your Company Name",
+    "description": "your company description",
+    "slogan": "your slogan"
+  },
+  "system": {
+    "version": "0.1.0",
+    "releaseDate": "2025-08-04",
+    "techStack": "React 19 + Node.js + Express + SQLite3 + Ant Design",
+    "team": "Li Haozhe"
+  },
+  "contact": {
+    "email": "lihaozhe013@gmail.com",
+    "phone": "+1 437-661-7680",
+    "address": "Toronto, Ontario, Canada"
+  },
+  "lastUpdated": "2025-08-04T10:30:00.000Z"
+}

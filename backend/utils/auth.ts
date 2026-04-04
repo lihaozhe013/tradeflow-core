@@ -5,11 +5,11 @@ import jwt from 'jsonwebtoken';
 import argon2 from 'argon2';
 import { Request, Response, NextFunction } from 'express';
 import { logger } from '@/utils/logger';
-import { resolveFilesInDataPath, config } from '@/utils/paths';
+import { resolveFilesInCachePath, config } from '@/utils/paths';
 import { prisma } from '../prismaClient';
 import type { User } from '@/prisma/client';
 
-const secretPath: string = resolveFilesInDataPath('jwt-secret.txt');
+const secretPath: string = resolveFilesInCachePath('jwt-secret.txt');
 
 export interface UserData {
   username: string;

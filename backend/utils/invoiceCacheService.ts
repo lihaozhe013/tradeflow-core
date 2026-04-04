@@ -3,7 +3,7 @@ import path from 'path';
 import { prisma } from '@/prismaClient';
 import decimalCalc from '@/utils/decimalCalculator';
 import { logger } from '@/utils/logger';
-import { getDataDir } from '@/utils/paths';
+import { getConfigDir } from '@/utils/paths';
 
 const CACHE_FILE_NAME = 'invoice-cache.json';
 
@@ -26,7 +26,7 @@ class InvoiceCacheService {
   private cache: InvoiceCacheData;
 
   constructor() {
-    this.cachePath = path.join(getDataDir(), CACHE_FILE_NAME);
+    this.cachePath = path.join(getConfigDir(), CACHE_FILE_NAME);
     this.cache = this.loadCache();
   }
 

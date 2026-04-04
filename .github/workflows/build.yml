@@ -24,8 +24,7 @@ jobs:
       - name: Install dependencies and build project
         run: |
           pnpm install:all
-          mkdir -p data
-          cp -r config-example/* data
+          cp -r config-example/build-config .
           python build.py
 
       - name: Read version from file

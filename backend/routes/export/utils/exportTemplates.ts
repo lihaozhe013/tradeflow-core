@@ -1,2 +1,2 @@
-import TEMPLATES from '@/../data/exportConfig.json';
+import TEMPLATES from '@/../build-config/exportConfig.json';
 export { TEMPLATES };

@@ -21,13 +21,13 @@ node_modules
 *.sln
 *.sw?
 *.pyc
+.npmrc
 
 # Data
-data/
-frontend/public/logo.svg
-.npmrc
-frontend/src/config/frontendConfig.json
-ecosystem.config.json
+/cache/
+/config/
+/build-config/
+/frontend/public/logo.svg
 
 # Dist
 dist/

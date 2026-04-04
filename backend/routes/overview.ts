@@ -4,7 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import { prisma } from '@/prismaClient';
 import decimalCalc from '@/utils/decimalCalculator';
-import { resolveFilesInDataPath } from '@/utils/paths';
+import { resolveFilesInCachePath } from '@/utils/paths';
 
 const router: Router = express.Router();
 
@@ -196,7 +196,7 @@ async function calculateSoldGoodsCost(): Promise<number> {
 
 // GET Read cache only
 router.get('/stats', (_req: Request, res: Response) => {
-  const statsFile = resolveFilesInDataPath('overview-stats.json');
+  const statsFile = resolveFilesInCachePath('overview-stats.json');
   if (fs.existsSync(statsFile)) {
     const json = fs.readFileSync(statsFile, 'utf-8');
     return res.json(JSON.parse(json));
@@ -207,7 +207,7 @@ router.get('/stats', (_req: Request, res: Response) => {
 
 // POST Force refresh and write to cache (including top_sales_products and monthly_inventory_changes)
 router.post('/stats', async (_req: Request, res: Response): Promise<void> => {
-  const statsFile = resolveFilesInDataPath('overview-stats.json');
+  const statsFile = resolveFilesInCachePath('overview-stats.json');
   const stats: StatsCache = {};
 
   // Get the date one year ago from now
@@ -443,7 +443,7 @@ router.post('/stats', async (_req: Request, res: Response): Promise<void> => {
 
 // Get top 10 products by sales amount and "Others" total (read from overview-stats.json)
 router.get('/top-sales-products', (_req: Request, res: Response) => {
-  const statsFile = resolveFilesInDataPath('overview-stats.json');
+  const statsFile = resolveFilesInCachePath('overview-stats.json');
   if (fs.existsSync(statsFile)) {
     const json = fs.readFileSync(statsFile, 'utf-8');
     const stats: StatsCache = JSON.parse(json);
@@ -465,7 +465,7 @@ router.get('/monthly-inventory-change/:productModel', (req: Request, res: Respon
     });
   }
 
-  const statsFile = resolveFilesInDataPath('overview-stats.json');
+  const statsFile = resolveFilesInCachePath('overview-stats.json');
   if (fs.existsSync(statsFile)) {
     const json = fs.readFileSync(statsFile, 'utf-8');
     const stats: StatsCache = JSON.parse(json);
