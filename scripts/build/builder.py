@@ -1,7 +1,6 @@
 from scripts.build.directory_manager import DirectoryManager
 
 def build(base_dir):
-    config_dir = base_dir / 'config'
     build_config_dir = base_dir / 'build-config'
     frontend_dir = base_dir / 'frontend'
     backend_dir = base_dir / 'backend'
@@ -10,7 +9,6 @@ def build(base_dir):
     builder = DirectoryManager()
 
     # check if config files exists
-    builder.check_exists(config_dir)
     builder.check_exists(build_config_dir)
 
     # clean old distributions
