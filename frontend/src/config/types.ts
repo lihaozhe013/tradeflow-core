@@ -1,4 +1,4 @@
-import rawConfig from '@/config/frontendConfig.json';
+import rawConfig from '@/build-config/frontendConfig.json';
 export type PaymentMethod = (typeof rawConfig)['paymentMethods']['list'][number];
 export interface PaymentMethodConfig {
   readonly label: string;

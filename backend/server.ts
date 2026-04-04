@@ -3,10 +3,11 @@ import fs from 'fs';
 import path from 'path';
 import cors from 'cors';
 import type { CustomError } from '@/types/index';
-import { config } from '@/utils/paths';
+import { config, getConfigDir, getCacheDir } from '@/utils/paths';
 import { logger } from '@/utils/logger';
 import { requestLogger, errorLogger } from '@/utils/loggerMiddleware';
 import { authenticateToken, checkWritePermission } from '@/utils/auth';
+import { initCacheFiles } from '@/utils/initCache';
 import overviewRoutes from '@/routes/overview';
 import inboundRoutes from '@/routes/inbound';
 import outboundRoutes from '@/routes/outbound';
@@ -23,6 +24,12 @@ import authRoutes from '@/routes/auth';
 import usersRoutes from '@/routes/users';
 
 const app: Express = express();
+
+// Initialize Cache Files
+initCacheFiles();
+
+logger.info(`Config directory is set to: ${getConfigDir()}`);
+logger.info(`Cache directory is set to: ${getCacheDir()}`);
 
 // Port Config
 const PORT: number = config.server?.httpPort || 8000;

@@ -1,7 +1,8 @@
 from scripts.build.directory_manager import DirectoryManager
 
 def build(base_dir):
-    data_dir = base_dir / 'data'
+    config_dir = base_dir / 'config'
+    build_config_dir = base_dir / 'build-config'
     frontend_dir = base_dir / 'frontend'
     backend_dir = base_dir / 'backend'
     dist_dir = base_dir / 'dist'
@@ -9,14 +10,14 @@ def build(base_dir):
     builder = DirectoryManager()
 
     # check if config files exists
-    builder.check_exists(data_dir)
+    builder.check_exists(config_dir)
+    builder.check_exists(build_config_dir)
 
     # clean old distributions
     builder.delete(dist_dir)
 
     # copy frontend build essential files
-    builder.copy(data_dir / 'frontendConfig.json', frontend_dir / 'src' / 'config' / 'frontendConfig.json')
-    builder.copy(data_dir / 'logo.svg', frontend_dir / 'public' / 'logo.svg')
+    builder.copy(build_config_dir / 'logo.svg', frontend_dir / 'public' / 'logo.svg')
 
     # build frontend
     builder.run(frontend_dir, 'pnpm vite build')

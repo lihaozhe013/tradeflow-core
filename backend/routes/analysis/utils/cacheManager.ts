@@ -1,5 +1,5 @@
 import fs from 'fs';
-import { ensureFileDirSync, resolveFilesInDataPath } from '@/utils/paths';
+import { ensureFileDirSync, resolveFilesInCachePath } from '@/utils/paths';
 
 export interface CacheEntry {
   last_updated?: string;
@@ -31,7 +31,7 @@ export function generateDetailCacheKey(
 }
 
 export function getCacheFilePath(): string {
-  return resolveFilesInDataPath('analysis-cache.json');
+  return resolveFilesInCachePath('analysis-cache.json');
 }
 
 /**

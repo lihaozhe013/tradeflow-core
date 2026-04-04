@@ -2,34 +2,57 @@ import fs from 'fs';
 import path from 'path';
 import yaml from 'js-yaml';
 import { AppConfig } from '@/types/config';
+import { logger } from '@/utils/logger';
 
 function getAppRoot(): string {
   return process.cwd();
 }
 
-export function getDataDir(): string {
+export function getConfigDir(): string {
   const appRoot = getAppRoot();
-  const candidatePaths = ['data', '../data', '../../data'];
-
+  const candidatePaths = ['config', '../config', '../../config'];
   const resolvedCandidatePaths = candidatePaths.map((relativePath) =>
     path.resolve(appRoot, relativePath),
   );
-
   const foundPath = resolvedCandidatePaths.find((fullPath) => {
     try {
       return fs.existsSync(fullPath) && fs.statSync(fullPath).isDirectory();
     } catch (e) {
-      console.error(`Error checking path: ${fullPath}`, e);
+      logger.warn(`Error checking config path: ${fullPath}`, e);
+      return false;
+    }
+  });
+  return foundPath ?? path.resolve(appRoot, 'config');
+}
+
+export function getCacheDir(): string {
+  const appRoot = getAppRoot();
+  const candidatePaths = ['cache', '../cache', '../../cache'];
+  const resolvedCandidatePaths = candidatePaths.map((relativePath) =>
+    path.resolve(appRoot, relativePath),
+  );
+  const foundPath = resolvedCandidatePaths.find((fullPath) => {
+    try {
+      return fs.existsSync(fullPath) && fs.statSync(fullPath).isDirectory();
+    } catch (e) {
+      logger.warn(`Error checking cache path: ${fullPath}`, e);
       return false;
     }
   });
 
-  return foundPath ?? path.resolve(appRoot, 'data');
+  const finalPath = foundPath ?? path.resolve(appRoot, 'cache');
+  ensureDirSync(finalPath); // Ensure cache dir always exists
+  return finalPath;
 }
 
-// Resolves a path inside the data directory.
-export function resolveFilesInDataPath(...segments: string[]): string {
-  return path.resolve(getDataDir(), ...segments);
+// Resolves a path inside the config directory.
+export function resolveFilesInConfigPath(...segments: string[]): string {
+  return path.resolve(getConfigDir(), ...segments);
+}
+
+// Resolves a path inside the cache directory.
+export function resolveFilesInCachePath(...segments: string[]): string {
+  return path.resolve(getCacheDir(), ...segments);
 }
 
 // Ensures a directory exists (mkdir -p behavior).
@@ -44,7 +67,7 @@ export function ensureFileDirSync(filePath: string): void {
   ensureDirSync(path.dirname(filePath));
 }
 
-const appConfigPath = resolveFilesInDataPath('appConfig.yaml');
+const appConfigPath = resolveFilesInConfigPath('config.yaml');
 let config: AppConfig = {};
 
 try {
@@ -53,7 +76,7 @@ try {
     config = yaml.load(temp_data) as AppConfig;
   }
 } catch (e) {
-  console.error('Failed to load appConfig.yaml', e);
+  logger.error('Failed to load config.yaml', e);
 }
 
 const currency_unit_symbol = config.currency_unit_symbol || '$';
