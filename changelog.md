@@ -1,5 +1,11 @@
 # Change Log
 
+## v0.8.2 - 0.8.4
+
+- Refactor all config files
+- Change to pnpm, saved some prod package size
+- export bug fixes
+
 ## v0.8.1
 
 - redesign the schema, removed useless columns

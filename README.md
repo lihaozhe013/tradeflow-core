@@ -11,7 +11,7 @@ A lightweight tradeflow system designed for small businesses, built with React.j
 - **Multi-language Support**: Supports English, Korean, and Chinese
 - **Data Export**: Supports data export in Excel format
 - **JWT Authentication**: Stateless authentication system
-- **Role Based Access Control**: Can assign **Editor** and **Viewer** to each user
+- **Role-Based Access Control**: Can assign **Editor** and **Viewer** to each user
 
 ## Tech Stack
 
@@ -200,10 +200,29 @@ Key endpoints (high level):
 ### Prerequisites
 
 - Node.js 24+ (Always based on latest LTS version)
+- pnpm
+- Python/uv (for build script)
 - PostgreSQL
 - Docker (Optional)
 
-### Development (Without Docker)
+### Docker-Based Deployment
+
+1. **Copy necessary files**
+
+- Download and put `compose.yaml` from the root directory and the `config-example/config/` directory, and put them in the root directory in your production environment
+
+2. **Setup PostgreSQL**
+
+- Use `scripts/init_postgres.sql` to initialize the database, your database name, password and username should match the information inside the `config.yaml` file.
+
+3. **Start Server**
+
+```bash
+docker compose pull
+docker compose up -d
+```
+
+### Manual Build
 
 1.  **Clone the project**:
 
@@ -215,23 +234,28 @@ cd tradeflow-core
 2.  **Install dependencies**:
 
 ```bash
-npm run install:all
+pnpm install:all
 ```
 
 3.  **Set up configuration**:
 
 ```bash
 # Copy the example configuration files
-mkdir -p data
-cp -r config-example/* data/
+cp -r config-example/* .
 ```
 
-4. **Build**:
+4.  **Customize the build-config files**
 
-> Note: I use `uv run` instead of `python` because the `python` command is incompatible across different systems. It is strongly recommended to use `uv`. If you prefer not to use `uv`, you can modify the `npm run build` command yourself to `python build.py` or `python3 build.py`.
+- `about.json`: Customize your company info
+- `exportConfig`: Customize your export format. You can change the order of columns, the column name, or add a customized column in this file
+- `frontendConfig.json`: Customize frontend options
+
+4.  **Build**:
+
+> Note: I use `uv run` instead of `python` because the `python` command is incompatible across different systems. It is strongly recommended to use `uv`. If you prefer not to use `uv`, you can modify the `pnpm build` command yourself to `python build.py` or `python3 build.py`.
 
 ```bash
-npm run build
+pnpm build
 ```
 
 or
@@ -240,16 +264,11 @@ or
 python3 build.py
 ```
 
-5.  **Start the development servers**:
+### Development
+
+1.  **Start the development servers**:
 
 ```bash
 # Start the dev server()
-npm run dev
+pnpm dev
 ```
-
-## Data Files
-
-The system uses configuration files located in the `data/` directory:
-
-- `appConfig.yaml`: Application settings and company information
-- `exportConfig.json`: Data export templates and settings, will be compiled into the output; no need to retain it in the production environment
