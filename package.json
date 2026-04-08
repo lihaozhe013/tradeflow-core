@@ -6,9 +6,9 @@
   "scripts": {
     "preinstall": "npx only-allow pnpm",
     "install:all": "pnpm install && cd frontend && pnpm install && cd ../backend && pnpm install && pnpm prisma generate",
-    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
-    "dev:frontend": "cd frontend && npm run dev",
-    "dev:backend": "cd backend && npm run dev",
+    "dev": "concurrently \"pnpm dev:backend\" \"pnpm dev:frontend\"",
+    "dev:frontend": "cd frontend && pnpm dev",
+    "dev:backend": "cd backend && pnpm dev",
     "build": "uv run build.py",
     "start": "cd dist && cross-env NODE_ENV=production backend/server/.js",
     "format": "prettier --write ."
@@ -19,7 +19,6 @@
     "prettier": "^3.8.1"
   },
   "engines": {
-    "node": ">=22.0.0",
-    "npm": ">=11.0.0"
+    "node": ">=24.0.0"
   }
 }

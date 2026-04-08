@@ -25,8 +25,11 @@ import {
 import { generateFinancialExcel } from '@/routes/export/utils/financialExporter';
 import { generateAnalysisExcel } from '@/routes/export/utils/analysisExporter';
 import { generateAdvancedAnalysisExcel } from '@/routes/export/utils/advancedAnalysisExporter';
-import { getInvoiceData } from '@/routes/export/utils/invoiceQueries';
-import { generateInvoiceExcel } from '@/routes/export/utils/invoiceExporter';
+import { getInvoiceData, getAllInvoiceData } from '@/routes/export/utils/invoiceQueries';
+import {
+  generateInvoiceExcel,
+  generateMultiInvoiceExcel,
+} from '@/routes/export/utils/invoiceExporter';
 import { getInventoryData } from '@/routes/export/utils/inventoryQueries';
 import { generateInventoryExcel } from '@/routes/export/utils/inventoryExporter';
 
@@ -91,6 +94,12 @@ export async function exportAdvancedAnalysis(
 export async function exportInvoice(options: InvoiceFilters): Promise<Buffer> {
   const { partnerCode, dateFrom, dateTo } = options || {};
   if (!partnerCode) throw new Error('Partner code is required');
+
+  if (partnerCode.toLowerCase() === 'all') {
+    const dataMap = await getAllInvoiceData({ dateFrom, dateTo });
+    return generateMultiInvoiceExcel(dataMap);
+  }
+
   const data = await getInvoiceData({
     partnerCode,
     dateFrom,

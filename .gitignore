@@ -26,6 +26,8 @@ node_modules
 # Data
 /cache/
 /config/
+/backend/cache/
+/backend/config/
 /build-config/
 /frontend/public/logo.svg
 

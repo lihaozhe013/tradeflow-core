@@ -5,7 +5,7 @@ export function initCacheFiles() {
   const cacheFiles = [
     { name: 'analysis-cache.json', defaultContent: '{}' },
     { name: 'invoice-cache.json', defaultContent: '{}' },
-    { name: 'overview-stats.json', defaultContent: '{}' }
+    { name: 'overview-stats.json', defaultContent: '{}' },
   ];
 
   for (const file of cacheFiles) {
