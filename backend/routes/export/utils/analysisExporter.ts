@@ -1,17 +1,13 @@
 import * as XLSX from 'xlsx';
 import ExportUtils, { ExportTemplate } from '@/routes/export/utils/exportUtils';
 import { TEMPLATES } from '@/routes/export/utils/exportTemplates';
-import { currency_unit_symbol } from '@/utils/paths';
 import { AnalysisExportOptions } from '@/routes/export/utils/types';
 
 /**
  * Format currency value for display
  */
-function formatCurrency(value: number): string {
-  return `${currency_unit_symbol}${Number(value || 0).toLocaleString('zh-CN', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
+function formatCurrency(value: number): number {
+  return Math.round(value || 0);
 }
 
 /**
@@ -71,6 +67,7 @@ export function generateAnalysisExcel(options: AnalysisExportOptions): Buffer {
       template = TEMPLATES.analysis_detail_by_product as ExportTemplate;
       formattedDetailData = detailData.map((item) => ({
         product_model: item.product_model || '',
+        quantity: item.quantity || 0,
         sales_amount: formatCurrency(item.sales_amount),
         cost_amount: formatCurrency(item.cost_amount),
         profit_amount: formatCurrency(item.profit_amount),
@@ -82,6 +79,7 @@ export function generateAnalysisExcel(options: AnalysisExportOptions): Buffer {
       formattedDetailData = detailData.map((item) => ({
         customer_code: item.customer_code || '',
         customer_name: item.customer_name || '',
+        quantity: item.quantity || 0,
         sales_amount: formatCurrency(item.sales_amount),
         cost_amount: formatCurrency(item.cost_amount),
         profit_amount: formatCurrency(item.profit_amount),
@@ -94,6 +92,7 @@ export function generateAnalysisExcel(options: AnalysisExportOptions): Buffer {
         product_model: item.product_model || '',
         customer_code: item.customer_code || '',
         customer_name: item.customer_name || '',
+        quantity: item.quantity || 0,
         sales_amount: formatCurrency(item.sales_amount),
         cost_amount: formatCurrency(item.cost_amount),
         profit_amount: formatCurrency(item.profit_amount),

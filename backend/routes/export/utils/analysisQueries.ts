@@ -17,6 +17,7 @@ interface ProductStats {
   cost_amount: number;
   profit_amount: number;
   profit_rate: number;
+  quantity?: number;
 }
 
 interface CustomerStats {
@@ -26,6 +27,7 @@ interface CustomerStats {
   cost_amount: number;
   profit_amount: number;
   profit_rate: number;
+  quantity?: number;
 }
 
 interface CustomerAggregation extends CustomerStats {
@@ -196,6 +198,7 @@ export async function getCustomerAnalysisData(
     const salesAmount = row.sales_amount;
     const costAmount = row.cost_amount;
     const profitAmount = salesAmount - costAmount;
+    const quantity = row.quantity || 0;
 
     if (!customerMap[customerCode]) {
       customerMap[customerCode] = {
@@ -205,6 +208,7 @@ export async function getCustomerAnalysisData(
         cost_amount: 0,
         profit_amount: 0,
         profit_rate: 0,
+        quantity: 0,
         product_details_map: {},
       };
     }
@@ -213,6 +217,7 @@ export async function getCustomerAnalysisData(
     cust.sales_amount += salesAmount;
     cust.cost_amount += costAmount;
     cust.profit_amount += profitAmount;
+    cust.quantity = (cust.quantity || 0) + quantity;
 
     // productModel could be null in DB but filtered out in calculateFIFOData
     const modelKey = productModel || 'Unknown';
@@ -224,12 +229,14 @@ export async function getCustomerAnalysisData(
         cost_amount: 0,
         profit_amount: 0,
         profit_rate: 0,
+        quantity: 0,
       };
     }
     const prod = cust.product_details_map[modelKey];
     prod.sales_amount += salesAmount;
     prod.cost_amount += costAmount;
     prod.profit_amount += profitAmount;
+    prod.quantity = (prod.quantity || 0) + quantity;
   }
 
   return Object.values(customerMap)
@@ -270,6 +277,7 @@ export async function getProductAnalysisData(
     const salesAmount = row.sales_amount;
     const costAmount = row.cost_amount;
     const profitAmount = salesAmount - costAmount;
+    const quantity = row.quantity || 0;
 
     if (!productMap[productModel]) {
       productMap[productModel] = {
@@ -278,6 +286,7 @@ export async function getProductAnalysisData(
         cost_amount: 0,
         profit_amount: 0,
         profit_rate: 0,
+        quantity: 0,
         customer_details_map: {},
       };
     }
@@ -286,6 +295,7 @@ export async function getProductAnalysisData(
     prod.sales_amount += salesAmount;
     prod.cost_amount += costAmount;
     prod.profit_amount += profitAmount;
+    prod.quantity = (prod.quantity || 0) + quantity;
 
     if (!prod.customer_details_map[customerCode]) {
       prod.customer_details_map[customerCode] = {
@@ -295,12 +305,14 @@ export async function getProductAnalysisData(
         cost_amount: 0,
         profit_amount: 0,
         profit_rate: 0,
+        quantity: 0,
       };
     }
     const cust = prod.customer_details_map[customerCode];
     cust.sales_amount += salesAmount;
     cust.cost_amount += costAmount;
     cust.profit_amount += profitAmount;
+    cust.quantity = (cust.quantity || 0) + quantity;
   }
 
   return Object.values(productMap)

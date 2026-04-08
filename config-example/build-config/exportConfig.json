@@ -193,6 +193,7 @@
       { "label": "Customer Code", "key": "customer_code" },
       { "label": "Customer Name", "key": "customer_name" },
       { "label": "Product Model", "key": "product_model" },
+      { "label": "Quantity", "key": "quantity" },
       { "label": "Sales Amount", "key": "sales_amount" },
       { "label": "Cost", "key": "cost_amount" },
       { "label": "Profit", "key": "profit_amount" },
@@ -218,6 +219,7 @@
     "sheetName": "Product Sales Detail",
     "columns": [
       { "label": "Product Model", "key": "product_model" },
+      { "label": "Quantity", "key": "quantity" },
       { "label": "Sales Amount", "key": "sales_amount" },
       { "label": "Cost", "key": "cost_amount" },
       { "label": "Profit", "key": "profit_amount" },
@@ -232,6 +234,7 @@
     "sheetName": "Product Sales Summary",
     "columns": [
       { "label": "Product Model", "key": "product_model" },
+      { "label": "Quantity", "key": "quantity" },
       { "label": "Sales Amount", "key": "sales_amount" },
       { "label": "Cost", "key": "cost_amount" },
       { "label": "Profit", "key": "profit_amount" },
@@ -261,6 +264,7 @@
     "sheetName": "Product Analysis",
     "columns": [
       { "label": "Product Model", "key": "product_model" },
+      { "label": "Quantity", "key": "quantity" },
       { "label": "Sales Amount", "key": "sales_amount" },
       { "label": "Cost", "key": "cost_amount" },
       { "label": "Profit", "key": "profit_amount" },

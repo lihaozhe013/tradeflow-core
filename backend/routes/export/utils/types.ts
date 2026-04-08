@@ -110,6 +110,7 @@ export interface AnalysisDetailItem {
   cost_amount: number;
   profit_amount: number;
   profit_rate: number;
+  quantity?: number;
 }
 
 export interface AnalysisExportOptions {
@@ -147,6 +148,7 @@ export interface AnalysisProductDetail {
   cost_amount: number;
   profit_amount: number;
   profit_rate: number;
+  quantity?: number;
 }
 
 export interface AnalysisCustomerData {
@@ -157,6 +159,7 @@ export interface AnalysisCustomerData {
   profit_amount: number;
   profit_rate: number;
   product_details: AnalysisProductDetail[];
+  quantity?: number;
 }
 
 export interface AnalysisCustomerDetail {
@@ -166,6 +169,7 @@ export interface AnalysisCustomerDetail {
   cost_amount: number;
   profit_amount: number;
   profit_rate: number;
+  quantity?: number;
 }
 
 export interface AnalysisProductData {
@@ -175,4 +179,5 @@ export interface AnalysisProductData {
   profit_amount: number;
   profit_rate: number;
   customer_details: AnalysisCustomerDetail[];
+  quantity?: number;
 }
