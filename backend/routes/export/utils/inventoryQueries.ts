@@ -22,7 +22,7 @@ export async function getInventoryData(): Promise<InventoryExportRow[]> {
 
     // Get latest purchase price
     const priceRow = await prisma.inboundRecord.findFirst({
-      where: { product_model: item.product_model },
+      where: { product: { product_model: item.product_model } },
       orderBy: [{ inbound_date: 'desc' }, { id: 'desc' }],
       select: { unit_price: true },
     });

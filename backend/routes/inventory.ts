@@ -65,7 +65,7 @@ router.get('/total-cost-estimate', async (_req: Request, res: Response): Promise
   for (const item of items) {
     // Get latest purchase price
     const priceRow = await prisma.inboundRecord.findFirst({
-      where: { product_model: item.product_model },
+      where: { product: { product_model: item.product_model } },
       orderBy: [{ inbound_date: 'desc' }, { id: 'desc' }],
       select: { unit_price: true },
     });

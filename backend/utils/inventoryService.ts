@@ -24,9 +24,15 @@ export const inventoryService = {
         await tx.inventory.deleteMany({});
         await tx.inventoryLedger.deleteMany({});
 
-        // 2. Fetch all records
-        const inbounds = await tx.inboundRecord.findMany({ orderBy: { inbound_date: 'asc' } });
-        const outbounds = await tx.outboundRecord.findMany({ orderBy: { outbound_date: 'asc' } });
+        // 2. Fetch all records with product included
+        const inbounds = await tx.inboundRecord.findMany({
+          orderBy: { inbound_date: 'asc' },
+          include: { product: true },
+        });
+        const outbounds = await tx.outboundRecord.findMany({
+          orderBy: { outbound_date: 'asc' },
+          include: { product: true },
+        });
 
         // 3. Create events timeline
         const events: Array<{
@@ -38,23 +44,23 @@ export const inventoryService = {
         }> = [];
 
         for (const r of inbounds) {
-          if (!r.product_model || !r.quantity) continue;
+          if (!r.product?.product_model || !r.quantity) continue;
           events.push({
             date: r.inbound_date || new Date().toISOString(),
             type: 'INBOUND',
             qty: r.quantity,
-            model: r.product_model,
+            model: r.product.product_model,
             refId: r.id,
           });
         }
 
         for (const r of outbounds) {
-          if (!r.product_model || !r.quantity) continue;
+          if (!r.product?.product_model || !r.quantity) continue;
           events.push({
             date: r.outbound_date || new Date().toISOString(),
             type: 'OUTBOUND',
             qty: -r.quantity, // Negative for outbound
-            model: r.product_model,
+            model: r.product.product_model,
             refId: r.id,
           });
         }
@@ -110,12 +116,13 @@ export const inventoryService = {
   /**
    * Handle Inbound Create
    */
-  async onInboundCreate(record: Prisma.InboundRecordGetPayload<null>) {
-    if (!record.product_model || !record.quantity) return;
+  async onInboundCreate(record: Prisma.InboundRecordGetPayload<{ include: { product: true } }>) {
+    const product_model = record.product?.product_model;
+    if (!product_model || !record.quantity) return;
     await prisma.$transaction(async (tx) => {
       await tx.inventoryLedger.create({
         data: {
-          product_model: record.product_model!,
+          product_model: product_model,
           change_qty: record.quantity!,
           change_type: 'INBOUND',
           reference_id: record.id,
@@ -123,9 +130,9 @@ export const inventoryService = {
         },
       });
       await tx.inventory.upsert({
-        where: { product_model: record.product_model! },
+        where: { product_model: product_model },
         update: { quantity: { increment: record.quantity! } },
-        create: { product_model: record.product_model!, quantity: record.quantity! },
+        create: { product_model: product_model, quantity: record.quantity! },
       });
     });
   },
@@ -133,8 +140,9 @@ export const inventoryService = {
   /**
    * Handle Outbound Create
    */
-  async onOutboundCreate(record: Prisma.OutboundRecordGetPayload<null>) {
-    if (!record.product_model || !record.quantity) return;
+  async onOutboundCreate(record: Prisma.OutboundRecordGetPayload<{ include: { product: true } }>) {
+    const product_model = record.product?.product_model;
+    if (!product_model || !record.quantity) return;
     await prisma.$transaction(async (tx) => {
       // Ledger stores negative qty for outbound? Or stores positive number with type OUTBOUND?
       // User query example: SELECT SUM(Change_Qty).
@@ -143,7 +151,7 @@ export const inventoryService = {
 
       await tx.inventoryLedger.create({
         data: {
-          product_model: record.product_model!,
+          product_model: product_model,
           change_qty: changeQty,
           change_type: 'OUTBOUND',
           reference_id: record.id,
@@ -151,9 +159,9 @@ export const inventoryService = {
         },
       });
       await tx.inventory.upsert({
-        where: { product_model: record.product_model! },
+        where: { product_model: product_model },
         update: { quantity: { increment: changeQty } },
-        create: { product_model: record.product_model!, quantity: changeQty },
+        create: { product_model: product_model, quantity: changeQty },
       });
     });
   },
@@ -209,8 +217,8 @@ export const inventoryService = {
    * Handle Inbound Update
    */
   async onInboundUpdate(
-    oldRecord: Prisma.InboundRecordGetPayload<null>,
-    newRecord: Prisma.InboundRecordGetPayload<null>,
+    oldRecord: Prisma.InboundRecordGetPayload<{ include: { product: true } }>,
+    newRecord: Prisma.InboundRecordGetPayload<{ include: { product: true } }>,
   ) {
     // Revert Old, Apply New
     await this.onInboundDelete(oldRecord.id);
@@ -221,8 +229,8 @@ export const inventoryService = {
    * Handle Outbound Update
    */
   async onOutboundUpdate(
-    oldRecord: Prisma.OutboundRecordGetPayload<null>,
-    newRecord: Prisma.OutboundRecordGetPayload<null>,
+    oldRecord: Prisma.OutboundRecordGetPayload<{ include: { product: true } }>,
+    newRecord: Prisma.OutboundRecordGetPayload<{ include: { product: true } }>,
   ) {
     // Revert Old, Apply New
     await this.onOutboundDelete(oldRecord.id);

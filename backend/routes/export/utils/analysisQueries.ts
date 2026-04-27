@@ -48,7 +48,7 @@ async function calculateFIFOData(startDate: string, endDate: string): Promise<An
     prisma.inboundRecord.findMany({
       where: { quantity: { gt: 0 } },
       orderBy: [{ inbound_date: 'asc' }, { id: 'asc' }],
-      select: { product_model: true, quantity: true, unit_price: true },
+      select: { product: { select: { product_model: true } }, quantity: true, unit_price: true },
     }),
     // Outbound: Up to endDate
     prisma.outboundRecord.findMany({
@@ -56,7 +56,7 @@ async function calculateFIFOData(startDate: string, endDate: string): Promise<An
       orderBy: [{ outbound_date: 'asc' }, { id: 'asc' }],
       select: {
         id: true,
-        product_model: true,
+        product: { select: { product_model: true } },
         quantity: true,
         outbound_date: true,
         unit_price: true,
@@ -98,10 +98,11 @@ async function calculateFIFOData(startDate: string, endDate: string): Promise<An
 
   // Initial Inventory (Inbound)
   for (const inRecord of allInbound) {
-    if (!inRecord.product_model || !inRecord.quantity) continue;
-    if (!inventoryState[inRecord.product_model]) inventoryState[inRecord.product_model] = [];
+    if (!inRecord.product?.product_model || !inRecord.quantity) continue;
+    if (!inventoryState[inRecord.product?.product_model])
+      inventoryState[inRecord.product?.product_model] = [];
 
-    inventoryState[inRecord.product_model]!.push({
+    inventoryState[inRecord.product?.product_model]!.push({
       quantity_remaining: Number(inRecord.quantity),
       unit_price: Number(inRecord.unit_price),
     });
@@ -109,9 +110,9 @@ async function calculateFIFOData(startDate: string, endDate: string): Promise<An
 
   // Process Outbound
   for (const outRecord of allOutbound) {
-    if (!outRecord.product_model || !outRecord.quantity) continue;
+    if (!outRecord.product?.product_model || !outRecord.quantity) continue;
 
-    const model = outRecord.product_model;
+    const model = outRecord.product?.product_model;
     let qtyToFulfill = Number(outRecord.quantity);
     let currentRecordCost = decimalCalc.decimal(0);
 
@@ -161,7 +162,7 @@ async function calculateFIFOData(startDate: string, endDate: string): Promise<An
       // Record this transaction for analysis
       processedRecords.push({
         id: outRecord.id,
-        product_model: outRecord.product_model,
+        product_model: outRecord.product?.product_model,
         quantity: Number(outRecord.quantity),
         outbound_date: outRecord.outbound_date,
         unit_price: Number(outRecord.unit_price),

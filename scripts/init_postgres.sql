@@ -34,10 +34,7 @@ CREATE TABLE products (
 CREATE TABLE inbound_records (
     id SERIAL PRIMARY KEY,
     supplier_code TEXT,
-    supplier_short_name TEXT,
-    supplier_full_name TEXT,
     product_code TEXT,
-    product_model TEXT,
     quantity INTEGER,
     unit_price DOUBLE PRECISION,
     total_price DOUBLE PRECISION,
@@ -53,10 +50,7 @@ CREATE TABLE inbound_records (
 CREATE TABLE outbound_records (
     id SERIAL PRIMARY KEY,
     customer_code TEXT,
-    customer_short_name TEXT,
-    customer_full_name TEXT,
     product_code TEXT,
-    product_model TEXT,
     quantity INTEGER,
     unit_price DOUBLE PRECISION,
     total_price DOUBLE PRECISION,

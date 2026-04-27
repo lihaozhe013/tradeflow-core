@@ -19,7 +19,7 @@ export async function calculateFilteredSoldGoodsCost(
     quantity: { gt: 0 },
   };
   if (productModel && productModel !== 'All') {
-    inboundWhere.product_model = productModel;
+    inboundWhere.product = { product_model: productModel };
   }
 
   const allInbound = await prisma.inboundRecord.findMany({
@@ -27,7 +27,7 @@ export async function calculateFilteredSoldGoodsCost(
     orderBy: [{ inbound_date: 'asc' }, { id: 'asc' }],
     select: {
       id: true,
-      product_model: true,
+      product: { select: { product_model: true } },
       quantity: true,
       unit_price: true,
       inbound_date: true,
@@ -44,7 +44,7 @@ export async function calculateFilteredSoldGoodsCost(
   outboundWhere.outbound_date = { lte: endDate };
 
   if (productModel && productModel !== 'All') {
-    outboundWhere.product_model = productModel;
+    outboundWhere.product = { product_model: productModel };
   }
 
   // Note: We don't filter by customerCode here initially because we need to calculate
@@ -56,7 +56,7 @@ export async function calculateFilteredSoldGoodsCost(
     orderBy: [{ outbound_date: 'asc' }, { id: 'asc' }],
     select: {
       id: true,
-      product_model: true,
+      product: { select: { product_model: true } },
       quantity: true,
       outbound_date: true,
       customer_code: true,
@@ -75,15 +75,15 @@ export async function calculateFilteredSoldGoodsCost(
 
   // Initialize state with all inbound
   for (const inRecord of allInbound) {
-    if (!inRecord.product_model || !inRecord.quantity || inRecord.quantity <= 0) continue;
+    if (!inRecord.product?.product_model || !inRecord.quantity || inRecord.quantity <= 0) continue;
 
-    if (!inventoryState[inRecord.product_model]) {
-      inventoryState[inRecord.product_model] = [];
+    if (!inventoryState[inRecord.product?.product_model]) {
+      inventoryState[inRecord.product?.product_model] = [];
     }
-    if (!inventoryState[inRecord.product_model]) {
-      inventoryState[inRecord.product_model] = [];
+    if (!inventoryState[inRecord.product?.product_model]) {
+      inventoryState[inRecord.product?.product_model] = [];
     }
-    inventoryState[inRecord.product_model]!.push({
+    inventoryState[inRecord.product?.product_model]!.push({
       quantity_remaining: inRecord.quantity,
       unit_price: inRecord.unit_price || 0,
     });
@@ -93,9 +93,9 @@ export async function calculateFilteredSoldGoodsCost(
 
   // Process outbound in chronological order
   for (const outRecord of allOutbound) {
-    if (!outRecord.product_model || !outRecord.quantity) continue;
+    if (!outRecord.product?.product_model || !outRecord.quantity) continue;
 
-    const model = outRecord.product_model;
+    const model = outRecord.product?.product_model;
     let qtyToFulfill = outRecord.quantity;
     let currentRecordCost = decimalCalc.decimal(0);
 
