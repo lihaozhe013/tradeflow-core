@@ -59,12 +59,14 @@ export async function getInboundData(
     where,
     include: {
       partner: true,
+      product: true,
     },
     orderBy: [{ inbound_date: 'desc' }, { id: 'desc' }],
   });
 
   return records.map((record) => ({
     ...record,
+    product_model: record.product?.product_model || '',
     supplier_short_name: record.partner?.short_name || '',
     supplier_full_name: record.partner?.full_name || '',
   })) as unknown as InboundRecordDto[];
@@ -107,12 +109,14 @@ export async function getOutboundData(
     where,
     include: {
       partner: true,
+      product: true,
     },
     orderBy: [{ outbound_date: 'desc' }, { id: 'desc' }],
   });
 
   return records.map((record) => ({
     ...record,
+    product_model: record.product?.product_model || '',
     customer_short_name: record.partner?.short_name || '',
     customer_full_name: record.partner?.full_name || '',
   })) as unknown as OutboundRecordDto[];

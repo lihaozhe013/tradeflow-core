@@ -85,13 +85,14 @@ export async function getPayableDetails(
 
   const rows = await prisma.inboundRecord.findMany({
     where,
-    include: { partner: true },
+    include: { partner: true, product: true },
     orderBy: [{ inbound_date: 'desc' }, { id: 'desc' }],
   });
 
   return rows.map((r) => ({
     ...r,
     record_id: r.id,
+    product_model: r.product?.product_model || '',
     supplier_short_name: r.partner?.short_name || '',
     supplier_full_name: r.partner?.full_name || '',
   })) as unknown as (InboundRecordDto & { record_id: number })[];
