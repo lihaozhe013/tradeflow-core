@@ -233,6 +233,8 @@
     "paginationTotal": "{{total}}개 중 {{start}}-{{end}}번째 결과",
     "productModel": "제품 모델",
     "recalculate": "재고 재계산",
+    "recalculateFailed": "Recalculate Failed",
+    "recalculated": "Inventory Recalculated",
     "searchProductModel": "제품 모델 검색",
     "status": "상태",
     "title": "재고",
