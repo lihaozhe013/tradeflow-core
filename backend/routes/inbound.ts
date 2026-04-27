@@ -36,7 +36,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     };
   }
   if (isProvided(req.query['product_model'])) {
-    where.product_model = { contains: req.query['product_model'] as string };
+    where.product = { product_model: { contains: req.query['product_model'] as string } };
   }
   if (isProvided(req.query['start_date'])) {
     where.inbound_date = { gte: req.query['start_date'] as string };
@@ -69,7 +69,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     }
   }
 
-  const [rows, total] = await prisma.$transaction([
+  const [rawRows, total] = await prisma.$transaction([
     prisma.inboundRecord.findMany({
       where,
       orderBy,
@@ -77,10 +77,16 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       take: limit,
       include: {
         partner: true,
+        product: true,
       },
     }),
     prisma.inboundRecord.count({ where }),
   ]);
+
+  const rows = rawRows.map((row) => ({
+    ...row,
+    product_model: row.product?.product_model || null,
+  }));
 
   res.json({
     data: rows,
@@ -100,7 +106,7 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
   const {
     supplier_code,
     product_code,
-    product_model,
+
     quantity,
     unit_price,
     inbound_date,
@@ -117,7 +123,6 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
     data: {
       supplier_code,
       product_code,
-      product_model,
       quantity,
       unit_price,
       total_price,
@@ -128,6 +133,7 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
       order_number,
       remark,
     },
+    include: { product: true },
   });
 
   await inventoryService.onInboundCreate(result);
@@ -142,7 +148,7 @@ router.put('/:id', async (req: Request, res: Response): Promise<void> => {
   const {
     supplier_code,
     product_code,
-    product_model,
+
     quantity,
     unit_price,
     inbound_date,
@@ -154,7 +160,10 @@ router.put('/:id', async (req: Request, res: Response): Promise<void> => {
   } = req.body;
 
   const total_price = decimalCalc.calculateTotalPrice(quantity, unit_price);
-  const oldRecord = await prisma.inboundRecord.findUnique({ where: { id } });
+  const oldRecord = await prisma.inboundRecord.findUnique({
+    where: { id },
+    include: { product: true },
+  });
   if (!oldRecord) {
     res.status(404).json({ error: 'No inbound records exist' });
     return;
@@ -164,7 +173,6 @@ router.put('/:id', async (req: Request, res: Response): Promise<void> => {
     data: {
       supplier_code,
       product_code,
-      product_model,
       quantity,
       unit_price,
       total_price,
@@ -175,6 +183,7 @@ router.put('/:id', async (req: Request, res: Response): Promise<void> => {
       order_number,
       remark,
     },
+    include: { product: true },
   });
   await inventoryService.onInboundUpdate(oldRecord, result);
   res.json({ message: 'Inbound record updated!' });
@@ -209,7 +218,6 @@ router.post('/batch', async (req: Request, res: Response): Promise<void> => {
   const allowedFieldsMap: Record<string, keyof Prisma.InboundRecordUncheckedUpdateInput> = {
     supplier_code: 'supplier_code',
     product_code: 'product_code',
-    product_model: 'product_model',
     quantity: 'quantity',
     unit_price: 'unit_price',
     inbound_date: 'inbound_date',
@@ -253,6 +261,7 @@ router.post('/batch', async (req: Request, res: Response): Promise<void> => {
   for (const recordId of ids) {
     const oldRecord = await prisma.inboundRecord.findUnique({
       where: { id: recordId },
+      include: { product: true },
     });
     if (!oldRecord) {
       notFound.push(recordId);
@@ -276,11 +285,13 @@ router.post('/batch', async (req: Request, res: Response): Promise<void> => {
           ...updateData,
           total_price: total_price,
         },
+        include: { product: true },
       });
     } else {
       result = await prisma.inboundRecord.update({
         where: { id: recordId },
         data: updateData,
+        include: { product: true },
       });
     }
 

@@ -232,6 +232,8 @@
     "paginationTotal": "Showing {{start}}-{{end}} of {{total}} results.",
     "productModel": "Product Model",
     "recalculate": "Recalculate",
+    "recalculateFailed": "Recalculate Failed",
+    "recalculated": "Inventory Recalculated",
     "searchProductModel": "Search Product Model",
     "status": "Status",
     "title": "Inventory",

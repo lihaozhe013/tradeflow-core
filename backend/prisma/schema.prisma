@@ -19,7 +19,7 @@ model InboundRecord {
   supplier_code  String
   partner        Partner @relation(fields: [supplier_code], references: [code])
   product_code   String?
-  product_model  String?
+  product        Product? @relation(fields: [product_code], references: [code])
   quantity       Int?
   unit_price     Float?
   total_price    Float?
@@ -38,7 +38,7 @@ model OutboundRecord {
   customer_code  String
   partner        Partner @relation(fields: [customer_code], references: [code])
   product_code   String?
-  product_model  String?
+  product        Product? @relation(fields: [product_code], references: [code])
   quantity       Int?
   unit_price     Float?
   total_price    Float?
@@ -86,10 +86,12 @@ model Partner {
 }
 
 model Product {
-  code          String  @unique
-  category      String?
-  product_model String?
-  remark        String?
+  code            String  @unique
+  category        String?
+  product_model   String?
+  remark          String?
+  inboundRecords  InboundRecord[]
+  outboundRecords OutboundRecord[]
 
   @@map("products")
 }

@@ -13,7 +13,7 @@ const router: Router = express.Router();
 type Decimal = ReturnType<typeof decimalCalc.decimal>;
 
 interface InboundGroup {
-  product_model: string | null;
+  product_code: string | null;
   _sum: {
     quantity: number | null;
     total_price: number | null;
@@ -26,7 +26,7 @@ interface QuantityPriceRow {
 }
 
 interface OutboundRow extends QuantityPriceRow {
-  product_model: string | null;
+  product_code: string | null;
 }
 
 interface AvgCostData {
@@ -75,13 +75,13 @@ interface StatsCache {
 function buildAvgCostMap(inboundRecords: InboundGroup[]): Record<string, AvgCostData> {
   return inboundRecords.reduce(
     (map, item) => {
-      if (!item.product_model) return map;
+      if (!item.product_code) return map;
 
       const totalQty = item._sum.quantity || 0;
       const totalPrice = item._sum.total_price || 0;
 
       if (totalQty > 0) {
-        map[item.product_model] = {
+        map[item.product_code] = {
           avg_cost_price: decimalCalc.fromSqlResult(totalPrice / totalQty, 0, 4),
           total_inbound_quantity: decimalCalc.fromSqlResult(totalQty, 0),
         };
@@ -96,7 +96,7 @@ function buildAvgCostMap(inboundRecords: InboundGroup[]): Record<string, AvgCost
  * Helper: Calculate cost for a single sales record
  */
 function calculateOutboundCost(record: OutboundRow, avgCostMap: Record<string, AvgCostData>) {
-  const productModel = record.product_model || 'unknown';
+  const productModel = record.product_code || 'unknown';
   const soldQuantity = decimalCalc.decimal(record.quantity || 0);
 
   // Use weighted average inbound price for this product if exists
@@ -134,7 +134,7 @@ async function calculateSoldGoodsCost(): Promise<number> {
 
   // 1. Calculate weighted average inbound price for each product (only positive unit price records from past year)
   const inboundRecords = await prisma.inboundRecord.groupBy({
-    by: ['product_model'],
+    by: ['product_code'],
     where: {
       unit_price: { gte: 0 },
       inbound_date: { gte: oneYearAgoStr },
@@ -154,7 +154,7 @@ async function calculateSoldGoodsCost(): Promise<number> {
       outbound_date: { gte: oneYearAgoStr },
     },
     select: {
-      product_model: true,
+      product_code: true,
       quantity: true,
       unit_price: true, // as selling_price
     },
@@ -309,16 +309,22 @@ router.post('/stats', async (_req: Request, res: Response): Promise<void> => {
   // Raw SQL was: SELECT product_model, SUM(quantity * unit_price) ... GROUP BY product_model
   // Again, assuming total_price is reliable.
   const topSalesGroups = await prisma.outboundRecord.groupBy({
-    by: ['product_model'],
+    by: ['product_code'],
     where: { unit_price: { gte: 0 }, outbound_date: { gte: oneYearAgoStr } },
     _sum: { total_price: true },
     // Prisma doesn't support 'orderBy' in groupBy easily for aggregates in all versions
     // We will sort in JS.
   });
 
+  const allProductsOverview = await prisma.product.findMany({
+    select: { code: true, product_model: true },
+  });
+  const pMapOverview = new Map<string, string>();
+  allProductsOverview.forEach((p) => pMapOverview.set(p.code, p.product_model || 'unknown'));
+
   const processedRows = topSalesGroups
     .map((g) => ({
-      product_model: g.product_model || 'unknown',
+      product_model: (g.product_code ? pMapOverview.get(g.product_code) : 'unknown') || 'unknown',
       total_sales: decimalCalc.fromSqlResult(g._sum.total_price || 0, 0, 2),
     }))
     .sort((a, b) => b.total_sales - a.total_sales); // Descending
@@ -347,8 +353,7 @@ router.post('/stats', async (_req: Request, res: Response): Promise<void> => {
   const monthStartStr = monthStart.toISOString().split('T')[0];
 
   const allProductModels = await prisma.product.findMany({
-    select: { product_model: true },
-    distinct: ['product_model'],
+    select: { code: true, product_model: true },
   });
 
   // We can optimize this loop by fetching all records and processing in memory if dataset is small,
@@ -358,59 +363,59 @@ router.post('/stats', async (_req: Request, res: Response): Promise<void> => {
 
   // Before Month Inbound
   const beforeMonthInboundAgg = await prisma.inboundRecord.groupBy({
-    by: ['product_model'],
+    by: ['product_code'],
     where: { inbound_date: { lt: monthStartStr } },
     _sum: { quantity: true },
   });
   // Convert to Map
   const beforeInMap: Record<string, number> = {};
   beforeMonthInboundAgg.forEach((x) => {
-    if (x.product_model) beforeInMap[x.product_model] = x._sum.quantity || 0;
+    if (x.product_code) beforeInMap[x.product_code] = x._sum.quantity || 0;
   });
 
   // Before Month Outbound
   const beforeMonthOutboundAgg = await prisma.outboundRecord.groupBy({
-    by: ['product_model'],
+    by: ['product_code'],
     where: { outbound_date: { lt: monthStartStr } },
     _sum: { quantity: true },
   });
   const beforeOutMap: Record<string, number> = {};
   beforeMonthOutboundAgg.forEach((x) => {
-    if (x.product_model) beforeOutMap[x.product_model] = x._sum.quantity || 0;
+    if (x.product_code) beforeOutMap[x.product_code] = x._sum.quantity || 0;
   });
 
   // Current Month Inbound
   const curMonthInboundAgg = await prisma.inboundRecord.groupBy({
-    by: ['product_model'],
+    by: ['product_code'],
     where: { inbound_date: { gte: monthStartStr } },
     _sum: { quantity: true },
   });
   const curInMap: Record<string, number> = {};
   curMonthInboundAgg.forEach((x) => {
-    if (x.product_model) curInMap[x.product_model] = x._sum.quantity || 0;
+    if (x.product_code) curInMap[x.product_code] = x._sum.quantity || 0;
   });
 
   // Current Month Outbound
   const curMonthOutboundAgg = await prisma.outboundRecord.groupBy({
-    by: ['product_model'],
+    by: ['product_code'],
     where: { outbound_date: { gte: monthStartStr } },
     _sum: { quantity: true },
   });
   const curOutMap: Record<string, number> = {};
   curMonthOutboundAgg.forEach((x) => {
-    if (x.product_model) curOutMap[x.product_model] = x._sum.quantity || 0;
+    if (x.product_code) curOutMap[x.product_code] = x._sum.quantity || 0;
   });
 
   const monthlyChanges: Record<string, MonthlyInventoryChange> = {};
 
   for (const p of allProductModels) {
-    if (!p.product_model) continue;
+    if (!p.code) continue;
 
-    const beforeIn = decimalCalc.fromSqlResult(beforeInMap[p.product_model] || 0, 0, 0);
-    const beforeOut = decimalCalc.fromSqlResult(beforeOutMap[p.product_model] || 0, 0, 0);
+    const beforeIn = decimalCalc.fromSqlResult(beforeInMap[p.code] || 0, 0, 0);
+    const beforeOut = decimalCalc.fromSqlResult(beforeOutMap[p.code] || 0, 0, 0);
 
-    const curIn = decimalCalc.fromSqlResult(curInMap[p.product_model] || 0, 0, 0);
-    const curOut = decimalCalc.fromSqlResult(curOutMap[p.product_model] || 0, 0, 0);
+    const curIn = decimalCalc.fromSqlResult(curInMap[p.code] || 0, 0, 0);
+    const curOut = decimalCalc.fromSqlResult(curOutMap[p.code] || 0, 0, 0);
 
     // Start Inventory = Total In (before) - Total Out (before)
     // Note: This logic assumes simple inventory (no adjustments/losses other than outbound).
@@ -425,8 +430,8 @@ router.post('/stats', async (_req: Request, res: Response): Promise<void> => {
       0,
     );
 
-    monthlyChanges[p.product_model] = {
-      product_model: p.product_model,
+    monthlyChanges[p.product_model || 'unknown'] = {
+      product_model: p.product_model || 'unknown',
       month_start_inventory: monthStartInventory,
       current_inventory: currentInventory,
       monthly_change: monthlyChange,

@@ -38,7 +38,7 @@ export async function getInboundData(
     andConditions.push({
       OR: [
         { product_code: { contains: filters.productCode } },
-        { product_model: { contains: filters.productCode } },
+        { product: { product_model: { contains: filters.productCode } } },
       ],
     });
   }
@@ -86,7 +86,7 @@ export async function getOutboundData(
     andConditions.push({
       OR: [
         { product_code: { contains: filters.productCode } },
-        { product_model: { contains: filters.productCode } },
+        { product: { product_model: { contains: filters.productCode } } },
       ],
     });
   }
