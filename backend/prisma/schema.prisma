@@ -17,9 +17,9 @@ datasource db {
 model InboundRecord {
   id             Int     @id @default(autoincrement())
   supplier_code  String
-  partner        Partner @relation(fields: [supplier_code], references: [code])
+  partner        Partner  @relation(fields: [supplier_code], references: [code], onUpdate: Cascade, onDelete: Restrict)
   product_code   String?
-  product        Product? @relation(fields: [product_code], references: [code])
+  product        Product? @relation(fields: [product_code], references: [code], onUpdate: Cascade, onDelete: Restrict)
   quantity       Int?
   unit_price     Float?
   total_price    Float?
@@ -36,9 +36,9 @@ model InboundRecord {
 model OutboundRecord {
   id             Int     @id @default(autoincrement())
   customer_code  String
-  partner        Partner @relation(fields: [customer_code], references: [code])
+  partner        Partner  @relation(fields: [customer_code], references: [code], onUpdate: Cascade, onDelete: Restrict)
   product_code   String?
-  product        Product? @relation(fields: [product_code], references: [code])
+  product        Product? @relation(fields: [product_code], references: [code], onUpdate: Cascade, onDelete: Restrict)
   quantity       Int?
   unit_price     Float?
   total_price    Float?

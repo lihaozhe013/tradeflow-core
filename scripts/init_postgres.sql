@@ -33,8 +33,8 @@ CREATE TABLE products (
 -- Table: inbound_records
 CREATE TABLE inbound_records (
     id SERIAL PRIMARY KEY,
-    supplier_code TEXT,
-    product_code TEXT,
+    supplier_code TEXT REFERENCES partners(code) ON UPDATE CASCADE ON DELETE RESTRICT,
+    product_code TEXT REFERENCES products(code) ON UPDATE CASCADE ON DELETE RESTRICT,
     quantity INTEGER,
     unit_price DOUBLE PRECISION,
     total_price DOUBLE PRECISION,
@@ -49,8 +49,8 @@ CREATE TABLE inbound_records (
 -- Table: outbound_records
 CREATE TABLE outbound_records (
     id SERIAL PRIMARY KEY,
-    customer_code TEXT,
-    product_code TEXT,
+    customer_code TEXT REFERENCES partners(code) ON UPDATE CASCADE ON DELETE RESTRICT,
+    product_code TEXT REFERENCES products(code) ON UPDATE CASCADE ON DELETE RESTRICT,
     quantity INTEGER,
     unit_price DOUBLE PRECISION,
     total_price DOUBLE PRECISION,
