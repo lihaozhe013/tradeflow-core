@@ -10,27 +10,23 @@ export async function calculateSalesData(
   productModel: string | null | undefined,
 ): Promise<SalesData> {
   const baseConditions: Prisma.Sql[] = [
-    Prisma.sql`outbound_date >= ${startDate}`,
-    Prisma.sql`outbound_date <= ${endDate}`,
+    Prisma.sql`r.outbound_date >= ${startDate}`,
+    Prisma.sql`r.outbound_date <= ${endDate}`,
   ];
   if (customerCode && customerCode !== 'All') {
-    baseConditions.push(Prisma.sql`customer_code = ${customerCode}`);
+    baseConditions.push(Prisma.sql`r.customer_code = ${customerCode}`);
   }
   if (productModel && productModel !== 'All') {
-    baseConditions.push(Prisma.sql`product_model = ${productModel}`);
+    baseConditions.push(Prisma.sql`p.product_model = ${productModel}`);
   }
-  const normalSalesWhere = Prisma.sql`WHERE unit_price >= 0 AND ${Prisma.join(baseConditions, ' AND ')}`;
-  const specialExpenseWhere = Prisma.sql`WHERE unit_price < 0 AND ${Prisma.join(baseConditions, ' AND ')}`;
+
   const query = Prisma.sql`
     SELECT 
-      COALESCE(SUM(quantity * unit_price), 0) as normal_sales,
-      COALESCE((
-        SELECT SUM(ABS(quantity * unit_price)) 
-        FROM outbound_records 
-        ${specialExpenseWhere}
-      ), 0) as special_expense
-    FROM outbound_records 
-    ${normalSalesWhere}
+      COALESCE(SUM(CASE WHEN r.unit_price >= 0 THEN r.quantity * r.unit_price ELSE 0 END), 0) as normal_sales,
+      COALESCE(SUM(CASE WHEN r.unit_price < 0 THEN ABS(r.quantity * r.unit_price) ELSE 0 END), 0) as special_expense
+    FROM outbound_records r
+    LEFT JOIN products p ON r.product_code = p.code
+    WHERE ${Prisma.join(baseConditions, ' AND ')}
   `;
 
   interface SalesRow {

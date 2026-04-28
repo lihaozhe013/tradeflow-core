@@ -15,22 +15,23 @@ export async function calculatePurchaseData(
 ): Promise<PurchaseData> {
   // Build Purchase Query Conditions
   const purchaseSqlConditions: Prisma.Sql[] = [
-    Prisma.sql`inbound_date >= ${startDate}`,
-    Prisma.sql`inbound_date <= ${endDate}`,
+    Prisma.sql`r.inbound_date >= ${startDate}`,
+    Prisma.sql`r.inbound_date <= ${endDate}`,
   ];
 
   if (supplierCode && supplierCode !== 'All') {
-    purchaseSqlConditions.push(Prisma.sql`supplier_code = ${supplierCode}`);
+    purchaseSqlConditions.push(Prisma.sql`r.supplier_code = ${supplierCode}`);
   }
 
   if (productModel && productModel !== 'All') {
-    purchaseSqlConditions.push(Prisma.sql`product_model = ${productModel}`);
+    purchaseSqlConditions.push(Prisma.sql`p.product_model = ${productModel}`);
   }
 
   const query = Prisma.sql`
     SELECT 
-      COALESCE(SUM(quantity * unit_price), 0) as purchase_amount
-    FROM inbound_records 
+      COALESCE(SUM(r.quantity * r.unit_price), 0) as purchase_amount
+    FROM inbound_records r
+    LEFT JOIN products p ON r.product_code = p.code
     WHERE ${Prisma.join(purchaseSqlConditions, ' AND ')}
   `;
 
