@@ -22,17 +22,17 @@ export async function getInvoiceData(filters: InvoiceFilters): Promise<InvoiceIt
 
   // Inbound query conditions
   const inboundConditions: Prisma.Sql[] = [
-    Prisma.sql`supplier_code IN (${Prisma.join(partnerCodes)})`,
+    Prisma.sql`r.supplier_code IN (${Prisma.join(partnerCodes)})`,
   ];
-  if (dateFrom) inboundConditions.push(Prisma.sql`inbound_date >= ${dateFrom}`);
-  if (dateTo) inboundConditions.push(Prisma.sql`inbound_date <= ${dateTo}`);
+  if (dateFrom) inboundConditions.push(Prisma.sql`r.inbound_date >= ${dateFrom}`);
+  if (dateTo) inboundConditions.push(Prisma.sql`r.inbound_date <= ${dateTo}`);
 
   // Outbound query conditions
   const outboundConditions: Prisma.Sql[] = [
-    Prisma.sql`customer_code IN (${Prisma.join(partnerCodes)})`,
+    Prisma.sql`r.customer_code IN (${Prisma.join(partnerCodes)})`,
   ];
-  if (dateFrom) outboundConditions.push(Prisma.sql`outbound_date >= ${dateFrom}`);
-  if (dateTo) outboundConditions.push(Prisma.sql`outbound_date <= ${dateTo}`);
+  if (dateFrom) outboundConditions.push(Prisma.sql`r.outbound_date >= ${dateFrom}`);
+  if (dateTo) outboundConditions.push(Prisma.sql`r.outbound_date <= ${dateTo}`);
 
   // Combine queries using UNION ALL
   // Note: We select product_model, unit_price, quantity, total_price from both tables.
@@ -47,19 +47,21 @@ export async function getInvoiceData(filters: InvoiceFilters): Promise<InvoiceIt
       SUM(total_price) as total_price
     FROM (
       SELECT 
-        product_model,
-        unit_price,
-        quantity,
-        total_price
-      FROM inbound_records 
+        p.product_model,
+        r.unit_price,
+        r.quantity,
+        r.total_price
+      FROM inbound_records r
+      LEFT JOIN products p ON r.product_code = p.code
       WHERE ${Prisma.join(inboundConditions, ' AND ')}
       UNION ALL
       SELECT 
-        product_model,
-        unit_price,
-        quantity,
-        total_price
-      FROM outbound_records 
+        p.product_model,
+        r.unit_price,
+        r.quantity,
+        r.total_price
+      FROM outbound_records r
+      LEFT JOIN products p ON r.product_code = p.code
       WHERE ${Prisma.join(outboundConditions, ' AND ')}
     ) as combined_records
     GROUP BY product_model, unit_price
@@ -91,12 +93,12 @@ export async function getAllInvoiceData(
 
   // We can group all records by partner in one go
   const inboundConditions: Prisma.Sql[] = [];
-  if (dateFrom) inboundConditions.push(Prisma.sql`inbound_date >= ${dateFrom}`);
-  if (dateTo) inboundConditions.push(Prisma.sql`inbound_date <= ${dateTo}`);
+  if (dateFrom) inboundConditions.push(Prisma.sql`r.inbound_date >= ${dateFrom}`);
+  if (dateTo) inboundConditions.push(Prisma.sql`r.inbound_date <= ${dateTo}`);
 
   const outboundConditions: Prisma.Sql[] = [];
-  if (dateFrom) outboundConditions.push(Prisma.sql`outbound_date >= ${dateFrom}`);
-  if (dateTo) outboundConditions.push(Prisma.sql`outbound_date <= ${dateTo}`);
+  if (dateFrom) outboundConditions.push(Prisma.sql`r.outbound_date >= ${dateFrom}`);
+  if (dateTo) outboundConditions.push(Prisma.sql`r.outbound_date <= ${dateTo}`);
 
   const inboundWhere =
     inboundConditions.length > 0
@@ -116,21 +118,23 @@ export async function getAllInvoiceData(
       SUM(total_price) as total_price
     FROM (
       SELECT 
-        supplier_code as partner_code,
-        product_model,
-        unit_price,
-        quantity,
-        total_price
-      FROM inbound_records 
+        r.supplier_code as partner_code,
+        p.product_model,
+        r.unit_price,
+        r.quantity,
+        r.total_price
+      FROM inbound_records r
+      LEFT JOIN products p ON r.product_code = p.code
       ${inboundWhere}
       UNION ALL
       SELECT 
-        customer_code as partner_code,
-        product_model,
-        unit_price,
-        quantity,
-        total_price
-      FROM outbound_records 
+        r.customer_code as partner_code,
+        p.product_model,
+        r.unit_price,
+        r.quantity,
+        r.total_price
+      FROM outbound_records r
+      LEFT JOIN products p ON r.product_code = p.code
       ${outboundWhere}
     ) as combined_records
     GROUP BY partner_code, product_model, unit_price
