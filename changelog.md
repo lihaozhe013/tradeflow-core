@@ -1,5 +1,10 @@
 # Change Log
 
+## v0.9.0
+
+- Optimized Docker network settings
+- New Feature: Supports searching product and partner lists
+
 ## v0.8.2 - 0.8.4
 
 - Refactor all config files
@@ -38,9 +43,9 @@
 
 ## v0.5.0
 
-- New feature: Automatically lookup for invoiced/uninvoiced details
-- New feature: Batch edit record in inbound and outbound table
-- New feature: One-Click DB Backup
+- New Feature: Automatically lookup for invoiced/uninvoiced details
+- New Feature: Batch edit record in inbound and outbound table
+- New Feature: One-Click DB Backup
 - Fixed the messy issue with the invoice and receipt fields
 - Chore: update npm packages
 

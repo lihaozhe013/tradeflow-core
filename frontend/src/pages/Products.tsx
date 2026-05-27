@@ -1,6 +1,6 @@
-import { useState, type FC } from 'react';
+import { useState, useEffect, useCallback, type FC } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { ColumnsType } from 'antd/es/table';
+import type { ColumnsType, TableProps } from 'antd/es/table';
 import type { FormProps } from 'antd';
 import {
   Table,
@@ -20,7 +20,7 @@ import {
 } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { PRODUCT_CATEGORIES } from '@/config';
-import { useSimpleApi, useSimpleApiData } from '@/hooks/useSimpleApi';
+import { useSimpleApi } from '@/hooks/useSimpleApi';
 
 const { Title } = Typography;
 
@@ -33,6 +33,18 @@ type ProductItem = {
 
 type ProductListResponse = {
   readonly data: ProductItem[];
+  readonly pagination?: {
+    readonly page: number;
+    readonly limit: number;
+    readonly total: number;
+    readonly pages: number;
+  };
+};
+
+type PaginationInfo = {
+  readonly current: number;
+  readonly pageSize: number;
+  readonly total: number;
 };
 
 type ProductFormValues = {
@@ -42,21 +54,58 @@ type ProductFormValues = {
   remark?: string;
 };
 
+type ProductFilters = {
+  code?: string | undefined;
+  product_model?: string | undefined;
+  category?: string | undefined;
+};
+
+const DEFAULT_PAGINATION: PaginationInfo = {
+  current: 1,
+  pageSize: 20,
+  total: 0,
+};
+
 const Products: FC = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [editingProduct, setEditingProduct] = useState<ProductItem | null>(null);
   const [form] = Form.useForm<ProductFormValues>();
+  const [filterForm] = Form.useForm<ProductFilters>();
+  const [products, setProducts] = useState<ProductItem[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [pagination, setPagination] = useState<PaginationInfo>(DEFAULT_PAGINATION);
+  const [filters, setFilters] = useState<ProductFilters>({});
   const { t } = useTranslation();
 
-  const { post, put, request } = useSimpleApi();
+  const { get, post, put, request } = useSimpleApi();
 
-  const {
-    data: productsResponse,
-    loading,
-    refetch: refreshProducts,
-  } = useSimpleApiData<ProductListResponse>('/products', { data: [] });
+  const fetchProducts = useCallback(
+    async (page = 1, nextFilters: ProductFilters = filters): Promise<void> => {
+      try {
+        setLoading(true);
+        const query = new URLSearchParams({ page: String(page) });
+        if (nextFilters.code) query.append('code', nextFilters.code);
+        if (nextFilters.product_model) query.append('product_model', nextFilters.product_model);
+        if (nextFilters.category) query.append('category', nextFilters.category);
+        const result = await get<ProductListResponse>(`/products?${query.toString()}`);
+        setProducts(Array.isArray(result?.data) ? result.data : []);
+        setPagination((prev) => ({
+          current: result?.pagination?.page ?? page,
+          pageSize: result?.pagination?.limit ?? prev.pageSize,
+          total: result?.pagination?.total ?? prev.total,
+        }));
+      } catch {
+        setProducts([]);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [filters, get],
+  );
 
-  const products = productsResponse?.data ?? [];
+  useEffect(() => {
+    fetchProducts(1);
+  }, [fetchProducts]);
   const productOptions = products;
 
   const handleAdd = (): void => {
@@ -75,7 +124,7 @@ const Products: FC = () => {
     try {
       await request(`/products/${code}`, { method: 'DELETE' });
       message.success(t('products.deleteSuccess'));
-      refreshProducts();
+      fetchProducts(pagination.current, filters);
     } catch {
       // 错误已经在 useSimpleApi 中处理
     }
@@ -91,7 +140,7 @@ const Products: FC = () => {
         message.success(t('products.addSuccess'));
       }
       setModalVisible(false);
-      refreshProducts();
+      fetchProducts(pagination.current, filters);
     } catch {
       // 错误已经在 useSimpleApi 中处理
     }
@@ -172,6 +221,22 @@ const Products: FC = () => {
     }
   };
 
+  const handleTableChange: TableProps<ProductItem>['onChange'] = (paginationConfig) => {
+    const nextPage = paginationConfig.current ?? 1;
+    fetchProducts(nextPage, filters);
+  };
+
+  const handleFilter = (): void => {
+    const values = filterForm.getFieldsValue();
+    const nextFilters: ProductFilters = {
+      code: values.code?.trim() || undefined,
+      product_model: values.product_model?.trim() || undefined,
+      category: values.category,
+    };
+    setFilters(nextFilters);
+    fetchProducts(1, nextFilters);
+  };
+
   return (
     <div>
       <Card>
@@ -188,6 +253,36 @@ const Products: FC = () => {
           </Col>
         </Row>
 
+        <Form<ProductFilters> form={filterForm} layout="inline" style={{ marginBottom: 12 }}>
+          <Form.Item name="code" label={t('products.code')} style={{ minWidth: 200 }}>
+            <Input allowClear placeholder={t('products.inputCode')} />
+          </Form.Item>
+          <Form.Item
+            name="product_model"
+            label={t('products.productModel')}
+            style={{ minWidth: 240 }}
+          >
+            <Input allowClear placeholder={t('products.inputProductModel')} />
+          </Form.Item>
+          <Form.Item name="category" label={t('products.category')} style={{ minWidth: 220 }}>
+            <Select
+              showSearch
+              allowClear
+              placeholder={t('products.selectCategory')}
+              options={PRODUCT_CATEGORIES.map((name) => ({ value: name, label: name }))}
+              filterOption={(input, option) => {
+                const label = typeof option?.label === 'string' ? option.label : '';
+                return label.toLowerCase().includes(input.toLowerCase());
+              }}
+            />
+          </Form.Item>
+          <Form.Item>
+            <Button type="primary" onClick={handleFilter}>
+              {t('common.search')}
+            </Button>
+          </Form.Item>
+        </Form>
+
         <Divider />
 
         <div className="responsive-table">
@@ -196,8 +291,11 @@ const Products: FC = () => {
             dataSource={products}
             rowKey="code"
             loading={loading}
+            onChange={handleTableChange}
             pagination={{
-              pageSize: 10,
+              current: pagination.current,
+              pageSize: pagination.pageSize,
+              total: pagination.total,
               showQuickJumper: true,
               showTotal: (total, range) =>
                 t('products.paginationTotal', {

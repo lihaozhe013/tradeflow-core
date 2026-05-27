@@ -1,6 +1,7 @@
 import express, { type Router, type Request, type Response } from 'express';
 import { prisma } from '@/prismaClient';
 import { Prisma } from '@/prisma/client';
+import { pagination_limit } from '@/utils/paths';
 
 const router: Router = express.Router();
 
@@ -13,7 +14,7 @@ interface ProductBinding {
  * GET /api/products
  */
 router.get('/', async (req: Request, res: Response): Promise<void> => {
-  const { category, product_model, code } = req.query;
+  const { category, product_model, code, page, limit } = req.query;
 
   const where: Prisma.ProductWhereInput = {};
 
@@ -27,11 +28,41 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     where.code = { contains: code as string };
   }
 
-  const rows = await prisma.product.findMany({
-    where,
-    orderBy: { code: 'asc' },
+  const usePagination = page !== undefined || limit !== undefined;
+
+  if (!usePagination) {
+    const rows = await prisma.product.findMany({
+      where,
+      orderBy: { code: 'asc' },
+    });
+    res.json({ data: rows });
+    return;
+  }
+
+  let pageNum = parseInt(String(page ?? '1'), 10);
+  if (!Number.isFinite(pageNum) || pageNum < 1) pageNum = 1;
+  const limitNum = Number(limit) || pagination_limit;
+  const skip = (pageNum - 1) * limitNum;
+
+  const [rows, total] = await prisma.$transaction([
+    prisma.product.findMany({
+      where,
+      orderBy: { code: 'asc' },
+      skip,
+      take: limitNum,
+    }),
+    prisma.product.count({ where }),
+  ]);
+
+  res.json({
+    data: rows,
+    pagination: {
+      page: pageNum,
+      limit: limitNum,
+      total,
+      pages: Math.ceil(total / limitNum),
+    },
   });
-  res.json({ data: rows });
 });
 
 /**

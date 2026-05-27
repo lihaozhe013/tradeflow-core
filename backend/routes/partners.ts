@@ -1,6 +1,7 @@
 import express, { type Router, type Request, type Response } from 'express';
 import { prisma } from '@/prismaClient';
 import { Prisma } from '@/prisma/client';
+import { pagination_limit } from '@/utils/paths';
 
 const router: Router = express.Router();
 
@@ -14,7 +15,7 @@ interface PartnerBinding {
  * GET /api/partners
  */
 router.get('/', async (req: Request, res: Response): Promise<void> => {
-  const { type, short_name, full_name, code } = req.query;
+  const { type, short_name, full_name, code, page, limit } = req.query;
 
   const where: Prisma.PartnerWhereInput = {};
 
@@ -31,12 +32,42 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     where.code = { contains: code as string };
   }
 
-  const rows = await prisma.partner.findMany({
-    where,
-    orderBy: { short_name: 'asc' },
-  });
+  const usePagination = page !== undefined || limit !== undefined;
 
-  res.json({ data: rows });
+  if (!usePagination) {
+    const rows = await prisma.partner.findMany({
+      where,
+      orderBy: { short_name: 'asc' },
+    });
+
+    res.json({ data: rows });
+    return;
+  }
+
+  let pageNum = parseInt(String(page ?? '1'), 10);
+  if (!Number.isFinite(pageNum) || pageNum < 1) pageNum = 1;
+  const limitNum = Number(limit) || pagination_limit;
+  const skip = (pageNum - 1) * limitNum;
+
+  const [rows, total] = await prisma.$transaction([
+    prisma.partner.findMany({
+      where,
+      orderBy: { short_name: 'asc' },
+      skip,
+      take: limitNum,
+    }),
+    prisma.partner.count({ where }),
+  ]);
+
+  res.json({
+    data: rows,
+    pagination: {
+      page: pageNum,
+      limit: limitNum,
+      total,
+      pages: Math.ceil(total / limitNum),
+    },
+  });
 });
 
 /**

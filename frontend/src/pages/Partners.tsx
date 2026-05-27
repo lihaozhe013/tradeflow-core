@@ -1,6 +1,6 @@
-import { useState, type FC } from 'react';
+import { useState, useEffect, useCallback, type FC } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { ColumnsType } from 'antd/es/table';
+import type { ColumnsType, TableProps } from 'antd/es/table';
 import type { FormProps } from 'antd';
 import {
   Table,
@@ -19,7 +19,7 @@ import {
   Divider,
 } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
-import { useSimpleApi, useSimpleApiData } from '@/hooks/useSimpleApi';
+import { useSimpleApi } from '@/hooks/useSimpleApi';
 
 const { Title } = Typography;
 const { Option } = Select;
@@ -36,6 +36,18 @@ type PartnerItem = {
 
 type PartnerListResponse = {
   readonly data: PartnerItem[];
+  readonly pagination?: {
+    readonly page: number;
+    readonly limit: number;
+    readonly total: number;
+    readonly pages: number;
+  };
+};
+
+type PaginationInfo = {
+  readonly current: number;
+  readonly pageSize: number;
+  readonly total: number;
 };
 
 type PartnerFormValues = {
@@ -48,21 +60,60 @@ type PartnerFormValues = {
   contact_phone?: string;
 };
 
+type PartnerFilters = {
+  code?: string | undefined;
+  short_name?: string | undefined;
+  full_name?: string | undefined;
+  type?: 0 | 1 | undefined;
+};
+
+const DEFAULT_PAGINATION: PaginationInfo = {
+  current: 1,
+  pageSize: 20,
+  total: 0,
+};
+
 const Partners: FC = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [editingPartner, setEditingPartner] = useState<PartnerItem | null>(null);
   const [form] = Form.useForm<PartnerFormValues>();
+  const [filterForm] = Form.useForm<PartnerFilters>();
+  const [partners, setPartners] = useState<PartnerItem[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [pagination, setPagination] = useState<PaginationInfo>(DEFAULT_PAGINATION);
+  const [filters, setFilters] = useState<PartnerFilters>({});
   const { t } = useTranslation();
 
-  const { post, put, request } = useSimpleApi();
+  const { get, post, put, request } = useSimpleApi();
 
-  const {
-    data: partnersResponse,
-    loading,
-    refetch: refreshPartners,
-  } = useSimpleApiData<PartnerListResponse>('/partners', { data: [] });
+  const fetchPartners = useCallback(
+    async (page = 1, nextFilters: PartnerFilters = filters): Promise<void> => {
+      try {
+        setLoading(true);
+        const query = new URLSearchParams({ page: String(page) });
+        if (nextFilters.code) query.append('code', nextFilters.code);
+        if (nextFilters.short_name) query.append('short_name', nextFilters.short_name);
+        if (nextFilters.full_name) query.append('full_name', nextFilters.full_name);
+        if (nextFilters.type !== undefined) query.append('type', String(nextFilters.type));
+        const result = await get<PartnerListResponse>(`/partners?${query.toString()}`);
+        setPartners(Array.isArray(result?.data) ? result.data : []);
+        setPagination((prev) => ({
+          current: result?.pagination?.page ?? page,
+          pageSize: result?.pagination?.limit ?? prev.pageSize,
+          total: result?.pagination?.total ?? prev.total,
+        }));
+      } catch {
+        setPartners([]);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [filters, get],
+  );
 
-  const partners = partnersResponse?.data ?? [];
+  useEffect(() => {
+    fetchPartners(1);
+  }, [fetchPartners]);
   const partnerOptions = partners;
 
   const handleAdd = (): void => {
@@ -81,7 +132,7 @@ const Partners: FC = () => {
     try {
       await request(`/partners/${shortName}`, { method: 'DELETE' });
       message.success(t('partners.deleteSuccess'));
-      refreshPartners();
+      fetchPartners(pagination.current, filters);
     } catch {
       // 错误已经在 useSimpleApi 中处理
     }
@@ -102,7 +153,7 @@ const Partners: FC = () => {
         message.success(t('partners.addSuccess'));
       }
       setModalVisible(false);
-      refreshPartners();
+      fetchPartners(pagination.current, filters);
     } catch {
       // 错误已经在 useSimpleApi 中处理
     }
@@ -210,6 +261,23 @@ const Partners: FC = () => {
     }
   };
 
+  const handleTableChange: TableProps<PartnerItem>['onChange'] = (paginationConfig) => {
+    const nextPage = paginationConfig.current ?? 1;
+    fetchPartners(nextPage, filters);
+  };
+
+  const handleFilter = (): void => {
+    const values = filterForm.getFieldsValue();
+    const nextFilters: PartnerFilters = {
+      code: values.code?.trim() || undefined,
+      short_name: values.short_name?.trim() || undefined,
+      full_name: values.full_name?.trim() || undefined,
+      type: values.type,
+    };
+    setFilters(nextFilters);
+    fetchPartners(1, nextFilters);
+  };
+
   return (
     <div>
       <Card>
@@ -226,6 +294,29 @@ const Partners: FC = () => {
           </Col>
         </Row>
 
+        <Form<PartnerFilters> form={filterForm} layout="inline" style={{ marginBottom: 12 }}>
+          <Form.Item name="code" label={t('partners.code')} style={{ minWidth: 200 }}>
+            <Input allowClear placeholder={t('partners.inputCode')} />
+          </Form.Item>
+          <Form.Item name="short_name" label={t('partners.shortName')} style={{ minWidth: 220 }}>
+            <Input allowClear placeholder={t('partners.inputShortName')} />
+          </Form.Item>
+          <Form.Item name="full_name" label={t('partners.fullName')} style={{ minWidth: 240 }}>
+            <Input allowClear placeholder={t('partners.inputFullName')} />
+          </Form.Item>
+          <Form.Item name="type" label={t('partners.type')} style={{ minWidth: 180 }}>
+            <Select allowClear placeholder={t('partners.selectType')}>
+              <Option value={0}>{t('partners.supplier')}</Option>
+              <Option value={1}>{t('partners.customer')}</Option>
+            </Select>
+          </Form.Item>
+          <Form.Item>
+            <Button type="primary" onClick={handleFilter}>
+              {t('common.search')}
+            </Button>
+          </Form.Item>
+        </Form>
+
         <Divider />
 
         <div className="responsive-table">
@@ -234,8 +325,11 @@ const Partners: FC = () => {
             dataSource={partners}
             rowKey="short_name"
             loading={loading}
+            onChange={handleTableChange}
             pagination={{
-              pageSize: 10,
+              current: pagination.current,
+              pageSize: pagination.pageSize,
+              total: pagination.total,
               showQuickJumper: true,
               showTotal: (total, range) =>
                 t('partners.paginationTotal', {
