@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, type FC } from 'react';
+import { useState, useEffect, useCallback, useRef, type FC } from 'react';
 import { Modal, Table, Button, message, Typography } from 'antd';
 import { ReloadOutlined } from '@ant-design/icons';
 import { currency_unit_symbol } from '@/config/types';
@@ -51,6 +51,9 @@ const InvoicedModal: FC<InvoicedModalProps> = ({
   const [pagination, setPagination] = useState<ModalPaginationState>(DEFAULT_PAGINATION);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
 
+  const apiInstanceRef = useRef(apiInstance);
+  apiInstanceRef.current = apiInstance;
+
   const fetchInvoicedRecords = useCallback(
     async (page = 1): Promise<void> => {
       if (!customerCode) return;
@@ -62,7 +65,7 @@ const InvoicedModal: FC<InvoicedModalProps> = ({
           limit: String(DEFAULT_PAGINATION.pageSize),
         });
 
-        const result = await apiInstance.get<InvoicedRecordsResponse>(
+        const result = await apiInstanceRef.current.get<InvoicedRecordsResponse>(
           `/receivable/invoiced/${customerCode}?${query.toString()}`,
         );
 
@@ -80,7 +83,7 @@ const InvoicedModal: FC<InvoicedModalProps> = ({
         setLoading(false);
       }
     },
-    [customerCode, apiInstance],
+    [customerCode],
   );
 
   const handleRefreshCache = async (): Promise<void> => {
