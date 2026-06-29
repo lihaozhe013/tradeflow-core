@@ -74,24 +74,22 @@ class InvoiceCacheService {
         },
         _min: {
           invoice_date: true,
+          outbound_date: true,
         },
         _count: {
           _all: true,
         },
       });
 
-      // Sort in memory or use logic. SQL was ORDER BY MIN(invoice_date) DESC
-      // Prisma groupBy allows orderBy since recent versions, but simpler to sort in code if needed or check types.
-      // Let's sort in memory to be safe and consistent.
       groups.sort((a, b) => {
-        const dateA = a._min.invoice_date || '';
-        const dateB = b._min.invoice_date || '';
+        const dateA = a._min.invoice_date ?? a._min.outbound_date ?? '';
+        const dateB = b._min.invoice_date ?? b._min.outbound_date ?? '';
         return dateB.localeCompare(dateA);
       });
 
       const invoicedRecords: InvoicedRecord[] = groups.map((g) => ({
         invoice_number: g.invoice_number!,
-        invoice_date: g._min.invoice_date,
+        invoice_date: g._min.invoice_date ?? g._min.outbound_date ?? null,
         total_amount: decimalCalc.fromSqlResult(g._sum.total_price || 0, 0),
         record_count: g._count._all,
       }));
@@ -126,6 +124,7 @@ class InvoiceCacheService {
         },
         _min: {
           invoice_date: true,
+          inbound_date: true,
         },
         _count: {
           _all: true,
@@ -133,14 +132,14 @@ class InvoiceCacheService {
       });
 
       groups.sort((a, b) => {
-        const dateA = a._min.invoice_date || '';
-        const dateB = b._min.invoice_date || '';
+        const dateA = a._min.invoice_date ?? a._min.inbound_date ?? '';
+        const dateB = b._min.invoice_date ?? b._min.inbound_date ?? '';
         return dateB.localeCompare(dateA);
       });
 
       const invoicedRecords: InvoicedRecord[] = groups.map((g) => ({
         invoice_number: g.invoice_number!,
-        invoice_date: g._min.invoice_date,
+        invoice_date: g._min.invoice_date ?? g._min.inbound_date ?? null,
         total_amount: decimalCalc.fromSqlResult(g._sum.total_price || 0, 0),
         record_count: g._count._all,
       }));
