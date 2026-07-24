@@ -35,12 +35,18 @@ const InboundFilter: FC<InboundFilterProps> = ({
     setFilters((prev) => ({
       ...prev,
       dateRange: dates
-        ? [dates[0]?.format('YYYY-MM-DD') ?? null, dates[1]?.format('YYYY-MM-DD') ?? null]
+        ? [
+            dates[0]?.format('YYYY-MM-DD') ?? null,
+            dates[1]?.format('YYYY-MM-DD') ?? null,
+          ]
         : [null, null],
     }));
   };
 
-  const filterByLabel = (input: string, option?: DefaultOptionType): boolean => {
+  const filterByLabel = (
+    input: string,
+    option?: DefaultOptionType,
+  ): boolean => {
     const label = typeof option?.label === 'string' ? option.label : undefined;
     return label ? label.toLowerCase().includes(input.toLowerCase()) : false;
   };

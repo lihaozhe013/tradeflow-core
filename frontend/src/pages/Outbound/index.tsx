@@ -1,5 +1,21 @@
-import { useState, useEffect, useCallback, useMemo, type FC, type Key } from 'react';
-import { Button, Form, message, Card, Typography, Row, Col, Divider } from 'antd';
+import {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  type FC,
+  type Key,
+} from 'react';
+import {
+  Button,
+  Form,
+  message,
+  Card,
+  Typography,
+  Row,
+  Col,
+  Divider,
+} from 'antd';
 import type { TableProps } from 'antd/es/table';
 import type { SorterResult } from 'antd/es/table/interface';
 import dayjs, { type Dayjs } from 'dayjs';
@@ -42,7 +58,9 @@ const Outbound: FC = () => {
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [batchModalVisible, setBatchModalVisible] = useState(false);
-  const [editingRecord, setEditingRecord] = useState<OutboundRecord | null>(null);
+  const [editingRecord, setEditingRecord] = useState<OutboundRecord | null>(
+    null,
+  );
   const [form] = Form.useForm<OutboundFormValues>();
   const [batchForm] = Form.useForm<OutboundFormValues>();
   const [selectedRowKeys, setSelectedRowKeys] = useState<Key[]>([]);
@@ -54,16 +72,23 @@ const Outbound: FC = () => {
   const [sorter, setSorter] = useState<SorterState>({});
   const [manualPrice, setManualPrice] = useState(false);
   const [batchManualPrice, setBatchManualPrice] = useState(false);
-  const [pagination, setPagination] = useState<PaginationState>(DEFAULT_PAGINATION);
+  const [pagination, setPagination] =
+    useState<PaginationState>(DEFAULT_PAGINATION);
 
   const { get, post, put, delete: deleteRequest } = useSimpleApi();
 
-  const { data: partnersResponse } = useSimpleApiData<ApiListResponse<Partner>>('/partners', {
-    data: [],
-  });
-  const { data: productsResponse } = useSimpleApiData<ApiListResponse<Product>>('/products', {
-    data: [],
-  });
+  const { data: partnersResponse } = useSimpleApiData<ApiListResponse<Partner>>(
+    '/partners',
+    {
+      data: [],
+    },
+  );
+  const { data: productsResponse } = useSimpleApiData<ApiListResponse<Product>>(
+    '/products',
+    {
+      data: [],
+    },
+  );
 
   const partners = useMemo<Partner[]>(() => {
     const data = partnersResponse?.data;
@@ -99,7 +124,9 @@ const Outbound: FC = () => {
           sort_order: params.sort_order ?? sorter.order ?? '',
         });
 
-        const result = await get<OutboundListResponse>(`/outbound?${query.toString()}`);
+        const result = await get<OutboundListResponse>(
+          `/outbound?${query.toString()}`,
+        );
 
         setOutboundRecords(Array.isArray(result?.data) ? result.data : []);
         setPagination((prev: PaginationState) => ({
@@ -114,7 +141,15 @@ const Outbound: FC = () => {
         setLoading(false);
       }
     },
-    [customerShortName, endDate, get, productModel, sorter.field, sorter.order, startDate],
+    [
+      customerShortName,
+      endDate,
+      get,
+      productModel,
+      sorter.field,
+      sorter.order,
+      startDate,
+    ],
   );
 
   useEffect(() => {
@@ -134,8 +169,12 @@ const Outbound: FC = () => {
 
   const handleEdit = (record: OutboundRecord): void => {
     setEditingRecord(record);
-    const customer = partners.find((partner) => partner.code === record.customer_code);
-    const product = products.find((item) => item.product_model === record.product_model);
+    const customer = partners.find(
+      (partner) => partner.code === record.customer_code,
+    );
+    const product = products.find(
+      (item) => item.product_model === record.product_model,
+    );
 
     form.setFieldsValue({
       ...record,
@@ -170,10 +209,13 @@ const Outbound: FC = () => {
       const productModelValue = values.product_model;
 
       if (customerCode && customerShortNameValue) {
-        const customer = partners.find((partner) => partner.code === customerCode);
+        const customer = partners.find(
+          (partner) => partner.code === customerCode,
+        );
         if (customer?.short_name !== customerShortNameValue) {
           message.error(
-            t('outbound.customerCodeShortNameMismatch') ?? '客户代号与简称不匹配，请重新选择',
+            t('outbound.customerCodeShortNameMismatch') ??
+              '客户代号与简称不匹配，请重新选择',
           );
           return;
         }
@@ -183,7 +225,8 @@ const Outbound: FC = () => {
         const product = products.find((item) => item.code === productCode);
         if (product?.product_model !== productModelValue) {
           message.error(
-            t('outbound.productCodeModelMismatch') ?? '产品代号与型号不匹配，请重新选择',
+            t('outbound.productCodeModelMismatch') ??
+              '产品代号与型号不匹配，请重新选择',
           );
           return;
         }
@@ -194,8 +237,12 @@ const Outbound: FC = () => {
 
       const payload = {
         ...values,
-        outbound_date: values.outbound_date ? values.outbound_date.format('YYYY-MM-DD') : null,
-        invoice_date: values.invoice_date ? values.invoice_date.format('YYYY-MM-DD') : null,
+        outbound_date: values.outbound_date
+          ? values.outbound_date.format('YYYY-MM-DD')
+          : null,
+        invoice_date: values.invoice_date
+          ? values.invoice_date.format('YYYY-MM-DD')
+          : null,
         total_price: quantity * unitPrice,
       };
 
@@ -212,7 +259,9 @@ const Outbound: FC = () => {
     } catch (error) {
       console.error('保存失败:', error);
       const errorMessage =
-        error instanceof Error ? error.message : (t('outbound.saveFailed') ?? '保存失败');
+        error instanceof Error
+          ? error.message
+          : (t('outbound.saveFailed') ?? '保存失败');
       message.error(errorMessage);
     }
   };
@@ -266,9 +315,15 @@ const Outbound: FC = () => {
       return;
     }
 
-    const customerShortNameValue = form.getFieldValue('customer_short_name') as string | undefined;
-    const productModelValue = form.getFieldValue('product_model') as string | undefined;
-    const outboundDateValue = form.getFieldValue('outbound_date') as Dayjs | undefined;
+    const customerShortNameValue = form.getFieldValue('customer_short_name') as
+      | string
+      | undefined;
+    const productModelValue = form.getFieldValue('product_model') as
+      | string
+      | undefined;
+    const outboundDateValue = form.getFieldValue('outbound_date') as
+      | Dayjs
+      | undefined;
 
     if (customerShortNameValue && productModelValue && outboundDateValue) {
       try {
@@ -314,8 +369,10 @@ const Outbound: FC = () => {
 
       // Only include fields that are actually filled
       if (values.customer_code) updates['customer_code'] = values.customer_code;
-      if (values.customer_short_name) updates['customer_short_name'] = values.customer_short_name;
-      if (values.customer_full_name) updates['customer_full_name'] = values.customer_full_name;
+      if (values.customer_short_name)
+        updates['customer_short_name'] = values.customer_short_name;
+      if (values.customer_full_name)
+        updates['customer_full_name'] = values.customer_full_name;
       if (values.product_code) updates['product_code'] = values.product_code;
       if (values.product_model) updates['product_model'] = values.product_model;
       if (values.quantity) updates['quantity'] = values.quantity;
@@ -323,9 +380,12 @@ const Outbound: FC = () => {
         updates['unit_price'] = values.unit_price;
       if (values.outbound_date)
         updates['outbound_date'] = values.outbound_date.format('YYYY-MM-DD');
-      if (values.invoice_date) updates['invoice_date'] = values.invoice_date.format('YYYY-MM-DD');
-      if (values.invoice_number) updates['invoice_number'] = values.invoice_number;
-      if (values.receipt_number) updates['receipt_number'] = values.receipt_number;
+      if (values.invoice_date)
+        updates['invoice_date'] = values.invoice_date.format('YYYY-MM-DD');
+      if (values.invoice_number)
+        updates['invoice_number'] = values.invoice_number;
+      if (values.receipt_number)
+        updates['receipt_number'] = values.receipt_number;
       if (values.order_number) updates['order_number'] = values.order_number;
       if (values.remark) updates['remark'] = values.remark;
 
@@ -339,7 +399,9 @@ const Outbound: FC = () => {
         payload,
       );
 
-      message.success(`Batch update completed! ${result.updated} records updated.`);
+      message.success(
+        `Batch update completed! ${result.updated} records updated.`,
+      );
       if (result.notFound && result.notFound.length > 0) {
         message.warning(`${result.notFound.length} records not found.`);
       }
@@ -349,7 +411,8 @@ const Outbound: FC = () => {
       fetchOutboundRecords({ page: pagination.current });
     } catch (error) {
       console.error('Batch save failed:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Batch update failed';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Batch update failed';
       message.error(errorMessage);
     }
   };
@@ -411,11 +474,15 @@ const Outbound: FC = () => {
       return;
     }
 
-    const customerShortNameValue = batchForm.getFieldValue('customer_short_name') as
+    const customerShortNameValue = batchForm.getFieldValue(
+      'customer_short_name',
+    ) as string | undefined;
+    const productModelValue = batchForm.getFieldValue('product_model') as
       | string
       | undefined;
-    const productModelValue = batchForm.getFieldValue('product_model') as string | undefined;
-    const outboundDateValue = batchForm.getFieldValue('outbound_date') as Dayjs | undefined;
+    const outboundDateValue = batchForm.getFieldValue('outbound_date') as
+      | Dayjs
+      | undefined;
 
     if (customerShortNameValue && productModelValue && outboundDateValue) {
       try {
@@ -457,7 +524,8 @@ const Outbound: FC = () => {
     const sorterResult = Array.isArray(sorterTable)
       ? sorterTable[0]
       : (sorterTable as SorterResult<OutboundRecord> | undefined);
-    const field = typeof sorterResult?.field === 'string' ? sorterResult.field : undefined;
+    const field =
+      typeof sorterResult?.field === 'string' ? sorterResult.field : undefined;
     const order =
       sorterResult?.order === 'ascend'
         ? 'asc'
@@ -485,7 +553,11 @@ const Outbound: FC = () => {
   return (
     <div>
       <Card>
-        <Row justify="space-between" align="middle" style={{ marginBottom: 16 }}>
+        <Row
+          justify="space-between"
+          align="middle"
+          style={{ marginBottom: 16 }}
+        >
           <Col>
             <Title level={2} style={{ margin: 0 }}>
               {t('outbound.title')}
@@ -498,7 +570,11 @@ const Outbound: FC = () => {
           </Col>
         </Row>
 
-        <Row justify="space-between" align="middle" style={{ marginBottom: 16 }}>
+        <Row
+          justify="space-between"
+          align="middle"
+          style={{ marginBottom: 16 }}
+        >
           <Col flex="auto">
             <OutboundFilter
               filters={filters}

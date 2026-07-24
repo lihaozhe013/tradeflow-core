@@ -45,7 +45,10 @@ const OutboundTable: FC<OutboundTableProps> = ({
       dataIndex: ['partner', 'short_name'],
       key: 'partner.short_name',
       width: 100,
-      filters: partners.map((p) => ({ text: p.short_name, value: p.short_name })),
+      filters: partners.map((p) => ({
+        text: p.short_name,
+        value: p.short_name,
+      })),
       onFilter: (value, record) => record.partner?.short_name === value,
       render: (_, record) => record.partner?.short_name,
     },
@@ -113,7 +116,12 @@ const OutboundTable: FC<OutboundTableProps> = ({
       width: 80,
       render: (_value, record) => (
         <Space size="small">
-          <Button type="link" icon={<EditOutlined />} onClick={() => onEdit(record)} size="small">
+          <Button
+            type="link"
+            icon={<EditOutlined />}
+            onClick={() => onEdit(record)}
+            size="small"
+          >
             {t('common.edit')}
           </Button>
           <Popconfirm

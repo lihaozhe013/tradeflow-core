@@ -2,7 +2,11 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { message } from 'antd';
 import { apiRequest } from '@/utils';
 import type { RequestOptions } from '@/utils';
-import type { UseSimpleApiDataReturn, UseSimpleApiReturn, ApiRequestOptions } from '@/hooks/types';
+import type {
+  UseSimpleApiDataReturn,
+  UseSimpleApiReturn,
+  ApiRequestOptions,
+} from '@/hooks/types';
 
 /**
  * 简化版的 API 数据获取 Hook
@@ -87,7 +91,10 @@ export const useSimpleApi = (): UseSimpleApiReturn => {
    * 通用请求方法
    */
   const request = useCallback(
-    async <T = unknown>(url: string, options: RequestOptions = {}): Promise<T> => {
+    async <T = unknown>(
+      url: string,
+      options: RequestOptions = {},
+    ): Promise<T> => {
       try {
         setLoading(true);
         const response = await apiRequest<T>(url, options);
@@ -110,7 +117,10 @@ export const useSimpleApi = (): UseSimpleApiReturn => {
     async (url: string, options: RequestOptions = {}): Promise<Blob> => {
       try {
         setLoading(true);
-        const response = await apiRequest<Blob>(url, { ...options, responseType: 'blob' });
+        const response = await apiRequest<Blob>(url, {
+          ...options,
+          responseType: 'blob',
+        });
         return response;
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : '请求失败';
@@ -137,7 +147,11 @@ export const useSimpleApi = (): UseSimpleApiReturn => {
    * POST 请求
    */
   const post = useCallback(
-    <T = unknown>(url: string, data?: unknown, options: ApiRequestOptions = {}): Promise<T> => {
+    <T = unknown>(
+      url: string,
+      data?: unknown,
+      options: ApiRequestOptions = {},
+    ): Promise<T> => {
       return request<T>(url, {
         method: 'POST',
         body: JSON.stringify(data),
@@ -151,7 +165,11 @@ export const useSimpleApi = (): UseSimpleApiReturn => {
    * POST 请求（返回 Blob）
    */
   const postBlob = useCallback(
-    (url: string, data?: unknown, options: ApiRequestOptions = {}): Promise<Blob> => {
+    (
+      url: string,
+      data?: unknown,
+      options: ApiRequestOptions = {},
+    ): Promise<Blob> => {
       return requestBlob(url, {
         method: 'POST',
         body: JSON.stringify(data),
@@ -165,7 +183,11 @@ export const useSimpleApi = (): UseSimpleApiReturn => {
    * PUT 请求
    */
   const put = useCallback(
-    <T = unknown>(url: string, data?: unknown, options: ApiRequestOptions = {}): Promise<T> => {
+    <T = unknown>(
+      url: string,
+      data?: unknown,
+      options: ApiRequestOptions = {},
+    ): Promise<T> => {
       return request<T>(url, {
         method: 'PUT',
         body: JSON.stringify(data),

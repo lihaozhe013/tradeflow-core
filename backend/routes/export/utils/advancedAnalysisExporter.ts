@@ -1,7 +1,10 @@
 import * as XLSX from 'xlsx';
 import ExportUtils from '@/routes/export/utils/exportUtils';
 import { TEMPLATES } from '@/routes/export/utils/exportTemplates';
-import { getCustomerAnalysisData, getProductAnalysisData } from './analysisQueries';
+import {
+  getCustomerAnalysisData,
+  getProductAnalysisData,
+} from './analysisQueries';
 
 /**
  * Format currency value for display
@@ -64,7 +67,10 @@ export async function generateAdvancedAnalysisExcel(
   const workbook = XLSX.utils.book_new();
 
   if (exportType === 'customer') {
-    const customerData = await getCustomerAnalysisData(startDate || '', endDate || '');
+    const customerData = await getCustomerAnalysisData(
+      startDate || '',
+      endDate || '',
+    );
     const detailLabels = TEMPLATES.analysis_customer_detail.labels || {};
 
     // 1. Create a unified Summary sheet
@@ -84,9 +90,14 @@ export async function generateAdvancedAnalysisExcel(
         summaryData,
         TEMPLATES.analysis_customer_summary,
       );
-      const sheetName = TEMPLATES.analysis_customer_summary.sheetName || 'Summary';
+      const sheetName =
+        TEMPLATES.analysis_customer_summary.sheetName || 'Summary';
       const safeSummarySheetName = getUniqueSheetName(workbook, sheetName);
-      XLSX.utils.book_append_sheet(workbook, summaryWorksheet, safeSummarySheetName);
+      XLSX.utils.book_append_sheet(
+        workbook,
+        summaryWorksheet,
+        safeSummarySheetName,
+      );
     }
 
     // 2. Create Detail sheets per customer
@@ -116,13 +127,20 @@ export async function generateAdvancedAnalysisExcel(
             workbook,
             `${customer.customer_name}-${detailLabels.detail_suffix || 'Details'}`,
           );
-          XLSX.utils.book_append_sheet(workbook, detailWorksheet, detailSheetName);
+          XLSX.utils.book_append_sheet(
+            workbook,
+            detailWorksheet,
+            detailSheetName,
+          );
         }
       }
     }
   } else {
     // Product export
-    const productData = await getProductAnalysisData(startDate || '', endDate || '');
+    const productData = await getProductAnalysisData(
+      startDate || '',
+      endDate || '',
+    );
     const detailLabels = TEMPLATES.analysis_product_detail.labels || {};
 
     // 1. Create a unified Summary sheet
@@ -142,9 +160,14 @@ export async function generateAdvancedAnalysisExcel(
         summaryData,
         TEMPLATES.analysis_product_summary,
       );
-      const sheetName = TEMPLATES.analysis_product_summary.sheetName || 'Summary';
+      const sheetName =
+        TEMPLATES.analysis_product_summary.sheetName || 'Summary';
       const safeSummarySheetName = getUniqueSheetName(workbook, sheetName);
-      XLSX.utils.book_append_sheet(workbook, summaryWorksheet, safeSummarySheetName);
+      XLSX.utils.book_append_sheet(
+        workbook,
+        summaryWorksheet,
+        safeSummarySheetName,
+      );
     }
 
     // 2. Create Detail sheets per product
@@ -175,7 +198,11 @@ export async function generateAdvancedAnalysisExcel(
             workbook,
             `${product.product_model}-${detailLabels.detail_suffix || 'Details'}`,
           );
-          XLSX.utils.book_append_sheet(workbook, detailWorksheet, detailSheetName);
+          XLSX.utils.book_append_sheet(
+            workbook,
+            detailWorksheet,
+            detailSheetName,
+          );
         }
       }
     }

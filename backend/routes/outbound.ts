@@ -37,7 +37,9 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     };
   }
   if (isProvided(req.query['product_model'])) {
-    where.product = { product_model: { contains: req.query['product_model'] as string } };
+    where.product = {
+      product_model: { contains: req.query['product_model'] as string },
+    };
   }
   if (isProvided(req.query['start_date'])) {
     where.outbound_date = { gte: req.query['start_date'] as string };
@@ -47,11 +49,19 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
   }
 
   const sortField = req.query['sort_field'] as string;
-  const allowedSortFields = ['outbound_date', 'unit_price', 'total_price', 'id'];
+  const allowedSortFields = [
+    'outbound_date',
+    'unit_price',
+    'total_price',
+    'id',
+  ];
   let orderBy: Prisma.OutboundRecordOrderByWithRelationInput = { id: 'desc' }; // Default
 
   if (sortField && allowedSortFields.includes(sortField)) {
-    const fieldMap: Record<string, keyof Prisma.OutboundRecordOrderByWithRelationInput> = {
+    const fieldMap: Record<
+      string,
+      keyof Prisma.OutboundRecordOrderByWithRelationInput
+    > = {
       outbound_date: 'outbound_date',
       unit_price: 'unit_price',
       total_price: 'total_price',
@@ -59,7 +69,8 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     };
     const prismaField = fieldMap[sortField];
     const sortOrder =
-      req.query['sort_order'] && (req.query['sort_order'] as string).toLowerCase() === 'asc'
+      req.query['sort_order'] &&
+      (req.query['sort_order'] as string).toLowerCase() === 'asc'
         ? 'asc'
         : 'desc';
     if (prismaField) {
@@ -209,7 +220,9 @@ router.post('/batch', async (req: Request, res: Response): Promise<void> => {
   const { ids, updates } = req.body;
 
   if (!ids || !Array.isArray(ids) || ids.length === 0) {
-    res.status(400).json({ error: 'ids array is required and must not be empty' });
+    res
+      .status(400)
+      .json({ error: 'ids array is required and must not be empty' });
     return;
   }
 
@@ -219,7 +232,10 @@ router.post('/batch', async (req: Request, res: Response): Promise<void> => {
   }
 
   // Mapping
-  const allowedFieldsMap: Record<string, keyof Prisma.OutboundRecordUncheckedUpdateInput> = {
+  const allowedFieldsMap: Record<
+    string,
+    keyof Prisma.OutboundRecordUncheckedUpdateInput
+  > = {
     customer_code: 'customer_code',
     product_code: 'product_code',
     quantity: 'quantity',
@@ -270,9 +286,16 @@ router.post('/batch', async (req: Request, res: Response): Promise<void> => {
 
         const quantity = oldRecord.quantity ?? 0;
         const unitPrice = oldRecord.unit_price ?? 0;
-        const finalQuantity = hasQuantity ? (updates.quantity as number) : quantity;
-        const finalUnitPrice = hasUnitPrice ? (updates.unit_price as number) : unitPrice;
-        const total_price = decimalCalc.calculateTotalPrice(finalQuantity, finalUnitPrice);
+        const finalQuantity = hasQuantity
+          ? (updates.quantity as number)
+          : quantity;
+        const finalUnitPrice = hasUnitPrice
+          ? (updates.unit_price as number)
+          : unitPrice;
+        const total_price = decimalCalc.calculateTotalPrice(
+          finalQuantity,
+          finalUnitPrice,
+        );
 
         const result = await prisma.outboundRecord.update({
           where: { id: recordId },
@@ -300,7 +323,10 @@ router.post('/batch', async (req: Request, res: Response): Promise<void> => {
         completed++;
       }
     } catch (e: unknown) {
-      if (e instanceof Prisma.PrismaClientKnownRequestError && (e as any).code === 'P2025')
+      if (
+        e instanceof Prisma.PrismaClientKnownRequestError &&
+        (e as any).code === 'P2025'
+      )
         notFound.push(recordId);
       else errors++;
     }

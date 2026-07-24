@@ -1,5 +1,14 @@
 import { useState, useEffect, useCallback, useMemo, type FC } from 'react';
-import { Button, Form, message, Card, Typography, Row, Col, Divider } from 'antd';
+import {
+  Button,
+  Form,
+  message,
+  Card,
+  Typography,
+  Row,
+  Col,
+  Divider,
+} from 'antd';
 import type { TableProps } from 'antd/es/table';
 import type { SorterResult } from 'antd/es/table/interface';
 import { useTranslation } from 'react-i18next';
@@ -43,20 +52,25 @@ const Payable: FC = () => {
   const [payableRecords, setPayableRecords] = useState<PayableRecord[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
-  const [editingPayment, setEditingPayment] = useState<PayablePaymentRecord | null>(null);
-  const [selectedSupplier, setSelectedSupplier] = useState<PayableRecord | null>(null);
+  const [editingPayment, setEditingPayment] =
+    useState<PayablePaymentRecord | null>(null);
+  const [selectedSupplier, setSelectedSupplier] =
+    useState<PayableRecord | null>(null);
   const [form] = Form.useForm<PayablePaymentFormValues>();
-  const [pagination, setPagination] = useState<PaginationState>(DEFAULT_PAGINATION);
+  const [pagination, setPagination] =
+    useState<PaginationState>(DEFAULT_PAGINATION);
   const [filters, setFilters] = useState<PayableFilters>({});
-  const [sorter, setSorter] = useState<PayableSorterState>({ field: 'balance', order: 'descend' });
+  const [sorter, setSorter] = useState<PayableSorterState>({
+    field: 'balance',
+    order: 'descend',
+  });
 
   const apiInstance = useSimpleApi();
-  const { data: suppliersResponse } = useSimpleApiData<ApiListResponse<Supplier>>(
-    '/partners?type=0',
-    {
-      data: [],
-    },
-  );
+  const { data: suppliersResponse } = useSimpleApiData<
+    ApiListResponse<Supplier>
+  >('/partners?type=0', {
+    data: [],
+  });
 
   const suppliers = useMemo<Supplier[]>(() => {
     const list = suppliersResponse?.data;
@@ -69,7 +83,8 @@ const Payable: FC = () => {
         setLoading(true);
         const page = params.page ?? pagination.current;
         const limit = params.limit ?? pagination.pageSize;
-        const supplierName = params.supplier_short_name ?? filters.supplier_short_name ?? '';
+        const supplierName =
+          params.supplier_short_name ?? filters.supplier_short_name ?? '';
         const field = params.sort_field ?? sorter.field ?? 'balance';
         const order = params.sort_order ?? toApiSortOrder(sorter.order);
 
@@ -81,7 +96,9 @@ const Payable: FC = () => {
           sort_order: order,
         });
 
-        const result = await apiInstance.get<PayableListResponse>(`/payable?${query.toString()}`);
+        const result = await apiInstance.get<PayableListResponse>(
+          `/payable?${query.toString()}`,
+        );
 
         setPayableRecords(Array.isArray(result?.data) ? result.data : []);
         setPagination((prev) => ({
@@ -167,7 +184,9 @@ const Payable: FC = () => {
     });
   };
 
-  const handleSavePayment = async (values: PayablePaymentFormValues): Promise<void> => {
+  const handleSavePayment = async (
+    values: PayablePaymentFormValues,
+  ): Promise<void> => {
     try {
       const payload = {
         ...values,
@@ -175,14 +194,19 @@ const Payable: FC = () => {
       };
 
       if (editingPayment) {
-        await apiInstance.put(`/payable/payments/${editingPayment.id}`, payload);
+        await apiInstance.put(
+          `/payable/payments/${editingPayment.id}`,
+          payload,
+        );
       } else {
         await apiInstance.post('/payable/payments', payload);
       }
 
       message.success(
         t('payable.saveSuccess', {
-          action: editingPayment ? t('payable.editPayment') : t('payable.addPayment'),
+          action: editingPayment
+            ? t('payable.editPayment')
+            : t('payable.addPayment'),
         }),
       );
       setModalVisible(false);
@@ -212,7 +236,11 @@ const Payable: FC = () => {
   return (
     <div>
       <Card>
-        <Row justify="space-between" align="middle" style={{ marginBottom: 16 }}>
+        <Row
+          justify="space-between"
+          align="middle"
+          style={{ marginBottom: 16 }}
+        >
           <Col>
             <Title level={2} style={{ margin: 0 }}>
               {t('payable.title')}

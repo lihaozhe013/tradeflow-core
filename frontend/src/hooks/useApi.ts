@@ -37,7 +37,10 @@ export const useApi = (): UseApiReturn => {
    * 通用请求方法
    */
   const request = useCallback(
-    async <T = unknown>(url: string, options: RequestOptions = {}): Promise<T> => {
+    async <T = unknown>(
+      url: string,
+      options: RequestOptions = {},
+    ): Promise<T> => {
       setLoading(true);
       setError(null);
 
@@ -72,7 +75,10 @@ export const useApi = (): UseApiReturn => {
    * GET 请求
    */
   const get = useCallback(
-    async <T = unknown>(url: string, options: ApiRequestOptions = {}): Promise<T> => {
+    async <T = unknown>(
+      url: string,
+      options: ApiRequestOptions = {},
+    ): Promise<T> => {
       return await request<T>(url, { method: 'GET', ...options });
     },
     [request],
@@ -118,7 +124,10 @@ export const useApi = (): UseApiReturn => {
    * DELETE 请求
    */
   const del = useCallback(
-    async <T = unknown>(url: string, options: ApiRequestOptions = {}): Promise<T> => {
+    async <T = unknown>(
+      url: string,
+      options: ApiRequestOptions = {},
+    ): Promise<T> => {
       return await request<T>(url, { method: 'DELETE', ...options });
     },
     [request],
@@ -148,7 +157,11 @@ export const useApi = (): UseApiReturn => {
    * 文件下载
    */
   const download = useCallback(
-    async (url: string, filename?: string, options: ApiRequestOptions = {}): Promise<void> => {
+    async (
+      url: string,
+      filename?: string,
+      options: ApiRequestOptions = {},
+    ): Promise<void> => {
       try {
         setLoading(true);
         const response = await apiRequest<Response>(url, {
@@ -270,7 +283,9 @@ export const useApiData = <T = unknown>(
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : '请求失败';
         setError(errorMessage);
-        onErrorRef.current?.(err instanceof Error ? err : new Error(errorMessage));
+        onErrorRef.current?.(
+          err instanceof Error ? err : new Error(errorMessage),
+        );
         return null;
       } finally {
         setLoading(false);

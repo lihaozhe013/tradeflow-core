@@ -1,4 +1,14 @@
-import { Modal, Form, Row, Col, Input, InputNumber, DatePicker, Button, Radio } from 'antd';
+import {
+  Modal,
+  Form,
+  Row,
+  Col,
+  Input,
+  InputNumber,
+  DatePicker,
+  Button,
+  Radio,
+} from 'antd';
 import type { FormInstance, RadioChangeEvent } from 'antd';
 import type { DefaultOptionType } from 'antd/es/select';
 import type { Dayjs } from 'dayjs';
@@ -25,9 +35,14 @@ interface OutboundBatchModalProps {
   readonly onPriceOrQuantityChange: () => void;
 }
 
-const filterOption = (inputValue: string, option?: DefaultOptionType): boolean => {
-  const valueText = typeof option?.value === 'string' ? option.value.toLowerCase() : '';
-  const labelText = typeof option?.label === 'string' ? option.label.toLowerCase() : '';
+const filterOption = (
+  inputValue: string,
+  option?: DefaultOptionType,
+): boolean => {
+  const valueText =
+    typeof option?.value === 'string' ? option.value.toLowerCase() : '';
+  const labelText =
+    typeof option?.label === 'string' ? option.label.toLowerCase() : '';
   const needle = inputValue.toLowerCase();
   return (valueText.includes(needle) || labelText.includes(needle)) ?? false;
 };
@@ -94,7 +109,10 @@ const OutboundBatchModal: FC<OutboundBatchModalProps> = ({
             </Form.Item>
           </Col>
           <Col span={8}>
-            <Form.Item label={t('outbound.customerShortName')} name="customer_short_name">
+            <Form.Item
+              label={t('outbound.customerShortName')}
+              name="customer_short_name"
+            >
               <AutoComplete
                 placeholder={t('outbound.inputCustomerShortName') ?? ''}
                 onChange={(value) => onCustomerShortNameChange(value ?? '')}
@@ -108,7 +126,10 @@ const OutboundBatchModal: FC<OutboundBatchModalProps> = ({
             </Form.Item>
           </Col>
           <Col span={8}>
-            <Form.Item label={t('outbound.customerFullName')} name="customer_full_name">
+            <Form.Item
+              label={t('outbound.customerFullName')}
+              name="customer_full_name"
+            >
               <Input placeholder={t('outbound.autoFill') ?? ''} disabled />
             </Form.Item>
           </Col>
@@ -230,7 +251,10 @@ const OutboundBatchModal: FC<OutboundBatchModalProps> = ({
             </Form.Item>
           </Col>
           <Col span={8}>
-            <Form.Item label={t('outbound.invoiceNumber')} name="invoice_number">
+            <Form.Item
+              label={t('outbound.invoiceNumber')}
+              name="invoice_number"
+            >
               <Input placeholder={t('outbound.inputInvoiceNumber') ?? ''} />
             </Form.Item>
           </Col>
@@ -243,18 +267,26 @@ const OutboundBatchModal: FC<OutboundBatchModalProps> = ({
 
         <Row gutter={16}>
           <Col span={8}>
-            <Form.Item label={t('outbound.receiptNumber')} name="receipt_number">
+            <Form.Item
+              label={t('outbound.receiptNumber')}
+              name="receipt_number"
+            >
               <Input placeholder={t('outbound.inputReceiptNumber') ?? ''} />
             </Form.Item>
           </Col>
         </Row>
 
         <Form.Item label={t('outbound.remark')} name="remark">
-          <Input.TextArea placeholder={t('outbound.inputRemark') ?? ''} rows={3} />
+          <Input.TextArea
+            placeholder={t('outbound.inputRemark') ?? ''}
+            rows={3}
+          />
         </Form.Item>
 
         <div className="form-actions">
-          <Button onClick={() => setModalVisible(false)}>{t('common.cancel')}</Button>
+          <Button onClick={() => setModalVisible(false)}>
+            {t('common.cancel')}
+          </Button>
           <Button type="primary" htmlType="submit">
             {t('outbound.batchUpdate', { selectedCount })}
           </Button>

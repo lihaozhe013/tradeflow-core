@@ -47,7 +47,10 @@ interface PayableTableProps {
   readonly onFilter: (filters: PayableFilters) => void;
   readonly onTableChange: NonNullable<TableProps<PayableRecord>['onChange']>;
   readonly onAddPayment: (record: PayableRecord) => void;
-  readonly onEditPayment: (payment: PayablePaymentRecord, supplier: PayableRecord) => void;
+  readonly onEditPayment: (
+    payment: PayablePaymentRecord,
+    supplier: PayableRecord,
+  ) => void;
   readonly onDeletePayment: (paymentId: number) => Promise<void> | void;
   readonly apiInstance: UseSimpleApiReturn;
 }
@@ -83,8 +86,10 @@ const PayableTable: FC<PayableTableProps> = ({
 }) => {
   const { t } = useTranslation();
   const [detailsVisible, setDetailsVisible] = useState(false);
-  const [selectedSupplier, setSelectedSupplier] = useState<PayableRecord | null>(null);
-  const [supplierDetails, setSupplierDetails] = useState<PayableDetailResponse | null>(null);
+  const [selectedSupplier, setSelectedSupplier] =
+    useState<PayableRecord | null>(null);
+  const [supplierDetails, setSupplierDetails] =
+    useState<PayableDetailResponse | null>(null);
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [paymentPagination, setPaymentPagination] =
     useState<ModalPaginationState>(DEFAULT_MODAL_PAGINATION);
@@ -95,7 +100,11 @@ const PayableTable: FC<PayableTableProps> = ({
   const getBalanceTag = (balance: number | null | undefined): ReactNode => {
     const numeric = Number(balance ?? 0);
     if (numeric > 0) {
-      return <Tag color="volcano">{t('payable.unpaid', { amount: formatCurrency(numeric) })}</Tag>;
+      return (
+        <Tag color="volcano">
+          {t('payable.unpaid', { amount: formatCurrency(numeric) })}
+        </Tag>
+      );
     }
     if (numeric < 0) {
       return (
@@ -184,13 +193,21 @@ const PayableTable: FC<PayableTableProps> = ({
 
   const handlePaymentPageChange = async (page: number): Promise<void> => {
     if (selectedSupplier) {
-      await fetchSupplierDetails(selectedSupplier.supplier_code, page, inboundPagination.current);
+      await fetchSupplierDetails(
+        selectedSupplier.supplier_code,
+        page,
+        inboundPagination.current,
+      );
     }
   };
 
   const handleInboundPageChange = async (page: number): Promise<void> => {
     if (selectedSupplier) {
-      await fetchSupplierDetails(selectedSupplier.supplier_code, paymentPagination.current, page);
+      await fetchSupplierDetails(
+        selectedSupplier.supplier_code,
+        paymentPagination.current,
+        page,
+      );
     }
   };
 
@@ -198,7 +215,9 @@ const PayableTable: FC<PayableTableProps> = ({
     onFilter({ supplier_short_name: value || undefined });
   };
 
-  const handleDeletePaymentConfirm = async (paymentId: number): Promise<void> => {
+  const handleDeletePaymentConfirm = async (
+    paymentId: number,
+  ): Promise<void> => {
     await Promise.resolve(onDeletePayment(paymentId));
     if (detailsVisible && selectedSupplier) {
       await fetchSupplierDetails(
@@ -311,8 +330,14 @@ const PayableTable: FC<PayableTableProps> = ({
   ];
 
   const searchStats = useMemo(() => {
-    const totalPayable = data.reduce((sum, item) => sum + (item.total_payable ?? 0), 0);
-    const totalUnpaid = data.reduce((sum, item) => sum + Math.max(item.balance ?? 0, 0), 0);
+    const totalPayable = data.reduce(
+      (sum, item) => sum + (item.total_payable ?? 0),
+      0,
+    );
+    const totalUnpaid = data.reduce(
+      (sum, item) => sum + Math.max(item.balance ?? 0, 0),
+      0,
+    );
     return {
       totalPayable,
       totalUnpaid,
@@ -369,20 +394,25 @@ const PayableTable: FC<PayableTableProps> = ({
         style={{ top: 20 }}
       >
         {detailsLoading ? (
-          <div style={{ textAlign: 'center', padding: 50 }}>{t('payable.loading')}</div>
+          <div style={{ textAlign: 'center', padding: 50 }}>
+            {t('payable.loading')}
+          </div>
         ) : supplierDetails ? (
           <div>
             <div style={{ marginBottom: 24 }}>
               <Title level={5}>{t('payable.supplierInfo')}</Title>
               <Row gutter={16}>
                 <Col span={8}>
-                  {t('payable.supplierCode')}: {supplierDetails.supplier?.code ?? '-'}
+                  {t('payable.supplierCode')}:{' '}
+                  {supplierDetails.supplier?.code ?? '-'}
                 </Col>
                 <Col span={8}>
-                  {t('payable.supplierShortName')}: {supplierDetails.supplier?.short_name ?? '-'}
+                  {t('payable.supplierShortName')}:{' '}
+                  {supplierDetails.supplier?.short_name ?? '-'}
                 </Col>
                 <Col span={8}>
-                  {t('payable.supplierFullName')}: {supplierDetails.supplier?.full_name ?? '-'}
+                  {t('payable.supplierFullName')}:{' '}
+                  {supplierDetails.supplier?.full_name ?? '-'}
                 </Col>
               </Row>
             </div>
@@ -395,10 +425,12 @@ const PayableTable: FC<PayableTableProps> = ({
                   {formatCurrency(supplierDetails.summary?.total_payable)}
                 </Col>
                 <Col span={8}>
-                  {t('payable.totalPaid')}: {formatCurrency(supplierDetails.summary?.total_paid)}
+                  {t('payable.totalPaid')}:{' '}
+                  {formatCurrency(supplierDetails.summary?.total_paid)}
                 </Col>
                 <Col span={8}>
-                  {t('payable.balance')}:{getBalanceTag(supplierDetails.summary?.balance)}
+                  {t('payable.balance')}:
+                  {getBalanceTag(supplierDetails.summary?.balance)}
                 </Col>
               </Row>
             </div>
@@ -430,7 +462,8 @@ const PayableTable: FC<PayableTableProps> = ({
                   showSizeChanger: false,
                   size: 'small',
                   onChange: handlePaymentPageChange,
-                  showTotal: (total, range) => `${range[0]}-${range[1]} / ${total}`,
+                  showTotal: (total, range) =>
+                    `${range[0]}-${range[1]} / ${total}`,
                 }}
                 scroll={{ y: 200 }}
                 columns={[
@@ -440,8 +473,15 @@ const PayableTable: FC<PayableTableProps> = ({
                     render: (value) => formatCurrency(value),
                   },
                   { title: t('payable.paymentDate'), dataIndex: 'pay_date' },
-                  { title: t('payable.paymentMethod'), dataIndex: 'pay_method' },
-                  { title: t('payable.remark'), dataIndex: 'remark', ellipsis: true },
+                  {
+                    title: t('payable.paymentMethod'),
+                    dataIndex: 'pay_method',
+                  },
+                  {
+                    title: t('payable.remark'),
+                    dataIndex: 'remark',
+                    ellipsis: true,
+                  },
                   {
                     title: t('payable.action'),
                     width: 120,
@@ -461,9 +501,16 @@ const PayableTable: FC<PayableTableProps> = ({
                         </Button>
                         <Popconfirm
                           title={t('payable.deletePaymentConfirm')}
-                          onConfirm={() => handleDeletePaymentConfirm(record.id)}
+                          onConfirm={() =>
+                            handleDeletePaymentConfirm(record.id)
+                          }
                         >
-                          <Button type="link" size="small" danger icon={<DeleteOutlined />} />
+                          <Button
+                            type="link"
+                            size="small"
+                            danger
+                            icon={<DeleteOutlined />}
+                          />
                         </Popconfirm>
                       </Space>
                     ),
@@ -493,12 +540,21 @@ const PayableTable: FC<PayableTableProps> = ({
                   showSizeChanger: false,
                   size: 'small',
                   onChange: handleInboundPageChange,
-                  showTotal: (total, range) => `${range[0]}-${range[1]} / ${total}`,
+                  showTotal: (total, range) =>
+                    `${range[0]}-${range[1]} / ${total}`,
                 }}
                 scroll={{ y: 200 }}
                 columns={[
-                  { title: t('payable.inboundDate'), dataIndex: 'inbound_date', width: 100 },
-                  { title: t('payable.productModel'), dataIndex: 'product_model', width: 120 },
+                  {
+                    title: t('payable.inboundDate'),
+                    dataIndex: 'inbound_date',
+                    width: 100,
+                  },
+                  {
+                    title: t('payable.productModel'),
+                    dataIndex: 'product_model',
+                    width: 120,
+                  },
                   {
                     title: t('payable.quantity'),
                     dataIndex: 'quantity',
@@ -525,7 +581,11 @@ const PayableTable: FC<PayableTableProps> = ({
                     width: 120,
                     ellipsis: true,
                   },
-                  { title: t('payable.remark'), dataIndex: 'remark', ellipsis: true },
+                  {
+                    title: t('payable.remark'),
+                    dataIndex: 'remark',
+                    ellipsis: true,
+                  },
                 ]}
               />
             </div>

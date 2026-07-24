@@ -10,7 +10,11 @@ type OutOfStockModalProps = {
   products: OutOfStockProduct[];
 };
 
-const OutOfStockModal = ({ visible, onClose, products }: OutOfStockModalProps) => {
+const OutOfStockModal = ({
+  visible,
+  onClose,
+  products,
+}: OutOfStockModalProps) => {
   const { t } = useTranslation();
 
   return (
@@ -31,7 +35,14 @@ const OutOfStockModal = ({ visible, onClose, products }: OutOfStockModalProps) =
           )}
         />
       ) : (
-        <div style={{ textAlign: 'center', color: '#52c41a', fontSize: 18, padding: '32px 0' }}>
+        <div
+          style={{
+            textAlign: 'center',
+            color: '#52c41a',
+            fontSize: 18,
+            padding: '32px 0',
+          }}
+        >
           {t('overview.inventoryNormal')}
         </div>
       )}

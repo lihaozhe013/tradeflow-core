@@ -1,5 +1,6 @@
 import rawConfig from '@/build-config/frontendConfig.json';
-export type PaymentMethod = (typeof rawConfig)['paymentMethods']['list'][number];
+export type PaymentMethod =
+  (typeof rawConfig)['paymentMethods']['list'][number];
 export interface PaymentMethodConfig {
   readonly label: string;
   readonly code: string;
@@ -9,7 +10,8 @@ export interface PaymentMethodsConfig {
   readonly default: PaymentMethod;
   readonly config: (typeof rawConfig)['paymentMethods']['config'];
 }
-export type ProductCategory = (typeof rawConfig)['productCategories']['list'][number];
+export type ProductCategory =
+  (typeof rawConfig)['productCategories']['list'][number];
 export interface ProductCategoriesConfig {
   readonly list: readonly ProductCategory[];
   readonly default: ProductCategory;

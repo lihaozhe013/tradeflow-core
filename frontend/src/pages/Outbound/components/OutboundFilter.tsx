@@ -36,12 +36,18 @@ const OutboundFilter: FC<OutboundFilterProps> = ({
     setFilters((prev) => ({
       ...prev,
       dateRange: dates
-        ? [dates[0]?.format('YYYY-MM-DD') ?? null, dates[1]?.format('YYYY-MM-DD') ?? null]
+        ? [
+            dates[0]?.format('YYYY-MM-DD') ?? null,
+            dates[1]?.format('YYYY-MM-DD') ?? null,
+          ]
         : [null, null],
     }));
   };
 
-  const filterByLabel = (input: string, option?: DefaultOptionType): boolean => {
+  const filterByLabel = (
+    input: string,
+    option?: DefaultOptionType,
+  ): boolean => {
     const label = typeof option?.label === 'string' ? option.label : undefined;
     return label ? label.toLowerCase().includes(input.toLowerCase()) : false;
   };
@@ -94,7 +100,10 @@ const OutboundFilter: FC<OutboundFilterProps> = ({
           value={rangeValue}
           onChange={handleDateChange}
           format="YYYY-MM-DD"
-          placeholder={[t('outbound.startDate') ?? '', t('outbound.endDate') ?? '']}
+          placeholder={[
+            t('outbound.startDate') ?? '',
+            t('outbound.endDate') ?? '',
+          ]}
         />
       </Col>
       <Col span={3}>

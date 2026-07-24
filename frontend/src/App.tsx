@@ -10,9 +10,22 @@ import {
 import type { Location } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
-import { Menu, Layout, Alert, Select, Space, Dropdown, Button, Tag } from 'antd';
+import {
+  Menu,
+  Layout,
+  Alert,
+  Select,
+  Space,
+  Dropdown,
+  Button,
+  Tag,
+} from 'antd';
 import type { MenuProps, SelectProps } from 'antd';
-import { GlobalOutlined, UserOutlined, LogoutOutlined } from '@ant-design/icons';
+import {
+  GlobalOutlined,
+  UserOutlined,
+  LogoutOutlined,
+} from '@ant-design/icons';
 import Inbound from '@/pages/Inbound';
 import Outbound from '@/pages/Outbound';
 import Inventory from '@/pages/Inventory';
@@ -43,7 +56,10 @@ interface ErrorBoundaryState {
   readonly error: Error | null;
 }
 
-class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+class ErrorBoundary extends React.Component<
+  ErrorBoundaryProps,
+  ErrorBoundaryState
+> {
   constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = { hasError: false, error: null };
@@ -154,7 +170,10 @@ function UserMenu(): React.ReactElement {
   return (
     <Space>
       <Tag color={getRoleColor(user?.role)}>{getRoleText(user?.role)}</Tag>
-      <Dropdown menu={{ items: userMenuItems, onClick: handleMenuClick }} placement="bottomRight">
+      <Dropdown
+        menu={{ items: userMenuItems, onClick: handleMenuClick }}
+        placement="bottomRight"
+      >
         <Button type="text" style={{ color: 'white' }}>
           <Space>
             <UserOutlined />
@@ -174,7 +193,11 @@ interface LanguageOption {
   readonly flag: string;
 }
 
-const supportedLanguages: readonly LanguageValue[] = ['zh', 'en', 'ko'] as const;
+const supportedLanguages: readonly LanguageValue[] = [
+  'zh',
+  'en',
+  'ko',
+] as const;
 
 function LanguageSelector(): React.ReactElement {
   const { i18n, t } = useTranslation();
@@ -185,17 +208,20 @@ function LanguageSelector(): React.ReactElement {
     { value: 'ko', label: t('common.korean'), flag: '🇰🇷' },
   ];
 
-  const selectOptions: SelectProps<LanguageValue>['options'] = languageOptions.map((option) => ({
-    value: option.value,
-    label: (
-      <Space>
-        <span>{option.flag}</span>
-        <span>{option.label}</span>
-      </Space>
-    ),
-  }));
+  const selectOptions: SelectProps<LanguageValue>['options'] =
+    languageOptions.map((option) => ({
+      value: option.value,
+      label: (
+        <Space>
+          <span>{option.flag}</span>
+          <span>{option.label}</span>
+        </Space>
+      ),
+    }));
 
-  const currentLanguage = supportedLanguages.includes(i18n.language as LanguageValue)
+  const currentLanguage = supportedLanguages.includes(
+    i18n.language as LanguageValue,
+  )
     ? (i18n.language as LanguageValue)
     : 'zh';
 
@@ -242,7 +268,10 @@ interface AppContentInnerProps {
   readonly t: TFunction;
 }
 
-function AppContentInner({ location, t }: AppContentInnerProps): React.ReactElement {
+function AppContentInner({
+  location,
+  t,
+}: AppContentInnerProps): React.ReactElement {
   const getSelectedKey = (): MenuKey | '' => {
     const path = location.pathname;
     if (path === '/overview' || path === '/') return 'overview';
@@ -384,7 +413,9 @@ function AppContentInner({ location, t }: AppContentInnerProps): React.ReactElem
           </Link>
         </div>
       </Header>
-      <Content style={{ padding: '25px', background: '#f0f2f5', marginTop: '0px' }}>
+      <Content
+        style={{ padding: '25px', background: '#f0f2f5', marginTop: '0px' }}
+      >
         <div style={{ maxWidth: '1800px', margin: '0 auto' }}>
           <ErrorBoundary>
             <Routes>

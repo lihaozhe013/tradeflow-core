@@ -25,7 +25,10 @@ import {
 import { generateFinancialExcel } from '@/routes/export/utils/financialExporter';
 import { generateAnalysisExcel } from '@/routes/export/utils/analysisExporter';
 import { generateAdvancedAnalysisExcel } from '@/routes/export/utils/advancedAnalysisExporter';
-import { getInvoiceData, getAllInvoiceData } from '@/routes/export/utils/invoiceQueries';
+import {
+  getInvoiceData,
+  getAllInvoiceData,
+} from '@/routes/export/utils/invoiceQueries';
 import {
   generateInvoiceExcel,
   generateMultiInvoiceExcel,
@@ -33,12 +36,16 @@ import {
 import { getInventoryData } from '@/routes/export/utils/inventoryQueries';
 import { generateInventoryExcel } from '@/routes/export/utils/inventoryExporter';
 
-export async function exportBaseInfo(options: BasicDataFilters = {}): Promise<Buffer> {
+export async function exportBaseInfo(
+  options: BasicDataFilters = {},
+): Promise<Buffer> {
   const data = await getBaseInfoData(options.tables || '123');
   return generateBaseInfoExcel(data, options);
 }
 
-export async function exportInboundOutbound(options: TransactionFilters = {}): Promise<Buffer> {
+export async function exportInboundOutbound(
+  options: TransactionFilters = {},
+): Promise<Buffer> {
   const data = await getInboundOutboundData(options);
   return generateTransactionExcel(data, options);
 }
@@ -74,12 +81,16 @@ export async function exportReceivablePayable(
   return generateFinancialExcel(data); // Use "data" directly, assuming type compatibility will be checked
 }
 
-export async function exportStatement(options: TransactionFilters = {}): Promise<Buffer> {
+export async function exportStatement(
+  options: TransactionFilters = {},
+): Promise<Buffer> {
   const data = await getInboundOutboundData(options);
   return generateStatementExcel(data, options);
 }
 
-export async function exportAnalysis(options: AnalysisExportOptions): Promise<Buffer> {
+export async function exportAnalysis(
+  options: AnalysisExportOptions,
+): Promise<Buffer> {
   // Purely formatting provided data
   return generateAnalysisExcel(options);
 }

@@ -11,8 +11,14 @@ const { TabPane } = Tabs;
 
 const Report = () => {
   const [loading, setLoading] = useState(false);
-  const [dateRange, setDateRange] = useState([dayjs().subtract(1, 'month'), dayjs()]);
-  const [paymentDateRange, setPaymentDateRange] = useState([dayjs().subtract(1, 'month'), dayjs()]);
+  const [dateRange, setDateRange] = useState([
+    dayjs().subtract(1, 'month'),
+    dayjs(),
+  ]);
+  const [paymentDateRange, setPaymentDateRange] = useState([
+    dayjs().subtract(1, 'month'),
+    dayjs(),
+  ]);
   const [selectedProduct, setSelectedProduct] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState('');
 

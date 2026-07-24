@@ -10,54 +10,66 @@ const router: Router = express.Router();
  * List all users. Only 'editor' or admins can view.
  */
 
-router.get('/', authorize(['editor']), async (_req: Request, res: Response): Promise<void> => {
-  const users = await prisma.user.findMany({
-    orderBy: { username: 'asc' },
-  });
-  // Strip hash before returning
-  const safeUsers = users.map((u) => {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { password_hash, ...rest } = u;
-    return rest;
-  });
-  res.json(safeUsers);
-});
+router.get(
+  '/',
+  authorize(['editor']),
+  async (_req: Request, res: Response): Promise<void> => {
+    const users = await prisma.user.findMany({
+      orderBy: { username: 'asc' },
+    });
+    // Strip hash before returning
+    const safeUsers = users.map((u) => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { password_hash, ...rest } = u;
+      return rest;
+    });
+    res.json(safeUsers);
+  },
+);
 
 /**
  * POST /api/users
  * Create a new user.
  */
-router.post('/', authorize(['editor']), async (req: Request, res: Response): Promise<void> => {
-  const { username, password, role, display_name } = req.body;
+router.post(
+  '/',
+  authorize(['editor']),
+  async (req: Request, res: Response): Promise<void> => {
+    const { username, password, role, display_name } = req.body;
 
-  if (!username || !password || !role) {
-    res.status(400).json({ success: false, message: 'Missing required fields' });
-    return;
-  }
+    if (!username || !password || !role) {
+      res
+        .status(400)
+        .json({ success: false, message: 'Missing required fields' });
+      return;
+    }
 
-  // Check if user exists
-  const existing = await prisma.user.findUnique({ where: { username } });
-  if (existing) {
-    res.status(409).json({ success: false, message: 'Username already exists' });
-    return;
-  }
+    // Check if user exists
+    const existing = await prisma.user.findUnique({ where: { username } });
+    if (existing) {
+      res
+        .status(409)
+        .json({ success: false, message: 'Username already exists' });
+      return;
+    }
 
-  const hash = await hashPassword(password);
-  const newUser = await prisma.user.create({
-    data: {
-      username,
-      password_hash: hash,
-      role,
-      display_name,
-      enabled: true,
-      last_password_change: new Date().toISOString(),
-    },
-  });
+    const hash = await hashPassword(password);
+    const newUser = await prisma.user.create({
+      data: {
+        username,
+        password_hash: hash,
+        role,
+        display_name,
+        enabled: true,
+        last_password_change: new Date().toISOString(),
+      },
+    });
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { password_hash: _, ...safeUser } = newUser;
-  res.status(201).json({ success: true, data: safeUser });
-});
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { password_hash: _, ...safeUser } = newUser;
+    res.status(201).json({ success: true, data: safeUser });
+  },
+);
 
 /**
  * PUT /api/users/:username
@@ -119,7 +131,9 @@ router.delete(
 
     // Prevent deleting self? Maybe.
     if (req.user?.username === username) {
-      res.status(400).json({ success: false, message: 'Cannot delete yourself' });
+      res
+        .status(400)
+        .json({ success: false, message: 'Cannot delete yourself' });
       return;
     }
 

@@ -17,7 +17,12 @@ import type { RadioChangeEvent } from 'antd/es/radio';
 import type { DefaultOptionType } from 'antd/es/select';
 import type { Dayjs } from 'dayjs';
 import { currency_unit_symbol } from '@/config/types';
-import type { InboundFormValues, InboundRecord, Partner, Product } from '../types';
+import type {
+  InboundFormValues,
+  InboundRecord,
+  Partner,
+  Product,
+} from '../types';
 
 interface InboundModalProps {
   readonly modalVisible: boolean;
@@ -37,9 +42,14 @@ interface InboundModalProps {
   readonly onPriceOrQuantityChange: () => void;
 }
 
-const filterOption = (inputValue: string, option?: DefaultOptionType): boolean => {
-  const valueText = typeof option?.value === 'string' ? option.value.toLowerCase() : '';
-  const labelText = typeof option?.label === 'string' ? option.label.toLowerCase() : '';
+const filterOption = (
+  inputValue: string,
+  option?: DefaultOptionType,
+): boolean => {
+  const valueText =
+    typeof option?.value === 'string' ? option.value.toLowerCase() : '';
+  const labelText =
+    typeof option?.label === 'string' ? option.label.toLowerCase() : '';
   const needle = inputValue.toLowerCase();
   return valueText.includes(needle) || labelText.includes(needle);
 };
@@ -73,7 +83,11 @@ const InboundModal: FC<InboundModalProps> = ({
 
   return (
     <Modal
-      title={editingRecord ? t('inbound.editInboundRecord') : t('inbound.addInboundRecord')}
+      title={
+        editingRecord
+          ? t('inbound.editInboundRecord')
+          : t('inbound.addInboundRecord')
+      }
       open={modalVisible}
       onCancel={() => setModalVisible(false)}
       footer={null}
@@ -85,7 +99,9 @@ const InboundModal: FC<InboundModalProps> = ({
             <Form.Item
               label={t('inbound.supplierCode')}
               name="supplier_code"
-              rules={[{ required: true, message: t('inbound.inputSupplierCode') }]}
+              rules={[
+                { required: true, message: t('inbound.inputSupplierCode') },
+              ]}
             >
               <AutoComplete
                 placeholder={t('inbound.inputSupplierCode') ?? ''}
@@ -102,7 +118,12 @@ const InboundModal: FC<InboundModalProps> = ({
             <Form.Item
               label={t('inbound.supplierShortName')}
               name="supplier_short_name"
-              rules={[{ required: true, message: t('inbound.inputSupplierShortName') }]}
+              rules={[
+                {
+                  required: true,
+                  message: t('inbound.inputSupplierShortName'),
+                },
+              ]}
             >
               <AutoComplete
                 placeholder={t('inbound.inputSupplierShortName') ?? ''}
@@ -116,7 +137,10 @@ const InboundModal: FC<InboundModalProps> = ({
             </Form.Item>
           </Col>
           <Col span={8}>
-            <Form.Item label={t('inbound.supplierFullName')} name="supplier_full_name">
+            <Form.Item
+              label={t('inbound.supplierFullName')}
+              name="supplier_full_name"
+            >
               <Input placeholder={t('inbound.autoFill') ?? ''} disabled />
             </Form.Item>
           </Col>
@@ -127,7 +151,9 @@ const InboundModal: FC<InboundModalProps> = ({
             <Form.Item
               label={t('inbound.productCode')}
               name="product_code"
-              rules={[{ required: true, message: t('inbound.inputProductCode') }]}
+              rules={[
+                { required: true, message: t('inbound.inputProductCode') },
+              ]}
             >
               <AutoComplete
                 placeholder={t('inbound.inputProductCode') ?? ''}
@@ -144,7 +170,9 @@ const InboundModal: FC<InboundModalProps> = ({
             <Form.Item
               label={t('inbound.productModel')}
               name="product_model"
-              rules={[{ required: true, message: t('inbound.inputProductModel') }]}
+              rules={[
+                { required: true, message: t('inbound.inputProductModel') },
+              ]}
             >
               <AutoComplete
                 placeholder={t('inbound.inputProductModel') ?? ''}
@@ -161,7 +189,9 @@ const InboundModal: FC<InboundModalProps> = ({
             <Form.Item
               label={t('inbound.inboundDate')}
               name="inbound_date"
-              rules={[{ required: true, message: t('inbound.selectInboundDate') }]}
+              rules={[
+                { required: true, message: t('inbound.selectInboundDate') },
+              ]}
             >
               <DatePicker
                 style={{ width: '100%' }}
@@ -180,7 +210,10 @@ const InboundModal: FC<InboundModalProps> = ({
               name="quantity"
               rules={[
                 { required: true, message: t('inbound.inputQuantity') },
-                { type: 'number', message: t('inbound.quantityGreaterThanZero') },
+                {
+                  type: 'number',
+                  message: t('inbound.quantityGreaterThanZero'),
+                },
               ]}
             >
               <InputNumber
@@ -212,7 +245,10 @@ const InboundModal: FC<InboundModalProps> = ({
             <Form.Item
               label={t('inbound.unitPrice')}
               name="unit_price"
-              rules={[{ required: true, message: t('inbound.inputUnitPrice') }, { type: 'number' }]}
+              rules={[
+                { required: true, message: t('inbound.inputUnitPrice') },
+                { type: 'number' },
+              ]}
             >
               <InputNumber
                 style={{ width: '100%' }}
@@ -268,11 +304,16 @@ const InboundModal: FC<InboundModalProps> = ({
         </Row>
 
         <Form.Item label={t('inbound.remark')} name="remark">
-          <Input.TextArea placeholder={t('inbound.inputRemark') ?? ''} rows={3} />
+          <Input.TextArea
+            placeholder={t('inbound.inputRemark') ?? ''}
+            rows={3}
+          />
         </Form.Item>
 
         <div className="form-actions">
-          <Button onClick={() => setModalVisible(false)}>{t('common.cancel')}</Button>
+          <Button onClick={() => setModalVisible(false)}>
+            {t('common.cancel')}
+          </Button>
           <Button type="primary" htmlType="submit">
             {editingRecord ? t('common.save') : t('common.add')}
           </Button>

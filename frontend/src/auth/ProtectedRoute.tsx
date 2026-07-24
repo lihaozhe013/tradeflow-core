@@ -71,8 +71,14 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
         status="403"
         title={t('auth.permission.deniedTitle')}
         subTitle={t('auth.permission.deniedSubTitle', {
-          action: requireRole === 'editor' ? t('common.edit') : t('auth.permission.view'),
-          role: user?.role === 'reader' ? t('auth.roles.reader') : t('auth.roles.editor'),
+          action:
+            requireRole === 'editor'
+              ? t('common.edit')
+              : t('auth.permission.view'),
+          role:
+            user?.role === 'reader'
+              ? t('auth.roles.reader')
+              : t('auth.roles.editor'),
         })}
         extra={
           <Button type="primary" onClick={() => window.history.back()}>

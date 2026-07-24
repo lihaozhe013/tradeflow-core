@@ -6,7 +6,12 @@
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
 
 // 响应类型
-export type ResponseType = 'json' | 'blob' | 'text' | 'arrayBuffer' | 'formData';
+export type ResponseType =
+  | 'json'
+  | 'blob'
+  | 'text'
+  | 'arrayBuffer'
+  | 'formData';
 
 // 请求选项接口
 export interface RequestOptions extends Omit<RequestInit, 'body' | 'method'> {
@@ -31,7 +36,10 @@ export interface RequestInstance {
   <T = unknown>(url: string, options?: RequestOptions): Promise<T>;
 
   // 便捷方法
-  get<T = unknown>(url: string, options?: Omit<RequestOptions, 'method' | 'body'>): Promise<T>;
+  get<T = unknown>(
+    url: string,
+    options?: Omit<RequestOptions, 'method' | 'body'>,
+  ): Promise<T>;
   post<T = unknown>(
     url: string,
     data?: unknown,
@@ -42,11 +50,22 @@ export interface RequestInstance {
     data?: unknown,
     options?: Omit<RequestOptions, 'method' | 'body'>,
   ): Promise<T>;
-  delete<T = unknown>(url: string, options?: Omit<RequestOptions, 'method' | 'body'>): Promise<T>;
+  delete<T = unknown>(
+    url: string,
+    options?: Omit<RequestOptions, 'method' | 'body'>,
+  ): Promise<T>;
 
   // 文件操作方法
-  upload<T = unknown>(url: string, formData: FormData, options?: UploadOptions): Promise<T>;
-  download(url: string, filename?: string, options?: DownloadOptions): Promise<void>;
+  upload<T = unknown>(
+    url: string,
+    formData: FormData,
+    options?: UploadOptions,
+  ): Promise<T>;
+  download(
+    url: string,
+    filename?: string,
+    options?: DownloadOptions,
+  ): Promise<void>;
 }
 
 // 请求错误类

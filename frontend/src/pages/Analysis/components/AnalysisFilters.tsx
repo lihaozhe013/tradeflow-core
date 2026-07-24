@@ -1,9 +1,21 @@
 import React from 'react';
-import { Row, Col, DatePicker, AutoComplete, Button, Space, Segmented } from 'antd';
+import {
+  Row,
+  Col,
+  DatePicker,
+  AutoComplete,
+  Button,
+  Space,
+  Segmented,
+} from 'antd';
 import { ReloadOutlined, DownloadOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import type { Dayjs } from 'dayjs';
-import type { PartnerOption, ProductOption, AnalysisType } from '@/types/analysis';
+import type {
+  PartnerOption,
+  ProductOption,
+  AnalysisType,
+} from '@/types/analysis';
 
 const { RangePicker } = DatePicker;
 
@@ -56,8 +68,14 @@ const AnalysisFilters: React.FC<AnalysisFiltersProps> = ({
               <strong>{t('analysis.type')}:</strong>
               <Segmented
                 options={[
-                  { label: t('analysis.sales') || 'Outbound (Sales)', value: 'outbound' },
-                  { label: t('analysis.purchase') || 'Inbound (Purchase)', value: 'inbound' },
+                  {
+                    label: t('analysis.sales') || 'Outbound (Sales)',
+                    value: 'outbound',
+                  },
+                  {
+                    label: t('analysis.purchase') || 'Inbound (Purchase)',
+                    value: 'inbound',
+                  },
                 ]}
                 value={analysisType}
                 onChange={(val) => onAnalysisTypeChange(val as AnalysisType)}
@@ -103,7 +121,9 @@ const AnalysisFilters: React.FC<AnalysisFiltersProps> = ({
               label: `${p.code} - ${p.name}`,
             }))}
             filterOption={(inputValue, option) =>
-              (option?.label ?? '').toLowerCase().includes(inputValue.toLowerCase())
+              (option?.label ?? '')
+                .toLowerCase()
+                .includes(inputValue.toLowerCase())
             }
             allowClear
           />
@@ -123,7 +143,9 @@ const AnalysisFilters: React.FC<AnalysisFiltersProps> = ({
               label: `${product.model} - ${product.name}`,
             }))}
             filterOption={(inputValue, option) =>
-              (option?.label ?? '').toLowerCase().includes(inputValue.toLowerCase())
+              (option?.label ?? '')
+                .toLowerCase()
+                .includes(inputValue.toLowerCase())
             }
             allowClear
           />

@@ -3,7 +3,12 @@ import { message } from 'antd';
 import { useTranslation } from 'react-i18next';
 import { useSimpleApi } from '@/hooks/useSimpleApi';
 import type { Dayjs } from 'dayjs';
-import type { AnalysisType, AnalysisData, DetailItem, PartnerOption } from '@/types/analysis';
+import type {
+  AnalysisType,
+  AnalysisData,
+  DetailItem,
+  PartnerOption,
+} from '@/types/analysis';
 
 export const useAnalysisExport = () => {
   const { t } = useTranslation();
@@ -34,7 +39,8 @@ export const useAnalysisExport = () => {
       setExporting(true);
 
       const processedDetailData = detailData.map((item) => {
-        const partnerCode = item.partner_code || item.supplier_code || item.customer_code;
+        const partnerCode =
+          item.partner_code || item.supplier_code || item.customer_code;
         const partner = partners.find((c) => c.code === partnerCode);
         return {
           ...item,
@@ -47,12 +53,21 @@ export const useAnalysisExport = () => {
         detailData: processedDetailData,
         startDate: dateRange[0].format('YYYY-MM-DD'),
         endDate: dateRange[1].format('YYYY-MM-DD'),
-        partnerCode: selectedPartner && selectedPartner !== 'All' ? selectedPartner : undefined,
-        productModel: selectedProduct && selectedProduct !== 'All' ? selectedProduct : undefined,
+        partnerCode:
+          selectedPartner && selectedPartner !== 'All'
+            ? selectedPartner
+            : undefined,
+        productModel:
+          selectedProduct && selectedProduct !== 'All'
+            ? selectedProduct
+            : undefined,
         type: analysisType,
       };
 
-      const blob = await (apiInstance as any).postBlob('/export/analysis', requestBody);
+      const blob = await (apiInstance as any).postBlob(
+        '/export/analysis',
+        requestBody,
+      );
 
       downloadFile(blob, `Data_Analysis_Export_${analysisType}.xlsx`);
       message.success(t('analysis.exportSuccess'));
@@ -79,7 +94,10 @@ export const useAnalysisExport = () => {
         type: analysisType,
       };
 
-      const blob = await (apiInstance as any).postBlob('/export/advanced-analysis', requestBody);
+      const blob = await (apiInstance as any).postBlob(
+        '/export/advanced-analysis',
+        requestBody,
+      );
 
       const defaultFilename = `Advanced_Export_${analysisType}_${exportType}.xlsx`;
       downloadFile(blob, defaultFilename);

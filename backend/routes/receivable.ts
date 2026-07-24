@@ -49,7 +49,9 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
   let orderBy = 'balance DESC';
   if (sort_field && allowedSortFields.includes(sort_field as string)) {
     const sortOrderStr =
-      sort_order && (sort_order as string).toLowerCase() === 'asc' ? 'ASC' : 'DESC';
+      sort_order && (sort_order as string).toLowerCase() === 'asc'
+        ? 'ASC'
+        : 'DESC';
     orderBy = `${sort_field} ${sortOrderStr}`;
   }
 
@@ -122,29 +124,32 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
 /**
  * GET /api/receivable/payments/:customer_code
  */
-router.get('/payments/:customer_code', async (req: Request, res: Response): Promise<void> => {
-  const customer_code = req.params['customer_code'] as string;
-  const { page = 1, limit = 10 } = req.query;
+router.get(
+  '/payments/:customer_code',
+  async (req: Request, res: Response): Promise<void> => {
+    const customer_code = req.params['customer_code'] as string;
+    const { page = 1, limit = 10 } = req.query;
 
-  const skip = (Number(page) - 1) * Number(limit);
+    const skip = (Number(page) - 1) * Number(limit);
 
-  const [rows, total] = await prisma.$transaction([
-    prisma.receivablePayment.findMany({
-      where: { customer_code },
-      orderBy: { pay_date: 'desc' },
-      skip,
-      take: Number(limit),
-    }),
-    prisma.receivablePayment.count({ where: { customer_code } }),
-  ]);
+    const [rows, total] = await prisma.$transaction([
+      prisma.receivablePayment.findMany({
+        where: { customer_code },
+        orderBy: { pay_date: 'desc' },
+        skip,
+        take: Number(limit),
+      }),
+      prisma.receivablePayment.count({ where: { customer_code } }),
+    ]);
 
-  res.json({
-    data: rows,
-    total,
-    page: Number(page),
-    limit: Number(limit),
-  });
-});
+    res.json({
+      data: rows,
+      total,
+      page: Number(page),
+      limit: Number(limit),
+    });
+  },
+);
 
 /**
  * POST /api/receivable/payments
@@ -155,7 +160,10 @@ router.post('/payments', async (req: Request, res: Response): Promise<void> => {
   if (!customer_code || amount === undefined || !pay_date) {
     res
       .status(400)
-      .json({ error: 'Customer ID, payment amount, and payment date are required fields' });
+      .json({
+        error:
+          'Customer ID, payment amount, and payment date are required fields',
+      });
     return;
   }
 
@@ -174,66 +182,83 @@ router.post('/payments', async (req: Request, res: Response): Promise<void> => {
 /**
  * PUT /api/receivable/payments/:id
  */
-router.put('/payments/:id', async (req: Request, res: Response): Promise<void> => {
-  const id = Number(req.params['id']);
-  const { customer_code, amount, pay_date, pay_method, remark } = req.body;
+router.put(
+  '/payments/:id',
+  async (req: Request, res: Response): Promise<void> => {
+    const id = Number(req.params['id']);
+    const { customer_code, amount, pay_date, pay_method, remark } = req.body;
 
-  if (!customer_code || amount === undefined || !pay_date) {
-    res
-      .status(400)
-      .json({ error: 'Customer ID, payment amount, and payment date are required fields' });
-    return;
-  }
+    if (!customer_code || amount === undefined || !pay_date) {
+      res
+        .status(400)
+        .json({
+          error:
+            'Customer ID, payment amount, and payment date are required fields',
+        });
+      return;
+    }
 
-  await prisma.receivablePayment.update({
-    where: { id },
-    data: {
-      customer_code,
-      amount,
-      pay_date,
-      pay_method: pay_method || '',
-      remark: remark || '',
-    },
-  });
-  res.json({ message: 'Payment record updated!' });
-});
+    await prisma.receivablePayment.update({
+      where: { id },
+      data: {
+        customer_code,
+        amount,
+        pay_date,
+        pay_method: pay_method || '',
+        remark: remark || '',
+      },
+    });
+    res.json({ message: 'Payment record updated!' });
+  },
+);
 
 /**
  * DELETE /api/receivable/payments/:id
  */
-router.delete('/payments/:id', async (req: Request, res: Response): Promise<void> => {
-  const id = Number(req.params['id']);
-  await prisma.receivablePayment.delete({ where: { id } });
-  res.json({ message: 'Payment record deleted!' });
-});
+router.delete(
+  '/payments/:id',
+  async (req: Request, res: Response): Promise<void> => {
+    const id = Number(req.params['id']);
+    await prisma.receivablePayment.delete({ where: { id } });
+    res.json({ message: 'Payment record deleted!' });
+  },
+);
 
 /**
  * GET /api/receivable/details/:customer_code
  */
-router.get('/details/:customer_code', async (req: Request, res: Response): Promise<void> => {
-  const customer_code = req.params['customer_code'] as string;
-  const {
-    outbound_page = 1,
-    outbound_limit = 10,
-    payment_page = 1,
-    payment_limit = 10,
-  } = req.query;
+router.get(
+  '/details/:customer_code',
+  async (req: Request, res: Response): Promise<void> => {
+    const customer_code = req.params['customer_code'] as string;
+    const {
+      outbound_page = 1,
+      outbound_limit = 10,
+      payment_page = 1,
+      payment_limit = 10,
+    } = req.query;
 
-  const customer = await prisma.partner.findFirst({
-    where: { code: customer_code, type: 1 },
-  });
+    const customer = await prisma.partner.findFirst({
+      where: { code: customer_code, type: 1 },
+    });
 
-  if (!customer) {
-    res.status(404).json({ error: 'Clienet dne' });
-    return;
-  }
+    if (!customer) {
+      res.status(404).json({ error: 'Clienet dne' });
+      return;
+    }
 
-  const outboundSkip = (Number(outbound_page) - 1) * Number(outbound_limit);
-  const paymentSkip = (Number(payment_page) - 1) * Number(payment_limit);
+    const outboundSkip = (Number(outbound_page) - 1) * Number(outbound_limit);
+    const paymentSkip = (Number(payment_page) - 1) * Number(payment_limit);
 
-  // Parallel fetch
-  const [outboundRecords, outboundCount, paymentRecords, paymentCount, outboundAgg, paymentAgg] =
-    await Promise.all([
+    // Parallel fetch
+    const [
+      outboundRecords,
+      outboundCount,
+      paymentRecords,
+      paymentCount,
+      outboundAgg,
+      paymentAgg,
+    ] = await Promise.all([
       prisma.outboundRecord.findMany({
         where: { customer_code },
         orderBy: { outbound_date: 'desc' },
@@ -258,64 +283,74 @@ router.get('/details/:customer_code', async (req: Request, res: Response): Promi
       }),
     ]);
 
-  const totalReceivable = decimalCalc.fromSqlResult(outboundAgg._sum?.total_price || 0, 0);
-  const totalPaid = decimalCalc.fromSqlResult(paymentAgg._sum?.amount || 0, 0);
-  const balance = decimalCalc.calculateBalance(totalReceivable, totalPaid);
+    const totalReceivable = decimalCalc.fromSqlResult(
+      outboundAgg._sum?.total_price || 0,
+      0,
+    );
+    const totalPaid = decimalCalc.fromSqlResult(
+      paymentAgg._sum?.amount || 0,
+      0,
+    );
+    const balance = decimalCalc.calculateBalance(totalReceivable, totalPaid);
 
-  res.json({
-    customer,
-    summary: {
-      total_receivable: totalReceivable,
-      total_paid: totalPaid,
-      balance: balance,
-    },
-    outbound_records: {
-      data: outboundRecords,
-      total: outboundCount,
-      page: Number(outbound_page),
-      limit: Number(outbound_limit),
-    },
-    payment_records: {
-      data: paymentRecords,
-      total: paymentCount,
-      page: Number(payment_page),
-      limit: Number(payment_limit),
-    },
-  });
-});
+    res.json({
+      customer,
+      summary: {
+        total_receivable: totalReceivable,
+        total_paid: totalPaid,
+        balance: balance,
+      },
+      outbound_records: {
+        data: outboundRecords,
+        total: outboundCount,
+        page: Number(outbound_page),
+        limit: Number(outbound_limit),
+      },
+      payment_records: {
+        data: paymentRecords,
+        total: paymentCount,
+        page: Number(payment_page),
+        limit: Number(payment_limit),
+      },
+    });
+  },
+);
 
 /**
  * GET /api/receivable/uninvoiced/:customer_code
  * Get uninvoiced outbound records for a customer (invoice_number is NULL or empty)
  */
-router.get('/uninvoiced/:customer_code', async (req: Request, res: Response): Promise<void> => {
-  const customer_code = req.params['customer_code'] as string;
-  const { page = 1, limit = 10 } = req.query;
+router.get(
+  '/uninvoiced/:customer_code',
+  async (req: Request, res: Response): Promise<void> => {
+    const customer_code = req.params['customer_code'] as string;
+    const { page = 1, limit = 10 } = req.query;
 
-  const skip = (Number(page) - 1) * Number(limit);
+    const skip = (Number(page) - 1) * Number(limit);
 
-  const where: Prisma.OutboundRecordWhereInput = {
-    customer_code,
-    OR: [{ invoice_number: null }, { invoice_number: '' }],
-  };
+    const where: Prisma.OutboundRecordWhereInput = {
+      customer_code,
+      OR: [{ invoice_number: null }, { invoice_number: '' }],
+    };
 
-  const [rows, total] = await prisma.$transaction([
-    prisma.outboundRecord.findMany({
-      where,
-      orderBy: { outbound_date: 'desc' },
-      skip,
-      take: Number(limit),
-    }),
-    prisma.outboundRecord.count({ where }),
-  ]);
+    const [rows, total] = await prisma.$transaction([
+      prisma.outboundRecord.findMany({
+        where,
+        orderBy: { outbound_date: 'desc' },
+        skip,
+        take: Number(limit),
+      }),
+      prisma.outboundRecord.count({ where }),
+    ]);
 
-  res.json({
-    data: rows,
-    total,
-    page: Number(page),
-    limit: Number(limit),
-  });
-});
+    res.json({
+      data: rows,
+      total,
+      page: Number(page),
+      limit: Number(limit),
+    });
+  },
+);
 
 /**
  * GET /api/receivable/invoiced/:customer_code
@@ -325,7 +360,8 @@ router.get('/invoiced/:customer_code', (req: Request, res: Response): void => {
   const customer_code = req.params['customer_code'] as string;
   const { page = 1, limit = 10 } = req.query;
 
-  const cachedRecords = invoiceCacheService.getCachedInvoicedRecords(customer_code);
+  const cachedRecords =
+    invoiceCacheService.getCachedInvoicedRecords(customer_code);
 
   if (!cachedRecords) {
     res.status(404).json({
@@ -355,7 +391,8 @@ router.post(
   '/invoices/refresh/:customer_code',
   async (req: Request, res: Response): Promise<void> => {
     const customer_code = req.params['customer_code'] as string;
-    const invoicedRecords = await invoiceCacheService.refreshCustomerCache(customer_code);
+    const invoicedRecords =
+      await invoiceCacheService.refreshCustomerCache(customer_code);
     const lastUpdated = invoiceCacheService.getLastUpdateTime(customer_code);
 
     res.json({

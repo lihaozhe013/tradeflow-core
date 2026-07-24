@@ -20,7 +20,9 @@ interface ReceivableModalProps {
   readonly selectedCustomer: ReceivableRecord | null;
   readonly customers: Customer[];
   readonly form: FormInstance<ReceivablePaymentFormValues>;
-  readonly onSave: (values: ReceivablePaymentFormValues) => Promise<void> | void;
+  readonly onSave: (
+    values: ReceivablePaymentFormValues,
+  ) => Promise<void> | void;
   readonly onCancel: () => void;
 }
 
@@ -46,7 +48,8 @@ const ReceivableModal: FC<ReceivableModalProps> = ({
 
   const handleSubmit = async (): Promise<void> => {
     try {
-      const values = (await form.validateFields()) as ReceivablePaymentFormValues;
+      const values =
+        (await form.validateFields()) as ReceivablePaymentFormValues;
       await onSave(values);
       form.resetFields();
     } catch (error) {
@@ -59,14 +62,21 @@ const ReceivableModal: FC<ReceivableModalProps> = ({
     onCancel();
   };
 
-  const filterCustomerOption = (input: string, option?: DefaultOptionType): boolean => {
+  const filterCustomerOption = (
+    input: string,
+    option?: DefaultOptionType,
+  ): boolean => {
     const label = typeof option?.label === 'string' ? option.label : '';
     return label.toLowerCase().includes(input.toLowerCase());
   };
 
   return (
     <Modal
-      title={editingPayment ? t('receivable.modalTitleEdit') : t('receivable.modalTitleAdd')}
+      title={
+        editingPayment
+          ? t('receivable.modalTitleEdit')
+          : t('receivable.modalTitleAdd')
+      }
       open={visible}
       onOk={handleSubmit}
       onCancel={handleCancel}
@@ -109,7 +119,10 @@ const ReceivableModal: FC<ReceivableModalProps> = ({
             precision={2}
             formatter={(value) =>
               value !== undefined && value !== null
-                ? `${currency_unit_symbol} ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+                ? `${currency_unit_symbol} ${value}`.replace(
+                    /\B(?=(\d{3})+(?!\d))/g,
+                    ',',
+                  )
                 : ''
             }
             parser={(value) => {
@@ -143,7 +156,10 @@ const ReceivableModal: FC<ReceivableModalProps> = ({
         >
           <Select
             placeholder={t('receivable.selectMethod') ?? ''}
-            options={PAYMENT_METHODS.map((method) => ({ value: method, label: method }))}
+            options={PAYMENT_METHODS.map((method) => ({
+              value: method,
+              label: method,
+            }))}
           />
         </Form.Item>
 

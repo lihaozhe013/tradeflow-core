@@ -45,7 +45,10 @@ export default [
       '@typescript-eslint/ban-ts-comment': 'off',
 
       // React specific rules
-      'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
+      'react-refresh/only-export-components': [
+        'warn',
+        { allowConstantExport: true },
+      ],
 
       // General rules
       'no-unused-vars': 'off',
@@ -106,7 +109,10 @@ export default [
       'no-debugger': 'off',
 
       // React specific rules
-      'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
+      'react-refresh/only-export-components': [
+        'warn',
+        { allowConstantExport: true },
+      ],
     },
   },
 ];

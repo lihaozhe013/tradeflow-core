@@ -37,7 +37,11 @@ export async function calculatePurchaseData(
 
   const result = await prisma.$queryRaw<PurchaseResult[]>(query);
   const purchaseRow = result[0];
-  const purchaseAmount = decimalCalc.fromSqlResult(purchaseRow?.purchase_amount, 0, 2);
+  const purchaseAmount = decimalCalc.fromSqlResult(
+    purchaseRow?.purchase_amount,
+    0,
+    2,
+  );
 
   return {
     purchase_amount: purchaseAmount,

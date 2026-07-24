@@ -10,7 +10,11 @@ interface AnalysisStatisticsProps {
   analysisType: AnalysisType;
 }
 
-const AnalysisStatistics: React.FC<AnalysisStatisticsProps> = ({ data, loading, analysisType }) => {
+const AnalysisStatistics: React.FC<AnalysisStatisticsProps> = ({
+  data,
+  loading,
+  analysisType,
+}) => {
   const { t } = useTranslation();
 
   if (!data) return null;
@@ -42,7 +46,9 @@ const AnalysisStatistics: React.FC<AnalysisStatisticsProps> = ({ data, loading, 
             value={data.sales_amount ?? 0}
             precision={2}
             prefix="¥"
-            valueStyle={{ color: (data.sales_amount ?? 0) >= 0 ? '#3f8600' : '#cf1322' }}
+            valueStyle={{
+              color: (data.sales_amount ?? 0) >= 0 ? '#3f8600' : '#cf1322',
+            }}
           />
         </Card>
       </Col>
@@ -62,10 +68,16 @@ const AnalysisStatistics: React.FC<AnalysisStatisticsProps> = ({ data, loading, 
             title={t('analysis.profitAmount')}
             value={data.profit_amount ?? 0}
             precision={2}
-            valueStyle={{ color: (data.profit_amount ?? 0) >= 0 ? '#3f8600' : '#cf1322' }}
+            valueStyle={{
+              color: (data.profit_amount ?? 0) >= 0 ? '#3f8600' : '#cf1322',
+            }}
             prefix={
               <>
-                {(data.profit_amount ?? 0) >= 0 ? <ArrowUpOutlined /> : <ArrowDownOutlined />}
+                {(data.profit_amount ?? 0) >= 0 ? (
+                  <ArrowUpOutlined />
+                ) : (
+                  <ArrowDownOutlined />
+                )}
                 <span style={{ marginLeft: 4 }}>¥</span>
               </>
             }
@@ -79,7 +91,9 @@ const AnalysisStatistics: React.FC<AnalysisStatisticsProps> = ({ data, loading, 
             value={data.profit_rate ?? 0}
             precision={2}
             suffix="%"
-            valueStyle={{ color: (data.profit_rate ?? 0) >= 0 ? '#3f8600' : '#cf1322' }}
+            valueStyle={{
+              color: (data.profit_rate ?? 0) >= 0 ? '#3f8600' : '#cf1322',
+            }}
           />
         </Card>
       </Col>

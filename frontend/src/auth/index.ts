@@ -24,12 +24,22 @@ export type {
   AuthAPI,
 } from '@/auth/auth';
 
-export type { AuthContextState, LoginResult, AuthContextValue } from '@/auth/useAuth.d';
+export type {
+  AuthContextState,
+  LoginResult,
+  AuthContextValue,
+} from '@/auth/useAuth.d';
 
 export type { UsePermissionsReturn } from '@/auth/usePermissions';
 
 // 导出认证工具（从 auth.js）
-export { tokenManager, userManager, authAPI, isAuthenticated, hasRole } from '@/auth/auth';
+export {
+  tokenManager,
+  userManager,
+  authAPI,
+  isAuthenticated,
+  hasRole,
+} from '@/auth/auth';
 
 /**
  * 使用示例:

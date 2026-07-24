@@ -74,14 +74,16 @@ const AnalysisDetailTable: React.FC<AnalysisDetailTableProps> = ({
         dataIndex: 'sales_amount',
         key: 'sales_amount',
         render: (val: number) => `¥${val?.toFixed(2) || '0.00'}`,
-        sorter: (a: DetailItem, b: DetailItem) => (a.sales_amount ?? 0) - (b.sales_amount ?? 0),
+        sorter: (a: DetailItem, b: DetailItem) =>
+          (a.sales_amount ?? 0) - (b.sales_amount ?? 0),
       },
       {
         title: t('analysis.cost'),
         dataIndex: 'cost_amount',
         key: 'cost_amount',
         render: (val: number) => `¥${val?.toFixed(2) || '0.00'}`,
-        sorter: (a: DetailItem, b: DetailItem) => (a.cost_amount ?? 0) - (b.cost_amount ?? 0),
+        sorter: (a: DetailItem, b: DetailItem) =>
+          (a.cost_amount ?? 0) - (b.cost_amount ?? 0),
       },
       {
         title: t('analysis.profit'),
@@ -92,7 +94,8 @@ const AnalysisDetailTable: React.FC<AnalysisDetailTableProps> = ({
             ¥{val?.toFixed(2) || '0.00'}
           </span>
         ),
-        sorter: (a: DetailItem, b: DetailItem) => (a.profit_amount ?? 0) - (b.profit_amount ?? 0),
+        sorter: (a: DetailItem, b: DetailItem) =>
+          (a.profit_amount ?? 0) - (b.profit_amount ?? 0),
       },
       {
         title: t('analysis.profitRate'),
@@ -103,13 +106,18 @@ const AnalysisDetailTable: React.FC<AnalysisDetailTableProps> = ({
             {val?.toFixed(2) || '0.00'}%
           </span>
         ),
-        sorter: (a: DetailItem, b: DetailItem) => (a.profit_rate ?? 0) - (b.profit_rate ?? 0),
+        sorter: (a: DetailItem, b: DetailItem) =>
+          (a.profit_rate ?? 0) - (b.profit_rate ?? 0),
       },
     ];
   };
 
   return (
-    <Card title={t('analysis.detailData')} loading={loading} style={{ marginBottom: 24 }}>
+    <Card
+      title={t('analysis.detailData')}
+      loading={loading}
+      style={{ marginBottom: 24 }}
+    >
       <Table
         dataSource={data}
         columns={getColumns()}

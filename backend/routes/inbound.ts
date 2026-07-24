@@ -36,7 +36,9 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     };
   }
   if (isProvided(req.query['product_model'])) {
-    where.product = { product_model: { contains: req.query['product_model'] as string } };
+    where.product = {
+      product_model: { contains: req.query['product_model'] as string },
+    };
   }
   if (isProvided(req.query['start_date'])) {
     where.inbound_date = { gte: req.query['start_date'] as string };
@@ -50,7 +52,10 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
   let orderBy: Prisma.InboundRecordOrderByWithRelationInput = { id: 'desc' };
 
   if (sortField && allowedSortFields.includes(sortField)) {
-    const fieldMap: Record<string, keyof Prisma.InboundRecordOrderByWithRelationInput> = {
+    const fieldMap: Record<
+      string,
+      keyof Prisma.InboundRecordOrderByWithRelationInput
+    > = {
       inbound_date: 'inbound_date',
       unit_price: 'unit_price',
       total_price: 'total_price',
@@ -58,7 +63,8 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     };
     const prismaField = fieldMap[sortField];
     const sortOrder =
-      req.query['sort_order'] && (req.query['sort_order'] as string).toLowerCase() === 'asc'
+      req.query['sort_order'] &&
+      (req.query['sort_order'] as string).toLowerCase() === 'asc'
         ? 'asc'
         : 'desc';
     // Need to cast the dynamic object structure for TypeScript
@@ -206,7 +212,9 @@ router.delete('/:id', async (req: Request, res: Response): Promise<void> => {
 router.post('/batch', async (req: Request, res: Response): Promise<void> => {
   const { ids, updates } = req.body;
   if (!ids || !Array.isArray(ids) || ids.length === 0) {
-    res.status(400).json({ error: 'ids array is required and must not be empty' });
+    res
+      .status(400)
+      .json({ error: 'ids array is required and must not be empty' });
     return;
   }
 
@@ -215,7 +223,10 @@ router.post('/batch', async (req: Request, res: Response): Promise<void> => {
     return;
   }
 
-  const allowedFieldsMap: Record<string, keyof Prisma.InboundRecordUncheckedUpdateInput> = {
+  const allowedFieldsMap: Record<
+    string,
+    keyof Prisma.InboundRecordUncheckedUpdateInput
+  > = {
     supplier_code: 'supplier_code',
     product_code: 'product_code',
     quantity: 'quantity',
@@ -275,9 +286,16 @@ router.post('/batch', async (req: Request, res: Response): Promise<void> => {
       const unitPrice = oldRecord.unit_price ?? 0;
 
       // Assuming updates object has correct types or casting as needed
-      const finalQuantity = hasQuantity ? (updates.quantity as number) : quantity;
-      const finalUnitPrice = hasUnitPrice ? (updates.unit_price as number) : unitPrice;
-      const total_price = decimalCalc.calculateTotalPrice(finalQuantity, finalUnitPrice);
+      const finalQuantity = hasQuantity
+        ? (updates.quantity as number)
+        : quantity;
+      const finalUnitPrice = hasUnitPrice
+        ? (updates.unit_price as number)
+        : unitPrice;
+      const total_price = decimalCalc.calculateTotalPrice(
+        finalQuantity,
+        finalUnitPrice,
+      );
 
       result = await prisma.inboundRecord.update({
         where: { id: recordId },

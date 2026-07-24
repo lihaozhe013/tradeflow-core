@@ -32,10 +32,12 @@ const Analysis: React.FC = () => {
     refreshAnalysisData,
   } = useAnalysisData();
 
-  const { exporting, performNormalExport, performAdvancedExport } = useAnalysisExport();
+  const { exporting, performNormalExport, performAdvancedExport } =
+    useAnalysisExport();
 
   // Local State
-  const [advancedExportModalVisible, setAdvancedExportModalVisible] = useState(false);
+  const [advancedExportModalVisible, setAdvancedExportModalVisible] =
+    useState(false);
 
   // Filters
   const [dateRange, setDateRange] = useState<[Dayjs, Dayjs]>([
@@ -54,9 +56,20 @@ const Analysis: React.FC = () => {
   // Auto-fetch cached data
   useEffect(() => {
     if (dateRange?.[0] && dateRange?.[1]) {
-      fetchAnalysisData(dateRange, selectedPartner, selectedProduct, analysisType);
+      fetchAnalysisData(
+        dateRange,
+        selectedPartner,
+        selectedProduct,
+        analysisType,
+      );
     }
-  }, [dateRange, selectedPartner, selectedProduct, analysisType, fetchAnalysisData]);
+  }, [
+    dateRange,
+    selectedPartner,
+    selectedProduct,
+    analysisType,
+    fetchAnalysisData,
+  ]);
 
   const handleAnalysisTypeChange = (type: AnalysisType) => {
     setAnalysisType(type);
@@ -108,7 +121,12 @@ const Analysis: React.FC = () => {
       return;
     }
 
-    await refreshAnalysisData(dateRange, selectedPartner, selectedProduct, analysisType);
+    await refreshAnalysisData(
+      dateRange,
+      selectedPartner,
+      selectedProduct,
+      analysisType,
+    );
   };
 
   const handleAdvancedExport = async (exportType: string) => {
@@ -150,7 +168,11 @@ const Analysis: React.FC = () => {
             analysisType={analysisType}
           />
 
-          <AnalysisStatistics data={analysisData} loading={loading} analysisType={analysisType} />
+          <AnalysisStatistics
+            data={analysisData}
+            loading={loading}
+            analysisType={analysisType}
+          />
 
           <AnalysisDetailTable
             data={detailData}

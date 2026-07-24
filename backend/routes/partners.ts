@@ -74,7 +74,15 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
  * POST /api/partners
  */
 router.post('/', async (req: Request, res: Response): Promise<void> => {
-  const { code, short_name, full_name, address, contact_person, contact_phone, type } = req.body;
+  const {
+    code,
+    short_name,
+    full_name,
+    address,
+    contact_person,
+    contact_phone,
+    type,
+  } = req.body;
 
   await prisma.partner.create({
     data: {
@@ -93,42 +101,51 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
 /**
  * PUT /api/partners/:short_name
  */
-router.put('/:short_name', async (req: Request, res: Response): Promise<void> => {
-  const short_name = req.params['short_name'] as string;
-  const { code, full_name, address, contact_person, contact_phone, type } = req.body;
+router.put(
+  '/:short_name',
+  async (req: Request, res: Response): Promise<void> => {
+    const short_name = req.params['short_name'] as string;
+    const { code, full_name, address, contact_person, contact_phone, type } =
+      req.body;
 
-  await prisma.partner.update({
-    where: { short_name: short_name },
-    data: {
-      code,
-      full_name,
-      address,
-      contact_person,
-      contact_phone,
-      type,
-    },
-  });
+    await prisma.partner.update({
+      where: { short_name: short_name },
+      data: {
+        code,
+        full_name,
+        address,
+        contact_person,
+        contact_phone,
+        type,
+      },
+    });
 
-  res.json({ message: 'Customer/Supplier updated!' });
-});
+    res.json({ message: 'Customer/Supplier updated!' });
+  },
+);
 
 /**
  * DELETE /api/partners/:short_name
  */
-router.delete('/:short_name', async (req: Request, res: Response): Promise<void> => {
-  const short_name = req.params['short_name'] as string;
-  await prisma.partner.delete({
-    where: { short_name: short_name },
-  });
-  res.json({ message: 'Customer/Supplier deleted!' });
-});
+router.delete(
+  '/:short_name',
+  async (req: Request, res: Response): Promise<void> => {
+    const short_name = req.params['short_name'] as string;
+    await prisma.partner.delete({
+      where: { short_name: short_name },
+    });
+    res.json({ message: 'Customer/Supplier deleted!' });
+  },
+);
 
 /**
  * POST /api/partners/bindings
  */
 router.post('/bindings', async (req: Request, res: Response): Promise<void> => {
   const rawBody = req.body;
-  const bindings: PartnerBinding[] = Array.isArray(rawBody) ? rawBody : [rawBody];
+  const bindings: PartnerBinding[] = Array.isArray(rawBody)
+    ? rawBody
+    : [rawBody];
 
   if (!bindings.length) {
     res.status(400).json({ error: 'No binding data' });
@@ -144,7 +161,11 @@ router.post('/bindings', async (req: Request, res: Response): Promise<void> => {
       res.status(400).json({ error: 'None of the three can be empty' });
       return;
     }
-    if (codes.has(b.code) || shorts.has(b.short_name) || fulls.has(b.full_name)) {
+    if (
+      codes.has(b.code) ||
+      shorts.has(b.short_name) ||
+      fulls.has(b.full_name)
+    ) {
       res.status(400).json({ error: 'Duplicated batch data' });
       return;
     }

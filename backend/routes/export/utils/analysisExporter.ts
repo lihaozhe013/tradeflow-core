@@ -21,7 +21,14 @@ function formatPercentage(value: number): string {
  * Export analysis data to Excel
  */
 export function generateAnalysisExcel(options: AnalysisExportOptions): Buffer {
-  const { analysisData, detailData, startDate, endDate, customerCode, productModel } = options;
+  const {
+    analysisData,
+    detailData,
+    startDate,
+    endDate,
+    customerCode,
+    productModel,
+  } = options;
   const workbook = XLSX.utils.book_new();
 
   // Summary Sheet
@@ -51,8 +58,15 @@ export function generateAnalysisExcel(options: AnalysisExportOptions): Buffer {
         remark: labels.calculation_method || 'Weighted average cost method',
       },
     ];
-    const summaryWorksheet = ExportUtils.createWorksheet(summaryData, TEMPLATES.analysis_summary);
-    XLSX.utils.book_append_sheet(workbook, summaryWorksheet, TEMPLATES.analysis_summary.sheetName);
+    const summaryWorksheet = ExportUtils.createWorksheet(
+      summaryData,
+      TEMPLATES.analysis_summary,
+    );
+    XLSX.utils.book_append_sheet(
+      workbook,
+      summaryWorksheet,
+      TEMPLATES.analysis_summary.sheetName,
+    );
   }
 
   // Detail Sheet
@@ -100,7 +114,10 @@ export function generateAnalysisExcel(options: AnalysisExportOptions): Buffer {
       }));
     }
 
-    const detailWorksheet = ExportUtils.createWorksheet(formattedDetailData, template);
+    const detailWorksheet = ExportUtils.createWorksheet(
+      formattedDetailData,
+      template,
+    );
     XLSX.utils.book_append_sheet(workbook, detailWorksheet, template.sheetName);
   }
 

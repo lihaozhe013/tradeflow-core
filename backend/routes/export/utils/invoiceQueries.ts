@@ -2,7 +2,9 @@ import { Prisma } from '@/prisma/client';
 import { prisma } from '@/prismaClient';
 import { InvoiceFilters, InvoiceItemDto } from '@/routes/export/utils/types';
 
-export async function getInvoiceData(filters: InvoiceFilters): Promise<InvoiceItemDto[]> {
+export async function getInvoiceData(
+  filters: InvoiceFilters,
+): Promise<InvoiceItemDto[]> {
   const { partnerCode, dateFrom, dateTo } = filters;
   if (!partnerCode) throw new Error('Partner Code is required');
 
@@ -24,14 +26,16 @@ export async function getInvoiceData(filters: InvoiceFilters): Promise<InvoiceIt
   const inboundConditions: Prisma.Sql[] = [
     Prisma.sql`r.supplier_code IN (${Prisma.join(partnerCodes)})`,
   ];
-  if (dateFrom) inboundConditions.push(Prisma.sql`r.inbound_date >= ${dateFrom}`);
+  if (dateFrom)
+    inboundConditions.push(Prisma.sql`r.inbound_date >= ${dateFrom}`);
   if (dateTo) inboundConditions.push(Prisma.sql`r.inbound_date <= ${dateTo}`);
 
   // Outbound query conditions
   const outboundConditions: Prisma.Sql[] = [
     Prisma.sql`r.customer_code IN (${Prisma.join(partnerCodes)})`,
   ];
-  if (dateFrom) outboundConditions.push(Prisma.sql`r.outbound_date >= ${dateFrom}`);
+  if (dateFrom)
+    outboundConditions.push(Prisma.sql`r.outbound_date >= ${dateFrom}`);
   if (dateTo) outboundConditions.push(Prisma.sql`r.outbound_date <= ${dateTo}`);
 
   // Combine queries using UNION ALL
@@ -80,9 +84,14 @@ export async function getInvoiceData(filters: InvoiceFilters): Promise<InvoiceIt
   return rows.map((row) => ({
     product_model: row.product_model,
     unit_price: Number(row.unit_price),
-    quantity: typeof row.quantity === 'bigint' ? Number(row.quantity) : Number(row.quantity),
+    quantity:
+      typeof row.quantity === 'bigint'
+        ? Number(row.quantity)
+        : Number(row.quantity),
     total_price:
-      typeof row.total_price === 'bigint' ? Number(row.total_price) : Number(row.total_price),
+      typeof row.total_price === 'bigint'
+        ? Number(row.total_price)
+        : Number(row.total_price),
   }));
 }
 
@@ -93,11 +102,13 @@ export async function getAllInvoiceData(
 
   // We can group all records by partner in one go
   const inboundConditions: Prisma.Sql[] = [];
-  if (dateFrom) inboundConditions.push(Prisma.sql`r.inbound_date >= ${dateFrom}`);
+  if (dateFrom)
+    inboundConditions.push(Prisma.sql`r.inbound_date >= ${dateFrom}`);
   if (dateTo) inboundConditions.push(Prisma.sql`r.inbound_date <= ${dateTo}`);
 
   const outboundConditions: Prisma.Sql[] = [];
-  if (dateFrom) outboundConditions.push(Prisma.sql`r.outbound_date >= ${dateFrom}`);
+  if (dateFrom)
+    outboundConditions.push(Prisma.sql`r.outbound_date >= ${dateFrom}`);
   if (dateTo) outboundConditions.push(Prisma.sql`r.outbound_date <= ${dateTo}`);
 
   const inboundWhere =
@@ -152,7 +163,9 @@ export async function getAllInvoiceData(
 
   // We map the results and group them by partner's short_name
   // First fetch all partners to get short names
-  const partners = await prisma.partner.findMany({ select: { code: true, short_name: true } });
+  const partners = await prisma.partner.findMany({
+    select: { code: true, short_name: true },
+  });
   const partnerMap = new Map(partners.map((p) => [p.code, p.short_name]));
 
   const result: Record<string, InvoiceItemDto[]> = {};
@@ -168,9 +181,14 @@ export async function getAllInvoiceData(
     result[partnerName].push({
       product_model: row.product_model,
       unit_price: Number(row.unit_price),
-      quantity: typeof row.quantity === 'bigint' ? Number(row.quantity) : Number(row.quantity),
+      quantity:
+        typeof row.quantity === 'bigint'
+          ? Number(row.quantity)
+          : Number(row.quantity),
       total_price:
-        typeof row.total_price === 'bigint' ? Number(row.total_price) : Number(row.total_price),
+        typeof row.total_price === 'bigint'
+          ? Number(row.total_price)
+          : Number(row.total_price),
     });
   }
 

@@ -75,12 +75,15 @@ const DEFAULT_PAGINATION: PaginationInfo = {
 
 const Partners: FC = () => {
   const [modalVisible, setModalVisible] = useState(false);
-  const [editingPartner, setEditingPartner] = useState<PartnerItem | null>(null);
+  const [editingPartner, setEditingPartner] = useState<PartnerItem | null>(
+    null,
+  );
   const [form] = Form.useForm<PartnerFormValues>();
   const [filterForm] = Form.useForm<PartnerFilters>();
   const [partners, setPartners] = useState<PartnerItem[]>([]);
   const [loading, setLoading] = useState(false);
-  const [pagination, setPagination] = useState<PaginationInfo>(DEFAULT_PAGINATION);
+  const [pagination, setPagination] =
+    useState<PaginationInfo>(DEFAULT_PAGINATION);
   const [filters, setFilters] = useState<PartnerFilters>({});
   const { t } = useTranslation();
 
@@ -92,10 +95,15 @@ const Partners: FC = () => {
         setLoading(true);
         const query = new URLSearchParams({ page: String(page) });
         if (nextFilters.code) query.append('code', nextFilters.code);
-        if (nextFilters.short_name) query.append('short_name', nextFilters.short_name);
-        if (nextFilters.full_name) query.append('full_name', nextFilters.full_name);
-        if (nextFilters.type !== undefined) query.append('type', String(nextFilters.type));
-        const result = await get<PartnerListResponse>(`/partners?${query.toString()}`);
+        if (nextFilters.short_name)
+          query.append('short_name', nextFilters.short_name);
+        if (nextFilters.full_name)
+          query.append('full_name', nextFilters.full_name);
+        if (nextFilters.type !== undefined)
+          query.append('type', String(nextFilters.type));
+        const result = await get<PartnerListResponse>(
+          `/partners?${query.toString()}`,
+        );
         setPartners(Array.isArray(result?.data) ? result.data : []);
         setPagination((prev) => ({
           current: result?.pagination?.page ?? page,
@@ -140,8 +148,14 @@ const Partners: FC = () => {
 
   const handleSave = async (values: PartnerFormValues): Promise<void> => {
     try {
-      if (!values.short_name || !values.full_name || values.type === undefined) {
-        message.error(t('common.validationError', { defaultValue: 'Validation error' }));
+      if (
+        !values.short_name ||
+        !values.full_name ||
+        values.type === undefined
+      ) {
+        message.error(
+          t('common.validationError', { defaultValue: 'Validation error' }),
+        );
         return;
       }
 
@@ -183,7 +197,8 @@ const Partners: FC = () => {
       dataIndex: 'type',
       key: 'type',
       width: 80,
-      render: (type) => (type === 0 ? t('partners.supplier') : t('partners.customer')),
+      render: (type) =>
+        type === 0 ? t('partners.supplier') : t('partners.customer'),
     },
     {
       title: t('partners.address'),
@@ -232,36 +247,47 @@ const Partners: FC = () => {
     },
   ];
 
-  const handlePartnerFieldChange: FormProps<PartnerFormValues>['onValuesChange'] = (
-    changedValues,
+  const handlePartnerFieldChange: FormProps<PartnerFormValues>['onValuesChange'] =
+    (changedValues) => {
+      if (changedValues?.code) {
+        const match = partnerOptions.find(
+          (partner) => partner.code === changedValues.code,
+        );
+        if (match) {
+          form.setFieldsValue({
+            short_name: match.short_name,
+            full_name: match.full_name,
+          });
+        }
+        return;
+      }
+
+      if (changedValues?.short_name) {
+        const match = partnerOptions.find(
+          (partner) => partner.short_name === changedValues.short_name,
+        );
+        if (match) {
+          form.setFieldsValue({ code: match.code, full_name: match.full_name });
+        }
+        return;
+      }
+
+      if (changedValues?.full_name) {
+        const match = partnerOptions.find(
+          (partner) => partner.full_name === changedValues.full_name,
+        );
+        if (match) {
+          form.setFieldsValue({
+            code: match.code,
+            short_name: match.short_name,
+          });
+        }
+      }
+    };
+
+  const handleTableChange: TableProps<PartnerItem>['onChange'] = (
+    paginationConfig,
   ) => {
-    if (changedValues?.code) {
-      const match = partnerOptions.find((partner) => partner.code === changedValues.code);
-      if (match) {
-        form.setFieldsValue({ short_name: match.short_name, full_name: match.full_name });
-      }
-      return;
-    }
-
-    if (changedValues?.short_name) {
-      const match = partnerOptions.find(
-        (partner) => partner.short_name === changedValues.short_name,
-      );
-      if (match) {
-        form.setFieldsValue({ code: match.code, full_name: match.full_name });
-      }
-      return;
-    }
-
-    if (changedValues?.full_name) {
-      const match = partnerOptions.find((partner) => partner.full_name === changedValues.full_name);
-      if (match) {
-        form.setFieldsValue({ code: match.code, short_name: match.short_name });
-      }
-    }
-  };
-
-  const handleTableChange: TableProps<PartnerItem>['onChange'] = (paginationConfig) => {
     const nextPage = paginationConfig.current ?? 1;
     fetchPartners(nextPage, filters);
   };
@@ -281,7 +307,11 @@ const Partners: FC = () => {
   return (
     <div>
       <Card>
-        <Row justify="space-between" align="middle" style={{ marginBottom: 16 }}>
+        <Row
+          justify="space-between"
+          align="middle"
+          style={{ marginBottom: 16 }}
+        >
           <Col>
             <Title level={2} style={{ margin: 0 }}>
               {t('partners.title')}
@@ -294,17 +324,37 @@ const Partners: FC = () => {
           </Col>
         </Row>
 
-        <Form<PartnerFilters> form={filterForm} layout="inline" style={{ marginBottom: 12 }}>
-          <Form.Item name="code" label={t('partners.code')} style={{ minWidth: 200 }}>
+        <Form<PartnerFilters>
+          form={filterForm}
+          layout="inline"
+          style={{ marginBottom: 12 }}
+        >
+          <Form.Item
+            name="code"
+            label={t('partners.code')}
+            style={{ minWidth: 200 }}
+          >
             <Input allowClear placeholder={t('partners.inputCode')} />
           </Form.Item>
-          <Form.Item name="short_name" label={t('partners.shortName')} style={{ minWidth: 220 }}>
+          <Form.Item
+            name="short_name"
+            label={t('partners.shortName')}
+            style={{ minWidth: 220 }}
+          >
             <Input allowClear placeholder={t('partners.inputShortName')} />
           </Form.Item>
-          <Form.Item name="full_name" label={t('partners.fullName')} style={{ minWidth: 240 }}>
+          <Form.Item
+            name="full_name"
+            label={t('partners.fullName')}
+            style={{ minWidth: 240 }}
+          >
             <Input allowClear placeholder={t('partners.inputFullName')} />
           </Form.Item>
-          <Form.Item name="type" label={t('partners.type')} style={{ minWidth: 180 }}>
+          <Form.Item
+            name="type"
+            label={t('partners.type')}
+            style={{ minWidth: 180 }}
+          >
             <Select allowClear placeholder={t('partners.selectType')}>
               <Option value={0}>{t('partners.supplier')}</Option>
               <Option value={1}>{t('partners.customer')}</Option>
@@ -344,7 +394,9 @@ const Partners: FC = () => {
       </Card>
 
       <Modal
-        title={editingPartner ? t('partners.editPartner') : t('partners.addPartner')}
+        title={
+          editingPartner ? t('partners.editPartner') : t('partners.addPartner')
+        }
         open={modalVisible}
         onCancel={() => setModalVisible(false)}
         footer={null}
@@ -361,7 +413,10 @@ const Partners: FC = () => {
             name="code"
             rules={[{ max: 50, message: t('partners.codeMax') }]}
           >
-            <Input placeholder={t('partners.inputCode')} disabled={Boolean(editingPartner)} />
+            <Input
+              placeholder={t('partners.inputCode')}
+              disabled={Boolean(editingPartner)}
+            />
           </Form.Item>
 
           <Form.Item
@@ -372,7 +427,10 @@ const Partners: FC = () => {
               { max: 50, message: t('partners.shortNameMax') },
             ]}
           >
-            <Input placeholder={t('partners.inputShortName')} disabled={Boolean(editingPartner)} />
+            <Input
+              placeholder={t('partners.inputShortName')}
+              disabled={Boolean(editingPartner)}
+            />
           </Form.Item>
 
           <Form.Item
@@ -422,7 +480,9 @@ const Partners: FC = () => {
           </Form.Item>
 
           <div className="form-actions">
-            <Button onClick={() => setModalVisible(false)}>{t('common.cancel')}</Button>
+            <Button onClick={() => setModalVisible(false)}>
+              {t('common.cancel')}
+            </Button>
             <Button type="primary" htmlType="submit">
               {editingPartner ? t('common.save') : t('common.add')}
             </Button>

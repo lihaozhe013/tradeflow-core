@@ -108,9 +108,13 @@ export interface CustomerDetail {
 export interface ReceivableDetailResponse {
   readonly customer?: CustomerDetail | null;
   readonly summary?: ReceivableDetailSummary | null;
-  readonly payment_records?: { readonly data: ReceivablePaymentRecord[] } | null;
+  readonly payment_records?: {
+    readonly data: ReceivablePaymentRecord[];
+  } | null;
   readonly payment_pagination?: PaginationInfo | null;
-  readonly outbound_records?: { readonly data: ReceivableOutboundRecord[] } | null;
+  readonly outbound_records?: {
+    readonly data: ReceivableOutboundRecord[];
+  } | null;
   readonly outbound_pagination?: PaginationInfo | null;
 }
 

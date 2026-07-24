@@ -52,8 +52,8 @@ const AnalysisConditions: React.FC<AnalysisConditionsProps> = ({
               : t('analysis.purchase') || 'Purchase'}
           </Tag>
           <span>
-            {t('analysis.time')}: {dateRange[0].format('YYYY-MM-DD')} {t('analysis.to')}{' '}
-            {dateRange[1].format('YYYY-MM-DD')}
+            {t('analysis.time')}: {dateRange[0].format('YYYY-MM-DD')}{' '}
+            {t('analysis.to')} {dateRange[1].format('YYYY-MM-DD')}
           </span>
           <span>
             {analysisType === 'outbound'

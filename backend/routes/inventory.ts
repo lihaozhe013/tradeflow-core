@@ -54,33 +54,39 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
 /**
  * GET /api/inventory/total-cost-estimate
  */
-router.get('/total-cost-estimate', async (_req: Request, res: Response): Promise<void> => {
-  const items = await prisma.inventory.findMany({
-    where: { quantity: { gt: 0 } },
-  });
-
-  let totalCost = decimalCalc.decimal(0);
-
-  // This loop might be slow if thousands of products, but typically fine for SMB
-  for (const item of items) {
-    // Get latest purchase price
-    const priceRow = await prisma.inboundRecord.findFirst({
-      where: { product: { product_model: item.product_model } },
-      orderBy: [{ inbound_date: 'desc' }, { id: 'desc' }],
-      select: { unit_price: true },
+router.get(
+  '/total-cost-estimate',
+  async (_req: Request, res: Response): Promise<void> => {
+    const items = await prisma.inventory.findMany({
+      where: { quantity: { gt: 0 } },
     });
 
-    if (priceRow && priceRow.unit_price) {
-      const infoCost = decimalCalc.multiply(item.quantity, priceRow.unit_price);
-      totalCost = decimalCalc.add(totalCost, infoCost);
-    }
-  }
+    let totalCost = decimalCalc.decimal(0);
 
-  res.json({
-    total_cost_estimate: decimalCalc.toDbNumber(totalCost, 2),
-    last_updated: new Date().toISOString(),
-  });
-});
+    // This loop might be slow if thousands of products, but typically fine for SMB
+    for (const item of items) {
+      // Get latest purchase price
+      const priceRow = await prisma.inboundRecord.findFirst({
+        where: { product: { product_model: item.product_model } },
+        orderBy: [{ inbound_date: 'desc' }, { id: 'desc' }],
+        select: { unit_price: true },
+      });
+
+      if (priceRow && priceRow.unit_price) {
+        const infoCost = decimalCalc.multiply(
+          item.quantity,
+          priceRow.unit_price,
+        );
+        totalCost = decimalCalc.add(totalCost, infoCost);
+      }
+    }
+
+    res.json({
+      total_cost_estimate: decimalCalc.toDbNumber(totalCost, 2),
+      last_updated: new Date().toISOString(),
+    });
+  },
+);
 
 /**
  * POST /api/inventory/refresh

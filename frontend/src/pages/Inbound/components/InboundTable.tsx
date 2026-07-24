@@ -45,7 +45,10 @@ const InboundTable: FC<InboundTableProps> = ({
       dataIndex: ['partner', 'short_name'],
       key: 'partner.short_name',
       width: 100,
-      filters: partners.map((p) => ({ text: p.short_name, value: p.short_name })),
+      filters: partners.map((p) => ({
+        text: p.short_name,
+        value: p.short_name,
+      })),
       onFilter: (value, record) => record.partner?.short_name === value,
       render: (_, record) => record.partner?.short_name,
     },
@@ -54,7 +57,10 @@ const InboundTable: FC<InboundTableProps> = ({
       dataIndex: 'product_model',
       key: 'product_model',
       width: 180,
-      filters: products.map((p) => ({ text: p.product_model, value: p.product_model })),
+      filters: products.map((p) => ({
+        text: p.product_model,
+        value: p.product_model,
+      })),
       onFilter: (value, record) => record.product_model === value,
     },
     {
@@ -110,7 +116,12 @@ const InboundTable: FC<InboundTableProps> = ({
       width: 80,
       render: (_value, record) => (
         <Space size="small">
-          <Button type="link" icon={<EditOutlined />} onClick={() => onEdit(record)} size="small">
+          <Button
+            type="link"
+            icon={<EditOutlined />}
+            onClick={() => onEdit(record)}
+            size="small"
+          >
             {t('common.edit')}
           </Button>
           <Popconfirm

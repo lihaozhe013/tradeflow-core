@@ -41,14 +41,21 @@ interface ProductAggregation extends ProductStats {
 /**
  * Perform FIFO calculation and return enriched outbound records
  */
-async function calculateFIFOData(startDate: string, endDate: string): Promise<AnalysisRecord[]> {
+async function calculateFIFOData(
+  startDate: string,
+  endDate: string,
+): Promise<AnalysisRecord[]> {
   // 1. Fetch Data
   const [allInbound, allOutbound, partners] = await Promise.all([
     // Inbound: All history, sorted by date asc for FIFO
     prisma.inboundRecord.findMany({
       where: { quantity: { gt: 0 } },
       orderBy: [{ inbound_date: 'asc' }, { id: 'asc' }],
-      select: { product: { select: { product_model: true } }, quantity: true, unit_price: true },
+      select: {
+        product: { select: { product_model: true } },
+        quantity: true,
+        unit_price: true,
+      },
     }),
     // Outbound: Up to endDate
     prisma.outboundRecord.findMany({
@@ -78,7 +85,10 @@ async function calculateFIFOData(startDate: string, endDate: string): Promise<An
 
   // 2. Prepare Maps
   const partnerCodeMap = new Map<string, { code: string; full_name: string }>();
-  const partnerShortMap = new Map<string, { code: string; full_name: string }>();
+  const partnerShortMap = new Map<
+    string,
+    { code: string; full_name: string }
+  >();
   partners.forEach((p) => {
     if (p.code)
       partnerCodeMap.set(p.code, {
@@ -119,13 +129,21 @@ async function calculateFIFOData(startDate: string, endDate: string): Promise<An
     const batches = inventoryState[model] || [];
 
     // Determine if this record is in our target period
-    const isTarget = outRecord.outbound_date! >= startDate && outRecord.outbound_date! <= endDate;
+    const isTarget =
+      outRecord.outbound_date! >= startDate &&
+      outRecord.outbound_date! <= endDate;
 
     // Resolve Partner - match behavior of "p.code IS NOT NULL"
     let partner = null;
-    if (outRecord.customer_code && partnerCodeMap.has(outRecord.customer_code)) {
+    if (
+      outRecord.customer_code &&
+      partnerCodeMap.has(outRecord.customer_code)
+    ) {
       partner = partnerCodeMap.get(outRecord.customer_code);
-    } else if (outRecord.partner?.short_name && partnerShortMap.has(outRecord.partner.short_name)) {
+    } else if (
+      outRecord.partner?.short_name &&
+      partnerShortMap.has(outRecord.partner.short_name)
+    ) {
       partner = partnerShortMap.get(outRecord.partner.short_name);
     }
 
@@ -243,11 +261,15 @@ export async function getCustomerAnalysisData(
   return Object.values(customerMap)
     .map((cust) => {
       cust.profit_rate =
-        cust.sales_amount !== 0 ? (cust.profit_amount / cust.sales_amount) * 100 : 0;
+        cust.sales_amount !== 0
+          ? (cust.profit_amount / cust.sales_amount) * 100
+          : 0;
       const productDetails = Object.values(cust.product_details_map)
         .map((prod) => {
           prod.profit_rate =
-            prod.sales_amount !== 0 ? (prod.profit_amount / prod.sales_amount) * 100 : 0;
+            prod.sales_amount !== 0
+              ? (prod.profit_amount / prod.sales_amount) * 100
+              : 0;
           return prod;
         })
         .sort((a, b) => b.sales_amount - a.sales_amount);
@@ -319,11 +341,15 @@ export async function getProductAnalysisData(
   return Object.values(productMap)
     .map((prod) => {
       prod.profit_rate =
-        prod.sales_amount !== 0 ? (prod.profit_amount / prod.sales_amount) * 100 : 0;
+        prod.sales_amount !== 0
+          ? (prod.profit_amount / prod.sales_amount) * 100
+          : 0;
       const customerDetails = Object.values(prod.customer_details_map)
         .map((cust) => {
           cust.profit_rate =
-            cust.sales_amount !== 0 ? (cust.profit_amount / cust.sales_amount) * 100 : 0;
+            cust.sales_amount !== 0
+              ? (cust.profit_amount / cust.sales_amount) * 100
+              : 0;
           return cust;
         })
         .sort((a, b) => b.sales_amount - a.sales_amount);

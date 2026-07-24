@@ -45,7 +45,9 @@ function maskSensitiveData(data: unknown): unknown {
 
   const masked = { ...(data as Record<string, unknown>) };
   for (const key of Object.keys(masked)) {
-    if (SENSITIVE_KEYS.some((k) => key.toLowerCase().includes(k.toLowerCase()))) {
+    if (
+      SENSITIVE_KEYS.some((k) => key.toLowerCase().includes(k.toLowerCase()))
+    ) {
       masked[key] = '******';
     } else if (typeof masked[key] === 'object') {
       masked[key] = maskSensitiveData(masked[key]);
@@ -58,7 +60,11 @@ function maskSensitiveData(data: unknown): unknown {
  * Access Logger Middleware
  * Logs modifications (POST, PUT, DELETE, PATCH) to the database.
  */
-export const requestLogger = (req: Request, res: Response, next: NextFunction): void => {
+export const requestLogger = (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): void => {
   // Only log mutations
   if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(req.method)) {
     // Check if this request should be skipped
@@ -74,7 +80,10 @@ export const requestLogger = (req: Request, res: Response, next: NextFunction): 
         try {
           const username = req.user?.username || 'anonymous';
           // Filter out anonymous requests that are not login attempts (e.g. network attacks)
-          if (username === 'anonymous' && req.originalUrl !== '/api/auth/login') {
+          if (
+            username === 'anonymous' &&
+            req.originalUrl !== '/api/auth/login'
+          ) {
             return;
           }
 
@@ -107,7 +116,12 @@ export const requestLogger = (req: Request, res: Response, next: NextFunction): 
 /**
  * Error Log Middleware
  */
-export const errorLogger = (err: Error, req: Request, _res: Response, next: NextFunction): void => {
+export const errorLogger = (
+  err: Error,
+  req: Request,
+  _res: Response,
+  next: NextFunction,
+): void => {
   console.error('API Error', {
     message: err.message,
     stack: err.stack,

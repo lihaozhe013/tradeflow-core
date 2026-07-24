@@ -1,4 +1,8 @@
-import type { User, LoginResponse, GetCurrentUserResponse } from '@/auth/auth.types';
+import type {
+  User,
+  LoginResponse,
+  GetCurrentUserResponse,
+} from '@/auth/auth.types';
 export type {
   User,
   LoginResponse,

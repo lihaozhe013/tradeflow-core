@@ -32,7 +32,9 @@ function createPrismaClient() {
   const adapter = new PrismaPg(pool);
 
   const log: Prisma.LogLevel[] =
-    process.env['NODE_ENV'] === 'development' ? ['query', 'info', 'warn', 'error'] : ['error'];
+    process.env['NODE_ENV'] === 'development'
+      ? ['query', 'info', 'warn', 'error']
+      : ['error'];
 
   return new PrismaClient({
     adapter,

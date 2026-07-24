@@ -4,8 +4,18 @@
  */
 
 import { tokenManager } from '../auth/auth';
-import type { RequestOptions, UploadOptions, DownloadOptions, RequestInstance } from './types';
-import { RequestError, NetworkError, AuthenticationError, AuthorizationError } from './types';
+import type {
+  RequestOptions,
+  UploadOptions,
+  DownloadOptions,
+  RequestInstance,
+} from './types';
+import {
+  RequestError,
+  NetworkError,
+  AuthenticationError,
+  AuthorizationError,
+} from './types';
 
 /**
  * 创建请求实例
@@ -19,9 +29,16 @@ const createRequest = (baseURL = ''): RequestInstance => {
    * @param options - 请求选项
    * @returns Promise 响应数据
    */
-  const request = async <T = unknown>(url: string, options: RequestOptions = {}): Promise<T> => {
+  const request = async <T = unknown>(
+    url: string,
+    options: RequestOptions = {},
+  ): Promise<T> => {
     const token = tokenManager.getToken();
-    const { responseType = 'json', body: requestBody, ...fetchOptions } = options;
+    const {
+      responseType = 'json',
+      body: requestBody,
+      ...fetchOptions
+    } = options;
 
     // 默认配置
     const headers: Record<string, string> = {
@@ -37,7 +54,11 @@ const createRequest = (baseURL = ''): RequestInstance => {
     let body: BodyInit | null = null;
 
     // 处理 body
-    if (requestBody && typeof requestBody === 'object' && !(requestBody instanceof FormData)) {
+    if (
+      requestBody &&
+      typeof requestBody === 'object' &&
+      !(requestBody instanceof FormData)
+    ) {
       body = JSON.stringify(requestBody);
     } else if (requestBody) {
       body = requestBody as BodyInit;
@@ -82,9 +103,15 @@ const createRequest = (baseURL = ''): RequestInstance => {
         }
 
         const errorMessage =
-          (errorData as { message?: string }).message ?? `HTTP Error: ${response.status}`;
+          (errorData as { message?: string }).message ??
+          `HTTP Error: ${response.status}`;
 
-        throw new RequestError(errorMessage, response.status, response.statusText, errorData);
+        throw new RequestError(
+          errorMessage,
+          response.status,
+          response.statusText,
+          errorData,
+        );
       }
 
       // 根据 responseType 处理响应
@@ -126,7 +153,9 @@ const createRequest = (baseURL = ''): RequestInstance => {
       }
 
       // 包装未知错误
-      throw new RequestError(error instanceof Error ? error.message : '请求失败');
+      throw new RequestError(
+        error instanceof Error ? error.message : '请求失败',
+      );
     }
   };
 
@@ -232,7 +261,12 @@ export const apiRequest = createRequest('/api');
 export { createRequest };
 
 // 导出错误类
-export { RequestError, NetworkError, AuthenticationError, AuthorizationError } from '@/utils/types';
+export {
+  RequestError,
+  NetworkError,
+  AuthenticationError,
+  AuthorizationError,
+} from '@/utils/types';
 
 // 导出类型
 export type {

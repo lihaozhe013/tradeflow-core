@@ -116,7 +116,9 @@ export const inventoryService = {
   /**
    * Handle Inbound Create
    */
-  async onInboundCreate(record: Prisma.InboundRecordGetPayload<{ include: { product: true } }>) {
+  async onInboundCreate(
+    record: Prisma.InboundRecordGetPayload<{ include: { product: true } }>,
+  ) {
     const product_model = record.product?.product_model;
     if (!product_model || !record.quantity) return;
     await prisma.$transaction(async (tx) => {
@@ -140,7 +142,9 @@ export const inventoryService = {
   /**
    * Handle Outbound Create
    */
-  async onOutboundCreate(record: Prisma.OutboundRecordGetPayload<{ include: { product: true } }>) {
+  async onOutboundCreate(
+    record: Prisma.OutboundRecordGetPayload<{ include: { product: true } }>,
+  ) {
     const product_model = record.product?.product_model;
     if (!product_model || !record.quantity) return;
     await prisma.$transaction(async (tx) => {
@@ -181,7 +185,10 @@ export const inventoryService = {
         await tx.inventory.upsert({
           where: { product_model: entry.product_model },
           update: { quantity: { decrement: entry.change_qty } },
-          create: { product_model: entry.product_model, quantity: -entry.change_qty },
+          create: {
+            product_model: entry.product_model,
+            quantity: -entry.change_qty,
+          },
         });
       }
       await tx.inventoryLedger.deleteMany({
@@ -204,7 +211,10 @@ export const inventoryService = {
         await tx.inventory.upsert({
           where: { product_model: entry.product_model },
           update: { quantity: { decrement: entry.change_qty } }, // change_qty is negative, so decrementing negative adds it back
-          create: { product_model: entry.product_model, quantity: -entry.change_qty },
+          create: {
+            product_model: entry.product_model,
+            quantity: -entry.change_qty,
+          },
         });
       }
       await tx.inventoryLedger.deleteMany({

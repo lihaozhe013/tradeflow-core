@@ -111,7 +111,10 @@ export const usePermissions = (): UsePermissionsReturn => {
       title: hasPermission(requiredRole)
         ? ''
         : t('auth.permission.needPermission', {
-            action: requiredRole === 'editor' ? t('common.edit') : t('auth.permission.view'),
+            action:
+              requiredRole === 'editor'
+                ? t('common.edit')
+                : t('auth.permission.view'),
           }),
     }),
   };

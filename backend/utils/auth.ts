@@ -52,7 +52,9 @@ export function getAuthConfig(): AuthConfig {
       maxAttempts: auth?.loginRateLimit?.maxAttempts || 20,
     },
     allowExportsForReader:
-      auth?.allowExportsForReader !== undefined ? auth.allowExportsForReader : true,
+      auth?.allowExportsForReader !== undefined
+        ? auth.allowExportsForReader
+        : true,
   };
 }
 
@@ -88,7 +90,9 @@ export async function findUser(username: string): Promise<User | null> {
   try {
     return await prisma.user.findUnique({ where: { username } });
   } catch (e) {
-    logger.error(`Failed to find user: ${username}`, { error: (e as Error).message });
+    logger.error(`Failed to find user: ${username}`, {
+      error: (e as Error).message,
+    });
     return null;
   }
 }
@@ -97,7 +101,10 @@ export async function createUser(data: User): Promise<User> {
   return await prisma.user.create({ data });
 }
 
-export async function updateUser(username: string, data: Partial<User>): Promise<User> {
+export async function updateUser(
+  username: string,
+  data: Partial<User>,
+): Promise<User> {
   return await prisma.user.update({
     where: { username },
     data,
@@ -108,11 +115,16 @@ export async function deleteUser(username: string): Promise<User> {
   return await prisma.user.delete({ where: { username } });
 }
 
-export async function verifyPassword(plain: string, hash: string): Promise<boolean> {
+export async function verifyPassword(
+  plain: string,
+  hash: string,
+): Promise<boolean> {
   try {
     return await argon2.verify(hash, plain);
   } catch (e) {
-    logger.error('Password verification failed', { error: (e as Error).message });
+    logger.error('Password verification failed', {
+      error: (e as Error).message,
+    });
     return false;
   }
 }
@@ -137,7 +149,8 @@ export function signToken(
   expiresInHours?: number,
 ): { token: string; expires_in: number } {
   const secret = ensureJwtSecret();
-  const expSeconds = Math.max(1, expiresInHours || getAuthConfig().tokenExpiresInHours) * 3600;
+  const expSeconds =
+    Math.max(1, expiresInHours || getAuthConfig().tokenExpiresInHours) * 3600;
   const payload: JWTPayload = {
     sub: user.username,
     role: user.role,
@@ -154,7 +167,11 @@ export function signToken(
 // In-memory login attempts: key => { count, firstAt }
 const attempts = new Map<string, LoginAttempt>();
 
-export function loginRateLimiter(req: Request, res: Response, next: NextFunction): void {
+export function loginRateLimiter(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): void {
   const { windowMinutes, maxAttempts } = getAuthConfig().loginRateLimit;
   const windowMs = windowMinutes * 60 * 1000;
   const ip = req.ip || req.socket?.remoteAddress || 'unknown';
@@ -238,7 +255,13 @@ export async function authenticateToken(
     };
     next();
   } catch (e) {
-    res.status(401).json({ success: false, message: 'Unauthorized', error: (e as Error).message });
+    res
+      .status(401)
+      .json({
+        success: false,
+        message: 'Unauthorized',
+        error: (e as Error).message,
+      });
   }
 }
 
@@ -258,7 +281,11 @@ export function authorize(roles: string | string[] = ['editor', 'reader']) {
 }
 
 // Check write permissions for read-only users
-export function checkWritePermission(req: Request, res: Response, next: NextFunction): void {
+export function checkWritePermission(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): void {
   if (!req.user) {
     res.status(401).json({ success: false, message: 'Unauthorized' });
     return;
@@ -299,7 +326,8 @@ export function checkWritePermission(req: Request, res: Response, next: NextFunc
       });
       res.status(403).json({
         success: false,
-        message: 'Read-only users are not authorized to perform this operation.',
+        message:
+          'Read-only users are not authorized to perform this operation.',
         error_code: 'READ_ONLY_ACCESS_DENIED',
       });
       return;
