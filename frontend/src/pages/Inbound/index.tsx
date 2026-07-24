@@ -314,14 +314,11 @@ const Inbound: FC = () => {
     }
 
     const supplierShortNameValue = form.getFieldValue('supplier_short_name') as
-      | string
-      | undefined;
+      string | undefined;
     const productModelValue = form.getFieldValue('product_model') as
-      | string
-      | undefined;
+      string | undefined;
     const inboundDateValue = form.getFieldValue('inbound_date') as
-      | Dayjs
-      | undefined;
+      Dayjs | undefined;
 
     if (supplierShortNameValue && productModelValue && inboundDateValue) {
       try {
@@ -475,11 +472,9 @@ const Inbound: FC = () => {
       'supplier_short_name',
     ) as string | undefined;
     const productModelValue = batchForm.getFieldValue('product_model') as
-      | string
-      | undefined;
+      string | undefined;
     const inboundDateValue = batchForm.getFieldValue('inbound_date') as
-      | Dayjs
-      | undefined;
+      Dayjs | undefined;
 
     if (supplierShortNameValue && productModelValue && inboundDateValue) {
       try {

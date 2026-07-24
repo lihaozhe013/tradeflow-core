@@ -7,11 +7,7 @@ export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
 
 // 响应类型
 export type ResponseType =
-  | 'json'
-  | 'blob'
-  | 'text'
-  | 'arrayBuffer'
-  | 'formData';
+  'json' | 'blob' | 'text' | 'arrayBuffer' | 'formData';
 
 // 请求选项接口
 export interface RequestOptions extends Omit<RequestInit, 'body' | 'method'> {

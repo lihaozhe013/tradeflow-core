@@ -255,13 +255,11 @@ export async function authenticateToken(
     };
     next();
   } catch (e) {
-    res
-      .status(401)
-      .json({
-        success: false,
-        message: 'Unauthorized',
-        error: (e as Error).message,
-      });
+    res.status(401).json({
+      success: false,
+      message: 'Unauthorized',
+      error: (e as Error).message,
+    });
   }
 }
 

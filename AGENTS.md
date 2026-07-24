@@ -4,11 +4,11 @@
 
 `tradeflow-core` is a monorepo with separate frontend and backend packages. Each has its own dependencies, build tooling, and config — never mix them.
 
-| Directory | Stack | Package Manager |
-|---|---|---|
-| `backend/` | Express + TypeScript + Prisma (Node.js API server) | pnpm |
-| `frontend/` | React 19 + Vite + TypeScript (SPA) | pnpm |
-| Root | Monorepo scripts (dev, build, format) | pnpm |
+| Directory   | Stack                                              | Package Manager |
+| ----------- | -------------------------------------------------- | --------------- |
+| `backend/`  | Express + TypeScript + Prisma (Node.js API server) | pnpm            |
+| `frontend/` | React 19 + Vite + TypeScript (SPA)                 | pnpm            |
+| Root        | Monorepo scripts (dev, build, format)              | pnpm            |
 
 The backend and frontend are completely independent. Their `node_modules`, tooling, and scripts live in their own directories. Do **not** install frontend dependencies in `backend/` or vice versa.
 
@@ -29,6 +29,7 @@ pnpm lint
 from the `backend/` directory. There must be **zero eslint errors**. Warnings are tolerated but should be addressed if practical.
 
 Key lint rules in effect:
+
 - `no-console` is `warn` (only `console.warn`, `console.error`, `console.info` are allowed).
 - `@typescript-eslint/no-unused-vars` is `error` (vars prefixed with `_` are ignored).
 - `@typescript-eslint/no-explicit-any` is `off`.
@@ -61,7 +62,7 @@ Prefer **`rg`** (ripgrep) over `grep` and **`fd`** over `find`. Both are assumed
 
 - Follow the Prettier config in `.prettierrc` at the repo root (single quotes, semicolons, trailing commas, 2-space indent, 80 chars).
 - Run `pnpm format` from the repo root before committing.
-- Do **not** write unnecessary comments. Comments that explain *what* obvious code does are noise. Write comments only when they explain *why* something is done in a non-obvious way.
+- Do **not** write unnecessary comments. Comments that explain _what_ obvious code does are noise. Write comments only when they explain _why_ something is done in a non-obvious way.
 - All comments and log messages must be in **English**.
 - Do **not** use emoji in log messages, console output, error messages, or comments.
 

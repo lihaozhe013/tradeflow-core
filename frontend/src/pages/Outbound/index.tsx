@@ -316,14 +316,11 @@ const Outbound: FC = () => {
     }
 
     const customerShortNameValue = form.getFieldValue('customer_short_name') as
-      | string
-      | undefined;
+      string | undefined;
     const productModelValue = form.getFieldValue('product_model') as
-      | string
-      | undefined;
+      string | undefined;
     const outboundDateValue = form.getFieldValue('outbound_date') as
-      | Dayjs
-      | undefined;
+      Dayjs | undefined;
 
     if (customerShortNameValue && productModelValue && outboundDateValue) {
       try {
@@ -478,11 +475,9 @@ const Outbound: FC = () => {
       'customer_short_name',
     ) as string | undefined;
     const productModelValue = batchForm.getFieldValue('product_model') as
-      | string
-      | undefined;
+      string | undefined;
     const outboundDateValue = batchForm.getFieldValue('outbound_date') as
-      | Dayjs
-      | undefined;
+      Dayjs | undefined;
 
     if (customerShortNameValue && productModelValue && outboundDateValue) {
       try {

@@ -54,11 +54,9 @@ router.get('/current', async (req: Request, res: Response): Promise<void> => {
   const { partner_short_name, product_model, date } = req.query;
 
   if (!partner_short_name || !product_model) {
-    res
-      .status(400)
-      .json({
-        error: 'Missing required argument: partner_short_name & product_model',
-      });
+    res.status(400).json({
+      error: 'Missing required argument: partner_short_name & product_model',
+    });
     return;
   }
 
@@ -140,12 +138,10 @@ router.get('/auto', async (req: Request, res: Response): Promise<void> => {
   const { partner_short_name, product_model, date } = req.query;
 
   if (!partner_short_name || !product_model || !date) {
-    res
-      .status(400)
-      .json({
-        error:
-          'Missing required argument: partner_short_name, product_model, date',
-      });
+    res.status(400).json({
+      error:
+        'Missing required argument: partner_short_name, product_model, date',
+    });
     return;
   }
 

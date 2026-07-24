@@ -158,12 +158,10 @@ router.post('/payments', async (req: Request, res: Response): Promise<void> => {
   const { customer_code, amount, pay_date, pay_method, remark } = req.body;
 
   if (!customer_code || amount === undefined || !pay_date) {
-    res
-      .status(400)
-      .json({
-        error:
-          'Customer ID, payment amount, and payment date are required fields',
-      });
+    res.status(400).json({
+      error:
+        'Customer ID, payment amount, and payment date are required fields',
+    });
     return;
   }
 
@@ -189,12 +187,10 @@ router.put(
     const { customer_code, amount, pay_date, pay_method, remark } = req.body;
 
     if (!customer_code || amount === undefined || !pay_date) {
-      res
-        .status(400)
-        .json({
-          error:
-            'Customer ID, payment amount, and payment date are required fields',
-        });
+      res.status(400).json({
+        error:
+          'Customer ID, payment amount, and payment date are required fields',
+      });
       return;
     }
 
