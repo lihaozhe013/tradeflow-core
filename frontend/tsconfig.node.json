@@ -9,6 +9,7 @@
     "noImplicitAny": false,
     "target": "ES2024",
     "lib": ["ES2024"],
+    "types": ["node"],
     "verbatimModuleSyntax": true
   },
   "include": ["vite.config.ts", "eslint.config.ts"]

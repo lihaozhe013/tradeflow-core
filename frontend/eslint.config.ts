@@ -5,7 +5,7 @@ import reactRefresh from 'eslint-plugin-react-refresh';
 import tseslint from '@typescript-eslint/eslint-plugin';
 import tsparser from '@typescript-eslint/parser';
 
-export default [
+const config = [
   {
     ignores: ['dist', 'node_modules', 'build', '**/*.d.ts'],
   },
@@ -116,3 +116,5 @@ export default [
     },
   },
 ];
+
+export default config as any;
