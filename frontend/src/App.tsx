@@ -40,6 +40,7 @@ import Payable from '@/pages/Payable';
 import Analysis from '@/pages/Analysis';
 import About from '@/pages/About';
 import Audit from '@/pages/Audit';
+import Users from '@/pages/Users';
 import { AuthProvider } from '@/auth/AuthContext';
 import { useAuth } from '@/auth/useAuth';
 import ProtectedRoute from '@/auth/ProtectedRoute';
@@ -122,7 +123,7 @@ const resolveDisplayName = (currentUser: User | null): string | undefined => {
 
 const getRoleColor = (role: User['role'] | undefined): string => {
   if (role === 'superuser') {
-    return 'green';
+    return 'black';
   }
   if (role === 'editor') {
     return 'green';
@@ -270,7 +271,8 @@ type MenuKey =
   | 'payable'
   | 'analysis'
   | 'export'
-  | 'audit';
+  | 'audit'
+  | 'users';
 
 interface AppContentInnerProps {
   readonly location: Location;
@@ -295,6 +297,7 @@ function AppContentInner({
     if (path === '/analysis') return 'analysis';
     if (path === '/export') return 'export';
     if (path === '/audit') return 'audit';
+    if (path === '/users') return 'users';
     if (path === '/about') return '';
     return 'overview';
   };
@@ -397,6 +400,10 @@ function AppContentInner({
           key: 'audit',
           label: <Link to="/audit">{t('nav.audit')}</Link>,
         },
+        {
+          key: 'users',
+          label: <Link to="/users">{t('nav.users')}</Link>,
+        },
       ],
     },
   ];
@@ -453,6 +460,7 @@ function AppContentInner({
               <Route path="/analysis" element={<Analysis />} />
               <Route path="/export" element={<Export />} />
               <Route path="/audit" element={<Audit />} />
+              <Route path="/users" element={<Users />} />
               <Route path="/about" element={<About />} />
               <Route path="*" element={<Navigate to="/overview" replace />} />
             </Routes>

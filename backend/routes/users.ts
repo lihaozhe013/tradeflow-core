@@ -1,86 +1,141 @@
 import express, { type Router, type Request, type Response } from 'express';
 import { Prisma } from '@/prisma/client';
 import { prisma } from '@/prismaClient';
-import { authorize, hashPassword } from '@/utils/auth';
+import { authorize, hashPassword, verifyPassword } from '@/utils/auth';
 
 const router: Router = express.Router();
 
 /**
- * GET /api/users
- * List all users. Only 'editor' or admins can view.
+ * PUT /api/users/me
+ * Update current user's display name. Any logged-in user can do this.
  */
+router.put('/me', async (req: Request, res: Response): Promise<void> => {
+  const { display_name } = req.body;
 
+  if (display_name === undefined) {
+    res
+      .status(400)
+      .json({ success: false, message: 'Missing display_name field' });
+    return;
+  }
+
+  const updated = await prisma.user.update({
+    where: { username: req.user!.username },
+    data: { display_name },
+  });
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { password_hash: _, ...safeUser } = updated;
+  res.json({ success: true, data: safeUser });
+});
+
+/**
+ * PUT /api/users/me/password
+ * Change current user's password. Requires old password verification.
+ */
+router.put(
+  '/me/password',
+  async (req: Request, res: Response): Promise<void> => {
+    const { oldPassword, newPassword } = req.body;
+
+    if (!oldPassword || !newPassword) {
+      res.status(400).json({
+        success: false,
+        message: 'Missing oldPassword or newPassword',
+      });
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      res.status(400).json({
+        success: false,
+        message: 'New password must be at least 6 characters',
+      });
+      return;
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { username: req.user!.username },
+    });
+
+    if (!user) {
+      res.status(404).json({ success: false, message: 'User not found' });
+      return;
+    }
+
+    const valid = await verifyPassword(oldPassword, user.password_hash);
+    if (!valid) {
+      res
+        .status(401)
+        .json({ success: false, message: 'Old password is incorrect' });
+      return;
+    }
+
+    const hash = await hashPassword(newPassword);
+    await prisma.user.update({
+      where: { username: req.user!.username },
+      data: {
+        password_hash: hash,
+        last_password_change: new Date().toISOString(),
+      },
+    });
+
+    res.json({ success: true, message: 'Password updated' });
+  },
+);
+
+/**
+ * GET /api/users
+ * List all users with pagination. Superuser only.
+ */
 router.get(
   '/',
-  authorize(['editor']),
-  async (_req: Request, res: Response): Promise<void> => {
-    const users = await prisma.user.findMany({
-      orderBy: { username: 'asc' },
-    });
-    // Strip hash before returning
+  authorize(['superuser']),
+  async (req: Request, res: Response): Promise<void> => {
+    const page = Math.max(1, Number(req.query['page']) || 1);
+    const pageSize = Math.min(
+      100,
+      Math.max(1, Number(req.query['pageSize']) || 20),
+    );
+    const skip = (page - 1) * pageSize;
+
+    const [users, total] = await Promise.all([
+      prisma.user.findMany({
+        orderBy: { username: 'asc' },
+        skip,
+        take: pageSize,
+      }),
+      prisma.user.count(),
+    ]);
+
     const safeUsers = users.map((u) => {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { password_hash, ...rest } = u;
       return rest;
     });
-    res.json(safeUsers);
-  },
-);
 
-/**
- * POST /api/users
- * Create a new user.
- */
-router.post(
-  '/',
-  authorize(['editor']),
-  async (req: Request, res: Response): Promise<void> => {
-    const { username, password, role, display_name } = req.body;
-
-    if (!username || !password || !role) {
-      res
-        .status(400)
-        .json({ success: false, message: 'Missing required fields' });
-      return;
-    }
-
-    // Check if user exists
-    const existing = await prisma.user.findUnique({ where: { username } });
-    if (existing) {
-      res
-        .status(409)
-        .json({ success: false, message: 'Username already exists' });
-      return;
-    }
-
-    const hash = await hashPassword(password);
-    const newUser = await prisma.user.create({
+    res.json({
+      success: true,
       data: {
-        username,
-        password_hash: hash,
-        role,
-        display_name,
-        enabled: true,
-        last_password_change: new Date().toISOString(),
+        items: safeUsers,
+        total,
+        page,
+        pageSize,
       },
     });
-
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { password_hash: _, ...safeUser } = newUser;
-    res.status(201).json({ success: true, data: safeUser });
   },
 );
 
 /**
  * PUT /api/users/:username
- * Update user details.
+ * Update user details (display_name, role, enabled). Superuser only.
  */
 router.put(
   '/:username',
-  authorize(['editor']),
+  authorize(['superuser']),
   async (req: Request, res: Response): Promise<void> => {
     const username = req.params['username'] as string;
-    const { password, role, display_name, enabled } = req.body;
+    const { role, display_name, enabled } = req.body;
 
     if (!username) {
       res.status(400).json({ success: false, message: 'Username is required' });
@@ -98,11 +153,6 @@ router.put(
     if (display_name !== undefined) data.display_name = display_name;
     if (enabled !== undefined) data.enabled = enabled;
 
-    if (password) {
-      data.password_hash = await hashPassword(password);
-      data.last_password_change = new Date().toISOString();
-    }
-
     const updated = await prisma.user.update({
       where: { username },
       data,
@@ -115,12 +165,55 @@ router.put(
 );
 
 /**
+ * PUT /api/users/:username/reset-password
+ * Superuser resets another user's password without needing old password.
+ */
+router.put(
+  '/:username/reset-password',
+  authorize(['superuser']),
+  async (req: Request, res: Response): Promise<void> => {
+    const username = req.params['username'] as string;
+    const { newPassword } = req.body;
+
+    if (!username) {
+      res.status(400).json({ success: false, message: 'Username is required' });
+      return;
+    }
+
+    if (!newPassword || newPassword.length < 6) {
+      res.status(400).json({
+        success: false,
+        message: 'New password must be at least 6 characters',
+      });
+      return;
+    }
+
+    const existing = await prisma.user.findUnique({ where: { username } });
+    if (!existing) {
+      res.status(404).json({ success: false, message: 'User not found' });
+      return;
+    }
+
+    const hash = await hashPassword(newPassword);
+    await prisma.user.update({
+      where: { username },
+      data: {
+        password_hash: hash,
+        last_password_change: new Date().toISOString(),
+      },
+    });
+
+    res.json({ success: true, message: 'Password reset successfully' });
+  },
+);
+
+/**
  * DELETE /api/users/:username
- * Delete a user.
+ * Delete a user. Superuser only. Cannot delete self.
  */
 router.delete(
   '/:username',
-  authorize(['editor']),
+  authorize(['superuser']),
   async (req: Request, res: Response): Promise<void> => {
     const username = req.params['username'] as string;
 
@@ -129,7 +222,6 @@ router.delete(
       return;
     }
 
-    // Prevent deleting self? Maybe.
     if (req.user?.username === username) {
       res
         .status(400)
