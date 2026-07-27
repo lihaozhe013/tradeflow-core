@@ -59,7 +59,7 @@ export interface AuthContextValue extends AuthContextState {
    * @param requiredRole - 所需角色
    * @returns 是否有权限
    */
-  hasPermission: (requiredRole: 'reader' | 'editor') => boolean;
+  hasPermission: (requiredRole: 'reader' | 'editor' | 'superuser') => boolean;
 }
 
 /**

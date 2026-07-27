@@ -85,3 +85,13 @@ Prefer **`rg`** (ripgrep) over `grep` and **`fd`** over `find`. Both are assumed
 - The build system uses `uv run build.py` at the root (Python). Do not modify `build.py` or the `build-config/` directory unless the task specifically involves the build pipeline.
 - Environment variables and config files live in `config/` (git-ignored). Use `config-example/` as a reference.
 - Database migrations are managed via Prisma in `backend/prisma/`.
+
+## Workflow
+
+### Plan-first approach
+
+For any non-trivial task, follow this workflow:
+
+1. **Write a plan first** — Before making changes, create a detailed plan document in `docs/reference/`. This ensures the approach is clear and agreed upon before implementation begins.
+2. **Implement the plan** — Execute the changes according to the plan document.
+3. **Archive the plan** — After successful implementation, move the plan from `docs/reference/` to `docs/archive/`. This should only be done when the user explicitly requests it — do not archive automatically.

@@ -241,7 +241,9 @@
     "totalCostEstimate": "총 비용 추정"
   },
   "nav": {
+    "advanced": "고급",
     "analysis": "데이터 분석",
+    "audit": "감사 로그",
     "export": "보고서",
     "inbound": "입고",
     "inventory": "재고",
@@ -252,6 +254,18 @@
     "productPrices": "가격",
     "products": "제품",
     "receivable": "매출채권"
+  },
+  "audit": {
+    "action": "작업 유형",
+    "createdAt": "작업 시간",
+    "noData": "로그 기록 없음",
+    "params": "요청 매개변수",
+    "resource": "요청 경로",
+    "search": "검색",
+    "searchUser": "사용자 이름으로 검색",
+    "title": "감사 로그",
+    "total": "총 {{count}} 개",
+    "username": "사용자 이름"
   },
   "outbound": {
     "actions": "작업",

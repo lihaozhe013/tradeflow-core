@@ -240,7 +240,9 @@
     "totalCostEstimate": "Total Cost Estimate"
   },
   "nav": {
+    "advanced": "Advanced",
     "analysis": "Data Analysis",
+    "audit": "Audit Log",
     "export": "Export",
     "inbound": "Inbound",
     "inventory": "Inventory",
@@ -251,6 +253,18 @@
     "productPrices": "Product Prices",
     "products": "Products",
     "receivable": "Receivable"
+  },
+  "audit": {
+    "action": "Action",
+    "createdAt": "Created At",
+    "noData": "No log records",
+    "params": "Params",
+    "resource": "Resource",
+    "search": "Search",
+    "searchUser": "Search by username",
+    "title": "Audit Log",
+    "total": "Total {{count}} records",
+    "username": "Username"
   },
   "outbound": {
     "actions": "Actions",

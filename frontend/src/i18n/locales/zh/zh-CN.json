@@ -236,7 +236,9 @@
     "totalCostEstimate": "总成本估算"
   },
   "nav": {
+    "advanced": "高级",
     "analysis": "数据分析",
+    "audit": "审计日志",
     "export": "导出",
     "inbound": "入库",
     "inventory": "库存",
@@ -247,6 +249,18 @@
     "productPrices": "价格",
     "products": "产品",
     "receivable": "应收账款"
+  },
+  "audit": {
+    "action": "操作类型",
+    "createdAt": "操作时间",
+    "noData": "暂无日志记录",
+    "params": "请求参数",
+    "resource": "请求路径",
+    "search": "查询",
+    "searchUser": "按用户名搜索",
+    "title": "审计日志",
+    "total": "共 {{count}} 条",
+    "username": "用户名"
   },
   "outbound": {
     "actions": "操作",

@@ -11,7 +11,7 @@ interface ProtectedRouteProps {
   /** 子组件 */
   children?: ReactNode;
   /** 所需角色权限 */
-  requireRole?: 'reader' | 'editor';
+  requireRole?: 'reader' | 'editor' | 'superuser';
   /** 备用内容 */
   fallback?: ReactNode;
 }

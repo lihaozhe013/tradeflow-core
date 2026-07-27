@@ -25,6 +25,7 @@ import {
   GlobalOutlined,
   UserOutlined,
   LogoutOutlined,
+  SettingOutlined,
 } from '@ant-design/icons';
 import Inbound from '@/pages/Inbound';
 import Outbound from '@/pages/Outbound';
@@ -38,6 +39,7 @@ import Receivable from '@/pages/Receivable';
 import Payable from '@/pages/Payable';
 import Analysis from '@/pages/Analysis';
 import About from '@/pages/About';
+import Audit from '@/pages/Audit';
 import { AuthProvider } from '@/auth/AuthContext';
 import { useAuth } from '@/auth/useAuth';
 import ProtectedRoute from '@/auth/ProtectedRoute';
@@ -119,6 +121,9 @@ const resolveDisplayName = (currentUser: User | null): string | undefined => {
 };
 
 const getRoleColor = (role: User['role'] | undefined): string => {
+  if (role === 'superuser') {
+    return 'green';
+  }
   if (role === 'editor') {
     return 'green';
   }
@@ -126,6 +131,9 @@ const getRoleColor = (role: User['role'] | undefined): string => {
 };
 
 const getRoleText = (role: User['role'] | undefined): string => {
+  if (role === 'superuser') {
+    return 'Superuser';
+  }
   if (role === 'editor') {
     return 'Editor';
   }
@@ -261,7 +269,8 @@ type MenuKey =
   | 'receivable'
   | 'payable'
   | 'analysis'
-  | 'export';
+  | 'export'
+  | 'audit';
 
 interface AppContentInnerProps {
   readonly location: Location;
@@ -285,6 +294,7 @@ function AppContentInner({
     if (path === '/payable') return 'payable';
     if (path === '/analysis') return 'analysis';
     if (path === '/export') return 'export';
+    if (path === '/audit') return 'audit';
     if (path === '/about') return '';
     return 'overview';
   };
@@ -378,6 +388,17 @@ function AppContentInner({
         </Link>
       ),
     },
+    {
+      key: 'advanced',
+      label: <span style={{ fontWeight: 'bold' }}>{t('nav.advanced')}</span>,
+      icon: <SettingOutlined />,
+      children: [
+        {
+          key: 'audit',
+          label: <Link to="/audit">{t('nav.audit')}</Link>,
+        },
+      ],
+    },
   ];
 
   const selectedKey = getSelectedKey();
@@ -431,6 +452,7 @@ function AppContentInner({
               <Route path="/payable" element={<Payable />} />
               <Route path="/analysis" element={<Analysis />} />
               <Route path="/export" element={<Export />} />
+              <Route path="/audit" element={<Audit />} />
               <Route path="/about" element={<About />} />
               <Route path="*" element={<Navigate to="/overview" replace />} />
             </Routes>

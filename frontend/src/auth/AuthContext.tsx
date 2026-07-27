@@ -219,14 +219,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   /**
    * Inspection Authority
    */
-  const hasPermission = (requiredRole: 'reader' | 'editor'): boolean => {
+  const hasPermission = (
+    requiredRole: 'reader' | 'editor' | 'superuser',
+  ): boolean => {
     if (!state.user) return false;
 
     if (requiredRole === 'reader') {
-      return state.user.role === 'reader' || state.user.role === 'editor';
+      return (
+        state.user.role === 'reader' ||
+        state.user.role === 'editor' ||
+        state.user.role === 'superuser'
+      );
     }
     if (requiredRole === 'editor') {
-      return state.user.role === 'editor';
+      return state.user.role === 'editor' || state.user.role === 'superuser';
+    }
+    if (requiredRole === 'superuser') {
+      return state.user.role === 'superuser';
     }
     return false;
   };

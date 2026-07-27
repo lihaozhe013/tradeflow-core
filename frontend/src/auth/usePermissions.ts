@@ -5,7 +5,7 @@ import type { User } from '@/auth/auth';
 /**
  * 角色类型
  */
-type Role = 'reader' | 'editor';
+type Role = 'reader' | 'editor' | 'superuser';
 
 /**
  * 按钮属性接口
@@ -27,12 +27,16 @@ export interface UsePermissionsReturn {
   readonly hasPermission: (requiredRole: Role) => boolean;
   /** 是否为编辑用户 */
   readonly isEditor: () => boolean;
+  /** 是否为超级用户 */
+  readonly isSuperuser: () => boolean;
   /** 是否为只读用户 */
   readonly isReader: () => boolean;
   /** 检查是否可以执行写操作 */
   readonly canEdit: () => boolean;
   /** 检查是否可以查看 */
   readonly canView: () => boolean;
+  /** 检查是否可以查看所有日志 */
+  readonly canViewAllLogs: () => boolean;
   /** 权限相关的样式类 */
   readonly getPermissionClass: (requiredRole?: Role) => string;
   /** 权限相关的按钮属性 */
@@ -76,6 +80,11 @@ export const usePermissions = (): UsePermissionsReturn => {
     isEditor: () => hasPermission('editor'),
 
     /**
+     * 是否为超级用户
+     */
+    isSuperuser: () => hasPermission('superuser'),
+
+    /**
      * 是否为只读用户
      */
     isReader: () => hasPermission('reader'),
@@ -89,6 +98,11 @@ export const usePermissions = (): UsePermissionsReturn => {
      * 检查是否可以查看
      */
     canView: () => hasPermission('reader'),
+
+    /**
+     * 检查是否可以查看所有日志
+     */
+    canViewAllLogs: () => hasPermission('superuser'),
 
     /**
      * 权限相关的样式类

@@ -292,7 +292,7 @@ export function checkWritePermission(
   const method = req.method.toUpperCase();
   const { allowExportsForReader } = getAuthConfig();
 
-  if (req.user.role === 'editor') {
+  if (req.user.role === 'editor' || req.user.role === 'superuser') {
     next();
     return;
   }

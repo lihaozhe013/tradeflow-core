@@ -22,6 +22,7 @@ import analysisRoutes from '@/routes/analysis/analysis';
 import aboutRoutes from '@/routes/about';
 import authRoutes from '@/routes/auth';
 import usersRoutes from '@/routes/users';
+import auditRoutes from '@/routes/audit';
 
 const app: Express = express();
 
@@ -84,6 +85,7 @@ app.use('/api/export', exportRoutes);
 app.use('/api/analysis', analysisRoutes);
 app.use('/api/about', aboutRoutes);
 app.use('/api/users', usersRoutes);
+app.use('/api/audit', auditRoutes);
 
 // =============================================================================
 // Error Message Middleware
