@@ -394,7 +394,7 @@ function AppContentInner({
     {
       key: 'advanced',
       label: <span style={{ fontWeight: 'bold' }}>{t('nav.advanced')}</span>,
-      icon: <SettingOutlined />,
+      // icon: <SettingOutlined />,
       children: [
         {
           key: 'audit',
