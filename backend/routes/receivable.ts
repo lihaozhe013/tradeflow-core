@@ -135,7 +135,7 @@ router.get(
     const [rows, total] = await prisma.$transaction([
       prisma.receivablePayment.findMany({
         where: { customer_code },
-        orderBy: { pay_date: 'desc' },
+        orderBy: [{ pay_date: 'desc' }, { id: 'desc' }],
         skip,
         take: Number(limit),
       }),
@@ -264,7 +264,7 @@ router.get(
       prisma.outboundRecord.count({ where: { customer_code } }),
       prisma.receivablePayment.findMany({
         where: { customer_code },
-        orderBy: { pay_date: 'desc' },
+        orderBy: [{ pay_date: 'desc' }, { id: 'desc' }],
         skip: paymentSkip,
         take: Number(payment_limit),
       }),
