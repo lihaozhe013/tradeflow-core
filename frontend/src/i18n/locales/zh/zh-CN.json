@@ -258,6 +258,8 @@
     "params": "请求参数",
     "resource": "请求路径",
     "search": "查询",
+    "searchParams": "按请求参数搜索",
+    "searchResource": "按请求路径搜索",
     "searchUser": "按用户名搜索",
     "title": "审计日志",
     "total": "共 {{count}} 条",

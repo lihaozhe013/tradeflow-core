@@ -41,18 +41,21 @@ GET /api/audit/logs
 
 **查询参数**：
 
-| 参数        | 类型   | 描述                            |
-| ----------- | ------ | ------------------------------- |
-| `page`      | number | 页码，默认 1                    |
-| `pageSize`  | number | 每页条数，默认 20               |
-| `startDate` | string | 开始时间 (ISO 格式)             |
-| `endDate`   | string | 结束时间 (ISO 格式)             |
-| `username`  | string | 用户名过滤（仅 superuser 可用） |
+| 参数        | 类型   | 描述                                              |
+| ----------- | ------ | ------------------------------------------------- |
+| `page`      | number | 页码，默认 1                                      |
+| `pageSize`  | number | 每页条数，默认 20                                 |
+| `startDate` | string | 开始时间 (ISO 格式)                               |
+| `endDate`   | string | 结束时间 (ISO 格式)                               |
+| `username`  | string | 用户名过滤（仅 superuser 可用）                   |
+| `resource`  | string | 请求路径模糊搜索（大小写不敏感）                  |
+| `params`    | string | 请求参数（JSON 字符串）模糊搜索（大小写不敏感）   |
 
 **权限逻辑**：
 
 - `superuser`：可查看所有日志，支持 `username` 参数过滤
 - `editor`/`reader`：强制只能查看自己的日志（忽略 `username` 参数）
+- `resource` / `params` 过滤对所有角色开放，可在 `username` 锁定后继续缩小结果集
 
 **响应格式**：
 
@@ -193,6 +196,8 @@ export type Role = 'reader' | 'editor' | 'superuser';
     "params": "请求参数",
     "createdAt": "操作时间",
     "searchUser": "按用户名搜索",
+    "searchResource": "按请求路径搜索",
+    "searchParams": "按请求参数搜索",
     "search": "查询",
     "noData": "暂无日志记录"
   }
@@ -218,10 +223,39 @@ export type Role = 'reader' | 'editor' | 'superuser';
 
 ---
 
-## 六、未来扩展
+## 六、后续迭代
+
+### 6.1 模糊搜索筛选增强
+
+在原有「时间范围 + 用户名」筛选的基础上，新增两个独立的模糊搜索维度，对应 `system_logs.resource` 与 `system_logs.params` 字段。详细方案见 `docs/reference/audit-log-filtering.md`。
+
+要点：
+
+- **请求路径** → 对 `resource` 做 `contains` 子串匹配
+- **请求参数** → 对 `params`（已脱敏的 JSON 字符串）做 `contains` 子串匹配
+- 大小写不敏感（Prisma `contains` + `mode: 'insensitive'`，PostgreSQL 编译为 `ILIKE`）
+- 所有角色可用，非 superuser 仍受 `username` 强制约束
+- 触发方式沿用现有「查询」按钮 + 回车快捷键
+- 无数据库 migration、无新增依赖
+
+### 6.2 文件变更（本次迭代）
+
+| 操作 | 文件路径                                      |
+| ---- | --------------------------------------------- |
+| 修改 | `backend/routes/audit.ts`                     |
+| 修改 | `frontend/src/pages/Audit/index.tsx`          |
+| 修改 | `frontend/src/i18n/locales/zh/zh-CN.json`     |
+| 修改 | `frontend/src/i18n/locales/en/en-US.json`     |
+| 修改 | `frontend/src/i18n/locales/ko/ko-Kr.json`     |
+
+---
+
+## 七、未来扩展
 
 当需要给 SUPERUSER 添加更多专属页面时，只需：
 
 1. 在 `menuItems` 的 `advanced.children` 数组中添加新项
 2. 在路由中添加对应路径
 3. 在页面中使用 `isSuperuser()` 进行权限控制
+
+数据库索引建议：当 `system_logs` 表增长后，`resource` / `params` 上的 `ILIKE` 会变慢，可后续用 `pg_trgm` + GIN 索引优化（需要 migration）。

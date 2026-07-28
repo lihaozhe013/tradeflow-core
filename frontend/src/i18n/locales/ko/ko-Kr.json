@@ -263,6 +263,8 @@
     "params": "요청 매개변수",
     "resource": "요청 경로",
     "search": "검색",
+    "searchParams": "요청 매개변수로 검색",
+    "searchResource": "요청 경로로 검색",
     "searchUser": "사용자 이름으로 검색",
     "title": "감사 로그",
     "total": "총 {{count}} 개",

@@ -55,6 +55,8 @@ function Audit(): React.ReactElement {
   });
 
   const [usernameFilter, setUsernameFilter] = useState('');
+  const [resourceFilter, setResourceFilter] = useState('');
+  const [paramsFilter, setParamsFilter] = useState('');
   const [dateRange, setDateRange] = useState<[Dayjs | null, Dayjs | null]>([
     null,
     null,
@@ -68,6 +70,13 @@ function Audit(): React.ReactElement {
 
       if (isSuperuser() && usernameFilter.trim()) {
         params.append('username', usernameFilter.trim());
+      }
+
+      if (resourceFilter.trim()) {
+        params.append('resource', resourceFilter.trim());
+      }
+      if (paramsFilter.trim()) {
+        params.append('params', paramsFilter.trim());
       }
 
       if (dateRange[0]) {
@@ -92,7 +101,7 @@ function Audit(): React.ReactElement {
         }));
       }
     },
-    [get, isSuperuser, usernameFilter, dateRange],
+    [get, isSuperuser, usernameFilter, resourceFilter, paramsFilter, dateRange],
   );
 
   const handleTableChange = (pag: TablePaginationConfig) => {
@@ -105,6 +114,8 @@ function Audit(): React.ReactElement {
 
   const handleReset = () => {
     setUsernameFilter('');
+    setResourceFilter('');
+    setParamsFilter('');
     setDateRange([null, null]);
     setPagination((prev) => ({ ...prev, current: 1 }));
     fetchData(1, pagination.pageSize || 20);
@@ -205,6 +216,24 @@ function Audit(): React.ReactElement {
             onPressEnter={handleSearch}
           />
         )}
+        <Input
+          placeholder={t('audit.searchResource', {
+            defaultValue: '按请求路径搜索',
+          })}
+          value={resourceFilter}
+          onChange={(e) => setResourceFilter(e.target.value)}
+          style={{ width: 200 }}
+          onPressEnter={handleSearch}
+        />
+        <Input
+          placeholder={t('audit.searchParams', {
+            defaultValue: '按请求参数搜索',
+          })}
+          value={paramsFilter}
+          onChange={(e) => setParamsFilter(e.target.value)}
+          style={{ width: 200 }}
+          onPressEnter={handleSearch}
+        />
         <RangePicker
           value={dateRange as [Dayjs | null, Dayjs | null]}
           onChange={(dates) =>

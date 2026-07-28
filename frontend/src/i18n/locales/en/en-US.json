@@ -262,6 +262,8 @@
     "params": "Params",
     "resource": "Resource",
     "search": "Search",
+    "searchParams": "Search by params",
+    "searchResource": "Search by resource",
     "searchUser": "Search by username",
     "title": "Audit Log",
     "total": "Total {{count}} records",
