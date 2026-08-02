@@ -1,5 +1,14 @@
 # AGENTS.md
 
+## Reference docs (look here first)
+
+When you need to look up an API endpoint or trace how data moves through the system, **start with these two documents at the repo root**:
+
+- **`docs/API_CATALOG.md`** — directory-style listing of every backend HTTP endpoint (method, path, auth requirement, source file). No prose — pick the row, then open the linked source file for the implementation.
+- **`docs/DATA_FLOW.md`** — how data moves: inbound/outbound writes, inventory recompute, pricing lookup, receivable/payable balances, invoice cache, overview/analysis caches, auth flow, frontend → backend roundtrip. Uses Mermaid diagrams where useful.
+
+**These docs may not always be the latest.** Code is the source of truth. Use the docs to navigate quickly; if a doc disagrees with reality, open the corresponding route/service file (paths are listed in `docs/API_CATALOG.md` and `docs/DATA_FLOW.md`) and resolve the discrepancy yourself.
+
 ## Project overview
 
 `tradeflow-core` is a monorepo with separate frontend and backend packages. Each has its own dependencies, build tooling, and config — never mix them.
