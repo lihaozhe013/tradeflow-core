@@ -14,6 +14,7 @@ interface InboundTableProps {
   readonly products: Product[];
   readonly selectedRowKeys: Key[];
   readonly setSelectedRowKeys: Dispatch<SetStateAction<Key[]>>;
+  readonly canWrite: boolean;
   readonly onEdit: (record: InboundRecord) => void;
   readonly onDelete: (id: number) => void;
   readonly onTableChange: NonNullable<TableProps<InboundRecord>['onChange']>;
@@ -27,6 +28,7 @@ const InboundTable: FC<InboundTableProps> = ({
   products,
   selectedRowKeys,
   setSelectedRowKeys,
+  canWrite,
   onEdit,
   onDelete,
   onTableChange,
@@ -110,7 +112,10 @@ const InboundTable: FC<InboundTableProps> = ({
       key: 'invoice_number',
       width: 140,
     },
-    {
+  ];
+
+  if (canWrite) {
+    columns.push({
       title: t('inbound.actions'),
       key: 'actions',
       width: 80,
@@ -136,8 +141,8 @@ const InboundTable: FC<InboundTableProps> = ({
           </Popconfirm>
         </Space>
       ),
-    },
-  ];
+    });
+  }
 
   const rowSelection: TableRowSelection<InboundRecord> = {
     selectedRowKeys,
@@ -154,7 +159,7 @@ const InboundTable: FC<InboundTableProps> = ({
         dataSource={inboundRecords}
         rowKey="id"
         loading={loading}
-        rowSelection={rowSelection}
+        rowSelection={canWrite ? rowSelection : undefined}
         onChange={onTableChange}
         pagination={pagination}
         scroll={{ x: 1320 }}

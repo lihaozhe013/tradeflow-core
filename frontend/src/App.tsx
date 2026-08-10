@@ -43,6 +43,7 @@ import Audit from '@/pages/Audit';
 import Users from '@/pages/Users';
 import { AuthProvider } from '@/auth/AuthContext';
 import { useAuth } from '@/auth/useAuth';
+import { usePermissions } from '@/auth/usePermissions';
 import ProtectedRoute from '@/auth/ProtectedRoute';
 import LoginPage from '@/pages/Login/LoginPage';
 import type { User } from '@/auth/auth';
@@ -283,6 +284,8 @@ function AppContentInner({
   location,
   t,
 }: AppContentInnerProps): React.ReactElement {
+  const { canManageUsers } = usePermissions();
+
   const getSelectedKey = (): MenuKey | '' => {
     const path = location.pathname;
     if (path === '/overview' || path === '/') return 'overview';
@@ -301,6 +304,21 @@ function AppContentInner({
     if (path === '/about') return '';
     return 'overview';
   };
+
+  const advancedItems: MenuProps['items'] = [
+    {
+      key: 'audit',
+      label: <Link to="/audit">{t('nav.audit')}</Link>,
+    },
+    ...(canManageUsers
+      ? [
+          {
+            key: 'users',
+            label: <Link to="/users">{t('nav.users')}</Link>,
+          },
+        ]
+      : []),
+  ];
 
   const menuItems: Required<MenuProps>['items'] = [
     {
@@ -391,21 +409,18 @@ function AppContentInner({
         </Link>
       ),
     },
-    {
-      key: 'advanced',
-      label: <span style={{ fontWeight: 'bold' }}>{t('nav.advanced')}</span>,
-      // icon: <SettingOutlined />,
-      children: [
-        {
-          key: 'audit',
-          label: <Link to="/audit">{t('nav.audit')}</Link>,
-        },
-        {
-          key: 'users',
-          label: <Link to="/users">{t('nav.users')}</Link>,
-        },
-      ],
-    },
+    ...(advancedItems.length > 0
+      ? [
+          {
+            key: 'advanced',
+            label: (
+              <span style={{ fontWeight: 'bold' }}>{t('nav.advanced')}</span>
+            ),
+            // icon: <SettingOutlined />,
+            children: advancedItems,
+          },
+        ]
+      : []),
   ];
 
   const selectedKey = getSelectedKey();
@@ -460,7 +475,14 @@ function AppContentInner({
               <Route path="/analysis" element={<Analysis />} />
               <Route path="/export" element={<Export />} />
               <Route path="/audit" element={<Audit />} />
-              <Route path="/users" element={<Users />} />
+              <Route
+                path="/users"
+                element={
+                  <ProtectedRoute requireRole="superuser">
+                    <Users />
+                  </ProtectedRoute>
+                }
+              />
               <Route path="/about" element={<About />} />
               <Route path="*" element={<Navigate to="/overview" replace />} />
             </Routes>

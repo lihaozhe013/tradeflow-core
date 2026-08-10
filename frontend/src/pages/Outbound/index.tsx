@@ -22,6 +22,7 @@ import dayjs, { type Dayjs } from 'dayjs';
 import { PlusOutlined, EditOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useSimpleApi, useSimpleApiData } from '@/hooks/useSimpleApi';
+import { usePermissions } from '@/auth/usePermissions';
 import OutboundFilter from '@/pages/Outbound/components/OutboundFilter';
 import OutboundTable from '@/pages/Outbound/components/OutboundTable';
 import OutboundModal from '@/pages/Outbound/components/OutboundModal';
@@ -54,6 +55,7 @@ const DEFAULT_PAGINATION: PaginationState = {
 
 const Outbound: FC = () => {
   const { t } = useTranslation();
+  const { canWrite } = usePermissions();
   const [outboundRecords, setOutboundRecords] = useState<OutboundRecord[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
@@ -157,6 +159,7 @@ const Outbound: FC = () => {
   }, [fetchOutboundRecords]);
 
   const handleAdd = (): void => {
+    if (!canWrite) return;
     setEditingRecord(null);
     setManualPrice(false);
     form.resetFields();
@@ -168,6 +171,7 @@ const Outbound: FC = () => {
   };
 
   const handleEdit = (record: OutboundRecord): void => {
+    if (!canWrite) return;
     setEditingRecord(record);
     const customer = partners.find(
       (partner) => partner.code === record.customer_code,
@@ -191,6 +195,7 @@ const Outbound: FC = () => {
   };
 
   const handleDelete = async (id: number): Promise<void> => {
+    if (!canWrite) return;
     try {
       await deleteRequest(`/outbound/${id}`);
       message.success(t('outbound.deleteSuccess') ?? '删除成功');
@@ -202,6 +207,7 @@ const Outbound: FC = () => {
   };
 
   const handleSave = async (values: OutboundFormValues): Promise<void> => {
+    if (!canWrite) return;
     try {
       const customerCode = values.customer_code;
       const customerShortNameValue = values.customer_short_name;
@@ -348,6 +354,7 @@ const Outbound: FC = () => {
   };
 
   const handleBatchEdit = (): void => {
+    if (!canWrite) return;
     if (selectedRowKeys.length === 0) {
       message.warning('Please select at least one record to edit');
       return;
@@ -361,6 +368,7 @@ const Outbound: FC = () => {
   };
 
   const handleBatchSave = async (values: OutboundFormValues): Promise<void> => {
+    if (!canWrite) return;
     try {
       const updates: Record<string, string | number | null> = {};
 
@@ -558,11 +566,17 @@ const Outbound: FC = () => {
               {t('outbound.title')}
             </Title>
           </Col>
-          <Col>
-            <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
-              {t('outbound.addOutboundRecord')}
-            </Button>
-          </Col>
+          {canWrite && (
+            <Col>
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={handleAdd}
+              >
+                {t('outbound.addOutboundRecord')}
+              </Button>
+            </Col>
+          )}
         </Row>
 
         <Row
@@ -579,19 +593,23 @@ const Outbound: FC = () => {
               onFilter={handleFilter}
             />
           </Col>
-          <Col>
-            <Button
-              type="default"
-              icon={<EditOutlined />}
-              onClick={handleBatchEdit}
-              disabled={selectedRowKeys.length === 0}
-              style={{ marginLeft: 8 }}
-            >
-              {`${t('outbound.batchEdit')}${
-                selectedRowKeys.length > 0 ? ` (${selectedRowKeys.length})` : ''
-              }`}
-            </Button>
-          </Col>
+          {canWrite && (
+            <Col>
+              <Button
+                type="default"
+                icon={<EditOutlined />}
+                onClick={handleBatchEdit}
+                disabled={selectedRowKeys.length === 0}
+                style={{ marginLeft: 8 }}
+              >
+                {`${t('outbound.batchEdit')}${
+                  selectedRowKeys.length > 0
+                    ? ` (${selectedRowKeys.length})`
+                    : ''
+                }`}
+              </Button>
+            </Col>
+          )}
         </Row>
 
         <Divider />
@@ -603,6 +621,7 @@ const Outbound: FC = () => {
           products={products}
           selectedRowKeys={selectedRowKeys}
           setSelectedRowKeys={setSelectedRowKeys}
+          canWrite={canWrite}
           onEdit={handleEdit}
           onDelete={handleDelete}
           onTableChange={handleTableChange}
@@ -616,41 +635,45 @@ const Outbound: FC = () => {
         />
       </Card>
 
-      <OutboundModal
-        modalVisible={modalVisible}
-        setModalVisible={setModalVisible}
-        editingRecord={editingRecord}
-        form={form}
-        partners={partners}
-        products={products}
-        manualPrice={manualPrice}
-        setManualPrice={setManualPrice}
-        onSave={handleSave}
-        onCustomerCodeChange={handleCustomerCodeChange}
-        onCustomerShortNameChange={handleCustomerShortNameChange}
-        onProductCodeChange={handleProductCodeChange}
-        onProductModelChange={handleProductModelChange}
-        onPartnerOrProductChange={handlePartnerOrProductChange}
-        onPriceOrQuantityChange={handlePriceOrQuantityChange}
-      />
+      {canWrite && (
+        <OutboundModal
+          modalVisible={modalVisible}
+          setModalVisible={setModalVisible}
+          editingRecord={editingRecord}
+          form={form}
+          partners={partners}
+          products={products}
+          manualPrice={manualPrice}
+          setManualPrice={setManualPrice}
+          onSave={handleSave}
+          onCustomerCodeChange={handleCustomerCodeChange}
+          onCustomerShortNameChange={handleCustomerShortNameChange}
+          onProductCodeChange={handleProductCodeChange}
+          onProductModelChange={handleProductModelChange}
+          onPartnerOrProductChange={handlePartnerOrProductChange}
+          onPriceOrQuantityChange={handlePriceOrQuantityChange}
+        />
+      )}
 
-      <OutboundBatchModal
-        modalVisible={batchModalVisible}
-        setModalVisible={setBatchModalVisible}
-        selectedCount={selectedRowKeys.length}
-        form={batchForm}
-        partners={partners}
-        products={products}
-        manualPrice={batchManualPrice}
-        setManualPrice={setBatchManualPrice}
-        onSave={handleBatchSave}
-        onCustomerCodeChange={handleBatchCustomerCodeChange}
-        onCustomerShortNameChange={handleBatchCustomerShortNameChange}
-        onProductCodeChange={handleBatchProductCodeChange}
-        onProductModelChange={handleBatchProductModelChange}
-        onPartnerOrProductChange={handleBatchPartnerOrProductChange}
-        onPriceOrQuantityChange={handleBatchPriceOrQuantityChange}
-      />
+      {canWrite && (
+        <OutboundBatchModal
+          modalVisible={batchModalVisible}
+          setModalVisible={setBatchModalVisible}
+          selectedCount={selectedRowKeys.length}
+          form={batchForm}
+          partners={partners}
+          products={products}
+          manualPrice={batchManualPrice}
+          setManualPrice={setBatchManualPrice}
+          onSave={handleBatchSave}
+          onCustomerCodeChange={handleBatchCustomerCodeChange}
+          onCustomerShortNameChange={handleBatchCustomerShortNameChange}
+          onProductCodeChange={handleBatchProductCodeChange}
+          onProductModelChange={handleBatchProductModelChange}
+          onPartnerOrProductChange={handleBatchPartnerOrProductChange}
+          onPriceOrQuantityChange={handleBatchPriceOrQuantityChange}
+        />
+      )}
     </div>
   );
 };

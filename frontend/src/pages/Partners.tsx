@@ -20,6 +20,7 @@ import {
 } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useSimpleApi } from '@/hooks/useSimpleApi';
+import { usePermissions } from '@/auth/usePermissions';
 
 const { Title } = Typography;
 const { Option } = Select;
@@ -86,6 +87,7 @@ const Partners: FC = () => {
     useState<PaginationInfo>(DEFAULT_PAGINATION);
   const [filters, setFilters] = useState<PartnerFilters>({});
   const { t } = useTranslation();
+  const { canWrite } = usePermissions();
 
   const { get, post, put, request } = useSimpleApi();
 
@@ -125,18 +127,21 @@ const Partners: FC = () => {
   const partnerOptions = partners;
 
   const handleAdd = (): void => {
+    if (!canWrite) return;
     setEditingPartner(null);
     form.resetFields();
     setModalVisible(true);
   };
 
   const handleEdit = (record: PartnerItem): void => {
+    if (!canWrite) return;
     setEditingPartner(record);
     form.setFieldsValue(record);
     setModalVisible(true);
   };
 
   const handleDelete = async (shortName: string): Promise<void> => {
+    if (!canWrite) return;
     try {
       await request(`/partners/${shortName}`, { method: 'DELETE' });
       message.success(t('partners.deleteSuccess'));
@@ -147,6 +152,7 @@ const Partners: FC = () => {
   };
 
   const handleSave = async (values: PartnerFormValues): Promise<void> => {
+    if (!canWrite) return;
     try {
       if (
         !values.short_name ||
@@ -218,7 +224,10 @@ const Partners: FC = () => {
       key: 'contact_phone',
       width: 120,
     },
-    {
+  ];
+
+  if (canWrite) {
+    columns.push({
       title: t('partners.actions'),
       key: 'actions',
       width: 120,
@@ -244,8 +253,8 @@ const Partners: FC = () => {
           </Popconfirm>
         </Space>
       ),
-    },
-  ];
+    });
+  }
 
   const handlePartnerFieldChange: FormProps<PartnerFormValues>['onValuesChange'] =
     (changedValues) => {
@@ -317,11 +326,17 @@ const Partners: FC = () => {
               {t('partners.title')}
             </Title>
           </Col>
-          <Col>
-            <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
-              {t('partners.addPartner')}
-            </Button>
-          </Col>
+          {canWrite && (
+            <Col>
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={handleAdd}
+              >
+                {t('partners.addPartner')}
+              </Button>
+            </Col>
+          )}
         </Row>
 
         <Form<PartnerFilters>
@@ -393,102 +408,109 @@ const Partners: FC = () => {
         </div>
       </Card>
 
-      <Modal
-        title={
-          editingPartner ? t('partners.editPartner') : t('partners.addPartner')
-        }
-        open={modalVisible}
-        onCancel={() => setModalVisible(false)}
-        footer={null}
-        width={600}
-      >
-        <Form<PartnerFormValues>
-          form={form}
-          layout="vertical"
-          onFinish={handleSave}
-          onValuesChange={handlePartnerFieldChange}
+      {canWrite && (
+        <Modal
+          title={
+            editingPartner
+              ? t('partners.editPartner')
+              : t('partners.addPartner')
+          }
+          open={modalVisible}
+          onCancel={() => setModalVisible(false)}
+          footer={null}
+          width={600}
         >
-          <Form.Item
-            label={t('partners.code')}
-            name="code"
-            rules={[{ max: 50, message: t('partners.codeMax') }]}
+          <Form<PartnerFormValues>
+            form={form}
+            layout="vertical"
+            onFinish={handleSave}
+            onValuesChange={handlePartnerFieldChange}
           >
-            <Input
-              placeholder={t('partners.inputCode')}
-              disabled={Boolean(editingPartner)}
-            />
-          </Form.Item>
+            <Form.Item
+              label={t('partners.code')}
+              name="code"
+              rules={[{ max: 50, message: t('partners.codeMax') }]}
+            >
+              <Input
+                placeholder={t('partners.inputCode')}
+                disabled={Boolean(editingPartner)}
+              />
+            </Form.Item>
 
-          <Form.Item
-            label={t('partners.shortName')}
-            name="short_name"
-            rules={[
-              { required: true, message: t('partners.inputShortName') },
-              { max: 50, message: t('partners.shortNameMax') },
-            ]}
-          >
-            <Input
-              placeholder={t('partners.inputShortName')}
-              disabled={Boolean(editingPartner)}
-            />
-          </Form.Item>
+            <Form.Item
+              label={t('partners.shortName')}
+              name="short_name"
+              rules={[
+                { required: true, message: t('partners.inputShortName') },
+                { max: 50, message: t('partners.shortNameMax') },
+              ]}
+            >
+              <Input
+                placeholder={t('partners.inputShortName')}
+                disabled={Boolean(editingPartner)}
+              />
+            </Form.Item>
 
-          <Form.Item
-            label={t('partners.fullName')}
-            name="full_name"
-            rules={[
-              { required: true, message: t('partners.inputFullName') },
-              { max: 200, message: t('partners.fullNameMax') },
-            ]}
-          >
-            <Input placeholder={t('partners.inputFullName')} />
-          </Form.Item>
+            <Form.Item
+              label={t('partners.fullName')}
+              name="full_name"
+              rules={[
+                { required: true, message: t('partners.inputFullName') },
+                { max: 200, message: t('partners.fullNameMax') },
+              ]}
+            >
+              <Input placeholder={t('partners.inputFullName')} />
+            </Form.Item>
 
-          <Form.Item
-            label={t('partners.type')}
-            name="type"
-            rules={[{ required: true, message: t('partners.selectType') }]}
-          >
-            <Select placeholder={t('partners.selectType')}>
-              <Option value={0}>{t('partners.supplier')}</Option>
-              <Option value={1}>{t('partners.customer')}</Option>
-            </Select>
-          </Form.Item>
+            <Form.Item
+              label={t('partners.type')}
+              name="type"
+              rules={[{ required: true, message: t('partners.selectType') }]}
+            >
+              <Select placeholder={t('partners.selectType')}>
+                <Option value={0}>{t('partners.supplier')}</Option>
+                <Option value={1}>{t('partners.customer')}</Option>
+              </Select>
+            </Form.Item>
 
-          <Form.Item
-            label={t('partners.address')}
-            name="address"
-            rules={[{ max: 500, message: t('partners.addressMax') }]}
-          >
-            <Input.TextArea placeholder={t('partners.inputAddress')} rows={3} />
-          </Form.Item>
+            <Form.Item
+              label={t('partners.address')}
+              name="address"
+              rules={[{ max: 500, message: t('partners.addressMax') }]}
+            >
+              <Input.TextArea
+                placeholder={t('partners.inputAddress')}
+                rows={3}
+              />
+            </Form.Item>
 
-          <Form.Item
-            label={t('partners.contactPerson')}
-            name="contact_person"
-            rules={[{ max: 100, message: t('partners.contactPersonMax') }]}
-          >
-            <Input placeholder={t('partners.inputContactPerson')} />
-          </Form.Item>
+            <Form.Item
+              label={t('partners.contactPerson')}
+              name="contact_person"
+              rules={[{ max: 100, message: t('partners.contactPersonMax') }]}
+            >
+              <Input placeholder={t('partners.inputContactPerson')} />
+            </Form.Item>
 
-          <Form.Item
-            label={t('partners.contactPhone')}
-            name="contact_phone"
-            rules={[{ max: 50, message: t('partners.contactPhoneMax') }]}
-          >
-            <Input placeholder={t('partners.inputContactPhone')} />
-          </Form.Item>
+            <Form.Item
+              label={t('partners.contactPhone')}
+              name="contact_phone"
+              rules={[{ max: 50, message: t('partners.contactPhoneMax') }]}
+            >
+              <Input placeholder={t('partners.inputContactPhone')} />
+            </Form.Item>
 
-          <div className="form-actions">
-            <Button onClick={() => setModalVisible(false)}>
-              {t('common.cancel')}
-            </Button>
-            <Button type="primary" htmlType="submit">
-              {editingPartner ? t('common.save') : t('common.add')}
-            </Button>
-          </div>
-        </Form>
-      </Modal>
+            <div className="form-actions">
+              <Button onClick={() => setModalVisible(false)}>
+                {t('common.cancel')}
+              </Button>
+              <Button type="primary" htmlType="submit">
+                {editingPartner ? t('common.save') : t('common.add')}
+              </Button>
+            </div>
+          </Form>
+        </Modal>
+      )}
     </div>
   );
 };

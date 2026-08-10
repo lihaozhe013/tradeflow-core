@@ -22,6 +22,7 @@ import type { SorterResult } from 'antd/es/table/interface';
 import dayjs, { type Dayjs } from 'dayjs';
 import { PlusOutlined, EditOutlined } from '@ant-design/icons';
 import { useSimpleApi, useSimpleApiData } from '@/hooks/useSimpleApi';
+import { usePermissions } from '@/auth/usePermissions';
 import InboundFilter from '@/pages/Inbound/components/InboundFilter';
 import InboundTable from '@/pages/Inbound/components/InboundTable';
 import InboundModal from '@/pages/Inbound/components/InboundModal.tsx';
@@ -53,6 +54,7 @@ const DEFAULT_PAGINATION: PaginationState = {
 
 const Inbound: FC = () => {
   const { t } = useTranslation();
+  const { canWrite } = usePermissions();
   const [inboundRecords, setInboundRecords] = useState<InboundRecord[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
@@ -156,6 +158,7 @@ const Inbound: FC = () => {
   }, [fetchInboundRecords]);
 
   const handleAdd = (): void => {
+    if (!canWrite) return;
     setEditingRecord(null);
     setManualPrice(false);
     form.resetFields();
@@ -167,6 +170,7 @@ const Inbound: FC = () => {
   };
 
   const handleEdit = (record: InboundRecord): void => {
+    if (!canWrite) return;
     setEditingRecord(record);
     const supplier = partners.find(
       (partner) => partner.code === record.supplier_code,
@@ -190,6 +194,7 @@ const Inbound: FC = () => {
   };
 
   const handleDelete = async (id: number): Promise<void> => {
+    if (!canWrite) return;
     try {
       await deleteRequest(`/inbound/${id}`);
       message.success(t('common.deleteSuccess') ?? '删除成功');
@@ -201,6 +206,7 @@ const Inbound: FC = () => {
   };
 
   const handleSave = async (values: InboundFormValues): Promise<void> => {
+    if (!canWrite) return;
     try {
       const supplierCode = values.supplier_code;
       const supplierShortNameValue = values.supplier_short_name;
@@ -345,6 +351,7 @@ const Inbound: FC = () => {
   };
 
   const handleBatchEdit = (): void => {
+    if (!canWrite) return;
     if (selectedRowKeys.length === 0) {
       message.warning('Please select at least one record to edit');
       return;
@@ -358,6 +365,7 @@ const Inbound: FC = () => {
   };
 
   const handleBatchSave = async (values: InboundFormValues): Promise<void> => {
+    if (!canWrite) return;
     try {
       const updates: Record<string, string | number | null> = {};
 
@@ -555,11 +563,17 @@ const Inbound: FC = () => {
               {t('nav.inbound')}
             </Title>
           </Col>
-          <Col>
-            <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
-              {t('inbound.addInboundRecord')}
-            </Button>
-          </Col>
+          {canWrite && (
+            <Col>
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={handleAdd}
+              >
+                {t('inbound.addInboundRecord')}
+              </Button>
+            </Col>
+          )}
         </Row>
 
         <Row
@@ -576,19 +590,23 @@ const Inbound: FC = () => {
               onFilter={handleFilter}
             />
           </Col>
-          <Col>
-            <Button
-              type="default"
-              icon={<EditOutlined />}
-              onClick={handleBatchEdit}
-              disabled={selectedRowKeys.length === 0}
-              style={{ marginLeft: 8 }}
-            >
-              {`${t('inbound.batchEdit')}${
-                selectedRowKeys.length > 0 ? ` (${selectedRowKeys.length})` : ''
-              }`}
-            </Button>
-          </Col>
+          {canWrite && (
+            <Col>
+              <Button
+                type="default"
+                icon={<EditOutlined />}
+                onClick={handleBatchEdit}
+                disabled={selectedRowKeys.length === 0}
+                style={{ marginLeft: 8 }}
+              >
+                {`${t('inbound.batchEdit')}${
+                  selectedRowKeys.length > 0
+                    ? ` (${selectedRowKeys.length})`
+                    : ''
+                }`}
+              </Button>
+            </Col>
+          )}
         </Row>
 
         <Divider />
@@ -600,6 +618,7 @@ const Inbound: FC = () => {
           products={products}
           selectedRowKeys={selectedRowKeys}
           setSelectedRowKeys={setSelectedRowKeys}
+          canWrite={canWrite}
           onEdit={handleEdit}
           onDelete={handleDelete}
           onTableChange={handleTableChange}
@@ -613,41 +632,45 @@ const Inbound: FC = () => {
         />
       </Card>
 
-      <InboundModal
-        modalVisible={modalVisible}
-        setModalVisible={setModalVisible}
-        editingRecord={editingRecord}
-        form={form}
-        partners={partners}
-        products={products}
-        manualPrice={manualPrice}
-        setManualPrice={setManualPrice}
-        onSave={handleSave}
-        onSupplierCodeChange={handleSupplierCodeChange}
-        onSupplierShortNameChange={handleSupplierShortNameChange}
-        onProductCodeChange={handleProductCodeChange}
-        onProductModelChange={handleProductModelChange}
-        onPartnerOrProductChange={handlePartnerOrProductChange}
-        onPriceOrQuantityChange={handlePriceOrQuantityChange}
-      />
+      {canWrite && (
+        <InboundModal
+          modalVisible={modalVisible}
+          setModalVisible={setModalVisible}
+          editingRecord={editingRecord}
+          form={form}
+          partners={partners}
+          products={products}
+          manualPrice={manualPrice}
+          setManualPrice={setManualPrice}
+          onSave={handleSave}
+          onSupplierCodeChange={handleSupplierCodeChange}
+          onSupplierShortNameChange={handleSupplierShortNameChange}
+          onProductCodeChange={handleProductCodeChange}
+          onProductModelChange={handleProductModelChange}
+          onPartnerOrProductChange={handlePartnerOrProductChange}
+          onPriceOrQuantityChange={handlePriceOrQuantityChange}
+        />
+      )}
 
-      <InboundBatchModal
-        modalVisible={batchModalVisible}
-        setModalVisible={setBatchModalVisible}
-        selectedCount={selectedRowKeys.length}
-        form={batchForm}
-        partners={partners}
-        products={products}
-        manualPrice={batchManualPrice}
-        setManualPrice={setBatchManualPrice}
-        onSave={handleBatchSave}
-        onSupplierCodeChange={handleBatchSupplierCodeChange}
-        onSupplierShortNameChange={handleBatchSupplierShortNameChange}
-        onProductCodeChange={handleBatchProductCodeChange}
-        onProductModelChange={handleBatchProductModelChange}
-        onPartnerOrProductChange={handleBatchPartnerOrProductChange}
-        onPriceOrQuantityChange={handleBatchPriceOrQuantityChange}
-      />
+      {canWrite && (
+        <InboundBatchModal
+          modalVisible={batchModalVisible}
+          setModalVisible={setBatchModalVisible}
+          selectedCount={selectedRowKeys.length}
+          form={batchForm}
+          partners={partners}
+          products={products}
+          manualPrice={batchManualPrice}
+          setManualPrice={setBatchManualPrice}
+          onSave={handleBatchSave}
+          onSupplierCodeChange={handleBatchSupplierCodeChange}
+          onSupplierShortNameChange={handleSupplierShortNameChange}
+          onProductCodeChange={handleProductCodeChange}
+          onProductModelChange={handleProductModelChange}
+          onPartnerOrProductChange={handleBatchPartnerOrProductChange}
+          onPriceOrQuantityChange={handleBatchPriceOrQuantityChange}
+        />
+      )}
     </div>
   );
 };

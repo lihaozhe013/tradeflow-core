@@ -3,6 +3,7 @@ import type {
   LoginResponse,
   GetCurrentUserResponse,
 } from '@/auth/auth.types';
+import { hasRolePermission } from '@/auth/permissions';
 export type {
   User,
   LoginResponse,
@@ -67,17 +68,11 @@ export const isAuthenticated = () => {
 };
 
 // 检查用户角色
-export const hasRole = (requiredRole: 'reader' | 'editor') => {
+export const hasRole = (
+  requiredRole: 'reader' | 'editor' | 'superuser',
+): boolean => {
   const user = userManager.getUser();
-  if (!user) return false;
-
-  if (requiredRole === 'reader') {
-    return user.role === 'reader' || user.role === 'editor';
-  }
-  if (requiredRole === 'editor') {
-    return user.role === 'editor';
-  }
-  return false;
+  return hasRolePermission(user?.role, requiredRole);
 };
 
 // API 调用

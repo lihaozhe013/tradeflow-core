@@ -23,6 +23,7 @@ import {
 import { SearchOutlined, ReloadOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useSimpleApi, useSimpleApiData } from '@/hooks/useSimpleApi';
+import { usePermissions } from '@/auth/usePermissions';
 import { currency_unit_symbol } from '@/config/types';
 
 const { Title } = Typography;
@@ -60,6 +61,7 @@ const Inventory: FC = () => {
   const [pagination, setPagination] =
     useState<PaginationInfo>(DEFAULT_PAGINATION);
   const { t } = useTranslation();
+  const { canWrite } = usePermissions();
 
   const { post, loading: actionLoading } = useSimpleApi();
 
@@ -112,6 +114,7 @@ const Inventory: FC = () => {
   */
 
   const handleRefreshCache = async (): Promise<void> => {
+    if (!canWrite) return;
     await post('/inventory/refresh', {});
     message.success(t('inventory.recalculated'));
     refreshInventory();
@@ -204,14 +207,16 @@ const Inventory: FC = () => {
                 style={{ width: 200 }}
                 allowClear
               />
-              <Button
-                type="primary"
-                icon={<ReloadOutlined spin={actionLoading} />}
-                onClick={handleRefreshCache}
-                loading={actionLoading}
-              >
-                {t('inventory.recalculate')}
-              </Button>
+              {canWrite && (
+                <Button
+                  type="primary"
+                  icon={<ReloadOutlined spin={actionLoading} />}
+                  onClick={handleRefreshCache}
+                  loading={actionLoading}
+                >
+                  {t('inventory.recalculate')}
+                </Button>
+              )}
             </Space>
           </Col>
         </Row>

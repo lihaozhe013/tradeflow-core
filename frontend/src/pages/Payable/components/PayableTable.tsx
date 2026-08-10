@@ -53,6 +53,7 @@ interface PayableTableProps {
   ) => void;
   readonly onDeletePayment: (paymentId: number) => Promise<void> | void;
   readonly apiInstance: UseSimpleApiReturn;
+  readonly canWrite: boolean;
 }
 
 const DEFAULT_MODAL_PAGINATION: ModalPaginationState = {
@@ -83,6 +84,7 @@ const PayableTable: FC<PayableTableProps> = ({
   onEditPayment,
   onDeletePayment,
   apiInstance,
+  canWrite,
 }) => {
   const { t } = useTranslation();
   const [detailsVisible, setDetailsVisible] = useState(false);
@@ -316,14 +318,16 @@ const PayableTable: FC<PayableTableProps> = ({
           >
             {t('payable.details')}
           </Button>
-          <Button
-            type="primary"
-            size="small"
-            icon={<PlusOutlined />}
-            onClick={() => onAddPayment(record)}
-          >
-            {t('payable.addPayment')}
-          </Button>
+          {canWrite && (
+            <Button
+              type="primary"
+              size="small"
+              icon={<PlusOutlined />}
+              onClick={() => onAddPayment(record)}
+            >
+              {t('payable.addPayment')}
+            </Button>
+          )}
         </Space>
       ),
     },
@@ -438,20 +442,22 @@ const PayableTable: FC<PayableTableProps> = ({
             <div style={{ marginBottom: 24 }}>
               <Title level={5}>
                 {t('payable.paymentRecords')}
-                <Button
-                  type="primary"
-                  size="small"
-                  icon={<PlusOutlined />}
-                  style={{ marginLeft: 16 }}
-                  onClick={() => {
-                    setDetailsVisible(false);
-                    if (selectedSupplier) {
-                      onAddPayment(selectedSupplier);
-                    }
-                  }}
-                >
-                  {t('payable.addPayment')}
-                </Button>
+                {canWrite && (
+                  <Button
+                    type="primary"
+                    size="small"
+                    icon={<PlusOutlined />}
+                    style={{ marginLeft: 16 }}
+                    onClick={() => {
+                      setDetailsVisible(false);
+                      if (selectedSupplier) {
+                        onAddPayment(selectedSupplier);
+                      }
+                    }}
+                  >
+                    {t('payable.addPayment')}
+                  </Button>
+                )}
               </Title>
               <Table<PayablePaymentRecord>
                 size="small"
@@ -482,39 +488,43 @@ const PayableTable: FC<PayableTableProps> = ({
                     dataIndex: 'remark',
                     ellipsis: true,
                   },
-                  {
-                    title: t('payable.action'),
-                    width: 120,
-                    render: (_value, record) => (
-                      <Space>
-                        <Button
-                          type="link"
-                          size="small"
-                          onClick={() => {
-                            setDetailsVisible(false);
-                            if (selectedSupplier) {
-                              onEditPayment(record, selectedSupplier);
-                            }
-                          }}
-                        >
-                          {t('payable.editPayment')}
-                        </Button>
-                        <Popconfirm
-                          title={t('payable.deletePaymentConfirm')}
-                          onConfirm={() =>
-                            handleDeletePaymentConfirm(record.id)
-                          }
-                        >
-                          <Button
-                            type="link"
-                            size="small"
-                            danger
-                            icon={<DeleteOutlined />}
-                          />
-                        </Popconfirm>
-                      </Space>
-                    ),
-                  },
+                  ...(canWrite
+                    ? [
+                        {
+                          title: t('payable.action'),
+                          width: 120,
+                          render: (_value, record) => (
+                            <Space>
+                              <Button
+                                type="link"
+                                size="small"
+                                onClick={() => {
+                                  setDetailsVisible(false);
+                                  if (selectedSupplier) {
+                                    onEditPayment(record, selectedSupplier);
+                                  }
+                                }}
+                              >
+                                {t('payable.editPayment')}
+                              </Button>
+                              <Popconfirm
+                                title={t('payable.deletePaymentConfirm')}
+                                onConfirm={() =>
+                                  handleDeletePaymentConfirm(record.id)
+                                }
+                              >
+                                <Button
+                                  type="link"
+                                  size="small"
+                                  danger
+                                  icon={<DeleteOutlined />}
+                                />
+                              </Popconfirm>
+                            </Space>
+                          ),
+                        },
+                      ]
+                    : []),
                 ]}
               />
             </div>
@@ -599,6 +609,7 @@ const PayableTable: FC<PayableTableProps> = ({
         supplierName={selectedSupplier?.supplier_short_name ?? null}
         onCancel={() => setInvoicedModalVisible(false)}
         apiInstance={apiInstance}
+        canWrite={canWrite}
       />
     </>
   );

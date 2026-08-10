@@ -15,6 +15,7 @@ import type { SorterResult } from 'antd/es/table/interface';
 import { ReloadOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { useSimpleApi, useSimpleApiData } from '@/hooks/useSimpleApi';
+import { usePermissions } from '@/auth/usePermissions';
 import type { UseSimpleApiReturn } from '@/hooks/types';
 import ReceivableTable from '@/pages/Receivable/components/ReceivableTable';
 import ReceivableModal from '@/pages/Receivable/components/ReceivableModal';
@@ -49,6 +50,7 @@ const toApiSortOrder = (order?: TableSortOrder): 'asc' | 'desc' => {
 
 const Receivable: FC = () => {
   const { t } = useTranslation();
+  const { canWrite } = usePermissions();
   const [receivableRecords, setReceivableRecords] = useState<
     ReceivableRecord[]
   >([]);
@@ -157,6 +159,7 @@ const Receivable: FC = () => {
   };
 
   const handleAddPayment = (customerRecord: ReceivableRecord): void => {
+    if (!canWrite) return;
     setSelectedCustomer(customerRecord);
     setEditingPayment(null);
     setModalVisible(true);
@@ -174,6 +177,7 @@ const Receivable: FC = () => {
     paymentRecord: ReceivablePaymentRecord,
     customerRecord: ReceivableRecord,
   ): void => {
+    if (!canWrite) return;
     setSelectedCustomer(customerRecord);
     setEditingPayment(paymentRecord);
     setModalVisible(true);
@@ -189,6 +193,7 @@ const Receivable: FC = () => {
   const handleSavePayment = async (
     values: ReceivablePaymentFormValues,
   ): Promise<void> => {
+    if (!canWrite) return;
     try {
       const payload = {
         ...values,
@@ -218,6 +223,7 @@ const Receivable: FC = () => {
   };
 
   const handleDeletePayment = async (paymentId: number): Promise<void> => {
+    if (!canWrite) return;
     try {
       await apiInstance.delete(`/receivable/payments/${paymentId}`);
       message.success(t('receivable.deleteSuccess'));
@@ -272,17 +278,20 @@ const Receivable: FC = () => {
           onEditPayment={handleEditPayment}
           onDeletePayment={handleDeletePayment}
           apiInstance={apiInstance as UseSimpleApiReturn}
+          canWrite={canWrite}
         />
 
-        <ReceivableModal
-          visible={modalVisible}
-          editingPayment={editingPayment}
-          selectedCustomer={selectedCustomer}
-          customers={customers}
-          form={form}
-          onSave={handleSavePayment}
-          onCancel={() => setModalVisible(false)}
-        />
+        {canWrite && (
+          <ReceivableModal
+            visible={modalVisible}
+            editingPayment={editingPayment}
+            selectedCustomer={selectedCustomer}
+            customers={customers}
+            form={form}
+            onSave={handleSavePayment}
+            onCancel={() => setModalVisible(false)}
+          />
+        )}
       </Card>
     </div>
   );

@@ -5,6 +5,7 @@ import dayjs from 'dayjs';
 import { useSimpleApi } from '../../hooks/useSimpleApi';
 import ExportPanel from './components/ExportPanel';
 import { useTranslation } from 'react-i18next';
+import { usePermissions } from '../../auth/usePermissions';
 
 const { Title } = Typography;
 const { TabPane } = Tabs;
@@ -23,6 +24,7 @@ const Report = () => {
   const [selectedCustomer, setSelectedCustomer] = useState('');
 
   const { t } = useTranslation();
+  const { canUseReaderPost } = usePermissions();
   const apiInstance = useSimpleApi();
   // 生成文件名
   const generateFilename = (exportType) => {
@@ -41,6 +43,7 @@ const Report = () => {
 
   // Node.js导出功能 - 直接下载
   const handleExport = async (exportType, params) => {
+    if (!canUseReaderPost) return;
     try {
       setLoading(true);
       message.loading(t('export.generating'), 0.5);
@@ -79,18 +82,20 @@ const Report = () => {
 
   return (
     <div>
-      <ExportPanel
-        handleExport={handleExport}
-        loading={loading}
-        dateRange={dateRange}
-        setDateRange={setDateRange}
-        paymentDateRange={paymentDateRange}
-        setPaymentDateRange={setPaymentDateRange}
-        selectedProduct={selectedProduct}
-        setSelectedProduct={setSelectedProduct}
-        selectedCustomer={selectedCustomer}
-        setSelectedCustomer={setSelectedCustomer}
-      />
+      {canUseReaderPost && (
+        <ExportPanel
+          handleExport={handleExport}
+          loading={loading}
+          dateRange={dateRange}
+          setDateRange={setDateRange}
+          paymentDateRange={paymentDateRange}
+          setPaymentDateRange={setPaymentDateRange}
+          selectedProduct={selectedProduct}
+          setSelectedProduct={setSelectedProduct}
+          selectedCustomer={selectedCustomer}
+          setSelectedCustomer={setSelectedCustomer}
+        />
+      )}
     </div>
   );
 };
