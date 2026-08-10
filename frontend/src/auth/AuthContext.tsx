@@ -8,6 +8,7 @@ import { tokenManager, userManager, authAPI } from '@/auth/auth';
 import { useTranslation } from 'react-i18next';
 import type { User } from '@/auth/auth';
 import type { AuthContextValue, LoginResult } from '@/auth/useAuth.d';
+import { hasRolePermission } from '@/auth/permissions';
 
 /**
  * Certification Status Interface
@@ -221,24 +222,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
    */
   const hasPermission = (
     requiredRole: 'reader' | 'editor' | 'superuser',
-  ): boolean => {
-    if (!state.user) return false;
-
-    if (requiredRole === 'reader') {
-      return (
-        state.user.role === 'reader' ||
-        state.user.role === 'editor' ||
-        state.user.role === 'superuser'
-      );
-    }
-    if (requiredRole === 'editor') {
-      return state.user.role === 'editor' || state.user.role === 'superuser';
-    }
-    if (requiredRole === 'superuser') {
-      return state.user.role === 'superuser';
-    }
-    return false;
-  };
+  ): boolean => hasRolePermission(state.user?.role, requiredRole);
 
   const value: AuthContextValue = {
     ...state,

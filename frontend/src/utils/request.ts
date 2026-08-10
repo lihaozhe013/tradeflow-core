@@ -3,7 +3,8 @@
  * 提供统一的请求接口，自动处理认证、错误等
  */
 
-import { tokenManager } from '../auth/auth';
+import { tokenManager, userManager } from '../auth/auth';
+import { canRoleUseRequest } from '@/auth/permissions';
 import type {
   RequestOptions,
   UploadOptions,
@@ -73,6 +74,14 @@ const createRequest = (baseURL = ''): RequestInstance => {
     const fullUrl = `${baseURL}${url}`;
 
     try {
+      if (
+        !canRoleUseRequest(userManager.getUser()?.role, config.method, fullUrl)
+      ) {
+        throw new AuthorizationError(
+          'Read-only users are not authorized to perform this operation.',
+        );
+      }
+
       const response = await fetch(fullUrl, config);
 
       // 处理 401 错误（token过期或无效）

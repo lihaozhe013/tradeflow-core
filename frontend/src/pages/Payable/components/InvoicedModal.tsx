@@ -14,6 +14,7 @@ interface InvoicedModalProps {
   readonly supplierName: string | null;
   readonly onCancel: () => void;
   readonly apiInstance: UseSimpleApiReturn;
+  readonly canWrite: boolean;
 }
 
 interface ModalPaginationState {
@@ -44,6 +45,7 @@ const InvoicedModal: FC<InvoicedModalProps> = ({
   supplierName,
   onCancel,
   apiInstance,
+  canWrite,
 }) => {
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -91,7 +93,7 @@ const InvoicedModal: FC<InvoicedModalProps> = ({
   );
 
   const handleRefreshCache = async (): Promise<void> => {
-    if (!supplierCode) return;
+    if (!supplierCode || !canWrite) return;
 
     try {
       setRefreshing(true);
@@ -171,14 +173,16 @@ const InvoicedModal: FC<InvoicedModalProps> = ({
             ? `Last updated: ${new Date(lastUpdated).toLocaleString()}`
             : ''}
         </Text>
-        <Button
-          type="primary"
-          icon={<ReloadOutlined />}
-          onClick={handleRefreshCache}
-          loading={refreshing}
-        >
-          Refresh Cache
-        </Button>
+        {canWrite && (
+          <Button
+            type="primary"
+            icon={<ReloadOutlined />}
+            onClick={handleRefreshCache}
+            loading={refreshing}
+          >
+            Refresh Cache
+          </Button>
+        )}
       </div>
 
       <Table<InvoicedRecord>

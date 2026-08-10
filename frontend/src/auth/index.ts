@@ -9,10 +9,12 @@ export { AuthProvider } from '@/auth/AuthContext';
 export { default as AuthContext } from '@/auth/AuthContext';
 export { default as LoginPage } from '@/pages/Login/LoginPage';
 export { default as ProtectedRoute } from '@/auth/ProtectedRoute';
+export { default as PermissionGate } from '@/auth/PermissionGate';
 
 // 导出 Hooks
 export { useAuth } from '@/auth/useAuth';
 export { usePermissions } from '@/auth/usePermissions';
+export { hasCapability, hasRolePermission } from '@/auth/permissions';
 
 // 导出类型
 export type {
@@ -31,6 +33,7 @@ export type {
 } from '@/auth/useAuth.d';
 
 export type { UsePermissionsReturn } from '@/auth/usePermissions';
+export type { Capability, ProtectedWriteMethod } from '@/auth/permissions';
 
 // 导出认证工具（从 auth.js）
 export {

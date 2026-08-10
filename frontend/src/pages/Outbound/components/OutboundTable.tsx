@@ -14,6 +14,7 @@ interface OutboundTableProps {
   readonly products: Product[];
   readonly selectedRowKeys: Key[];
   readonly setSelectedRowKeys: Dispatch<SetStateAction<Key[]>>;
+  readonly canWrite: boolean;
   readonly onEdit: (record: OutboundRecord) => void;
   readonly onDelete: (id: number) => void;
   readonly onTableChange: NonNullable<TableProps<OutboundRecord>['onChange']>;
@@ -27,6 +28,7 @@ const OutboundTable: FC<OutboundTableProps> = ({
   products,
   selectedRowKeys,
   setSelectedRowKeys,
+  canWrite,
   onEdit,
   onDelete,
   onTableChange,
@@ -110,7 +112,10 @@ const OutboundTable: FC<OutboundTableProps> = ({
       key: 'invoice_number',
       width: 140,
     },
-    {
+  ];
+
+  if (canWrite) {
+    columns.push({
       title: t('outbound.actions'),
       key: 'actions',
       width: 80,
@@ -136,8 +141,8 @@ const OutboundTable: FC<OutboundTableProps> = ({
           </Popconfirm>
         </Space>
       ),
-    },
-  ];
+    });
+  }
 
   const rowSelection: TableRowSelection<OutboundRecord> = {
     selectedRowKeys,
@@ -154,7 +159,7 @@ const OutboundTable: FC<OutboundTableProps> = ({
         dataSource={outboundRecords}
         rowKey="id"
         loading={loading}
-        rowSelection={rowSelection}
+        rowSelection={canWrite ? rowSelection : undefined}
         onChange={onTableChange}
         pagination={pagination}
         scroll={{ x: 1320 }}

@@ -15,6 +15,7 @@ import { useTranslation } from 'react-i18next';
 import { ReloadOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { useSimpleApi, useSimpleApiData } from '@/hooks/useSimpleApi';
+import { usePermissions } from '@/auth/usePermissions';
 import type { UseSimpleApiReturn } from '@/hooks/types';
 import PayableTable from '@/pages/Payable/components/PayableTable';
 import PayableModal from '@/pages/Payable/components/PayableModal';
@@ -49,6 +50,7 @@ const toApiSortOrder = (order?: TableSortOrder): 'asc' | 'desc' => {
 
 const Payable: FC = () => {
   const { t } = useTranslation();
+  const { canWrite } = usePermissions();
   const [payableRecords, setPayableRecords] = useState<PayableRecord[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
@@ -155,6 +157,7 @@ const Payable: FC = () => {
   };
 
   const handleAddPayment = (supplierRecord: PayableRecord): void => {
+    if (!canWrite) return;
     setSelectedSupplier(supplierRecord);
     setEditingPayment(null);
     setModalVisible(true);
@@ -172,6 +175,7 @@ const Payable: FC = () => {
     paymentRecord: PayablePaymentRecord,
     supplierRecord: PayableRecord,
   ): void => {
+    if (!canWrite) return;
     setSelectedSupplier(supplierRecord);
     setEditingPayment(paymentRecord);
     setModalVisible(true);
@@ -187,6 +191,7 @@ const Payable: FC = () => {
   const handleSavePayment = async (
     values: PayablePaymentFormValues,
   ): Promise<void> => {
+    if (!canWrite) return;
     try {
       const payload = {
         ...values,
@@ -218,6 +223,7 @@ const Payable: FC = () => {
   };
 
   const handleDeletePayment = async (paymentId: number): Promise<void> => {
+    if (!canWrite) return;
     try {
       await apiInstance.delete(`/payable/payments/${paymentId}`);
       message.success(t('payable.deleteSuccess'));
@@ -272,17 +278,20 @@ const Payable: FC = () => {
           onEditPayment={handleEditPayment}
           onDeletePayment={handleDeletePayment}
           apiInstance={apiInstance as UseSimpleApiReturn}
+          canWrite={canWrite}
         />
 
-        <PayableModal
-          visible={modalVisible}
-          editingPayment={editingPayment}
-          selectedSupplier={selectedSupplier}
-          suppliers={suppliers}
-          form={form}
-          onSave={handleSavePayment}
-          onCancel={() => setModalVisible(false)}
-        />
+        {canWrite && (
+          <PayableModal
+            visible={modalVisible}
+            editingPayment={editingPayment}
+            selectedSupplier={selectedSupplier}
+            suppliers={suppliers}
+            form={form}
+            onSave={handleSavePayment}
+            onCancel={() => setModalVisible(false)}
+          />
+        )}
       </Card>
     </div>
   );

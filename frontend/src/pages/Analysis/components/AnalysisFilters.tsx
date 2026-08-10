@@ -36,6 +36,7 @@ interface AnalysisFiltersProps {
   refreshing: boolean;
   exporting: boolean;
   hasData: boolean;
+  canUseReaderPost: boolean;
   analysisType: AnalysisType;
   onAnalysisTypeChange: (type: AnalysisType) => void;
 }
@@ -54,6 +55,7 @@ const AnalysisFilters: React.FC<AnalysisFiltersProps> = ({
   refreshing,
   exporting,
   hasData,
+  canUseReaderPost,
   analysisType,
   onAnalysisTypeChange,
 }) => {
@@ -152,28 +154,30 @@ const AnalysisFilters: React.FC<AnalysisFiltersProps> = ({
         </Col>
       </Row>
 
-      <Row style={{ marginBottom: 24 }}>
-        <Col>
-          <Space>
-            <Button
-              type="primary"
-              icon={<ReloadOutlined />}
-              onClick={onRefresh}
-              loading={refreshing}
-            >
-              {t('analysis.refreshData')}
-            </Button>
-            <Button
-              icon={<DownloadOutlined />}
-              onClick={onExport}
-              loading={exporting}
-              disabled={!hasData}
-            >
-              {t('analysis.exportData')}
-            </Button>
-          </Space>
-        </Col>
-      </Row>
+      {canUseReaderPost && (
+        <Row style={{ marginBottom: 24 }}>
+          <Col>
+            <Space>
+              <Button
+                type="primary"
+                icon={<ReloadOutlined />}
+                onClick={onRefresh}
+                loading={refreshing}
+              >
+                {t('analysis.refreshData')}
+              </Button>
+              <Button
+                icon={<DownloadOutlined />}
+                onClick={onExport}
+                loading={exporting}
+                disabled={!hasData}
+              >
+                {t('analysis.exportData')}
+              </Button>
+            </Space>
+          </Col>
+        </Row>
+      )}
     </>
   );
 };

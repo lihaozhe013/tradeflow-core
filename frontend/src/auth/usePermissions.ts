@@ -1,6 +1,8 @@
 import { useAuth } from '@/auth/useAuth';
 import { useTranslation } from 'react-i18next';
 import type { User } from '@/auth/auth';
+import { hasCapability } from '@/auth/permissions';
+import type { Capability } from '@/auth/permissions';
 
 /**
  * 角色类型
@@ -25,6 +27,14 @@ export interface UsePermissionsReturn {
   readonly user: User | null;
   /** 基础权限检查 */
   readonly hasPermission: (requiredRole: Role) => boolean;
+  /** Capability-level permission check */
+  readonly hasCapability: (capability: Capability) => boolean;
+  /** Whether business data write operations are available */
+  readonly canWrite: boolean;
+  /** Whether reader-compatible POST operations are available */
+  readonly canUseReaderPost: boolean;
+  /** Whether user administration is available */
+  readonly canManageUsers: boolean;
   /** 是否为编辑用户 */
   readonly isEditor: () => boolean;
   /** 是否为超级用户 */
@@ -66,6 +76,8 @@ export interface UsePermissionsReturn {
 export const usePermissions = (): UsePermissionsReturn => {
   const { user, hasPermission } = useAuth();
   const { t } = useTranslation();
+  const hasCapabilityForUser = (capability: Capability): boolean =>
+    hasCapability(user?.role, capability);
 
   return {
     // 当前用户信息
@@ -73,6 +85,10 @@ export const usePermissions = (): UsePermissionsReturn => {
 
     // 基础权限检查
     hasPermission,
+    hasCapability: hasCapabilityForUser,
+    canWrite: hasCapabilityForUser('writeData'),
+    canUseReaderPost: hasCapabilityForUser('readerPost'),
+    canManageUsers: hasCapabilityForUser('manageUsers'),
 
     /**
      * 是否为编辑用户
@@ -87,7 +103,7 @@ export const usePermissions = (): UsePermissionsReturn => {
     /**
      * 是否为只读用户
      */
-    isReader: () => hasPermission('reader'),
+    isReader: () => user?.role === 'reader',
 
     /**
      * 检查是否可以执行写操作

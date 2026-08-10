@@ -22,6 +22,7 @@ import {
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useSimpleApi, useSimpleApiData } from '@/hooks/useSimpleApi';
+import { usePermissions } from '@/auth/usePermissions';
 
 import MonthlyInventoryChange from '@/pages/Overview/MonthlyInventoryChange';
 import OutOfStockModal from '@/pages/Overview/OutOfStockModal';
@@ -33,6 +34,7 @@ const { Title, Text } = Typography;
 
 const OverviewMain = () => {
   const { t } = useTranslation();
+  const { canWrite, canUseReaderPost } = usePermissions();
   const { post } = useSimpleApi();
 
   // 使用简化版Hook获取统计数据
@@ -48,13 +50,14 @@ const OverviewMain = () => {
 
   // 刷新统计数据
   const refreshStats = useCallback(async () => {
+    if (!canUseReaderPost) return;
     try {
       await post('/overview/stats', {});
       await refetch();
     } catch (err) {
       console.error('刷新统计数据失败:', err);
     }
-  }, [post, refetch]);
+  }, [canUseReaderPost, post, refetch]);
 
   // 处理数据格式，确保安全访问
   const resolvedStats = stats ?? DEFAULT_OVERVIEW_STATS;
@@ -172,54 +175,60 @@ const OverviewMain = () => {
           </Text>
         </div>
         <Space>
-          <Button
-            type="primary"
-            icon={<ImportOutlined />}
-            onClick={handleQuickInbound}
-            size="large"
-            style={{
-              borderRadius: '12px',
-              background: '#52c41a',
-              border: 'none',
-              color: 'white',
-              boxShadow: '0 2px 8px rgba(82,196,26,0.2)',
-              marginRight: '8px',
-            }}
-          >
-            {t('overview.quickInbound')}
-          </Button>
-          <Button
-            type="primary"
-            icon={<ExportOutlined />}
-            onClick={handleQuickOutbound}
-            size="large"
-            style={{
-              borderRadius: '12px',
-              background: '#fa8c16',
-              border: 'none',
-              color: 'white',
-              boxShadow: '0 2px 8px rgba(250,140,22,0.2)',
-              marginRight: '8px',
-            }}
-          >
-            {t('overview.quickOutbound')}
-          </Button>
-          <Button
-            type="primary"
-            icon={<SyncOutlined />}
-            onClick={refreshStats}
-            loading={loading}
-            size="large"
-            style={{
-              borderRadius: '12px',
-              background: '#1677ff',
-              border: 'none',
-              color: 'white',
-              boxShadow: '0 2px 8px rgba(22,119,255,0.08)',
-            }}
-          >
-            {t('overview.refreshData')}
-          </Button>
+          {canWrite && (
+            <>
+              <Button
+                type="primary"
+                icon={<ImportOutlined />}
+                onClick={handleQuickInbound}
+                size="large"
+                style={{
+                  borderRadius: '12px',
+                  background: '#52c41a',
+                  border: 'none',
+                  color: 'white',
+                  boxShadow: '0 2px 8px rgba(82,196,26,0.2)',
+                  marginRight: '8px',
+                }}
+              >
+                {t('overview.quickInbound')}
+              </Button>
+              <Button
+                type="primary"
+                icon={<ExportOutlined />}
+                onClick={handleQuickOutbound}
+                size="large"
+                style={{
+                  borderRadius: '12px',
+                  background: '#fa8c16',
+                  border: 'none',
+                  color: 'white',
+                  boxShadow: '0 2px 8px rgba(250,140,22,0.2)',
+                  marginRight: '8px',
+                }}
+              >
+                {t('overview.quickOutbound')}
+              </Button>
+            </>
+          )}
+          {canUseReaderPost && (
+            <Button
+              type="primary"
+              icon={<SyncOutlined />}
+              onClick={refreshStats}
+              loading={loading}
+              size="large"
+              style={{
+                borderRadius: '12px',
+                background: '#1677ff',
+                border: 'none',
+                color: 'white',
+                boxShadow: '0 2px 8px rgba(22,119,255,0.08)',
+              }}
+            >
+              {t('overview.refreshData')}
+            </Button>
+          )}
         </Space>
       </div>
 

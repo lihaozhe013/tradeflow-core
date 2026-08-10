@@ -21,6 +21,7 @@ import {
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { PRODUCT_CATEGORIES } from '@/config';
 import { useSimpleApi } from '@/hooks/useSimpleApi';
+import { usePermissions } from '@/auth/usePermissions';
 
 const { Title } = Typography;
 
@@ -79,6 +80,7 @@ const Products: FC = () => {
     useState<PaginationInfo>(DEFAULT_PAGINATION);
   const [filters, setFilters] = useState<ProductFilters>({});
   const { t } = useTranslation();
+  const { canWrite } = usePermissions();
 
   const { get, post, put, request } = useSimpleApi();
 
@@ -116,18 +118,21 @@ const Products: FC = () => {
   const productOptions = products;
 
   const handleAdd = (): void => {
+    if (!canWrite) return;
     setEditingProduct(null);
     form.resetFields();
     setModalVisible(true);
   };
 
   const handleEdit = (record: ProductItem): void => {
+    if (!canWrite) return;
     setEditingProduct(record);
     form.setFieldsValue(record);
     setModalVisible(true);
   };
 
   const handleDelete = async (code: string): Promise<void> => {
+    if (!canWrite) return;
     try {
       await request(`/products/${code}`, { method: 'DELETE' });
       message.success(t('products.deleteSuccess'));
@@ -138,6 +143,7 @@ const Products: FC = () => {
   };
 
   const handleSave = async (values: ProductFormValues): Promise<void> => {
+    if (!canWrite) return;
     try {
       if (editingProduct) {
         await put(`/products/${editingProduct.code}`, values);
@@ -178,7 +184,10 @@ const Products: FC = () => {
       key: 'remark',
       width: 300,
     },
-    {
+  ];
+
+  if (canWrite) {
+    columns.push({
       title: t('products.actions'),
       key: 'actions',
       width: 120,
@@ -204,8 +213,8 @@ const Products: FC = () => {
           </Popconfirm>
         </Space>
       ),
-    },
-  ];
+    });
+  }
 
   const handleProductFieldChange: FormProps<ProductFormValues>['onValuesChange'] =
     (changedValues) => {
@@ -260,11 +269,17 @@ const Products: FC = () => {
               {t('products.title')}
             </Title>
           </Col>
-          <Col>
-            <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
-              {t('products.addProduct')}
-            </Button>
-          </Col>
+          {canWrite && (
+            <Col>
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={handleAdd}
+              >
+                {t('products.addProduct')}
+              </Button>
+            </Col>
+          )}
         </Row>
 
         <Form<ProductFilters>
@@ -339,91 +354,98 @@ const Products: FC = () => {
         </div>
       </Card>
 
-      <Modal
-        title={
-          editingProduct ? t('products.editProduct') : t('products.addProduct')
-        }
-        open={modalVisible}
-        onCancel={() => setModalVisible(false)}
-        footer={null}
-        width={600}
-      >
-        <Form<ProductFormValues>
-          form={form}
-          layout="vertical"
-          onFinish={handleSave}
-          onValuesChange={handleProductFieldChange}
+      {canWrite && (
+        <Modal
+          title={
+            editingProduct
+              ? t('products.editProduct')
+              : t('products.addProduct')
+          }
+          open={modalVisible}
+          onCancel={() => setModalVisible(false)}
+          footer={null}
+          width={600}
         >
-          <Form.Item
-            label={t('products.code')}
-            name="code"
-            rules={[
-              { required: true, message: t('products.inputCode') },
-              { max: 50, message: t('products.codeMax') },
-            ]}
+          <Form<ProductFormValues>
+            form={form}
+            layout="vertical"
+            onFinish={handleSave}
+            onValuesChange={handleProductFieldChange}
           >
-            <Input
-              placeholder={t('products.inputCode')}
-              disabled={Boolean(editingProduct)}
-            />
-          </Form.Item>
+            <Form.Item
+              label={t('products.code')}
+              name="code"
+              rules={[
+                { required: true, message: t('products.inputCode') },
+                { max: 50, message: t('products.codeMax') },
+              ]}
+            >
+              <Input
+                placeholder={t('products.inputCode')}
+                disabled={Boolean(editingProduct)}
+              />
+            </Form.Item>
 
-          <Form.Item
-            label={t('products.productModel')}
-            name="product_model"
-            rules={[
-              { required: true, message: t('products.inputProductModel') },
-              { max: 100, message: t('products.productModelMax') },
-            ]}
-          >
-            <Input
-              placeholder={t('products.inputProductModel')}
-              disabled={Boolean(editingProduct)}
-            />
-          </Form.Item>
+            <Form.Item
+              label={t('products.productModel')}
+              name="product_model"
+              rules={[
+                { required: true, message: t('products.inputProductModel') },
+                { max: 100, message: t('products.productModelMax') },
+              ]}
+            >
+              <Input
+                placeholder={t('products.inputProductModel')}
+                disabled={Boolean(editingProduct)}
+              />
+            </Form.Item>
 
-          <Form.Item
-            label={t('products.category')}
-            name="category"
-            rules={[
-              { required: true, message: t('products.selectCategory') },
-              { max: 100, message: t('products.categoryMax') },
-            ]}
-          >
-            <Select
-              showSearch
-              allowClear
-              placeholder={t('products.selectCategory')}
-              options={PRODUCT_CATEGORIES.map((name) => ({
-                value: name,
-                label: name,
-              }))}
-              filterOption={(input, option) => {
-                const label =
-                  typeof option?.label === 'string' ? option.label : '';
-                return label.toLowerCase().includes(input.toLowerCase());
-              }}
-            />
-          </Form.Item>
+            <Form.Item
+              label={t('products.category')}
+              name="category"
+              rules={[
+                { required: true, message: t('products.selectCategory') },
+                { max: 100, message: t('products.categoryMax') },
+              ]}
+            >
+              <Select
+                showSearch
+                allowClear
+                placeholder={t('products.selectCategory')}
+                options={PRODUCT_CATEGORIES.map((name) => ({
+                  value: name,
+                  label: name,
+                }))}
+                filterOption={(input, option) => {
+                  const label =
+                    typeof option?.label === 'string' ? option.label : '';
+                  return label.toLowerCase().includes(input.toLowerCase());
+                }}
+              />
+            </Form.Item>
 
-          <Form.Item
-            label={t('products.remark')}
-            name="remark"
-            rules={[{ max: 500, message: t('products.remarkMax') }]}
-          >
-            <Input.TextArea placeholder={t('products.inputRemark')} rows={4} />
-          </Form.Item>
+            <Form.Item
+              label={t('products.remark')}
+              name="remark"
+              rules={[{ max: 500, message: t('products.remarkMax') }]}
+            >
+              <Input.TextArea
+                placeholder={t('products.inputRemark')}
+                rows={4}
+              />
+            </Form.Item>
 
-          <div className="form-actions">
-            <Button onClick={() => setModalVisible(false)}>
-              {t('common.cancel')}
-            </Button>
-            <Button type="primary" htmlType="submit">
-              {editingProduct ? t('common.save') : t('common.add')}
-            </Button>
-          </div>
-        </Form>
-      </Modal>
+            <div className="form-actions">
+              <Button onClick={() => setModalVisible(false)}>
+                {t('common.cancel')}
+              </Button>
+              <Button type="primary" htmlType="submit">
+                {editingProduct ? t('common.save') : t('common.add')}
+              </Button>
+            </div>
+          </Form>
+        </Modal>
+      )}
     </div>
   );
 };

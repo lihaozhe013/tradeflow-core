@@ -54,6 +54,7 @@ interface ReceivableTableProps {
   ) => void;
   readonly onDeletePayment: (paymentId: number) => Promise<void> | void;
   readonly apiInstance: UseSimpleApiReturn;
+  readonly canWrite: boolean;
 }
 
 const DEFAULT_MODAL_PAGINATION: ModalPaginationState = {
@@ -84,6 +85,7 @@ const ReceivableTable: FC<ReceivableTableProps> = ({
   onEditPayment,
   onDeletePayment,
   apiInstance,
+  canWrite,
 }) => {
   const { t } = useTranslation();
   const [detailsVisible, setDetailsVisible] = useState(false);
@@ -319,14 +321,16 @@ const ReceivableTable: FC<ReceivableTableProps> = ({
           >
             {t('receivable.details')}
           </Button>
-          <Button
-            type="primary"
-            size="small"
-            icon={<PlusOutlined />}
-            onClick={() => onAddPayment(record)}
-          >
-            {t('receivable.addPayment')}
-          </Button>
+          {canWrite && (
+            <Button
+              type="primary"
+              size="small"
+              icon={<PlusOutlined />}
+              onClick={() => onAddPayment(record)}
+            >
+              {t('receivable.addPayment')}
+            </Button>
+          )}
         </Space>
       ),
     },
@@ -445,20 +449,22 @@ const ReceivableTable: FC<ReceivableTableProps> = ({
             <div style={{ marginBottom: 24 }}>
               <Title level={5}>
                 {t('receivable.paymentRecords')}
-                <Button
-                  type="primary"
-                  size="small"
-                  icon={<PlusOutlined />}
-                  style={{ marginLeft: 16 }}
-                  onClick={() => {
-                    setDetailsVisible(false);
-                    if (selectedCustomer) {
-                      onAddPayment(selectedCustomer);
-                    }
-                  }}
-                >
-                  {t('receivable.addPayment')}
-                </Button>
+                {canWrite && (
+                  <Button
+                    type="primary"
+                    size="small"
+                    icon={<PlusOutlined />}
+                    style={{ marginLeft: 16 }}
+                    onClick={() => {
+                      setDetailsVisible(false);
+                      if (selectedCustomer) {
+                        onAddPayment(selectedCustomer);
+                      }
+                    }}
+                  >
+                    {t('receivable.addPayment')}
+                  </Button>
+                )}
               </Title>
               <Table<ReceivablePaymentRecord>
                 size="small"
@@ -489,39 +495,43 @@ const ReceivableTable: FC<ReceivableTableProps> = ({
                     dataIndex: 'remark',
                     ellipsis: true,
                   },
-                  {
-                    title: t('receivable.action'),
-                    width: 120,
-                    render: (_value, record) => (
-                      <Space>
-                        <Button
-                          type="link"
-                          size="small"
-                          onClick={() => {
-                            setDetailsVisible(false);
-                            if (selectedCustomer) {
-                              onEditPayment(record, selectedCustomer);
-                            }
-                          }}
-                        >
-                          {t('receivable.editPayment')}
-                        </Button>
-                        <Popconfirm
-                          title={t('receivable.deletePaymentConfirm')}
-                          onConfirm={() =>
-                            handleDeletePaymentConfirm(record.id)
-                          }
-                        >
-                          <Button
-                            type="link"
-                            size="small"
-                            danger
-                            icon={<DeleteOutlined />}
-                          />
-                        </Popconfirm>
-                      </Space>
-                    ),
-                  },
+                  ...(canWrite
+                    ? [
+                        {
+                          title: t('receivable.action'),
+                          width: 120,
+                          render: (_value, record) => (
+                            <Space>
+                              <Button
+                                type="link"
+                                size="small"
+                                onClick={() => {
+                                  setDetailsVisible(false);
+                                  if (selectedCustomer) {
+                                    onEditPayment(record, selectedCustomer);
+                                  }
+                                }}
+                              >
+                                {t('receivable.editPayment')}
+                              </Button>
+                              <Popconfirm
+                                title={t('receivable.deletePaymentConfirm')}
+                                onConfirm={() =>
+                                  handleDeletePaymentConfirm(record.id)
+                                }
+                              >
+                                <Button
+                                  type="link"
+                                  size="small"
+                                  danger
+                                  icon={<DeleteOutlined />}
+                                />
+                              </Popconfirm>
+                            </Space>
+                          ),
+                        },
+                      ]
+                    : []),
                 ]}
               />
             </div>
@@ -606,6 +616,7 @@ const ReceivableTable: FC<ReceivableTableProps> = ({
         customerName={selectedCustomer?.customer_short_name ?? null}
         onCancel={() => setInvoicedModalVisible(false)}
         apiInstance={apiInstance}
+        canWrite={canWrite}
       />
     </>
   );

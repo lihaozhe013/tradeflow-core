@@ -27,6 +27,7 @@ import {
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { useSimpleApi, useSimpleApiData } from '@/hooks/useSimpleApi';
+import { usePermissions } from '@/auth/usePermissions';
 
 const { Title } = Typography;
 
@@ -98,6 +99,7 @@ const ProductPrices: FC = () => {
   const [form] = Form.useForm<ProductPriceFormValues>();
   const [filterForm] = Form.useForm<ProductPriceFilters>();
   const { t } = useTranslation();
+  const { canWrite } = usePermissions();
 
   const [filters, setFilters] = useState<FilterState>({});
   const [pagination, setPagination] =
@@ -163,6 +165,7 @@ const ProductPrices: FC = () => {
   */
 
   const handleAdd = (): void => {
+    if (!canWrite) return;
     setEditingPrice(null);
     form.resetFields();
     form.setFieldsValue({
@@ -172,6 +175,7 @@ const ProductPrices: FC = () => {
   };
 
   const handleEdit = (record: ProductPriceItem): void => {
+    if (!canWrite) return;
     setEditingPrice(record);
     form.setFieldsValue({
       ...record,
@@ -183,6 +187,7 @@ const ProductPrices: FC = () => {
   };
 
   const handleDelete = async (id: number): Promise<void> => {
+    if (!canWrite) return;
     try {
       await request(`/product-prices/${id}`, { method: 'DELETE' });
       message.success(t('productPrices.deleteSuccess'));
@@ -193,6 +198,7 @@ const ProductPrices: FC = () => {
   };
 
   const handleSave = async (values: ProductPriceFormValues): Promise<void> => {
+    if (!canWrite) return;
     try {
       if (!values.partner_short_name || !values.product_model) {
         message.error(
@@ -254,7 +260,10 @@ const ProductPrices: FC = () => {
       key: 'effective_date',
       width: 120,
     },
-    {
+  ];
+
+  if (canWrite) {
+    columns.push({
       title: t('productPrices.actions'),
       key: 'actions',
       width: 120,
@@ -280,8 +289,8 @@ const ProductPrices: FC = () => {
           </Popconfirm>
         </Space>
       ),
-    },
-  ];
+    });
+  }
 
   const partnerCodeOptions: AutoCompleteProps['options'] = partners.map(
     (partner) => ({
@@ -406,11 +415,17 @@ const ProductPrices: FC = () => {
               {t('productPrices.title')}
             </Title>
           </Col>
-          <Col>
-            <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
-              {t('productPrices.addPrice')}
-            </Button>
-          </Col>
+          {canWrite && (
+            <Col>
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={handleAdd}
+              >
+                {t('productPrices.addPrice')}
+              </Button>
+            </Col>
+          )}
         </Row>
 
         <Form<ProductPriceFilters>
@@ -491,165 +506,170 @@ const ProductPrices: FC = () => {
         </div>
       </Card>
 
-      <Modal
-        title={
-          editingPrice
-            ? t('productPrices.editPrice')
-            : t('productPrices.addPrice')
-        }
-        open={modalVisible}
-        onCancel={() => setModalVisible(false)}
-        footer={null}
-        width={600}
-      >
-        <Form<ProductPriceFormValues>
-          form={form}
-          layout="vertical"
-          onFinish={handleSave}
-          onValuesChange={handleFormValuesChange}
+      {canWrite && (
+        <Modal
+          title={
+            editingPrice
+              ? t('productPrices.editPrice')
+              : t('productPrices.addPrice')
+          }
+          open={modalVisible}
+          onCancel={() => setModalVisible(false)}
+          footer={null}
+          width={600}
         >
-          <Row gutter={8}>
-            <Col span={12}>
-              <Form.Item
-                label={t('productPrices.partnerCode')}
-                name="partner_code"
-              >
-                <AutoComplete
-                  options={partnerCodeOptions}
-                  placeholder={t('productPrices.inputPartnerCode')}
-                  onChange={handlePartnerCodeChange}
-                  filterOption={(inputValue, option) => {
-                    const optionValue = option?.value;
-                    const normalized =
-                      typeof optionValue === 'number'
-                        ? optionValue.toString()
-                        : (optionValue ?? '');
-                    return normalized
-                      .toLowerCase()
-                      .includes(inputValue.toLowerCase());
-                  }}
-                />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item
-                label={t('productPrices.partnerShortName')}
-                name="partner_short_name"
-                rules={[
-                  { required: true, message: t('productPrices.selectPartner') },
-                ]}
-              >
-                <Select
-                  placeholder={t('productPrices.selectPartner')}
-                  showSearch
-                  options={partnerShortNameOptions}
-                  onChange={handlePartnerShortNameChange}
-                  filterOption={(input, option) => {
-                    const value =
-                      typeof option?.value === 'string' ? option.value : '';
-                    return value.toLowerCase().includes(input.toLowerCase());
-                  }}
-                />
-              </Form.Item>
-            </Col>
-          </Row>
-          <Row gutter={8}>
-            <Col span={12}>
-              <Form.Item
-                label={t('productPrices.productCode')}
-                name="product_code"
-              >
-                <AutoComplete
-                  options={productCodeOptions}
-                  placeholder={t('productPrices.inputProductCode')}
-                  onChange={handleProductCodeChange}
-                  filterOption={(inputValue, option) => {
-                    const optionValue = option?.value;
-                    const normalized =
-                      typeof optionValue === 'number'
-                        ? optionValue.toString()
-                        : (optionValue ?? '');
-                    return normalized
-                      .toLowerCase()
-                      .includes(inputValue.toLowerCase());
-                  }}
-                />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item
-                label={t('productPrices.productModel')}
-                name="product_model"
-                rules={[
-                  {
-                    required: true,
-                    message: t('productPrices.selectProductModel'),
-                  },
-                ]}
-              >
-                <Select
-                  placeholder={t('productPrices.selectProductModel')}
-                  showSearch
-                  options={productModelOptions}
-                  onChange={handleProductModelChange}
-                  filterOption={(input, option) => {
-                    const value =
-                      typeof option?.value === 'string' ? option.value : '';
-                    return value.toLowerCase().includes(input.toLowerCase());
-                  }}
-                />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Form.Item
-            label={t('productPrices.unitPrice')}
-            name="unit_price"
-            rules={[
-              { required: true, message: t('productPrices.inputUnitPrice') },
-              {
-                type: 'number',
-                min: 0,
-                message: t('productPrices.unitPriceMin'),
-              },
-            ]}
+          <Form<ProductPriceFormValues>
+            form={form}
+            layout="vertical"
+            onFinish={handleSave}
+            onValuesChange={handleFormValuesChange}
           >
-            <InputNumber
-              style={{ width: '100%' }}
-              placeholder={t('productPrices.inputUnitPrice')}
-              precision={4}
-              min={0}
-              addonBefore={currency_unit_symbol}
-            />
-          </Form.Item>
+            <Row gutter={8}>
+              <Col span={12}>
+                <Form.Item
+                  label={t('productPrices.partnerCode')}
+                  name="partner_code"
+                >
+                  <AutoComplete
+                    options={partnerCodeOptions}
+                    placeholder={t('productPrices.inputPartnerCode')}
+                    onChange={handlePartnerCodeChange}
+                    filterOption={(inputValue, option) => {
+                      const optionValue = option?.value;
+                      const normalized =
+                        typeof optionValue === 'number'
+                          ? optionValue.toString()
+                          : (optionValue ?? '');
+                      return normalized
+                        .toLowerCase()
+                        .includes(inputValue.toLowerCase());
+                    }}
+                  />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item
+                  label={t('productPrices.partnerShortName')}
+                  name="partner_short_name"
+                  rules={[
+                    {
+                      required: true,
+                      message: t('productPrices.selectPartner'),
+                    },
+                  ]}
+                >
+                  <Select
+                    placeholder={t('productPrices.selectPartner')}
+                    showSearch
+                    options={partnerShortNameOptions}
+                    onChange={handlePartnerShortNameChange}
+                    filterOption={(input, option) => {
+                      const value =
+                        typeof option?.value === 'string' ? option.value : '';
+                      return value.toLowerCase().includes(input.toLowerCase());
+                    }}
+                  />
+                </Form.Item>
+              </Col>
+            </Row>
+            <Row gutter={8}>
+              <Col span={12}>
+                <Form.Item
+                  label={t('productPrices.productCode')}
+                  name="product_code"
+                >
+                  <AutoComplete
+                    options={productCodeOptions}
+                    placeholder={t('productPrices.inputProductCode')}
+                    onChange={handleProductCodeChange}
+                    filterOption={(inputValue, option) => {
+                      const optionValue = option?.value;
+                      const normalized =
+                        typeof optionValue === 'number'
+                          ? optionValue.toString()
+                          : (optionValue ?? '');
+                      return normalized
+                        .toLowerCase()
+                        .includes(inputValue.toLowerCase());
+                    }}
+                  />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item
+                  label={t('productPrices.productModel')}
+                  name="product_model"
+                  rules={[
+                    {
+                      required: true,
+                      message: t('productPrices.selectProductModel'),
+                    },
+                  ]}
+                >
+                  <Select
+                    placeholder={t('productPrices.selectProductModel')}
+                    showSearch
+                    options={productModelOptions}
+                    onChange={handleProductModelChange}
+                    filterOption={(input, option) => {
+                      const value =
+                        typeof option?.value === 'string' ? option.value : '';
+                      return value.toLowerCase().includes(input.toLowerCase());
+                    }}
+                  />
+                </Form.Item>
+              </Col>
+            </Row>
 
-          <Form.Item
-            label={t('productPrices.effectiveDate')}
-            name="effective_date"
-            rules={[
-              {
-                required: true,
-                message: t('productPrices.selectEffectiveDate'),
-              },
-            ]}
-          >
-            <DatePicker
-              style={{ width: '100%' }}
-              placeholder={t('productPrices.selectEffectiveDate')}
-              format="YYYY-MM-DD"
-            />
-          </Form.Item>
+            <Form.Item
+              label={t('productPrices.unitPrice')}
+              name="unit_price"
+              rules={[
+                { required: true, message: t('productPrices.inputUnitPrice') },
+                {
+                  type: 'number',
+                  min: 0,
+                  message: t('productPrices.unitPriceMin'),
+                },
+              ]}
+            >
+              <InputNumber
+                style={{ width: '100%' }}
+                placeholder={t('productPrices.inputUnitPrice')}
+                precision={4}
+                min={0}
+                addonBefore={currency_unit_symbol}
+              />
+            </Form.Item>
 
-          <div className="form-actions">
-            <Button onClick={() => setModalVisible(false)}>
-              {t('common.cancel')}
-            </Button>
-            <Button type="primary" htmlType="submit">
-              {editingPrice ? t('common.save') : t('common.add')}
-            </Button>
-          </div>
-        </Form>
-      </Modal>
+            <Form.Item
+              label={t('productPrices.effectiveDate')}
+              name="effective_date"
+              rules={[
+                {
+                  required: true,
+                  message: t('productPrices.selectEffectiveDate'),
+                },
+              ]}
+            >
+              <DatePicker
+                style={{ width: '100%' }}
+                placeholder={t('productPrices.selectEffectiveDate')}
+                format="YYYY-MM-DD"
+              />
+            </Form.Item>
+
+            <div className="form-actions">
+              <Button onClick={() => setModalVisible(false)}>
+                {t('common.cancel')}
+              </Button>
+              <Button type="primary" htmlType="submit">
+                {editingPrice ? t('common.save') : t('common.add')}
+              </Button>
+            </div>
+          </Form>
+        </Modal>
+      )}
     </div>
   );
 };

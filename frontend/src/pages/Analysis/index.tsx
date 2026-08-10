@@ -14,9 +14,11 @@ import AdvancedExportModal from '@/pages/Analysis/components/AdvancedExportModal
 import useAnalysisData from '@/pages/Analysis/hooks/useAnalysisData';
 import useAnalysisExport from '@/pages/Analysis/hooks/useAnalysisExport';
 import type { AnalysisType } from '@/types/analysis';
+import { usePermissions } from '@/auth/usePermissions';
 
 const Analysis: React.FC = () => {
   const { t } = useTranslation();
+  const { canUseReaderPost } = usePermissions();
 
   // Custom Hooks
   const {
@@ -81,6 +83,7 @@ const Analysis: React.FC = () => {
 
   // Export
   const handleExportAnalysis = async () => {
+    if (!canUseReaderPost) return;
     if (!analysisData) {
       message.warning(t('analysis.noDataToExport'));
       return;
@@ -111,6 +114,7 @@ const Analysis: React.FC = () => {
   };
 
   const handleRefreshData = async () => {
+    if (!canUseReaderPost) return;
     if (!dateRange?.[0] || !dateRange?.[1]) {
       message.warning(t('analysis.selectTimeRange'));
       return;
@@ -153,6 +157,7 @@ const Analysis: React.FC = () => {
           refreshing={refreshing}
           exporting={exporting}
           hasData={!!analysisData}
+          canUseReaderPost={canUseReaderPost}
           analysisType={analysisType}
           onAnalysisTypeChange={handleAnalysisTypeChange}
         />
@@ -184,13 +189,15 @@ const Analysis: React.FC = () => {
           />
         </Spin>
 
-        <AdvancedExportModal
-          visible={advancedExportModalVisible}
-          onCancel={() => setAdvancedExportModalVisible(false)}
-          onExport={(type: string) => handleAdvancedExport(type)}
-          exporting={exporting}
-          analysisType={analysisType}
-        />
+        {canUseReaderPost && (
+          <AdvancedExportModal
+            visible={advancedExportModalVisible}
+            onCancel={() => setAdvancedExportModalVisible(false)}
+            onExport={(type: string) => handleAdvancedExport(type)}
+            exporting={exporting}
+            analysisType={analysisType}
+          />
+        )}
       </Card>
     </div>
   );
