@@ -1,7 +1,11 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
-import frontendConfig from '../build-config/frontendConfig.json';
+import frontendConfig from '../build-config/frontendConfig.json' with {
+  type: 'json',
+};
+
+const frontendRoot = process.cwd();
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -9,16 +13,16 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      '@/build-config': path.resolve(__dirname, '../build-config'),
-      '@': path.resolve(__dirname, './src'),
-      '@/components': path.resolve(__dirname, './src/components'),
-      '@/pages': path.resolve(__dirname, './src/pages'),
-      '@/hooks': path.resolve(__dirname, './src/hooks'),
-      '@/utils': path.resolve(__dirname, './src/utils'),
-      '@/auth': path.resolve(__dirname, './src/auth'),
-      '@/config': path.resolve(__dirname, './src/config'),
-      '@/i18n': path.resolve(__dirname, './src/i18n'),
-      '@/types': path.resolve(__dirname, './src/types'),
+      '@/build-config': path.resolve(frontendRoot, '../build-config'),
+      '@': path.resolve(frontendRoot, './src'),
+      '@/components': path.resolve(frontendRoot, './src/components'),
+      '@/pages': path.resolve(frontendRoot, './src/pages'),
+      '@/hooks': path.resolve(frontendRoot, './src/hooks'),
+      '@/utils': path.resolve(frontendRoot, './src/utils'),
+      '@/auth': path.resolve(frontendRoot, './src/auth'),
+      '@/config': path.resolve(frontendRoot, './src/config'),
+      '@/i18n': path.resolve(frontendRoot, './src/i18n'),
+      '@/types': path.resolve(frontendRoot, './src/types'),
     },
   },
   server: {
