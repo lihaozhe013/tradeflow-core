@@ -41,15 +41,15 @@ GET /api/audit/logs
 
 **查询参数**：
 
-| 参数        | 类型   | 描述                                              |
-| ----------- | ------ | ------------------------------------------------- |
-| `page`      | number | 页码，默认 1                                      |
-| `pageSize`  | number | 每页条数，默认 20                                 |
-| `startDate` | string | 开始时间 (ISO 格式)                               |
-| `endDate`   | string | 结束时间 (ISO 格式)                               |
-| `username`  | string | 用户名过滤（仅 superuser 可用）                   |
-| `resource`  | string | 请求路径模糊搜索（大小写不敏感）                  |
-| `params`    | string | 请求参数（JSON 字符串）模糊搜索（大小写不敏感）   |
+| 参数        | 类型   | 描述                                            |
+| ----------- | ------ | ----------------------------------------------- |
+| `page`      | number | 页码，默认 1                                    |
+| `pageSize`  | number | 每页条数，默认 20                               |
+| `startDate` | string | 开始时间 (ISO 格式)                             |
+| `endDate`   | string | 结束时间 (ISO 格式)                             |
+| `username`  | string | 用户名过滤（仅 superuser 可用）                 |
+| `resource`  | string | 请求路径模糊搜索（大小写不敏感）                |
+| `params`    | string | 请求参数（JSON 字符串）模糊搜索（大小写不敏感） |
 
 **权限逻辑**：
 
@@ -240,13 +240,13 @@ export type Role = 'reader' | 'editor' | 'superuser';
 
 ### 6.2 文件变更（本次迭代）
 
-| 操作 | 文件路径                                      |
-| ---- | --------------------------------------------- |
-| 修改 | `backend/routes/audit.ts`                     |
-| 修改 | `frontend/src/pages/Audit/index.tsx`          |
-| 修改 | `frontend/src/i18n/locales/zh/zh-CN.json`     |
-| 修改 | `frontend/src/i18n/locales/en/en-US.json`     |
-| 修改 | `frontend/src/i18n/locales/ko/ko-Kr.json`     |
+| 操作 | 文件路径                                  |
+| ---- | ----------------------------------------- |
+| 修改 | `backend/routes/audit.ts`                 |
+| 修改 | `frontend/src/pages/Audit/index.tsx`      |
+| 修改 | `frontend/src/i18n/locales/zh/zh-CN.json` |
+| 修改 | `frontend/src/i18n/locales/en/en-US.json` |
+| 修改 | `frontend/src/i18n/locales/ko/ko-Kr.json` |
 
 ---
 

@@ -22,6 +22,7 @@ This document describes how data moves through the system. Use it to understand 
 ```
 
 Auxiliary state lives in:
+
 - `config/` — YAML/JSON config (config dir discovered by `backend/utils/paths.ts`)
 - `cache/` — JSON snapshots (`overview-stats.json`, `analysis-cache.json`, `invoice-cache.json`, `jwt-secret.txt`)
 
@@ -43,16 +44,19 @@ Client                  POST /api/inbound                  Database / Cache
 ```
 
 Inventory update logic: `backend/utils/inventoryService.ts:onInboundCreate`
+
 - adds `+quantity` to `inventory_ledger.change_qty`
 - upserts `inventory.quantity += quantity`
 - both inside a single `prisma.$transaction`
 
 Update = revert old + apply new:
+
 ```
 onInboundUpdate(old, new) = onInboundDelete(old.id) + onInboundCreate(new)
 ```
 
 Delete = revert:
+
 ```
 onInboundDelete(id)
   for each ledger row with reference_id=id, change_type='INBOUND':
@@ -268,6 +272,7 @@ checkWritePermission (server.ts)
 ```
 
 Roles enforced:
+
 - `superuser` — full access, including `/api/users/*` (guarded by `authorize(['superuser'])` in `routes/users.ts`)
 - `editor` — read + write
 - `reader` — read-only, plus limited POST on export/overview/analysis
@@ -277,6 +282,7 @@ Roles enforced:
 ## 11. Audit logging
 
 `GET /api/audit/logs` reads `system_logs`. Visibility rules:
+
 - `superuser` may filter by any `username`
 - `editor` / `reader` see only their own logs
 - Filters: `startDate`, `endDate`, `resource` (case-insensitive contains), `params` (case-insensitive contains)
@@ -335,12 +341,12 @@ sequenceDiagram
 
 ## 14. Cache file map
 
-| File                            | Owner                            | Trigger                                                |
-| ------------------------------- | -------------------------------- | ------------------------------------------------------ |
-| `cache/jwt-secret.txt`          | `utils/auth.ts:ensureJwtSecret`  | First startup (created if missing)                     |
-| `cache/overview-stats.json`     | `routes/overview.ts`             | `POST /api/overview/stats`                             |
-| `cache/analysis-cache.json`     | `routes/analysis/analysis.ts`    | `POST /api/analysis/refresh`                            |
-| `cache/invoice-cache.json`      | `utils/invoiceCacheService.ts`   | `POST /api/{receivable,payable}/invoices/refresh/...`  |
-| `config/config.yaml` + friends  | `utils/paths.ts:getConfigDir`    | Read at boot (`auth.*`, `server.*`, `frontend.*`)      |
+| File                           | Owner                           | Trigger                                               |
+| ------------------------------ | ------------------------------- | ----------------------------------------------------- |
+| `cache/jwt-secret.txt`         | `utils/auth.ts:ensureJwtSecret` | First startup (created if missing)                    |
+| `cache/overview-stats.json`    | `routes/overview.ts`            | `POST /api/overview/stats`                            |
+| `cache/analysis-cache.json`    | `routes/analysis/analysis.ts`   | `POST /api/analysis/refresh`                          |
+| `cache/invoice-cache.json`     | `utils/invoiceCacheService.ts`  | `POST /api/{receivable,payable}/invoices/refresh/...` |
+| `config/config.yaml` + friends | `utils/paths.ts:getConfigDir`   | Read at boot (`auth.*`, `server.*`, `frontend.*`)     |
 
 Resolution path helpers: `resolveFilesInCachePath`, `resolveFilesInConfigPath` in `backend/utils/paths.ts`.
