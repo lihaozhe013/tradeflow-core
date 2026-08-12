@@ -4,8 +4,10 @@
 
 在现有按时间 + 用户名筛选的基础上，新增两个互相独立的模糊搜索维度：
 
-- **请求路径** → 对应 `system_logs.resource`（`req.originalUrl`，例 `/api/inbound?product_code=A001`）
-- **请求参数** → 对应 `system_logs.params`（已脱敏的 JSON 字符串，对整段做 substring 匹配）
+- **请求路径** → 对应 `system_logs.resource`（`req.originalUrl`，例
+  `/api/inbound?product_code=A001`）
+- **请求参数** → 对应
+  `system_logs.params`（已脱敏的 JSON 字符串，对整段做 substring 匹配）
 
 约束：
 
@@ -20,7 +22,8 @@
 
 ### 1.1 `backend/routes/audit.ts`
 
-在 `req.query` 解构中新增 `resource` 与 `params`，在已有 `where` 对象中追加 `contains` + `mode: 'insensitive'` 过滤条件。
+在 `req.query` 解构中新增 `resource` 与 `params`，在已有 `where` 对象中追加
+`contains` + `mode: 'insensitive'` 过滤条件。
 
 ```ts
 const { page, pageSize, startDate, endDate, username, resource, params } =
@@ -120,7 +123,8 @@ pnpm format                   # 仓库根目录
 
 ## 五、范围外 / 未来扩展
 
-- 数据库索引：`resource` / `params` 当前无索引，`ILIKE` 在大数据量下慢，可后续加 `pg_trgm` + GIN
+- 数据库索引：`resource` / `params` 当前无索引，`ILIKE` 在大数据量下慢，可后续加
+  `pg_trgm` + GIN
 - 解析 JSON 后按 `key=value` 结构化搜索（需 JSONB 化）
 - 把 `statusCode` / IP 也写进日志表（schema 变更）
 - debounce 自动触发搜索

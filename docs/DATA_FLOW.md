@@ -1,8 +1,11 @@
 # Data Flow
 
-This document describes how data moves through the system. Use it to understand which tables, services, and API routes interact when a user action triggers data changes.
+This document describes how data moves through the system. Use it to understand
+which tables, services, and API routes interact when a user action triggers data
+changes.
 
-> Note: this doc may fall behind the code. When in doubt, search the corresponding route/service file (see `API_CATALOG.md`).
+> Note: this doc may fall behind the code. When in doubt, search the
+> corresponding route/service file (see `API_CATALOG.md`).
 
 ---
 
@@ -23,8 +26,10 @@ This document describes how data moves through the system. Use it to understand 
 
 Auxiliary state lives in:
 
-- `config/` — YAML/JSON config (config dir discovered by `backend/utils/paths.ts`)
-- `cache/` — JSON snapshots (`overview-stats.json`, `analysis-cache.json`, `invoice-cache.json`, `jwt-secret.txt`)
+- `config/` — YAML/JSON config (config dir discovered by
+  `backend/utils/paths.ts`)
+- `cache/` — JSON snapshots (`overview-stats.json`, `analysis-cache.json`,
+  `invoice-cache.json`, `jwt-secret.txt`)
 
 ---
 
@@ -78,7 +83,9 @@ Client                  POST /api/outbound                 Database
  │                            │     └─ inventory.upsert         │ ──▶ inventory
 ```
 
-`inventoryService.onOutboundCreate` writes the ledger with `change_qty = -quantity` so that `SUM(change_qty)` per model equals the current stock.
+`inventoryService.onOutboundCreate` writes the ledger with
+`change_qty = -quantity` so that `SUM(change_qty)` per model equals the current
+stock.
 
 Same revert-then-reapply semantics for `PUT` and `DELETE` as inbound.
 
@@ -86,7 +93,8 @@ Same revert-then-reapply semantics for `PUT` and `DELETE` as inbound.
 
 ## 4. Inventory recalculation
 
-`POST /api/inventory/refresh` rebuilds the entire `inventory` and `inventory_ledger` tables from raw `inbound_records` and `outbound_records`.
+`POST /api/inventory/refresh` rebuilds the entire `inventory` and
+`inventory_ledger` tables from raw `inbound_records` and `outbound_records`.
 
 ```mermaid
 sequenceDiagram
@@ -107,13 +115,15 @@ sequenceDiagram
   API-->>Client: { products_count, last_updated }
 ```
 
-Source: `backend/utils/inventoryService.ts:recalculateAll`. Used as a repair tool when ledger/cache drifts.
+Source: `backend/utils/inventoryService.ts:recalculateAll`. Used as a repair
+tool when ledger/cache drifts.
 
 ---
 
 ## 5. Pricing lookup flow
 
-`/api/product-prices/auto` and `/current` resolve the price effective for a given partner and product on a given date.
+`/api/product-prices/auto` and `/current` resolve the price effective for a
+given partner and product on a given date.
 
 ```
 GET /api/product-prices/auto?partner_short_name=...&product_model=...&date=YYYY-MM-DD
@@ -135,7 +145,8 @@ Source: `routes/productPrices.ts` lines around `get /auto` and `get /current`.
 
 ## 6. Receivable / Payable balance
 
-Receivable (customers) and Payable (suppliers) dashboards aggregate from the raw records.
+Receivable (customers) and Payable (suppliers) dashboards aggregate from the raw
+records.
 
 ```mermaid
 flowchart LR
@@ -153,9 +164,12 @@ flowchart LR
   X2 --> GET2[/api/payable/]
 ```
 
-Implementation uses raw SQL (`$queryRawUnsafe`) for the partner-level aggregation in `routes/receivable.ts` and `routes/payable.ts`. Pagination + filtering happen at the partner (outer) level; the inner SUMs are not paginated.
+Implementation uses raw SQL (`$queryRawUnsafe`) for the partner-level
+aggregation in `routes/receivable.ts` and `routes/payable.ts`. Pagination +
+filtering happen at the partner (outer) level; the inner SUMs are not paginated.
 
-`GET /api/receivable/details/:customer_code` (and the payable mirror) joins all data in a single response:
+`GET /api/receivable/details/:customer_code` (and the payable mirror) joins all
+data in a single response:
 
 ```
 {
@@ -170,7 +184,8 @@ Implementation uses raw SQL (`$queryRawUnsafe`) for the partner-level aggregatio
 
 ## 7. Invoice cache (per partner)
 
-The invoice groupings are precomputed and persisted to `cache/invoice-cache.json` to avoid re-aggregating on every page load.
+The invoice groupings are precomputed and persisted to
+`cache/invoice-cache.json` to avoid re-aggregating on every page load.
 
 ```mermaid
 sequenceDiagram
@@ -191,13 +206,15 @@ sequenceDiagram
   API-->>Client: { data, total, page, limit, last_updated }
 ```
 
-Source: `backend/utils/invoiceCacheService.ts`. Same pattern for suppliers under `/api/payable/...`.
+Source: `backend/utils/invoiceCacheService.ts`. Same pattern for suppliers under
+`/api/payable/...`.
 
 ---
 
 ## 8. Overview stats (cached aggregates)
 
-`/api/overview/*` reads/writes a JSON snapshot in `cache/overview-stats.json`. The snapshot is only refreshed on `POST /api/overview/stats` (manual recompute).
+`/api/overview/*` reads/writes a JSON snapshot in `cache/overview-stats.json`.
+The snapshot is only refreshed on `POST /api/overview/stats` (manual recompute).
 
 ```
 POST /api/overview/stats
@@ -211,15 +228,21 @@ POST /api/overview/stats
 write cache/overview-stats.json
 ```
 
-`GET /api/overview/stats`, `GET /api/overview/top-sales-products`, and `GET /api/overview/monthly-inventory-change/:productModel` only read the JSON file. If it is missing they return `503`.
+`GET /api/overview/stats`, `GET /api/overview/top-sales-products`, and
+`GET /api/overview/monthly-inventory-change/:productModel` only read the JSON
+file. If it is missing they return `503`.
 
-Frontend pattern: `useApiData` catches the 503, calls the matching `POST` to refresh, then retries the GET — see `frontend/src/hooks/useApi.ts` (`fetchData` with `autoCreate`).
+Frontend pattern: `useApiData` catches the 503, calls the matching `POST` to
+refresh, then retries the GET — see `frontend/src/hooks/useApi.ts` (`fetchData`
+with `autoCreate`).
 
 ---
 
 ## 9. Analysis flow
 
-The analysis module recomputes on demand and writes results to `cache/analysis-cache.json` keyed by `(start_date, end_date, partner_code, product_model, type)`.
+The analysis module recomputes on demand and writes results to
+`cache/analysis-cache.json` keyed by
+`(start_date, end_date, partner_code, product_model, type)`.
 
 ```mermaid
 flowchart TB
@@ -238,7 +261,8 @@ flowchart TB
   J -->|miss| L[503]
 ```
 
-Source: `backend/routes/analysis/analysis.ts`. Cache file path resolved via `backend/utils/paths.ts:resolveFilesInCachePath`.
+Source: `backend/routes/analysis/analysis.ts`. Cache file path resolved via
+`backend/utils/paths.ts:resolveFilesInCachePath`.
 
 ---
 
@@ -273,7 +297,8 @@ checkWritePermission (server.ts)
 
 Roles enforced:
 
-- `superuser` — full access, including `/api/users/*` (guarded by `authorize(['superuser'])` in `routes/users.ts`)
+- `superuser` — full access, including `/api/users/*` (guarded by
+  `authorize(['superuser'])` in `routes/users.ts`)
 - `editor` — read + write
 - `reader` — read-only, plus limited POST on export/overview/analysis
 
@@ -285,15 +310,20 @@ Roles enforced:
 
 - `superuser` may filter by any `username`
 - `editor` / `reader` see only their own logs
-- Filters: `startDate`, `endDate`, `resource` (case-insensitive contains), `params` (case-insensitive contains)
+- Filters: `startDate`, `endDate`, `resource` (case-insensitive contains),
+  `params` (case-insensitive contains)
 
-Note: writing to `system_logs` happens wherever the audit middleware / write-permission middleware observes a denied or notable write attempt (e.g. `checkWritePermission` logs reader write attempts). The catalog of writes is small — grep `prisma.systemLog` in `backend/` to find them.
+Note: writing to `system_logs` happens wherever the audit middleware /
+write-permission middleware observes a denied or notable write attempt (e.g.
+`checkWritePermission` logs reader write attempts). The catalog of writes is
+small — grep `prisma.systemLog` in `backend/` to find them.
 
 ---
 
 ## 12. Export flow
 
-All export endpoints return a binary `.xlsx` (SheetJS). The request body is JSON describing filters and (for `analysis`) the data set to embed.
+All export endpoints return a binary `.xlsx` (SheetJS). The request body is JSON
+describing filters and (for `analysis`) the data set to embed.
 
 ```
 POST /api/export/<type>
@@ -308,7 +338,9 @@ res.setHeader('Content-Disposition', `attachment; filename="..."`)
 res.send(buffer)
 ```
 
-Frontend uses `apiRequest.download(url, filename)` which wraps the blob in an object URL and triggers a click (`frontend/src/utils/request.ts:request.download`).
+Frontend uses `apiRequest.download(url, filename)` which wraps the blob in an
+object URL and triggers a click
+(`frontend/src/utils/request.ts:request.download`).
 
 ---
 
@@ -333,9 +365,12 @@ sequenceDiagram
   Hook-->>UI: { data, loading, error, refresh }
 ```
 
-- Auth token lives in `localStorage` under key `auth_token` (`frontend/src/auth/auth.ts:tokenManager`).
-- `apiRequest` auto-redirects to `/login` on `401` and throws `AuthorizationError` on `403`.
-- Routes that need caching (overview, analysis) use `useApiData` which retries on `503` by hitting the matching POST refresh endpoint.
+- Auth token lives in `localStorage` under key `auth_token`
+  (`frontend/src/auth/auth.ts:tokenManager`).
+- `apiRequest` auto-redirects to `/login` on `401` and throws
+  `AuthorizationError` on `403`.
+- Routes that need caching (overview, analysis) use `useApiData` which retries
+  on `503` by hitting the matching POST refresh endpoint.
 
 ---
 
@@ -349,4 +384,5 @@ sequenceDiagram
 | `cache/invoice-cache.json`     | `utils/invoiceCacheService.ts`  | `POST /api/{receivable,payable}/invoices/refresh/...` |
 | `config/config.yaml` + friends | `utils/paths.ts:getConfigDir`   | Read at boot (`auth.*`, `server.*`, `frontend.*`)     |
 
-Resolution path helpers: `resolveFilesInCachePath`, `resolveFilesInConfigPath` in `backend/utils/paths.ts`.
+Resolution path helpers: `resolveFilesInCachePath`, `resolveFilesInConfigPath`
+in `backend/utils/paths.ts`.

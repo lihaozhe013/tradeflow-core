@@ -16,7 +16,8 @@
 
 **修改 `backend/utils/auth.ts`**
 
-在 `checkWritePermission` 函数中（第 295 行），将 `superuser` 与 `editor` 同等处理：
+在 `checkWritePermission` 函数中（第 295 行），将 `superuser` 与 `editor`
+同等处理：
 
 ```typescript
 if (req.user.role === 'editor' || req.user.role === 'superuser') {
@@ -227,13 +228,16 @@ export type Role = 'reader' | 'editor' | 'superuser';
 
 ### 6.1 模糊搜索筛选增强
 
-在原有「时间范围 + 用户名」筛选的基础上，新增两个独立的模糊搜索维度，对应 `system_logs.resource` 与 `system_logs.params` 字段。详细方案见 `docs/reference/audit-log-filtering.md`。
+在原有「时间范围 + 用户名」筛选的基础上，新增两个独立的模糊搜索维度，对应
+`system_logs.resource` 与 `system_logs.params` 字段。详细方案见
+`docs/reference/audit-log-filtering.md`。
 
 要点：
 
 - **请求路径** → 对 `resource` 做 `contains` 子串匹配
 - **请求参数** → 对 `params`（已脱敏的 JSON 字符串）做 `contains` 子串匹配
-- 大小写不敏感（Prisma `contains` + `mode: 'insensitive'`，PostgreSQL 编译为 `ILIKE`）
+- 大小写不敏感（Prisma `contains` + `mode: 'insensitive'`，PostgreSQL 编译为
+  `ILIKE`）
 - 所有角色可用，非 superuser 仍受 `username` 强制约束
 - 触发方式沿用现有「查询」按钮 + 回车快捷键
 - 无数据库 migration、无新增依赖
@@ -258,4 +262,5 @@ export type Role = 'reader' | 'editor' | 'superuser';
 2. 在路由中添加对应路径
 3. 在页面中使用 `isSuperuser()` 进行权限控制
 
-数据库索引建议：当 `system_logs` 表增长后，`resource` / `params` 上的 `ILIKE` 会变慢，可后续用 `pg_trgm` + GIN 索引优化（需要 migration）。
+数据库索引建议：当 `system_logs` 表增长后，`resource` / `params` 上的 `ILIKE`
+会变慢，可后续用 `pg_trgm` + GIN 索引优化（需要 migration）。

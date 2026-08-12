@@ -1,9 +1,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
-import frontendConfig from '../build-config/frontendConfig.json' with {
-  type: 'json',
-};
+import frontendConfig from '../build-config/frontendConfig.json' with { type: 'json' };
 
 const frontendRoot = process.cwd();
 

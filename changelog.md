@@ -26,8 +26,10 @@
 
 ## v0.7.1
 
-- Add Inventory Ledger table, support FIFO inventory valuation method to compute the accurate inventory value.
-- Refactor whole build process, removed pm2, bundled backend packages in to a single file.
+- Add Inventory Ledger table, support FIFO inventory valuation method to compute
+  the accurate inventory value.
+- Refactor whole build process, removed pm2, bundled backend packages in to a
+  single file.
 - Small bug fixes
 
 ## v0.7.0
@@ -58,7 +60,8 @@
 
 ## v0.4.2
 
-- Refactor the backend by removing redundancy, changing all comments in the utils function to English
+- Refactor the backend by removing redundancy, changing all comments in the
+  utils function to English
 
 ## v0.4.1
 
@@ -66,7 +69,8 @@
 
 ## v0.4.0
 
-- Refactored the backend using TypeScript ESM standards, with all import paths written as path aliases.
+- Refactored the backend using TypeScript ESM standards, with all import paths
+  written as path aliases.
 - Refactored build scripts, using esbuild to bundle the backend
 - Example GitHub Actions script
 
@@ -74,7 +78,8 @@
 
 - Refactored most of the backend code using TypeScript, ESM standard
 - Feature: Dockerfile
-- Feature: A complete build script that can directly generate a full package containing all required node_modules for execution.
+- Feature: A complete build script that can directly generate a full package
+  containing all required node_modules for execution.
 
 ## v0.2.0
 
