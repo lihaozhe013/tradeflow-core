@@ -1,31 +1,43 @@
 {
+  "auth": {
+    "allowExportsForReader": true,
+    "enabled": true,
+    "loginRateLimit": {
+      "maxAttempts": 20,
+      "windowMinutes": 5
+    },
+    "tokenExpiresInHours": 12
+  },
   "currency_unit_symbol": "$",
   "paymentMethods": {
-    "list": ["Cash", "E-Transfer", "Cheque", "Banker's acceptance", "Other"],
-    "default": "E-Transfer",
     "config": {
-      "cash": { "label": "Cash", "code": "CASH" },
-      "bank_transfer": { "label": "E-Transfer", "code": "BANK_TRANSFER" },
-      "check": { "label": "Cheque", "code": "CHECK" },
       "bank_acceptance": {
-        "label": "Banker's acceptance",
-        "code": "BANK_ACCEPTANCE"
+        "code": "BANK_ACCEPTANCE",
+        "label": "Banker's acceptance"
       },
-      "other": { "label": "Other", "code": "OTHER" }
-    }
+      "bank_transfer": {
+        "code": "BANK_TRANSFER",
+        "label": "E-Transfer"
+      },
+      "cash": {
+        "code": "CASH",
+        "label": "Cash"
+      },
+      "check": {
+        "code": "CHECK",
+        "label": "Cheque"
+      },
+      "other": {
+        "code": "OTHER",
+        "label": "Other"
+      }
+    },
+    "default": "E-Transfer",
+    "list": ["Cash", "E-Transfer", "Cheque", "Banker's acceptance", "Other"]
   },
   "productCategories": {
-    "list": ["category 1", "category 2", "category 3", "Other"],
-    "default": "Other"
-  },
-  "auth": {
-    "enabled": true,
-    "tokenExpiresInHours": 12,
-    "loginRateLimit": {
-      "windowMinutes": 5,
-      "maxAttempts": 20
-    },
-    "allowExportsForReader": true
+    "default": "Other",
+    "list": ["category 1", "category 2", "category 3", "Other"]
   },
   "server": {
     "url": "http://localhost:8000"

@@ -1,16 +1,28 @@
 {
   "name": "frontend",
-  "private": true,
   "version": "0.0.0",
-  "type": "module",
+  "private": true,
   "description": "frontend",
+  "type": "module",
   "scripts": {
-    "preinstall": "npx only-allow pnpm",
-    "dev": "vite --host 0.0.0.0 --port 5173",
     "build": "tsc && vite build",
+    "dev": "vite --host 0.0.0.0 --port 5173",
+    "preinstall": "npx only-allow pnpm",
     "start": "vite preview --host 0.0.0.0 --port 8080",
     "type-check": "tsc --noEmit",
     "type-check:watch": "tsc --noEmit --watch"
+  },
+  "browserslist": {
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ],
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ]
   },
   "dependencies": {
     "@ant-design/icons": "^6.3.2",
@@ -34,18 +46,6 @@
     "jiti": "^2.7.0",
     "typescript": "npm:@typescript/typescript6@^6.0.2",
     "vite": "^8.2.1"
-  },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
   },
   "engines": {
     "node": ">=22.0.0",
