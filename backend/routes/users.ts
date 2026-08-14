@@ -5,6 +5,8 @@ import { authorize, hashPassword, verifyPassword } from '@/utils/auth';
 
 const router: Router = express.Router();
 
+const USER_ROLES = ['reader', 'editor', 'superuser'] as const;
+
 /**
  * PUT /api/users/me
  * Update current user's display name. Any logged-in user can do this.
@@ -81,6 +83,95 @@ router.put(
     });
 
     res.json({ success: true, message: 'Password updated' });
+  },
+);
+
+/**
+ * POST /api/users
+ * Create a user. Superuser only.
+ */
+router.post(
+  '/',
+  authorize(['superuser']),
+  async (req: Request, res: Response): Promise<void> => {
+    const body = req.body ?? {};
+    const username =
+      typeof body.username === 'string' ? body.username.trim() : '';
+    const password = typeof body.password === 'string' ? body.password : '';
+    const displayName = body.display_name;
+    const role = body.role === undefined ? 'reader' : body.role;
+    const enabled = body.enabled === undefined ? true : body.enabled;
+
+    if (!username) {
+      res.status(400).json({ success: false, message: 'Username is required' });
+      return;
+    }
+
+    if (password.length < 6) {
+      res.status(400).json({
+        success: false,
+        message: 'Password must be at least 6 characters',
+      });
+      return;
+    }
+
+    if (
+      typeof role !== 'string' ||
+      !USER_ROLES.includes(role as (typeof USER_ROLES)[number])
+    ) {
+      res.status(400).json({ success: false, message: 'Invalid user role' });
+      return;
+    }
+
+    if (
+      displayName !== undefined &&
+      displayName !== null &&
+      typeof displayName !== 'string'
+    ) {
+      res
+        .status(400)
+        .json({ success: false, message: 'Display name must be a string' });
+      return;
+    }
+
+    if (typeof enabled !== 'boolean') {
+      res
+        .status(400)
+        .json({ success: false, message: 'Enabled must be a boolean' });
+      return;
+    }
+
+    const passwordHash = await hashPassword(password);
+
+    try {
+      const created = await prisma.user.create({
+        data: {
+          username,
+          password_hash: passwordHash,
+          role,
+          display_name: displayName,
+          enabled,
+          last_password_change: new Date().toISOString(),
+        },
+      });
+
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { password_hash: _, ...safeUser } = created;
+      res.status(201).json({ success: true, data: safeUser });
+    } catch (error: unknown) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        res.status(409).json({
+          success: false,
+          message: 'Username already exists',
+        });
+        return;
+      }
+
+      throw error;
+    }
   },
 );
 

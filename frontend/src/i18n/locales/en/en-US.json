@@ -274,6 +274,9 @@
     "changePassword": "Change Password",
     "changePasswordButton": "Change Password",
     "confirmPassword": "Confirm Password",
+    "createSuccess": "User created successfully",
+    "createUser": "Create User",
+    "createUserTitle": "Create User",
     "delete": "Delete",
     "deleteConfirm": "Are you sure to delete this user?",
     "displayName": "Display Name",
@@ -301,6 +304,7 @@
     "updateSuccess": "Updated",
     "userList": "User List",
     "username": "Username",
+    "usernameRequired": "Username is required",
     "yes": "Yes"
   },
   "outbound": {

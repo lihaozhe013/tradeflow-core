@@ -117,6 +117,7 @@ Base URL: `/api` Auth: JWT via `POST /api/auth/login` →
 
 | Method | Path                                  | Auth           | Source          |
 | ------ | ------------------------------------- | -------------- | --------------- |
+| POST   | `/api/users`                          | superuser only | routes/users.ts |
 | PUT    | `/api/users/me`                       | yes            | routes/users.ts |
 | PUT    | `/api/users/me/password`              | yes            | routes/users.ts |
 | GET    | `/api/users`                          | superuser only | routes/users.ts |

@@ -270,6 +270,9 @@
     "changePassword": "修改密码",
     "changePasswordButton": "修改密码",
     "confirmPassword": "确认密码",
+    "createSuccess": "用户创建成功",
+    "createUser": "新增用户",
+    "createUserTitle": "新增用户",
     "delete": "删除",
     "deleteConfirm": "确定要删除该用户吗？",
     "displayName": "显示名称",
@@ -297,6 +300,7 @@
     "updateSuccess": "更新成功",
     "userList": "用户列表",
     "username": "用户名",
+    "usernameRequired": "请输入用户名",
     "yes": "是"
   },
   "outbound": {

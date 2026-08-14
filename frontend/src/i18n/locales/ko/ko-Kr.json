@@ -275,6 +275,9 @@
     "changePassword": "비밀번호 변경",
     "changePasswordButton": "비밀번호 변경",
     "confirmPassword": "비밀번호 확인",
+    "createSuccess": "사용자가 생성되었습니다",
+    "createUser": "사용자 추가",
+    "createUserTitle": "사용자 추가",
     "delete": "삭제",
     "deleteConfirm": "이 사용자를 삭제하시겠습니까?",
     "displayName": "표시 이름",
@@ -302,6 +305,7 @@
     "updateSuccess": "업데이트 완료",
     "userList": "사용자 목록",
     "username": "사용자 이름",
+    "usernameRequired": "사용자 이름을 입력하세요",
     "yes": "예"
   },
   "outbound": {
