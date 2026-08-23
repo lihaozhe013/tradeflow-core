@@ -1,6 +1,6 @@
 {
   "name": "tradeflow-core",
-  "version": "0.8.4",
+  "version": "0.12.1",
   "private": true,
   "description": "a lightweight tradeflow system core",
   "scripts": {
