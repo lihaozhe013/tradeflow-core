@@ -1,142 +1,223 @@
 # AGENTS.md
 
-## Reference docs (look here first)
+## Project structure
 
-When you need to look up an API endpoint or trace how data moves through the
-system, **start with these two documents at the repo root**:
+TradeFlow Core is a pnpm-managed monorepo: the root scripts orchestrate the
+React/Vite browser application in `frontend/`, the Express/TypeScript/Prisma
+API in `backend/`, and the Python build helpers in `scripts/` and `build.py`.
+Each package owns its manifest, lockfile, dependencies, and tooling; keep
+those boundaries intact and never install or edit one package's dependencies
+from another package's directory.
 
-- **`docs/API_CATALOG.md`** — directory-style listing of every backend HTTP
-  endpoint (method, path, auth requirement, source file). No prose — pick the
-  row, then open the linked source file for the implementation.
-- **`docs/DATA_FLOW.md`** — how data moves: inbound/outbound writes, inventory
-  recompute, pricing lookup, receivable/payable balances, invoice cache,
-  overview/analysis caches, auth flow, frontend → backend roundtrip. Uses
-  Mermaid diagrams where useful.
+## 1. Language and repository policy
 
-**These docs may not always be the latest.** Code is the source of truth. Use
-the docs to navigate quickly; if a doc disagrees with reality, open the
-corresponding route/service file (paths are listed in `docs/API_CATALOG.md` and
-`docs/DATA_FLOW.md`) and resolve the discrepancy yourself.
+- Source-code comments, doc comments, commit messages, engineering
+  documentation, configuration comments, and newly created repository prose
+  MUST be written in English.
+- Localized user-facing strings in the frontend's locale resources are
+  allowed. Do not add localized text to internal logs, error messages,
+  comments, or developer documentation.
+- When modifying an existing non-English engineering comment, log message, or
+  documentation section, translate the affected text to English when it is in
+  scope for the change.
+- Names and prose MUST explain intent. Do not add comments that merely restate
+  obvious code.
+- Keep `AGENTS.md` limited to durable repository policy. Do not add temporary
+  implementation plans, TODO lists, debugging notes, or release-specific
+  instructions here.
 
-## Project overview
+## 2. Toolchain and dependency policy
 
-`tradeflow-core` is a monorepo with separate frontend and backend packages. Each
-has its own dependencies, build tooling, and config — never mix them.
+- Use **pnpm exclusively** for JavaScript and TypeScript package management
+  and repository scripts. Do not use `npm`, `yarn`, or Bun to install, remove,
+  update, or execute repository dependencies.
+- The root `package.json` MUST contain a pinned `packageManager` field for the
+  repository's pnpm baseline. Keep it synchronized with the current lockfile
+  and toolchain when the package-manager baseline changes.
+- The root `package.json`, `pnpm-lock.yaml`, `frontend/package.json`,
+  `frontend/pnpm-lock.yaml`, `backend/package.json`, and
+  `backend/pnpm-lock.yaml` are separate package boundaries. A dependency
+  change MUST update the manifest and the matching lockfile in the same
+  package.
+- Run commands from the package they belong to. Use root scripts for
+  cross-package workflows; do not install frontend dependencies in
+  `backend/`, or backend dependencies in `frontend/`.
+- Respect the Node.js engine declarations in the relevant package. Root
+  workflows require Node.js 24 or newer; package-local workflows must also
+  satisfy their package's declared engine.
+- Use the TypeScript, Vite, React, Express, Prisma, and pnpm versions already
+  pinned by the package manifests and lockfiles. Do not introduce prerelease
+  dependencies or downgrade baseline dependencies to work around an
+  implementation problem without explicit approval.
+- Add a dependency only when it provides clear value over a small,
+  maintainable local implementation. Consider bundle size, maintenance,
+  security history, and whether the dependency belongs in the root tooling,
+  backend runtime, backend tooling, or frontend bundle.
+- Keep backend/Node-only dependencies out of browser-rendered frontend code.
+  Do not manually edit generated contents under `node_modules/`.
+- Use `uv run build.py` for the repository build helper. Do not modify
+  `build.py` or `scripts/build/` unless the task specifically concerns the
+  build pipeline.
+- Runtime configuration and private data belong in the existing ignored
+  configuration/data locations. Use `config-example/` as the public template;
+  never commit local credentials or generated runtime data.
 
-| Directory   | Stack                                              | Package Manager |
-| ----------- | -------------------------------------------------- | --------------- |
-| `backend/`  | Express + TypeScript + Prisma (Node.js API server) | pnpm            |
-| `frontend/` | React 19 + Vite + TypeScript (SPA)                 | pnpm            |
-| Root        | Monorepo scripts (dev, build, format)              | pnpm            |
+## 3. TypeScript requirements
 
-The backend and frontend are completely independent. Their `node_modules`,
-tooling, and scripts live in their own directories. Do **not** install frontend
-dependencies in `backend/` or vice versa.
+- Use the TypeScript version declared by the package being changed. Do not
+  mix TypeScript major versions across a package or change a package's
+  TypeScript baseline without explicit approval.
+- New application code SHOULD be TypeScript (`.ts`/`.tsx`). Existing
+  JavaScript/JSX files and build scripts may remain JavaScript when conversion
+  is not part of the task; do not silently expand a conversion's scope.
+- Backend TypeScript MUST remain in strict mode. Do not weaken backend
+  compiler options globally to silence errors; preserve its checked options,
+  including no implicit `any`, unused-code checks, unchecked indexed access,
+  and no implicit overrides.
+- Frontend TypeScript currently uses a deliberately relaxed compatibility
+  baseline. Do not claim or impose a repository-wide strict migration through
+  an unrelated feature; improve types locally and preserve the existing
+  frontend configuration unless strictness is explicitly requested.
+- Prefer `unknown` over `any`. New uses of `any` require a narrow
+  interoperability reason. Do not use `@ts-ignore` unless no safer option
+  exists; prefer `@ts-expect-error` with a concise explanation when a
+  suppression is unavoidable.
+- HTTP request bodies, query parameters, uploaded/imported data, persisted
+  configuration, authentication data, and external service responses MUST be
+  validated at their trust boundary. Use the repository's existing
+  validation patterns or focused runtime checks; do not assume TypeScript
+  types validate runtime input.
+- Public request/response types and other interfaces crossing the backend,
+  database, or frontend boundary MUST be explicit and stable. Use
+  `import type` for type-only imports where appropriate.
+- Frontend modules MUST remain browser-safe and must not import Node.js,
+  Prisma, filesystem, or server-only modules. Backend modules may use Node.js
+  and Prisma APIs but must not import renderer UI modules.
 
-## Package manager
+## 4. Backend policy
 
-Always use **pnpm**. Running `npm` or `yarn` is blocked by a `preinstall`
-lifecycle script in each `package.json`.
+- The backend is an Express API backed by Prisma and PostgreSQL. Preserve the
+  separation between route handlers, domain/data services, authentication,
+  export/analysis helpers, and infrastructure code.
+- Use the existing backend logger for server diagnostics instead of adding
+  ad hoc logging patterns. Keep audit records (database-backed user actions)
+  distinct from operational diagnostics.
+- Database schema and migration changes belong under `backend/prisma/` and
+  must be reviewed for data compatibility. Do not hand-edit generated Prisma
+  client output.
+- From `backend/`, `pnpm lint` MUST finish with zero ESLint errors. Warnings
+  should be addressed when practical, especially for new code.
 
-## Backend (`backend/`)
+## 5. Frontend policy
 
-### Linting
+- The frontend is a React/Vite browser SPA. Keep browser-only code in
+  `frontend/` and use the existing request, auth, routing, i18n, and config
+  boundaries instead of duplicating them in individual pages.
+- User-facing text MUST use the existing localization approach when the
+  feature is localized. Do not put new user-facing copy directly into
+  reusable logic when a locale resource is appropriate.
+- From `frontend/`, `pnpm type-check` MUST pass with zero TypeScript errors.
+  Run `pnpm build` when the change affects Vite bundling, assets, or runtime
+  integration.
 
-Eslint (`eslint.config.mjs`, flat config) is **mandatory** for the backend.
-Before submitting changes, run:
+## 6. Formatting and source style
 
-```sh
-pnpm lint
-```
+- Follow the repository's existing Prettier and ESLint configuration. Do not
+  introduce a second formatter or package-local style that conflicts with the
+  root configuration.
+- `pnpm format` is the repository formatting command. Run it when the change
+  touches formatting-sensitive files or before a requested commit, and review
+  unrelated formatting changes before keeping them.
+- Prefer `rg` for text/code search and `fd` for file discovery. Use `uv run`
+  instead of invoking a system Python interpreter for repository Python
+  tooling.
+- Keep changes minimal and focused. Preserve established naming, module
+  boundaries, and formatting unless the requested work includes a refactor.
 
-from the `backend/` directory. There must be **zero eslint errors**. Warnings
-are tolerated but should be addressed if practical.
+## 7. Security and data handling
 
-Key lint rules in effect:
+- Never log, commit, or expose API keys, JWTs, passwords, database credentials,
+  generated secrets, authorization headers, or unnecessary personal or
+  business data such as customer, supplier, invoice, or export contents.
+- Mask sensitive fields before logging request or database metadata. Error
+  responses MUST avoid leaking stack traces, secrets, SQL, or internal paths
+  in production.
+- Treat imported spreadsheets, uploaded files, configuration files, and
+  external API responses as untrusted input. Validate, constrain, and handle
+  failures without crashing unrelated requests.
 
-- `no-console` is `warn` (only `console.warn`, `console.error`, `console.info`
-  are allowed).
-- `@typescript-eslint/no-unused-vars` is `error` (vars prefixed with `_` are
-  ignored).
-- `@typescript-eslint/no-explicit-any` is `off`.
+## 8. Validation and handoff
 
-### TypeScript
+- Before handing off a backend change, run `pnpm lint` in `backend/`.
+- Before handing off a frontend change, run `pnpm type-check` in `frontend/`.
+- For cross-package or build-related changes, also run the narrowest relevant
+  root build/check, such as `pnpm build`, and report any unavailable or
+  environment-dependent check explicitly.
+- When debugging a feature, provide a ready-to-run command that exercises the
+  relevant flow and writes focused output to a dedicated ignored log file.
+  Use an `rg` filter for the feature prefix where useful.
 
-The backend tsconfig is at `backend/tsconfig.json`. TypeScript compilation is
-part of the ESLint pipeline via `typescript-eslint`. Ensure `tsc` passes before
-committing.
+## 9. Git and change management
 
-## Frontend (`frontend/`)
+- Never commit unless explicitly asked.
+- When asked to commit, use a concise Conventional Commits message in
+  English, include a `Co-Authored-By` trailer for the assisting model, and do
+  not amend commits, skip hooks, force-push, or rewrite history unless
+  explicitly instructed.
+- Preserve unrelated user changes in a dirty worktree. Inspect overlapping
+  files before editing and do not use destructive commands such as
+  `git reset --hard` or broad recursive deletion without explicit approval.
 
-### Type checking
+## 10. Logging and debugging
 
-Eslint is **not mandatory** for the frontend — the eslint config is
-intentionally relaxed for fast iteration. The required check is:
+- Application diagnostics MUST remain available without depending solely on
+  terminal stdout/stderr redirection. Backend persistent logs SHOULD be
+  written under an application-specific runtime log directory resolved through
+  the existing server path/configuration helpers; console output may
+  supplement file logs but must not be the only channel for persistent
+  diagnostics.
+- Startup MUST remain resilient when a log directory or log file cannot be
+  created. Report the logging failure safely and continue startup when the
+  application can do so.
+- Use stable, searchable subsystem prefixes for feature or investigation logs,
+  such as `[api]`, `[auth]`, `[inventory]`, `[export]`, `[analysis]`, or
+  `[db]`. Keep prefixes consistent within a subsystem and write internal log
+  messages in English.
+- Never log API keys, authentication tokens, passwords, database URLs,
+  generated secrets, credentials, or private trade/customer/invoice content
+  unnecessarily.
+- Verbose debug logging MUST NOT be enabled by default in production builds.
+- Generated `*.log` files, including the root `debug.log`, MUST remain
+  untracked. A development session MUST capture the root `pnpm dev` output and
+  application diagnostics in the ignored root `debug.log`; the canonical
+  capture command is:
 
-```sh
-pnpm type-check
-```
+  ```sh
+  pnpm dev > debug.log 2>&1
+  ```
 
-from the `frontend/` directory. `tsc --noEmit` must pass with **zero errors**.
+  The shell redirection truncates the file at the start of each session.
+  Filter it with `rg 'inventory|export|auth' debug.log` or a narrower subsystem
+  prefix. Do not rely on this capture alone for production diagnostics.
 
-### Linting (optional)
+## 11. Code organization and file size
 
-Eslint can be run with `pnpm lint` in `frontend/`, but it is not a gate. Focus
-on `tsc` correctness.
-
-## Search tools
-
-Prefer **`rg`** (ripgrep) over `grep` and **`fd`** over `find`. Both are assumed
-to be available on the system.
-
-## Code style
-
-- Follow the Prettier config in `.prettierrc` at the repo root (single quotes,
-  semicolons, trailing commas, 2-space indent, 80 chars).
-- Run `pnpm format` from the repo root before committing.
-- Do **not** write unnecessary comments. Comments that explain _what_ obvious
-  code does are noise. Write comments only when they explain _why_ something is
-  done in a non-obvious way.
-- All comments and log messages must be in **English**.
-- Do **not** use emoji in log messages, console output, error messages, or
-  comments.
-
-## Git
-
-- **Never commit unless explicitly asked to.**
-- When you are asked to commit, write a concise, descriptive commit message in
-  English following the repo's existing style.
-- Do not amend commits, force-push, or skip hooks unless explicitly instructed.
-
-## Before submitting changes
-
-1. In `backend/`: `pnpm lint` — zero errors.
-2. In `frontend/`: `pnpm type-check` — zero errors.
-3. At repo root: `pnpm format` (optional but recommended).
-
-## Other conventions
-
-- Keep file changes minimal and focused on the task. Do not refactor unrelated
-  code.
-- When adding a new dependency, install it in the correct sub-project
-  (`backend/` or `frontend/`), never in the root unless it is a repo-wide tool.
-- The build system uses `uv run build.py` at the root (Python). Do not modify
-  `build.py` or the `build-config/` directory unless the task specifically
-  involves the build pipeline.
-- Environment variables and config files live in `config/` (git-ignored). Use
-  `config-example/` as a reference.
-- Database migrations are managed via Prisma in `backend/prisma/`.
-
-## Workflow
-
-### Plan-first approach
-
-For any non-trivial task, follow this workflow:
-
-1. **Write a plan first** — Before making changes, create a detailed plan
-   document in `docs/reference/`. This ensures the approach is clear and agreed
-   upon before implementation begins.
-2. **Implement the plan** — Execute the changes according to the plan document.
-3. **Archive the plan** — After successful implementation, move the plan from
-   `docs/reference/` to `docs/archive/`. This should only be done when the user
-   explicitly requests it — do not archive automatically.
+- Preserve the established root, backend, and frontend package/module
+  boundaries unless a refactor is part of the requested change.
+- New modules MUST have one clear responsibility. Avoid circular dependencies,
+  broad shared mutable state, barrel files that hide dependency direction,
+  and generic `utils` modules that become dumping grounds.
+- Code imported by the frontend MUST remain environment-safe and must not
+  transitively depend on Node.js, Prisma, filesystem, or backend-only APIs.
+- Prefer dependency injection or explicit parameters for difficult-to-test
+  services, including filesystem access, database clients, external providers,
+  clocks, and cache/persistence operations.
+- Any source file over 800 lines MUST trigger an explicit design review before
+  more responsibilities are added. Evaluate cohesion, dependency direction,
+  state ownership, and whether behavior belongs in focused modules.
+- Do not allow a file to cross 800 lines without recording the assessment in
+  the change summary or commit body. When modifying an existing file already
+  over 800 lines, avoid increasing its scope and split cohesive behavior when
+  doing so is lower risk than continued growth.
+- Generated files, vendored code, lockfiles, build output, and generated Prisma
+  client code are exempt from the source-file size limit.
