@@ -64,6 +64,9 @@ declare module '*.less' {
   export default classes;
 }
 
+// Build-time git commit hash injected via vite `define` (see vite.config.ts)
+declare const __COMMIT_HASH__: string;
+
 interface ImportMetaEnv {
   readonly VITE_API_BASE_URL?: string;
   readonly VITE_APP_TITLE?: string;

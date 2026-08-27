@@ -1,3 +1,4 @@
+import { execSync } from 'node:child_process';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
@@ -5,9 +6,26 @@ import frontendConfig from '../build-config/frontendConfig.json' with { type: 'j
 
 const frontendRoot = process.cwd();
 
+// Compute the short git commit hash at build-time; fall back to 'unknown' if unavailable
+function getCommitHash(): string {
+  try {
+    return execSync('git rev-parse --short HEAD', { stdio: 'pipe' })
+      .toString()
+      .trim();
+  } catch {
+    return 'unknown';
+  }
+}
+
+const COMMIT_HASH = getCommitHash();
+
 // https://vite.dev/config/
 export default defineConfig({
   base: './',
+  // Replace __COMMIT_HASH__ with a hardcoded string literal at build time
+  define: {
+    __COMMIT_HASH__: JSON.stringify(COMMIT_HASH),
+  },
   plugins: [react()],
   resolve: {
     alias: {

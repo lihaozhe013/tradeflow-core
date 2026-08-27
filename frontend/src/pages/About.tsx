@@ -76,7 +76,10 @@ function About() {
             <Row gutter={[16, 16]}>
               <Col span={12}>
                 <Text strong>{t('about.systemVersion')}: </Text>
-                <Text>{aboutData?.system?.version ?? '0.1.0'}</Text>
+                <Text>
+                  {aboutData?.system?.version ?? '0.1.0'}
+                  <Text type="secondary"> ({__COMMIT_HASH__})</Text>
+                </Text>
               </Col>
               <Col span={12}>
                 <Text strong>{t('about.releaseDate')}: </Text>
