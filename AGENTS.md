@@ -158,10 +158,7 @@ another package's directory.
 ## 9. Git and change management
 
 - Never commit unless explicitly asked.
-- When asked to commit, use a concise Conventional Commits message in English,
-  include a `Co-Authored-By` trailer for the assisting model, and do not amend
-  commits, skip hooks, force-push, or rewrite history unless explicitly
-  instructed.
+- When asked to commit, use a concise Conventional Commits message in English.
 - Preserve unrelated user changes in a dirty worktree. Inspect overlapping files
   before editing and do not use destructive commands such as `git reset --hard`
   or broad recursive deletion without explicit approval.
