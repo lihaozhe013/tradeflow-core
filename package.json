@@ -1,6 +1,6 @@
 {
   "name": "tradeflow-core",
-  "version": "0.12.1",
+  "version": "1.0.0",
   "private": true,
   "description": "a lightweight tradeflow system core",
   "scripts": {
@@ -12,11 +12,5 @@
     "install:all": "pnpm install && cd frontend && pnpm install && cd ../backend && pnpm install && pnpm prisma generate",
     "preinstall": "npx only-allow pnpm",
     "start": "cd dist && node backend/server.js"
-  },
-  "devDependencies": {
-    "prettier": "^3.9.6"
-  },
-  "engines": {
-    "node": ">=24.0.0"
   }
 }

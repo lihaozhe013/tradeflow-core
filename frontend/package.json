@@ -1,6 +1,6 @@
 {
   "name": "frontend",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "private": true,
   "description": "frontend",
   "type": "module",
@@ -26,28 +26,24 @@
   },
   "dependencies": {
     "@ant-design/icons": "^6.3.2",
-    "antd": "^6.5.4",
-    "dayjs": "^1.11.21",
-    "i18next": "^26.3.6",
+    "antd": "^6.6.2",
+    "dayjs": "^1.11.23",
+    "i18next": "^26.4.0",
     "i18next-browser-languagedetector": "^8.2.1",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
-    "react-i18next": "^17.0.11",
-    "react-router-dom": "^7.18.2",
+    "react-i18next": "^17.0.12",
+    "react-router-dom": "^7.18.3",
     "recharts": "^3.10.1"
   },
   "devDependencies": {
-    "@types/node": "^26.2.0",
+    "@types/node": "^26.4.0",
     "@types/react": "^19.2.18",
-    "@types/react-dom": "^19.2.4",
-    "@vitejs/plugin-react": "^6.0.5",
-    "globals": "^17.9.0",
+    "@types/react-dom": "^19.2.5",
+    "@vitejs/plugin-react": "^6.1.1",
+    "globals": "^17.11.0",
     "jiti": "^2.7.0",
-    "typescript": "npm:typescript@^7.0.2",
-    "vite": "^8.2.1"
-  },
-  "engines": {
-    "node": ">=22.0.0",
-    "npm": ">=11.0.0"
+    "typescript": "^7.0.2",
+    "vite": "^8.2.2"
   }
 }
