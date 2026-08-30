@@ -1,7 +1,12 @@
 import express, { type Router, type Request, type Response } from 'express';
 import { Prisma } from '@/prisma/client';
 import { prisma } from '@/prismaClient';
-import { authorize, hashPassword, verifyPassword } from '@/utils/auth';
+import {
+  authorize,
+  hashPassword,
+  signToken,
+  verifyPassword,
+} from '@/utils/auth';
 
 const router: Router = express.Router();
 
@@ -12,12 +17,19 @@ const USER_ROLES = ['reader', 'editor', 'superuser'] as const;
  * Update current user's display name. Any logged-in user can do this.
  */
 router.put('/me', async (req: Request, res: Response): Promise<void> => {
-  const { display_name } = req.body;
+  const { display_name } = req.body ?? {};
 
   if (display_name === undefined) {
     res
       .status(400)
       .json({ success: false, message: 'Missing display_name field' });
+    return;
+  }
+
+  if (display_name !== null && typeof display_name !== 'string') {
+    res
+      .status(400)
+      .json({ success: false, message: 'Display name must be a string' });
     return;
   }
 
@@ -38,9 +50,14 @@ router.put('/me', async (req: Request, res: Response): Promise<void> => {
 router.put(
   '/me/password',
   async (req: Request, res: Response): Promise<void> => {
-    const { oldPassword, newPassword } = req.body;
+    const { oldPassword, newPassword } = req.body ?? {};
 
-    if (!oldPassword || !newPassword) {
+    if (
+      typeof oldPassword !== 'string' ||
+      typeof newPassword !== 'string' ||
+      !oldPassword ||
+      !newPassword
+    ) {
       res.status(400).json({
         success: false,
         message: 'Missing oldPassword or newPassword',
@@ -74,7 +91,7 @@ router.put(
     }
 
     const hash = await hashPassword(newPassword);
-    await prisma.user.update({
+    const updated = await prisma.user.update({
       where: { username: req.user!.username },
       data: {
         password_hash: hash,
@@ -82,7 +99,8 @@ router.put(
       },
     });
 
-    res.json({ success: true, message: 'Password updated' });
+    const { token, expires_in } = signToken(updated);
+    res.json({ success: true, message: 'Password updated', token, expires_in });
   },
 );
 

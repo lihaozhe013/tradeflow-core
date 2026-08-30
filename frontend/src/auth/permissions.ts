@@ -7,6 +7,7 @@ export type Capability =
 export type ProtectedWriteMethod = 'POST' | 'PUT' | 'DELETE' | 'PATCH';
 
 const READER_POST_PREFIXES = ['/export', '/overview', '/analysis'] as const;
+const READER_SELF_SERVICE_PATHS = ['/users/me', '/users/me/password'] as const;
 
 const isKnownRole = (role: Role | null | undefined): role is Role =>
   role === 'reader' || role === 'editor' || role === 'superuser';
@@ -70,6 +71,11 @@ const isReaderPostPathAllowed = (url: string): boolean => {
   );
 };
 
+const isReaderSelfServicePathAllowed = (url: string): boolean =>
+  READER_SELF_SERVICE_PATHS.includes(
+    normalizePath(url) as (typeof READER_SELF_SERVICE_PATHS)[number],
+  );
+
 export const canReaderUseRequest = (
   method: string | undefined,
   url: string,
@@ -80,7 +86,10 @@ export const canReaderUseRequest = (
     return true;
   }
 
-  return normalizedMethod === 'POST' && isReaderPostPathAllowed(url);
+  return (
+    (normalizedMethod === 'POST' && isReaderPostPathAllowed(url)) ||
+    (normalizedMethod === 'PUT' && isReaderSelfServicePathAllowed(url))
+  );
 };
 
 export const canRoleUseRequest = (

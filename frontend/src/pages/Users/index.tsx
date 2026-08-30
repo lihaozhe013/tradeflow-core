@@ -24,6 +24,7 @@ import { useTranslation } from 'react-i18next';
 import { useApi } from '@/hooks/useApi';
 import { usePermissions } from '@/auth/usePermissions';
 import { useAuth } from '@/auth/useAuth';
+import { tokenManager } from '@/auth/auth';
 
 interface UserData {
   username: string;
@@ -48,6 +49,11 @@ interface UpdateUserPayload {
   display_name?: string;
   role?: string;
   enabled?: boolean;
+}
+
+interface ChangePasswordResponse {
+  success: boolean;
+  token?: string;
 }
 
 function Users(): React.ReactElement {
@@ -132,10 +138,14 @@ function Users(): React.ReactElement {
       return;
     }
 
-    await put('/users/me/password', {
+    const response = await put<ChangePasswordResponse>('/users/me/password', {
       oldPassword,
       newPassword,
     });
+
+    if (response?.token) {
+      tokenManager.setToken(response.token);
+    }
 
     message.success(t('users.passwordChanged'));
     setOldPassword('');

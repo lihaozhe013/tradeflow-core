@@ -291,8 +291,13 @@ checkWritePermission (server.ts)
   ├─ editor/superuser → ok
   └─ reader
        ├─ GET → ok
+       ├─ PUT /api/users/me|/api/users/me/password → ok
        ├─ POST /api/export|overview|analysis → ok (if allowExportsForReader)
        └─ otherwise → 403 READ_ONLY_ACCESS_DENIED
+
+Route-level page authorization then restricts `/api/overview`,
+`/api/analysis`, `/api/export`, `/api/payable`, and `/api/receivable` to
+editor/superuser users, including their GET requests.
 ```
 
 Roles enforced:
@@ -300,7 +305,9 @@ Roles enforced:
 - `superuser` — full access, including `/api/users/*` (guarded by
   `authorize(['superuser'])` in `routes/users.ts`)
 - `editor` — read + write
-- `reader` — read-only, plus limited POST on export/overview/analysis
+- `reader` — read-only on the operational pages, can update their own profile
+  and password, and cannot access overview, analysis, export, payable, or
+  receivable
 
 ---
 

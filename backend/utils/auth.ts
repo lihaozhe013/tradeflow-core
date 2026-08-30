@@ -42,6 +42,11 @@ interface LoginAttempt {
   firstAt: number;
 }
 
+const READER_SELF_SERVICE_PATHS = new Set([
+  '/api/users/me',
+  '/api/users/me/password',
+]);
+
 export function getAuthConfig(): AuthConfig {
   const auth = config?.auth;
   return {
@@ -298,6 +303,13 @@ export function checkWritePermission(
   }
 
   if (req.user.role === 'reader') {
+    const requestPath = req.originalUrl.split('?')[0];
+
+    if (method === 'PUT' && READER_SELF_SERVICE_PATHS.has(requestPath)) {
+      next();
+      return;
+    }
+
     if (method === 'GET') {
       next();
       return;

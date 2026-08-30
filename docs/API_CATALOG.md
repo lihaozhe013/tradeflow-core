@@ -19,12 +19,12 @@ Base URL: `/api` Auth: JWT via `POST /api/auth/login` →
 
 ## Overview
 
-| Method | Path                                                   | Auth | Source             |
-| ------ | ------------------------------------------------------ | ---- | ------------------ |
-| GET    | `/api/overview/stats`                                  | yes  | routes/overview.ts |
-| POST   | `/api/overview/stats`                                  | yes  | routes/overview.ts |
-| GET    | `/api/overview/top-sales-products`                     | yes  | routes/overview.ts |
-| GET    | `/api/overview/monthly-inventory-change/:productModel` | yes  | routes/overview.ts |
+| Method | Path                                                   | Auth                  | Source             |
+| ------ | ------------------------------------------------------ | --------------------- | ------------------ |
+| GET    | `/api/overview/stats`                                  | editor/superuser only | routes/overview.ts |
+| POST   | `/api/overview/stats`                                  | editor/superuser only | routes/overview.ts |
+| GET    | `/api/overview/top-sales-products`                     | editor/superuser only | routes/overview.ts |
+| GET    | `/api/overview/monthly-inventory-change/:productModel` | editor/superuser only | routes/overview.ts |
 
 ## Inventory
 
@@ -87,43 +87,43 @@ Base URL: `/api` Auth: JWT via `POST /api/auth/login` →
 
 ## Receivable
 
-| Method | Path                                              | Auth | Source               |
-| ------ | ------------------------------------------------- | ---- | -------------------- |
-| GET    | `/api/receivable`                                 | yes  | routes/receivable.ts |
-| GET    | `/api/receivable/payments/:customer_code`         | yes  | routes/receivable.ts |
-| POST   | `/api/receivable/payments`                        | yes  | routes/receivable.ts |
-| PUT    | `/api/receivable/payments/:id`                    | yes  | routes/receivable.ts |
-| DELETE | `/api/receivable/payments/:id`                    | yes  | routes/receivable.ts |
-| GET    | `/api/receivable/details/:customer_code`          | yes  | routes/receivable.ts |
-| GET    | `/api/receivable/uninvoiced/:customer_code`       | yes  | routes/receivable.ts |
-| GET    | `/api/receivable/invoiced/:customer_code`         | yes  | routes/receivable.ts |
-| POST   | `/api/receivable/invoices/refresh/:customer_code` | yes  | routes/receivable.ts |
+| Method | Path                                              | Auth                  | Source               |
+| ------ | ------------------------------------------------- | --------------------- | -------------------- |
+| GET    | `/api/receivable`                                 | editor/superuser only | routes/receivable.ts |
+| GET    | `/api/receivable/payments/:customer_code`         | editor/superuser only | routes/receivable.ts |
+| POST   | `/api/receivable/payments`                        | editor/superuser only | routes/receivable.ts |
+| PUT    | `/api/receivable/payments/:id`                    | editor/superuser only | routes/receivable.ts |
+| DELETE | `/api/receivable/payments/:id`                    | editor/superuser only | routes/receivable.ts |
+| GET    | `/api/receivable/details/:customer_code`          | editor/superuser only | routes/receivable.ts |
+| GET    | `/api/receivable/uninvoiced/:customer_code`       | editor/superuser only | routes/receivable.ts |
+| GET    | `/api/receivable/invoiced/:customer_code`         | editor/superuser only | routes/receivable.ts |
+| POST   | `/api/receivable/invoices/refresh/:customer_code` | editor/superuser only | routes/receivable.ts |
 
 ## Payable
 
-| Method | Path                                           | Auth | Source            |
-| ------ | ---------------------------------------------- | ---- | ----------------- |
-| GET    | `/api/payable`                                 | yes  | routes/payable.ts |
-| GET    | `/api/payable/payments/:supplier_code`         | yes  | routes/payable.ts |
-| POST   | `/api/payable/payments`                        | yes  | routes/payable.ts |
-| PUT    | `/api/payable/payments/:id`                    | yes  | routes/payable.ts |
-| DELETE | `/api/payable/payments/:id`                    | yes  | routes/payable.ts |
-| GET    | `/api/payable/details/:supplier_code`          | yes  | routes/payable.ts |
-| GET    | `/api/payable/uninvoiced/:supplier_code`       | yes  | routes/payable.ts |
-| GET    | `/api/payable/invoiced/:supplier_code`         | yes  | routes/payable.ts |
-| POST   | `/api/payable/invoices/refresh/:supplier_code` | yes  | routes/payable.ts |
+| Method | Path                                           | Auth                  | Source            |
+| ------ | ---------------------------------------------- | --------------------- | ----------------- |
+| GET    | `/api/payable`                                 | editor/superuser only | routes/payable.ts |
+| GET    | `/api/payable/payments/:supplier_code`         | editor/superuser only | routes/payable.ts |
+| POST   | `/api/payable/payments`                        | editor/superuser only | routes/payable.ts |
+| PUT    | `/api/payable/payments/:id`                    | editor/superuser only | routes/payable.ts |
+| DELETE | `/api/payable/payments/:id`                    | editor/superuser only | routes/payable.ts |
+| GET    | `/api/payable/details/:supplier_code`          | editor/superuser only | routes/payable.ts |
+| GET    | `/api/payable/uninvoiced/:supplier_code`       | editor/superuser only | routes/payable.ts |
+| GET    | `/api/payable/invoiced/:supplier_code`         | editor/superuser only | routes/payable.ts |
+| POST   | `/api/payable/invoices/refresh/:supplier_code` | editor/superuser only | routes/payable.ts |
 
 ## Users
 
-| Method | Path                                  | Auth           | Source          |
-| ------ | ------------------------------------- | -------------- | --------------- |
-| POST   | `/api/users`                          | superuser only | routes/users.ts |
-| PUT    | `/api/users/me`                       | yes            | routes/users.ts |
-| PUT    | `/api/users/me/password`              | yes            | routes/users.ts |
-| GET    | `/api/users`                          | superuser only | routes/users.ts |
-| PUT    | `/api/users/:username`                | superuser only | routes/users.ts |
-| PUT    | `/api/users/:username/reset-password` | superuser only | routes/users.ts |
-| DELETE | `/api/users/:username`                | superuser only | routes/users.ts |
+| Method | Path                                  | Auth                   | Source          |
+| ------ | ------------------------------------- | ---------------------- | --------------- |
+| POST   | `/api/users`                          | superuser only         | routes/users.ts |
+| PUT    | `/api/users/me`                       | any authenticated user | routes/users.ts |
+| PUT    | `/api/users/me/password`              | any authenticated user | routes/users.ts |
+| GET    | `/api/users`                          | superuser only         | routes/users.ts |
+| PUT    | `/api/users/:username`                | superuser only         | routes/users.ts |
+| PUT    | `/api/users/:username/reset-password` | superuser only         | routes/users.ts |
+| DELETE | `/api/users/:username`                | superuser only         | routes/users.ts |
 
 ## Audit
 
@@ -133,24 +133,24 @@ Base URL: `/api` Auth: JWT via `POST /api/auth/login` →
 
 ## Analysis
 
-| Method | Path                           | Auth | Source                      |
-| ------ | ------------------------------ | ---- | --------------------------- |
-| GET    | `/api/analysis/data`           | yes  | routes/analysis/analysis.ts |
-| GET    | `/api/analysis/detail`         | yes  | routes/analysis/analysis.ts |
-| POST   | `/api/analysis/refresh`        | yes  | routes/analysis/analysis.ts |
-| GET    | `/api/analysis/filter-options` | yes  | routes/analysis/analysis.ts |
-| POST   | `/api/analysis/clean-cache`    | yes  | routes/analysis/analysis.ts |
+| Method | Path                           | Auth                  | Source                      |
+| ------ | ------------------------------ | --------------------- | --------------------------- |
+| GET    | `/api/analysis/data`           | editor/superuser only | routes/analysis/analysis.ts |
+| GET    | `/api/analysis/detail`         | editor/superuser only | routes/analysis/analysis.ts |
+| POST   | `/api/analysis/refresh`        | editor/superuser only | routes/analysis/analysis.ts |
+| GET    | `/api/analysis/filter-options` | editor/superuser only | routes/analysis/analysis.ts |
+| POST   | `/api/analysis/clean-cache`    | editor/superuser only | routes/analysis/analysis.ts |
 
 ## Export
 
-| Method | Path                             | Auth | Source                 |
-| ------ | -------------------------------- | ---- | ---------------------- |
-| POST   | `/api/export/base-info`          | yes  | routes/export/index.ts |
-| POST   | `/api/export/inbound-outbound`   | yes  | routes/export/index.ts |
-| POST   | `/api/export/statement`          | yes  | routes/export/index.ts |
-| POST   | `/api/export/receivable-payable` | yes  | routes/export/index.ts |
-| POST   | `/api/export/invoice`            | yes  | routes/export/index.ts |
-| POST   | `/api/export/analysis`           | yes  | routes/export/index.ts |
-| POST   | `/api/export/advanced-analysis`  | yes  | routes/export/index.ts |
-| POST   | `/api/export/inventory`          | yes  | routes/export/index.ts |
-| GET    | `/api/export/status`             | yes  | routes/export/index.ts |
+| Method | Path                             | Auth                  | Source                 |
+| ------ | -------------------------------- | --------------------- | ---------------------- |
+| POST   | `/api/export/base-info`          | editor/superuser only | routes/export/index.ts |
+| POST   | `/api/export/inbound-outbound`   | editor/superuser only | routes/export/index.ts |
+| POST   | `/api/export/statement`          | editor/superuser only | routes/export/index.ts |
+| POST   | `/api/export/receivable-payable` | editor/superuser only | routes/export/index.ts |
+| POST   | `/api/export/invoice`            | editor/superuser only | routes/export/index.ts |
+| POST   | `/api/export/analysis`           | editor/superuser only | routes/export/index.ts |
+| POST   | `/api/export/advanced-analysis`  | editor/superuser only | routes/export/index.ts |
+| POST   | `/api/export/inventory`          | editor/superuser only | routes/export/index.ts |
+| GET    | `/api/export/status`             | editor/superuser only | routes/export/index.ts |

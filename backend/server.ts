@@ -6,7 +6,11 @@ import type { CustomError } from '@/types/index';
 import { config, getConfigDir, getCacheDir } from '@/utils/paths';
 import { logger } from '@/utils/logger';
 import { requestLogger, errorLogger } from '@/utils/loggerMiddleware';
-import { authenticateToken, checkWritePermission } from '@/utils/auth';
+import {
+  authenticateToken,
+  authorize,
+  checkWritePermission,
+} from '@/utils/auth';
 import { initCacheFiles } from '@/utils/initCache';
 import overviewRoutes from '@/routes/overview';
 import inboundRoutes from '@/routes/inbound';
@@ -72,17 +76,19 @@ app.use('/api', (req, res, next) => {
   return checkWritePermission(req, res, next);
 });
 
-app.use('/api/overview', overviewRoutes);
+const editorPageAccess = authorize(['editor', 'superuser']);
+
+app.use('/api/overview', editorPageAccess, overviewRoutes);
 app.use('/api/inbound', inboundRoutes);
 app.use('/api/outbound', outboundRoutes);
 app.use('/api/inventory', inventoryRoutes);
 app.use('/api/partners', partnersRoutes);
 app.use('/api/products', productsRoutes);
 app.use('/api/product-prices', productPricesRoutes);
-app.use('/api/receivable', receivableRoutes);
-app.use('/api/payable', payableRoutes);
-app.use('/api/export', exportRoutes);
-app.use('/api/analysis', analysisRoutes);
+app.use('/api/receivable', editorPageAccess, receivableRoutes);
+app.use('/api/payable', editorPageAccess, payableRoutes);
+app.use('/api/export', editorPageAccess, exportRoutes);
+app.use('/api/analysis', editorPageAccess, analysisRoutes);
 app.use('/api/about', aboutRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/audit', auditRoutes);

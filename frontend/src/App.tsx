@@ -253,6 +253,13 @@ function LanguageSelector(): React.ReactElement {
   );
 }
 
+function HomeRedirect(): React.ReactElement {
+  const { hasPermission } = useAuth();
+  const defaultPath = hasPermission('editor') ? '/overview' : '/inbound';
+
+  return <Navigate to={defaultPath} replace />;
+}
+
 function AppContent(): React.ReactElement {
   const location = useLocation();
   const { t } = useTranslation();
@@ -284,7 +291,8 @@ function AppContentInner({
   location,
   t,
 }: AppContentInnerProps): React.ReactElement {
-  const { canManageUsers } = usePermissions();
+  const { hasPermission } = usePermissions();
+  const canAccessRestrictedPages = hasPermission('editor');
 
   const getSelectedKey = (): MenuKey | '' => {
     const path = location.pathname;
@@ -310,25 +318,58 @@ function AppContentInner({
       key: 'audit',
       label: <Link to="/audit">{t('nav.audit')}</Link>,
     },
-    ...(canManageUsers
-      ? [
-          {
-            key: 'users',
-            label: <Link to="/users">{t('nav.users')}</Link>,
-          },
-        ]
-      : []),
+    {
+      key: 'users',
+      label: <Link to="/users">{t('nav.users')}</Link>,
+    },
   ];
 
-  const menuItems: Required<MenuProps>['items'] = [
+  const overviewMenuItem = {
+    key: 'overview',
+    label: (
+      <Link to="/overview" style={{ fontWeight: 'bold' }}>
+        {t('nav.overview')}
+      </Link>
+    ),
+  };
+
+  const restrictedFinancialMenuItems: Required<MenuProps>['items'] = [
     {
-      key: 'overview',
+      key: 'receivable',
       label: (
-        <Link to="/overview" style={{ fontWeight: 'bold' }}>
-          {t('nav.overview')}
+        <Link to="/receivable" style={{ fontWeight: 'bold' }}>
+          {t('nav.receivable')}
         </Link>
       ),
     },
+    {
+      key: 'payable',
+      label: (
+        <Link to="/payable" style={{ fontWeight: 'bold' }}>
+          {t('nav.payable')}
+        </Link>
+      ),
+    },
+    {
+      key: 'analysis',
+      label: (
+        <Link to="/analysis" style={{ fontWeight: 'bold' }}>
+          {t('nav.analysis')}
+        </Link>
+      ),
+    },
+    {
+      key: 'export',
+      label: (
+        <Link to="/export" style={{ fontWeight: 'bold' }}>
+          {t('nav.export')}
+        </Link>
+      ),
+    },
+  ];
+
+  const menuItems: Required<MenuProps>['items'] = [
+    ...(canAccessRestrictedPages ? [overviewMenuItem] : []),
     {
       key: 'inbound',
       label: (
@@ -377,38 +418,7 @@ function AppContentInner({
         </Link>
       ),
     },
-    {
-      key: 'receivable',
-      label: (
-        <Link to="/receivable" style={{ fontWeight: 'bold' }}>
-          {t('nav.receivable')}
-        </Link>
-      ),
-    },
-    {
-      key: 'payable',
-      label: (
-        <Link to="/payable" style={{ fontWeight: 'bold' }}>
-          {t('nav.payable')}
-        </Link>
-      ),
-    },
-    {
-      key: 'analysis',
-      label: (
-        <Link to="/analysis" style={{ fontWeight: 'bold' }}>
-          {t('nav.analysis')}
-        </Link>
-      ),
-    },
-    {
-      key: 'export',
-      label: (
-        <Link to="/export" style={{ fontWeight: 'bold' }}>
-          {t('nav.export')}
-        </Link>
-      ),
-    },
+    ...(canAccessRestrictedPages ? restrictedFinancialMenuItems : []),
     ...(advancedItems.length > 0
       ? [
           {
@@ -462,29 +472,64 @@ function AppContentInner({
         <div style={{ maxWidth: '1800px', margin: '0 auto' }}>
           <ErrorBoundary>
             <Routes>
-              <Route path="/" element={<Navigate to="/overview" replace />} />
-              <Route path="/overview" element={<Overview />} />
+              <Route path="/" element={<HomeRedirect />} />
+              <Route
+                path="/overview"
+                element={
+                  <ProtectedRoute requireRole="editor">
+                    <Overview />
+                  </ProtectedRoute>
+                }
+              />
               <Route path="/inbound" element={<Inbound />} />
               <Route path="/outbound" element={<Outbound />} />
               <Route path="/inventory" element={<Inventory />} />
               <Route path="/partners" element={<Partners />} />
               <Route path="/products" element={<Products />} />
               <Route path="/product-prices" element={<ProductPrices />} />
-              <Route path="/receivable" element={<Receivable />} />
-              <Route path="/payable" element={<Payable />} />
-              <Route path="/analysis" element={<Analysis />} />
-              <Route path="/export" element={<Export />} />
+              <Route
+                path="/receivable"
+                element={
+                  <ProtectedRoute requireRole="editor">
+                    <Receivable />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/payable"
+                element={
+                  <ProtectedRoute requireRole="editor">
+                    <Payable />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/analysis"
+                element={
+                  <ProtectedRoute requireRole="editor">
+                    <Analysis />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/export"
+                element={
+                  <ProtectedRoute requireRole="editor">
+                    <Export />
+                  </ProtectedRoute>
+                }
+              />
               <Route path="/audit" element={<Audit />} />
               <Route
                 path="/users"
                 element={
-                  <ProtectedRoute requireRole="superuser">
+                  <ProtectedRoute>
                     <Users />
                   </ProtectedRoute>
                 }
               />
               <Route path="/about" element={<About />} />
-              <Route path="*" element={<Navigate to="/overview" replace />} />
+              <Route path="*" element={<HomeRedirect />} />
             </Routes>
           </ErrorBoundary>
         </div>
