@@ -84,14 +84,14 @@ const createRequest = (baseURL = ''): RequestInstance => {
 
       const response = await fetch(fullUrl, config);
 
-      // 处理 401 错误（token过期或无效）
+      // Handle 401 errors caused by an expired or invalid token.
       if (response.status === 401) {
-        // 清除本地存储的认证信息
+        // Clear locally stored authentication information.
         tokenManager.clearToken();
 
-        // 重定向到登录页（如果当前不在登录页）
-        if (window.location.pathname !== '/login') {
-          window.location.href = '/login';
+        // Redirect to the login page unless it is already active.
+        if (!window.location.hash.startsWith('#/login')) {
+          window.location.hash = '#/login';
         }
 
         throw new AuthenticationError();

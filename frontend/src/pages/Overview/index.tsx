@@ -21,6 +21,7 @@ import {
   ExportOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { useSimpleApi, useSimpleApiData } from '@/hooks/useSimpleApi';
 import { usePermissions } from '@/auth/usePermissions';
 
@@ -36,6 +37,7 @@ const OverviewMain = () => {
   const { t } = useTranslation();
   const { canWrite, canUseReaderPost } = usePermissions();
   const { post } = useSimpleApi();
+  const navigate = useNavigate();
 
   // 使用简化版Hook获取统计数据
   const {
@@ -66,13 +68,13 @@ const OverviewMain = () => {
   const outOfStockCount = outOfStockProducts.length;
   const [modalVisible, setModalVisible] = useState(false);
 
-  // 快速操作函数
+  // Quick actions.
   const handleQuickInbound = () => {
-    window.location.href = '/inbound';
+    navigate('/inbound');
   };
 
   const handleQuickOutbound = () => {
-    window.location.href = '/outbound';
+    navigate('/outbound');
   };
 
   // 计算利润率（基于已售商品成本）
