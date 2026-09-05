@@ -9,7 +9,7 @@ const IGNORED_PATHS = [
   '/api/analysis/refresh',
   '/api/inventory/refresh',
   '/api/payable/invoices/refresh',
-  '/api/receivable/invoices/refresh',
+  '/api/receivable/invoices/refresh'
 ];
 
 /**
@@ -22,7 +22,7 @@ const SENSITIVE_KEYS = [
   'refreshToken',
   'oldPassword',
   'newPassword',
-  'confirmnewPassword',
+  'confirmnewPassword'
 ];
 
 function shouldSkipLogging(req: Request): boolean {
@@ -63,7 +63,7 @@ function maskSensitiveData(data: unknown): unknown {
 export const requestLogger = (
   req: Request,
   res: Response,
-  next: NextFunction,
+  next: NextFunction
 ): void => {
   // Only log mutations
   if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(req.method)) {
@@ -100,8 +100,8 @@ export const requestLogger = (
               action: req.method,
               resource: req.originalUrl,
               user_agent: req.get('User-Agent') || '',
-              params: bodyToLog,
-            },
+              params: bodyToLog
+            }
           });
         } catch (error) {
           console.error('Failed to write system log:', error);
@@ -120,14 +120,14 @@ export const errorLogger = (
   err: Error,
   req: Request,
   _res: Response,
-  next: NextFunction,
+  next: NextFunction
 ): void => {
   console.error('API Error', {
     message: err.message,
     stack: err.stack,
     method: req.method,
     url: req.originalUrl,
-    user: req.user?.username || 'anonymous',
+    user: req.user?.username || 'anonymous'
   });
   next(err);
 };

@@ -32,7 +32,7 @@ const InboundTable: FC<InboundTableProps> = ({
   onEdit,
   onDelete,
   onTableChange,
-  pagination,
+  pagination
 }) => {
   const { t } = useTranslation();
   const columns: ColumnsType<InboundRecord> = [
@@ -40,7 +40,7 @@ const InboundTable: FC<InboundTableProps> = ({
       title: t('inbound.id'),
       dataIndex: 'id',
       key: 'id',
-      width: 80,
+      width: 80
     },
     {
       title: t('inbound.supplierShortName'),
@@ -49,10 +49,10 @@ const InboundTable: FC<InboundTableProps> = ({
       width: 100,
       filters: partners.map((p) => ({
         text: p.short_name,
-        value: p.short_name,
+        value: p.short_name
       })),
       onFilter: (value, record) => record.partner?.short_name === value,
-      render: (_, record) => record.partner?.short_name,
+      render: (_, record) => record.partner?.short_name
     },
     {
       title: t('inbound.productModel'),
@@ -61,15 +61,15 @@ const InboundTable: FC<InboundTableProps> = ({
       width: 180,
       filters: products.map((p) => ({
         text: p.product_model,
-        value: p.product_model,
+        value: p.product_model
       })),
-      onFilter: (value, record) => record.product_model === value,
+      onFilter: (value, record) => record.product_model === value
     },
     {
       title: t('inbound.quantity'),
       dataIndex: 'quantity',
       key: 'quantity',
-      width: 80,
+      width: 80
     },
     {
       title: t('inbound.unitPrice'),
@@ -77,7 +77,7 @@ const InboundTable: FC<InboundTableProps> = ({
       key: 'unit_price',
       width: 100,
       render: (price) => `${currency_unit_symbol}${price}`,
-      sorter: true,
+      sorter: true
     },
     {
       title: t('inbound.totalPrice'),
@@ -85,33 +85,33 @@ const InboundTable: FC<InboundTableProps> = ({
       key: 'total_price',
       width: 100,
       render: (price) => `${currency_unit_symbol}${price}`,
-      sorter: true,
+      sorter: true
     },
     {
       title: t('inbound.inboundDate'),
       dataIndex: 'inbound_date',
       key: 'inbound_date',
       width: 100,
-      sorter: true,
+      sorter: true
     },
     {
       title: t('inbound.orderNumber'),
       dataIndex: 'order_number',
       key: 'order_number',
-      width: 160,
+      width: 160
     },
     {
       title: t('inbound.receiptNumber'),
       dataIndex: 'receipt_number',
       key: 'receipt_number',
-      width: 140,
+      width: 140
     },
     {
       title: t('inbound.invoiceNumber'),
       dataIndex: 'invoice_number',
       key: 'invoice_number',
-      width: 140,
-    },
+      width: 140
+    }
   ];
 
   if (canWrite) {
@@ -140,7 +140,7 @@ const InboundTable: FC<InboundTableProps> = ({
             </Button>
           </Popconfirm>
         </Space>
-      ),
+      )
     });
   }
 
@@ -149,7 +149,7 @@ const InboundTable: FC<InboundTableProps> = ({
     preserveSelectedRowKeys: true,
     onChange: (keys: Key[]) => {
       setSelectedRowKeys(keys);
-    },
+    }
   };
 
   return (

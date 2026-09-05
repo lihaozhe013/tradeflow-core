@@ -2,7 +2,7 @@ import React, {
   createContext,
   useReducer,
   useEffect,
-  type ReactNode,
+  type ReactNode
 } from 'react';
 import { tokenManager, userManager, authAPI } from '@/auth/auth';
 import { useTranslation } from 'react-i18next';
@@ -44,7 +44,7 @@ const initialState: AuthState = {
   token: null,
   isAuthenticated: false,
   isLoading: true,
-  error: null,
+  error: null
 };
 
 /**
@@ -55,7 +55,7 @@ const authReducer = (state: AuthState, action: AuthAction): AuthState => {
     case 'SET_LOADING':
       return {
         ...state,
-        isLoading: action.payload,
+        isLoading: action.payload
       };
 
     case 'LOGIN_SUCCESS':
@@ -65,7 +65,7 @@ const authReducer = (state: AuthState, action: AuthAction): AuthState => {
         token: action.payload.token,
         isAuthenticated: true,
         isLoading: false,
-        error: null,
+        error: null
       };
 
     case 'LOGIN_FAILURE':
@@ -75,7 +75,7 @@ const authReducer = (state: AuthState, action: AuthAction): AuthState => {
         token: null,
         isAuthenticated: false,
         isLoading: false,
-        error: action.payload,
+        error: action.payload
       };
 
     case 'LOGOUT':
@@ -85,13 +85,13 @@ const authReducer = (state: AuthState, action: AuthAction): AuthState => {
         token: null,
         isAuthenticated: false,
         isLoading: false,
-        error: null,
+        error: null
       };
 
     case 'CLEAR_ERROR':
       return {
         ...state,
-        error: null,
+        error: null
       };
 
     case 'SET_USER':
@@ -99,7 +99,7 @@ const authReducer = (state: AuthState, action: AuthAction): AuthState => {
         ...state,
         user: action.payload,
         isAuthenticated: !!action.payload,
-        isLoading: false,
+        isLoading: false
       };
 
     default:
@@ -139,7 +139,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           const activeToken = token ?? 'dev-mode-token';
           dispatch({
             type: 'LOGIN_SUCCESS',
-            payload: { user: response.user, token: activeToken },
+            payload: { user: response.user, token: activeToken }
           });
           // Only save when a valid token is present; otherwise, it may be in Dev Mode
           if (token) {
@@ -166,7 +166,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
    */
   const login = async (
     username: string,
-    password: string,
+    password: string
   ): Promise<LoginResult> => {
     dispatch({ type: 'SET_LOADING', payload: true });
     dispatch({ type: 'CLEAR_ERROR' });
@@ -184,7 +184,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // Update Status
         dispatch({
           type: 'LOGIN_SUCCESS',
-          payload: { user, token },
+          payload: { user, token }
         });
 
         return { success: true };
@@ -196,7 +196,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         error instanceof Error ? error.message : t('auth.loginFailed');
       dispatch({
         type: 'LOGIN_FAILURE',
-        payload: errorMessage,
+        payload: errorMessage
       });
       return { success: false, error: errorMessage };
     }
@@ -221,7 +221,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
    * Inspection Authority
    */
   const hasPermission = (
-    requiredRole: 'reader' | 'editor' | 'superuser',
+    requiredRole: 'reader' | 'editor' | 'superuser'
   ): boolean => hasRolePermission(state.user?.role, requiredRole);
 
   const value: AuthContextValue = {
@@ -229,7 +229,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     login,
     logout,
     clearError,
-    hasPermission,
+    hasPermission
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

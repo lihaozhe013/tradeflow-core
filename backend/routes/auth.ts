@@ -5,7 +5,7 @@ import {
   signToken,
   getPublicUser,
   authenticateToken,
-  loginRateLimiter,
+  loginRateLimiter
 } from '@/utils/auth';
 import { logger } from '@/utils/logger';
 
@@ -43,15 +43,15 @@ router.post(
 
     logger.info('User login success', {
       username: user.username,
-      role: user.role,
+      role: user.role
     });
     return res.json({
       success: true,
       token,
       expires_in,
-      user: getPublicUser(user),
+      user: getPublicUser(user)
     });
-  },
+  }
 );
 
 /**
@@ -70,10 +70,10 @@ router.get(
       user: {
         username: req.user.username,
         role: req.user.role,
-        display_name: req.user.name,
-      },
+        display_name: req.user.name
+      }
     });
-  },
+  }
 );
 
 /**

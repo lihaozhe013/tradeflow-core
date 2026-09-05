@@ -11,12 +11,12 @@ export async function calculatePurchaseData(
   startDate: string,
   endDate: string,
   supplierCode: string | null | undefined,
-  productModel: string | null | undefined,
+  productModel: string | null | undefined
 ): Promise<PurchaseData> {
   // Build Purchase Query Conditions
   const purchaseSqlConditions: Prisma.Sql[] = [
     Prisma.sql`r.inbound_date >= ${startDate}`,
-    Prisma.sql`r.inbound_date <= ${endDate}`,
+    Prisma.sql`r.inbound_date <= ${endDate}`
   ];
 
   if (supplierCode && supplierCode !== 'All') {
@@ -40,10 +40,10 @@ export async function calculatePurchaseData(
   const purchaseAmount = decimalCalc.fromSqlResult(
     purchaseRow?.purchase_amount,
     0,
-    2,
+    2
   );
 
   return {
-    purchase_amount: purchaseAmount,
+    purchase_amount: purchaseAmount
   };
 }

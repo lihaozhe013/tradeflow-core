@@ -28,15 +28,15 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       where,
       orderBy: { product_model: 'asc' },
       skip,
-      take: limitNum,
+      take: limitNum
     }),
-    prisma.inventory.count({ where }),
+    prisma.inventory.count({ where })
   ]);
 
   const results = rows.map((row) => {
     return {
       product_model: row.product_model,
-      current_inventory: row.quantity,
+      current_inventory: row.quantity
     };
   });
 
@@ -46,8 +46,8 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       page: pageNum,
       limit: limitNum,
       total,
-      pages: Math.ceil(total / limitNum),
-    },
+      pages: Math.ceil(total / limitNum)
+    }
   });
 });
 
@@ -58,7 +58,7 @@ router.get(
   '/total-cost-estimate',
   async (_req: Request, res: Response): Promise<void> => {
     const items = await prisma.inventory.findMany({
-      where: { quantity: { gt: 0 } },
+      where: { quantity: { gt: 0 } }
     });
 
     let totalCost = decimalCalc.decimal(0);
@@ -69,13 +69,13 @@ router.get(
       const priceRow = await prisma.inboundRecord.findFirst({
         where: { product: { product_model: item.product_model } },
         orderBy: [{ inbound_date: 'desc' }, { id: 'desc' }],
-        select: { unit_price: true },
+        select: { unit_price: true }
       });
 
       if (priceRow && priceRow.unit_price) {
         const infoCost = decimalCalc.multiply(
           item.quantity,
-          priceRow.unit_price,
+          priceRow.unit_price
         );
         totalCost = decimalCalc.add(totalCost, infoCost);
       }
@@ -83,9 +83,9 @@ router.get(
 
     res.json({
       total_cost_estimate: decimalCalc.toDbNumber(totalCost, 2),
-      last_updated: new Date().toISOString(),
+      last_updated: new Date().toISOString()
     });
-  },
+  }
 );
 
 /**
@@ -97,7 +97,7 @@ router.post('/refresh', async (_req: Request, res: Response): Promise<void> => {
     success: true,
     message: 'Inventory recalculation completed!',
     last_updated: new Date().toISOString(),
-    products_count: result.products_count,
+    products_count: result.products_count
   });
 });
 

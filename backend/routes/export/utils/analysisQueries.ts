@@ -3,7 +3,7 @@ import decimalCalc from '@/utils/decimalCalculator';
 import {
   AnalysisCustomerData,
   AnalysisProductData,
-  AnalysisRecord,
+  AnalysisRecord
 } from '@/routes/export/utils/types';
 
 interface Batch {
@@ -43,7 +43,7 @@ interface ProductAggregation extends ProductStats {
  */
 async function calculateFIFOData(
   startDate: string,
-  endDate: string,
+  endDate: string
 ): Promise<AnalysisRecord[]> {
   // 1. Fetch Data
   const [allInbound, allOutbound, partners] = await Promise.all([
@@ -54,8 +54,8 @@ async function calculateFIFOData(
       select: {
         product: { select: { product_model: true } },
         quantity: true,
-        unit_price: true,
-      },
+        unit_price: true
+      }
     }),
     // Outbound: Up to endDate
     prisma.outboundRecord.findMany({
@@ -72,15 +72,15 @@ async function calculateFIFOData(
         partner: {
           select: {
             short_name: true,
-            full_name: true,
-          },
-        },
-      },
+            full_name: true
+          }
+        }
+      }
     }),
     // Partners for resolution
     prisma.partner.findMany({
-      select: { code: true, short_name: true, full_name: true },
-    }),
+      select: { code: true, short_name: true, full_name: true }
+    })
   ]);
 
   // 2. Prepare Maps
@@ -93,12 +93,12 @@ async function calculateFIFOData(
     if (p.code)
       partnerCodeMap.set(p.code, {
         code: p.code,
-        full_name: p.full_name || '',
+        full_name: p.full_name || ''
       });
     if (p.short_name)
       partnerShortMap.set(p.short_name, {
         code: p.code || '',
-        full_name: p.full_name || '',
+        full_name: p.full_name || ''
       });
   });
 
@@ -114,7 +114,7 @@ async function calculateFIFOData(
 
     inventoryState[inRecord.product?.product_model]!.push({
       quantity_remaining: Number(inRecord.quantity),
-      unit_price: Number(inRecord.unit_price),
+      unit_price: Number(inRecord.unit_price)
     });
   }
 
@@ -190,7 +190,7 @@ async function calculateFIFOData(
         cost_amount: decimalCalc.toNumber(currentRecordCost, 2), // Decimal
         sales_amount: Number(outRecord.total_price || 0),
         customer_full_name: partner.full_name,
-        resolved_customer_code: partner.code,
+        resolved_customer_code: partner.code
       });
     }
   }
@@ -203,7 +203,7 @@ async function calculateFIFOData(
  */
 export async function getCustomerAnalysisData(
   startDate: string,
-  endDate: string,
+  endDate: string
 ): Promise<AnalysisCustomerData[]> {
   const records = await calculateFIFOData(startDate, endDate);
 
@@ -228,7 +228,7 @@ export async function getCustomerAnalysisData(
         profit_amount: 0,
         profit_rate: 0,
         quantity: 0,
-        product_details_map: {},
+        product_details_map: {}
       };
     }
 
@@ -248,7 +248,7 @@ export async function getCustomerAnalysisData(
         cost_amount: 0,
         profit_amount: 0,
         profit_rate: 0,
-        quantity: 0,
+        quantity: 0
       };
     }
     const prod = cust.product_details_map[modelKey];
@@ -287,7 +287,7 @@ export async function getCustomerAnalysisData(
  */
 export async function getProductAnalysisData(
   startDate: string,
-  endDate: string,
+  endDate: string
 ): Promise<AnalysisProductData[]> {
   const records = await calculateFIFOData(startDate, endDate);
   const productMap: Record<string, ProductAggregation> = {};
@@ -310,7 +310,7 @@ export async function getProductAnalysisData(
         profit_amount: 0,
         profit_rate: 0,
         quantity: 0,
-        customer_details_map: {},
+        customer_details_map: {}
       };
     }
 
@@ -328,7 +328,7 @@ export async function getProductAnalysisData(
         cost_amount: 0,
         profit_amount: 0,
         profit_rate: 0,
-        quantity: 0,
+        quantity: 0
       };
     }
     const cust = prod.customer_details_map[customerCode];

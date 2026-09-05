@@ -11,13 +11,13 @@ import {
   Space,
   Popconfirm,
   message,
-  Switch,
+  Switch
 } from 'antd';
 import {
   EditOutlined,
   DeleteOutlined,
   KeyOutlined,
-  PlusOutlined,
+  PlusOutlined
 } from '@ant-design/icons';
 import type { ColumnsType, TablePaginationConfig } from 'antd/es/table';
 import { useTranslation } from 'react-i18next';
@@ -65,7 +65,7 @@ function Users(): React.ReactElement {
   getRef.current = get;
 
   const [displayName, setDisplayName] = useState(
-    (currentUser?.display_name as string) || '',
+    (currentUser?.display_name as string) || ''
   );
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -78,7 +78,7 @@ function Users(): React.ReactElement {
     pageSize: 20,
     showSizeChanger: true,
     pageSizeOptions: ['10', '20', '50'],
-    showTotal: (t_: number) => t('users.total', { count: t_ }),
+    showTotal: (t_: number) => t('users.total', { count: t_ })
   });
 
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -101,7 +101,7 @@ function Users(): React.ReactElement {
 
   const fetchUsers = useCallback(async (page = 1, pageSize = 20) => {
     const response = await getRef.current<UsersResponse>(
-      `/users?page=${page}&pageSize=${pageSize}`,
+      `/users?page=${page}&pageSize=${pageSize}`
     );
 
     if (response?.success) {
@@ -111,7 +111,7 @@ function Users(): React.ReactElement {
         ...prev,
         current: page,
         pageSize,
-        total: response.data.total,
+        total: response.data.total
       }));
     }
   }, []);
@@ -140,7 +140,7 @@ function Users(): React.ReactElement {
 
     const response = await put<ChangePasswordResponse>('/users/me/password', {
       oldPassword,
-      newPassword,
+      newPassword
     });
 
     if (response?.token) {
@@ -171,7 +171,7 @@ function Users(): React.ReactElement {
     const payload: UpdateUserPayload = {
       display_name: editDisplayName,
       role: editRole,
-      enabled: editEnabled,
+      enabled: editEnabled
     };
 
     await put(`/users/${editingUser.username}`, payload);
@@ -196,7 +196,7 @@ function Users(): React.ReactElement {
     }
 
     await put(`/users/${resettingUser.username}/reset-password`, {
-      newPassword: resetPassword,
+      newPassword: resetPassword
     });
 
     message.success(t('users.passwordResetSuccess'));
@@ -240,7 +240,7 @@ function Users(): React.ReactElement {
       password: createPassword,
       display_name: createDisplayName,
       role: createRole,
-      enabled: createEnabled,
+      enabled: createEnabled
     });
 
     message.success(t('users.createSuccess'));
@@ -252,7 +252,7 @@ function Users(): React.ReactElement {
     const colorMap: Record<string, string> = {
       superuser: 'black',
       editor: 'green',
-      reader: 'blue',
+      reader: 'blue'
     };
     return <Tag color={colorMap[role] || 'default'}>{role}</Tag>;
   };
@@ -262,21 +262,21 @@ function Users(): React.ReactElement {
       title: t('users.username'),
       dataIndex: 'username',
       key: 'username',
-      width: 150,
+      width: 150
     },
     {
       title: t('users.displayName'),
       dataIndex: 'display_name',
       key: 'display_name',
       width: 150,
-      render: (text: string) => text || '-',
+      render: (text: string) => text || '-'
     },
     {
       title: t('users.role'),
       dataIndex: 'role',
       key: 'role',
       width: 120,
-      render: roleTag,
+      render: roleTag
     },
     {
       title: t('users.enabled'),
@@ -287,7 +287,7 @@ function Users(): React.ReactElement {
         <Tag color={enabled ? 'green' : 'red'}>
           {enabled ? t('users.yes') : t('users.no')}
         </Tag>
-      ),
+      )
     },
     {
       title: t('users.actions'),
@@ -322,8 +322,8 @@ function Users(): React.ReactElement {
             </Button>
           </Popconfirm>
         </Space>
-      ),
-    },
+      )
+    }
   ];
 
   return (

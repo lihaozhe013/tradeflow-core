@@ -4,7 +4,7 @@ import {
   useCallback,
   useMemo,
   type FC,
-  type Key,
+  type Key
 } from 'react';
 import {
   Button,
@@ -14,7 +14,7 @@ import {
   Typography,
   Row,
   Col,
-  Divider,
+  Divider
 } from 'antd';
 import type { TableProps } from 'antd/es/table';
 import type { SorterResult } from 'antd/es/table/interface';
@@ -36,7 +36,7 @@ import type {
   OutboundRecord,
   Partner,
   Product,
-  SorterState,
+  SorterState
 } from './types';
 
 const { Title } = Typography;
@@ -50,7 +50,7 @@ interface PaginationState {
 const DEFAULT_PAGINATION: PaginationState = {
   current: 1,
   pageSize: 10,
-  total: 0,
+  total: 0
 };
 
 const Outbound: FC = () => {
@@ -61,7 +61,7 @@ const Outbound: FC = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [batchModalVisible, setBatchModalVisible] = useState(false);
   const [editingRecord, setEditingRecord] = useState<OutboundRecord | null>(
-    null,
+    null
   );
   const [form] = Form.useForm<OutboundFormValues>();
   const [batchForm] = Form.useForm<OutboundFormValues>();
@@ -69,7 +69,7 @@ const Outbound: FC = () => {
   const [filters, setFilters] = useState<OutboundFilters>({
     customer_short_name: undefined,
     product_model: undefined,
-    dateRange: [null, null],
+    dateRange: [null, null]
   });
   const [sorter, setSorter] = useState<SorterState>({});
   const [manualPrice, setManualPrice] = useState(false);
@@ -82,14 +82,14 @@ const Outbound: FC = () => {
   const { data: partnersResponse } = useSimpleApiData<ApiListResponse<Partner>>(
     '/partners',
     {
-      data: [],
-    },
+      data: []
+    }
   );
   const { data: productsResponse } = useSimpleApiData<ApiListResponse<Product>>(
     '/products',
     {
-      data: [],
-    },
+      data: []
+    }
   );
 
   const partners = useMemo<Partner[]>(() => {
@@ -123,18 +123,18 @@ const Outbound: FC = () => {
           start_date: params.start_date ?? startDate,
           end_date: params.end_date ?? endDate,
           sort_field: params.sort_field ?? sorter.field ?? '',
-          sort_order: params.sort_order ?? sorter.order ?? '',
+          sort_order: params.sort_order ?? sorter.order ?? ''
         });
 
         const result = await get<OutboundListResponse>(
-          `/outbound?${query.toString()}`,
+          `/outbound?${query.toString()}`
         );
 
         setOutboundRecords(Array.isArray(result?.data) ? result.data : []);
         setPagination((prev: PaginationState) => ({
           current: result?.pagination?.page ?? page,
           pageSize: result?.pagination?.limit ?? prev.pageSize,
-          total: result?.pagination?.total ?? prev.total,
+          total: result?.pagination?.total ?? prev.total
         }));
       } catch (error) {
         console.error('获取出库记录失败:', error);
@@ -150,8 +150,8 @@ const Outbound: FC = () => {
       productModel,
       sorter.field,
       sorter.order,
-      startDate,
-    ],
+      startDate
+    ]
   );
 
   useEffect(() => {
@@ -165,7 +165,7 @@ const Outbound: FC = () => {
     form.resetFields();
     form.setFieldsValue({
       outbound_date: dayjs(),
-      manual_price: false,
+      manual_price: false
     });
     setModalVisible(true);
   };
@@ -174,10 +174,10 @@ const Outbound: FC = () => {
     if (!canWrite) return;
     setEditingRecord(record);
     const customer = partners.find(
-      (partner) => partner.code === record.customer_code,
+      (partner) => partner.code === record.customer_code
     );
     const product = products.find(
-      (item) => item.product_model === record.product_model,
+      (item) => item.product_model === record.product_model
     );
 
     form.setFieldsValue({
@@ -187,7 +187,7 @@ const Outbound: FC = () => {
       product_code: product?.code ?? '',
       outbound_date: record.outbound_date ? dayjs(record.outbound_date) : null,
       invoice_date: record.invoice_date ? dayjs(record.invoice_date) : null,
-      receipt_number: record.receipt_number ?? null,
+      receipt_number: record.receipt_number ?? null
     });
 
     setManualPrice(Boolean(form.getFieldValue('manual_price')));
@@ -216,12 +216,12 @@ const Outbound: FC = () => {
 
       if (customerCode && customerShortNameValue) {
         const customer = partners.find(
-          (partner) => partner.code === customerCode,
+          (partner) => partner.code === customerCode
         );
         if (customer?.short_name !== customerShortNameValue) {
           message.error(
             t('outbound.customerCodeShortNameMismatch') ??
-              '客户代号与简称不匹配，请重新选择',
+              '客户代号与简称不匹配，请重新选择'
           );
           return;
         }
@@ -232,7 +232,7 @@ const Outbound: FC = () => {
         if (product?.product_model !== productModelValue) {
           message.error(
             t('outbound.productCodeModelMismatch') ??
-              '产品代号与型号不匹配，请重新选择',
+              '产品代号与型号不匹配，请重新选择'
           );
           return;
         }
@@ -249,7 +249,7 @@ const Outbound: FC = () => {
         invoice_date: values.invoice_date
           ? values.invoice_date.format('YYYY-MM-DD')
           : null,
-        total_price: quantity * unitPrice,
+        total_price: quantity * unitPrice
       };
 
       if (editingRecord) {
@@ -277,7 +277,7 @@ const Outbound: FC = () => {
     if (customer) {
       form.setFieldsValue({
         customer_short_name: customer.short_name,
-        customer_full_name: customer.full_name ?? null,
+        customer_full_name: customer.full_name ?? null
       });
     }
     handlePartnerOrProductChange();
@@ -288,7 +288,7 @@ const Outbound: FC = () => {
     if (customer) {
       form.setFieldsValue({
         customer_code: customer.code ?? null,
-        customer_full_name: customer.full_name ?? null,
+        customer_full_name: customer.full_name ?? null
       });
     }
     handlePartnerOrProductChange();
@@ -299,7 +299,7 @@ const Outbound: FC = () => {
     if (product) {
       form.setFieldsValue({
         product_model: product.product_model,
-        product_category: product.category ?? null,
+        product_category: product.category ?? null
       });
     }
     handlePartnerOrProductChange();
@@ -310,7 +310,7 @@ const Outbound: FC = () => {
     if (product) {
       form.setFieldsValue({
         product_code: product.code ?? null,
-        product_category: product.category ?? null,
+        product_category: product.category ?? null
       });
     }
     handlePartnerOrProductChange();
@@ -332,10 +332,10 @@ const Outbound: FC = () => {
       try {
         const data = await get<{ unit_price: number }>(
           `/product-prices/auto?partner_short_name=${encodeURIComponent(
-            customerShortNameValue,
+            customerShortNameValue
           )}&product_model=${encodeURIComponent(
-            productModelValue,
-          )}&date=${outboundDateValue.format('YYYY-MM-DD')}`,
+            productModelValue
+          )}&date=${outboundDateValue.format('YYYY-MM-DD')}`
         );
         form.setFieldsValue({ unit_price: data.unit_price });
         handlePriceOrQuantityChange();
@@ -362,7 +362,7 @@ const Outbound: FC = () => {
     setBatchManualPrice(false);
     batchForm.resetFields();
     batchForm.setFieldsValue({
-      manual_price: false,
+      manual_price: false
     });
     setBatchModalVisible(true);
   };
@@ -396,16 +396,16 @@ const Outbound: FC = () => {
 
       const payload = {
         ids: selectedRowKeys.map((key) => Number(key)),
-        updates,
+        updates
       };
 
       const result = await post<{ updated: number; notFound: number[] }>(
         '/outbound/batch',
-        payload,
+        payload
       );
 
       message.success(
-        `Batch update completed! ${result.updated} records updated.`,
+        `Batch update completed! ${result.updated} records updated.`
       );
       if (result.notFound && result.notFound.length > 0) {
         message.warning(`${result.notFound.length} records not found.`);
@@ -427,7 +427,7 @@ const Outbound: FC = () => {
     if (customer) {
       batchForm.setFieldsValue({
         customer_short_name: customer.short_name,
-        customer_full_name: customer.full_name ?? null,
+        customer_full_name: customer.full_name ?? null
       });
     }
     handleBatchPartnerOrProductChange();
@@ -438,7 +438,7 @@ const Outbound: FC = () => {
     if (customer) {
       batchForm.setFieldsValue({
         customer_code: customer.code ?? null,
-        customer_full_name: customer.full_name ?? null,
+        customer_full_name: customer.full_name ?? null
       });
     }
     handleBatchPartnerOrProductChange();
@@ -449,7 +449,7 @@ const Outbound: FC = () => {
     if (product) {
       batchForm.setFieldsValue({
         product_model: product.product_model,
-        product_category: product.category ?? null,
+        product_category: product.category ?? null
       });
     }
     handleBatchPartnerOrProductChange();
@@ -460,7 +460,7 @@ const Outbound: FC = () => {
     if (product) {
       batchForm.setFieldsValue({
         product_code: product.code ?? null,
-        product_category: product.category ?? null,
+        product_category: product.category ?? null
       });
     }
     handleBatchPartnerOrProductChange();
@@ -480,7 +480,7 @@ const Outbound: FC = () => {
     }
 
     const customerShortNameValue = batchForm.getFieldValue(
-      'customer_short_name',
+      'customer_short_name'
     ) as string | undefined;
     const productModelValue = batchForm.getFieldValue('product_model') as
       string | undefined;
@@ -491,10 +491,10 @@ const Outbound: FC = () => {
       try {
         const data = await get<{ unit_price: number }>(
           `/product-prices/auto?partner_short_name=${encodeURIComponent(
-            customerShortNameValue,
+            customerShortNameValue
           )}&product_model=${encodeURIComponent(
-            productModelValue,
-          )}&date=${outboundDateValue.format('YYYY-MM-DD')}`,
+            productModelValue
+          )}&date=${outboundDateValue.format('YYYY-MM-DD')}`
         );
         batchForm.setFieldsValue({ unit_price: data.unit_price });
         handleBatchPriceOrQuantityChange();
@@ -508,21 +508,21 @@ const Outbound: FC = () => {
   const handleFilter = (): void => {
     setPagination((prev: PaginationState) => ({
       ...prev,
-      current: 1,
+      current: 1
     }));
     fetchOutboundRecords({
       page: 1,
       customer_short_name: filters.customer_short_name,
       product_model: filters.product_model,
       start_date: filters.dateRange[0],
-      end_date: filters.dateRange[1],
+      end_date: filters.dateRange[1]
     });
   };
 
   const handleTableChange: TableProps<OutboundRecord>['onChange'] = (
     paginationConfig,
     _filtersTable,
-    sorterTable,
+    sorterTable
   ) => {
     const sorterResult = Array.isArray(sorterTable)
       ? sorterTable[0]
@@ -539,7 +539,7 @@ const Outbound: FC = () => {
     setSorter({ field, order });
     setPagination((prev: PaginationState) => ({
       ...prev,
-      current: paginationConfig.current ?? prev.current,
+      current: paginationConfig.current ?? prev.current
     }));
 
     fetchOutboundRecords({
@@ -549,7 +549,7 @@ const Outbound: FC = () => {
       start_date: filters.dateRange[0],
       end_date: filters.dateRange[1],
       sort_field: field,
-      sort_order: order,
+      sort_order: order
     });
   };
 
@@ -630,7 +630,7 @@ const Outbound: FC = () => {
             pageSize: pagination.pageSize,
             total: pagination.total,
             showQuickJumper: true,
-            showSizeChanger: false,
+            showSizeChanger: false
           }}
         />
       </Card>

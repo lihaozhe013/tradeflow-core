@@ -29,7 +29,7 @@ async function main() {
     minify: true,
     external: ['argon2', 'prisma'],
     banner: {
-      js: "import { createRequire } from 'module'; const require = createRequire(import.meta.url);",
+      js: "import { createRequire } from 'module'; const require = createRequire(import.meta.url);"
     },
     plugins: [
       {
@@ -38,7 +38,7 @@ async function main() {
           build.onResolve({ filter: /^@prisma\/client$/ }, () => {
             return { path: '../prisma/client/index.js', external: true };
           });
-        },
+        }
       },
       {
         name: 'alias-atslash',
@@ -61,7 +61,7 @@ async function main() {
                 '.js',
                 '.mjs',
                 '.cjs',
-                '.json',
+                '.json'
               ]) {
                 candidates.push(base + ext);
               }
@@ -74,18 +74,18 @@ async function main() {
             }
             return { path: base };
           });
-        },
-      },
+        }
+      }
     ],
     define: {
       'process.env.NODE_ENV': JSON.stringify(
-        process.env.NODE_ENV || 'production',
-      ),
-    },
+        process.env.NODE_ENV || 'production'
+      )
+    }
   });
   console.info(
     'esbuild: backend bundled ->',
-    path.relative(process.cwd(), outfile),
+    path.relative(process.cwd(), outfile)
   );
 }
 

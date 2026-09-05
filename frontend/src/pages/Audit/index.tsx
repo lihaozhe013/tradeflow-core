@@ -7,7 +7,7 @@ import {
   Space,
   DatePicker,
   Tag,
-  message,
+  message
 } from 'antd';
 import { SearchOutlined, ReloadOutlined } from '@ant-design/icons';
 import type { ColumnsType, TablePaginationConfig } from 'antd/es/table';
@@ -51,7 +51,7 @@ function Audit(): React.ReactElement {
     showSizeChanger: true,
     pageSizeOptions: ['10', '20', '50', '100'],
     showTotal: (t_: number) =>
-      t('audit.total', { count: t_, defaultValue: `共 ${t_} 条` }),
+      t('audit.total', { count: t_, defaultValue: `共 ${t_} 条` })
   });
 
   const [usernameFilter, setUsernameFilter] = useState('');
@@ -59,7 +59,7 @@ function Audit(): React.ReactElement {
   const [paramsFilter, setParamsFilter] = useState('');
   const [dateRange, setDateRange] = useState<[Dayjs | null, Dayjs | null]>([
     null,
-    null,
+    null
   ]);
 
   const fetchData = useCallback(
@@ -87,7 +87,7 @@ function Audit(): React.ReactElement {
       }
 
       const response = await get<AuditLogsResponse>(
-        `/audit/logs?${params.toString()}`,
+        `/audit/logs?${params.toString()}`
       );
 
       if (response?.success) {
@@ -97,11 +97,11 @@ function Audit(): React.ReactElement {
           ...prev,
           current: page,
           pageSize,
-          total: response.data.total,
+          total: response.data.total
         }));
       }
     },
-    [get, isSuperuser, usernameFilter, resourceFilter, paramsFilter, dateRange],
+    [get, isSuperuser, usernameFilter, resourceFilter, paramsFilter, dateRange]
   );
 
   const handleTableChange = (pag: TablePaginationConfig) => {
@@ -126,7 +126,7 @@ function Audit(): React.ReactElement {
       POST: 'green',
       PUT: 'blue',
       DELETE: 'red',
-      PATCH: 'orange',
+      PATCH: 'orange'
     };
     return <Tag color={colorMap[action] || 'default'}>{action}</Tag>;
   };
@@ -147,7 +147,7 @@ function Audit(): React.ReactElement {
     title: '点击复制',
     onClick: () => {
       if (text) copyToClipboard(text);
-    },
+    }
   });
 
   const columns: ColumnsType<SystemLog> = [
@@ -158,14 +158,14 @@ function Audit(): React.ReactElement {
       width: 180,
       render: (text: string) => new Date(text).toLocaleString(),
       onCell: (record) =>
-        getCellProps(new Date(record.created_at).toLocaleString()),
+        getCellProps(new Date(record.created_at).toLocaleString())
     },
     {
       title: t('audit.username', { defaultValue: '用户名' }),
       dataIndex: 'username',
       key: 'username',
       width: 120,
-      onCell: (record) => getCellProps(record.username),
+      onCell: (record) => getCellProps(record.username)
     },
     {
       title: t('audit.action', { defaultValue: '操作类型' }),
@@ -173,7 +173,7 @@ function Audit(): React.ReactElement {
       key: 'action',
       width: 100,
       render: getActionTag,
-      onCell: (record) => getCellProps(record.action),
+      onCell: (record) => getCellProps(record.action)
     },
     {
       title: t('audit.resource', { defaultValue: '请求路径' }),
@@ -181,7 +181,7 @@ function Audit(): React.ReactElement {
       key: 'resource',
       width: 200,
       ellipsis: true,
-      onCell: (record) => getCellProps(record.resource),
+      onCell: (record) => getCellProps(record.resource)
     },
     {
       title: t('audit.params', { defaultValue: '请求参数' }),
@@ -198,8 +198,8 @@ function Audit(): React.ReactElement {
           return text;
         }
       },
-      onCell: (record) => getCellProps(record.params),
-    },
+      onCell: (record) => getCellProps(record.params)
+    }
   ];
 
   return (
@@ -208,7 +208,7 @@ function Audit(): React.ReactElement {
         {isSuperuser() && (
           <Input
             placeholder={t('audit.searchUser', {
-              defaultValue: '按用户名搜索',
+              defaultValue: '按用户名搜索'
             })}
             value={usernameFilter}
             onChange={(e) => setUsernameFilter(e.target.value)}
@@ -218,7 +218,7 @@ function Audit(): React.ReactElement {
         )}
         <Input
           placeholder={t('audit.searchResource', {
-            defaultValue: '按请求路径搜索',
+            defaultValue: '按请求路径搜索'
           })}
           value={resourceFilter}
           onChange={(e) => setResourceFilter(e.target.value)}
@@ -227,7 +227,7 @@ function Audit(): React.ReactElement {
         />
         <Input
           placeholder={t('audit.searchParams', {
-            defaultValue: '按请求参数搜索',
+            defaultValue: '按请求参数搜索'
           })}
           value={paramsFilter}
           onChange={(e) => setParamsFilter(e.target.value)}

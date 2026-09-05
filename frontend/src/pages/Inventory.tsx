@@ -4,7 +4,7 @@ import {
   useEffect,
   useMemo,
   type ChangeEvent,
-  type FC,
+  type FC
 } from 'react';
 import type { ColumnsType, TableProps } from 'antd/es/table';
 import {
@@ -18,7 +18,7 @@ import {
   message,
   Space,
   Tag,
-  Divider,
+  Divider
 } from 'antd';
 import { SearchOutlined, ReloadOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
@@ -53,7 +53,7 @@ type TotalCostResponse = {
 const DEFAULT_PAGINATION: PaginationInfo = {
   current: 1,
   pageSize: 20,
-  total: 0,
+  total: 0
 };
 
 const Inventory: FC = () => {
@@ -69,7 +69,7 @@ const Inventory: FC = () => {
 
   const buildInventoryUrl = useCallback(() => {
     const params = new URLSearchParams({
-      page: current.toString(),
+      page: current.toString()
     });
 
     if (productFilter) {
@@ -82,15 +82,15 @@ const Inventory: FC = () => {
   const {
     data: inventoryResponse,
     loading,
-    refetch: refreshInventory,
+    refetch: refreshInventory
   } = useSimpleApiData<InventoryResponse>(buildInventoryUrl(), {
     data: [],
-    pagination: DEFAULT_PAGINATION,
+    pagination: DEFAULT_PAGINATION
   });
 
   const { data: totalCostResponse, refetch: refreshTotalCost } =
     useSimpleApiData<TotalCostResponse>('/inventory/total-cost-estimate', {
-      total_cost_estimate: 0,
+      total_cost_estimate: 0
     });
 
   const inventoryData = useMemo<InventoryItem[]>(() => {
@@ -122,7 +122,7 @@ const Inventory: FC = () => {
   };
 
   const handleProductFilterChange = (
-    event: ChangeEvent<HTMLInputElement>,
+    event: ChangeEvent<HTMLInputElement>
   ): void => {
     const { value } = event.target;
     setProductFilter(value);
@@ -130,11 +130,11 @@ const Inventory: FC = () => {
   };
 
   const handleTableChange: TableProps<InventoryItem>['onChange'] = (
-    paginationConfig,
+    paginationConfig
   ) => {
     setPagination((prev) => ({
       ...prev,
-      current: paginationConfig.current ?? prev.current,
+      current: paginationConfig.current ?? prev.current
     }));
   };
 
@@ -145,7 +145,7 @@ const Inventory: FC = () => {
       key: 'product_model',
       width: 200,
       sorter: (a, b) =>
-        (a.product_model ?? '').localeCompare(b.product_model ?? ''),
+        (a.product_model ?? '').localeCompare(b.product_model ?? '')
     },
     {
       title: t('inventory.currentInventory'),
@@ -162,7 +162,7 @@ const Inventory: FC = () => {
           color = 'orange';
         }
         return <Tag color={color}>{value}</Tag>;
-      },
+      }
     },
     {
       title: t('inventory.status'),
@@ -180,8 +180,8 @@ const Inventory: FC = () => {
         }
 
         return <Tag color="green">{t('inventory.normal')}</Tag>;
-      },
-    },
+      }
+    }
   ];
 
   return (
@@ -231,7 +231,7 @@ const Inventory: FC = () => {
             backgroundColor: '#ffffff',
             borderRadius: '6px',
             border: '1px solid #d9d9d9',
-            boxShadow: '0 1px 2px rgba(0, 0, 0, 0.03)',
+            boxShadow: '0 1px 2px rgba(0, 0, 0, 0.03)'
           }}
         >
           <Col>
@@ -244,7 +244,7 @@ const Inventory: FC = () => {
                 {currency_unit_symbol}
                 {totalCostEstimate.toLocaleString('en-US', {
                   minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
+                  maximumFractionDigits: 2
                 })}
               </Tag>
             </Space>
@@ -267,8 +267,8 @@ const Inventory: FC = () => {
                 t('inventory.paginationTotal', {
                   start: range[0],
                   end: range[1],
-                  total,
-                }),
+                  total
+                })
             }}
             scroll={{ x: 600 }}
           />

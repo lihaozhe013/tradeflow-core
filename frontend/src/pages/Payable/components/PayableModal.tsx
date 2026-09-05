@@ -9,7 +9,7 @@ import type {
   PayablePaymentFormValues,
   PayablePaymentRecord,
   PayableRecord,
-  Supplier,
+  Supplier
 } from '../types';
 
 const { TextArea } = Input;
@@ -31,7 +31,7 @@ const PayableModal: FC<PayableModalProps> = ({
   suppliers,
   form,
   onSave,
-  onCancel,
+  onCancel
 }) => {
   const { t } = useTranslation();
 
@@ -39,9 +39,9 @@ const PayableModal: FC<PayableModalProps> = ({
     () =>
       suppliers.map((supplier) => ({
         value: supplier.code,
-        label: `${supplier.code} - ${supplier.short_name}`,
+        label: `${supplier.code} - ${supplier.short_name}`
       })),
-    [suppliers],
+    [suppliers]
   );
 
   const handleSubmit = async (): Promise<void> => {
@@ -61,7 +61,7 @@ const PayableModal: FC<PayableModalProps> = ({
 
   const filterSupplierOption = (
     input: string,
-    option?: DefaultOptionType,
+    option?: DefaultOptionType
   ): boolean => {
     const label = typeof option?.label === 'string' ? option.label : '';
     return label.toLowerCase().includes(input.toLowerCase());
@@ -84,7 +84,7 @@ const PayableModal: FC<PayableModalProps> = ({
         form={form}
         layout="vertical"
         initialValues={{
-          pay_method: DEFAULT_PAYMENT_METHOD,
+          pay_method: DEFAULT_PAYMENT_METHOD
         }}
       >
         <Form.Item
@@ -107,7 +107,7 @@ const PayableModal: FC<PayableModalProps> = ({
           label={t('payable.paymentAmount')}
           rules={[
             { required: true, message: t('payable.inputAmount') },
-            { type: 'number', message: t('payable.inputAmountValid') },
+            { type: 'number', message: t('payable.inputAmountValid') }
           ]}
         >
           <InputNumber
@@ -118,7 +118,7 @@ const PayableModal: FC<PayableModalProps> = ({
               value !== undefined && value !== null
                 ? `${currency_unit_symbol} ${value}`.replace(
                     /\B(?=(\d{3})+(?!\d))/g,
-                    ',',
+                    ','
                   )
                 : ''
             }
@@ -155,7 +155,7 @@ const PayableModal: FC<PayableModalProps> = ({
             placeholder={t('payable.selectMethod') ?? ''}
             options={PAYMENT_METHODS.map((method) => ({
               value: method,
-              label: method,
+              label: method
             }))}
           />
         </Form.Item>

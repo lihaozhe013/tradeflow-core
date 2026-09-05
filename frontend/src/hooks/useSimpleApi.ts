@@ -5,7 +5,7 @@ import type { RequestOptions } from '@/utils';
 import type {
   UseSimpleApiDataReturn,
   UseSimpleApiReturn,
-  ApiRequestOptions,
+  ApiRequestOptions
 } from '@/hooks/types';
 
 /**
@@ -24,7 +24,7 @@ import type {
  */
 export const useSimpleApiData = <T = unknown>(
   url: string,
-  defaultData: T | null = null,
+  defaultData: T | null = null
 ): UseSimpleApiDataReturn<T> => {
   const [data, setData] = useState<T | null>(defaultData);
   const [loading, setLoading] = useState(false);
@@ -65,7 +65,7 @@ export const useSimpleApiData = <T = unknown>(
     data,
     loading,
     error,
-    refetch: fetchData,
+    refetch: fetchData
   };
 };
 
@@ -93,7 +93,7 @@ export const useSimpleApi = (): UseSimpleApiReturn => {
   const request = useCallback(
     async <T = unknown>(
       url: string,
-      options: RequestOptions = {},
+      options: RequestOptions = {}
     ): Promise<T> => {
       try {
         setLoading(true);
@@ -107,7 +107,7 @@ export const useSimpleApi = (): UseSimpleApiReturn => {
         setLoading(false);
       }
     },
-    [],
+    []
   );
 
   /**
@@ -119,7 +119,7 @@ export const useSimpleApi = (): UseSimpleApiReturn => {
         setLoading(true);
         const response = await apiRequest<Blob>(url, {
           ...options,
-          responseType: 'blob',
+          responseType: 'blob'
         });
         return response;
       } catch (err) {
@@ -130,7 +130,7 @@ export const useSimpleApi = (): UseSimpleApiReturn => {
         setLoading(false);
       }
     },
-    [],
+    []
   );
 
   /**
@@ -140,7 +140,7 @@ export const useSimpleApi = (): UseSimpleApiReturn => {
     <T = unknown>(url: string, options: ApiRequestOptions = {}): Promise<T> => {
       return request<T>(url, { method: 'GET', ...options });
     },
-    [request],
+    [request]
   );
 
   /**
@@ -150,15 +150,15 @@ export const useSimpleApi = (): UseSimpleApiReturn => {
     <T = unknown>(
       url: string,
       data?: unknown,
-      options: ApiRequestOptions = {},
+      options: ApiRequestOptions = {}
     ): Promise<T> => {
       return request<T>(url, {
         method: 'POST',
         body: JSON.stringify(data),
-        ...options,
+        ...options
       });
     },
-    [request],
+    [request]
   );
 
   /**
@@ -168,15 +168,15 @@ export const useSimpleApi = (): UseSimpleApiReturn => {
     (
       url: string,
       data?: unknown,
-      options: ApiRequestOptions = {},
+      options: ApiRequestOptions = {}
     ): Promise<Blob> => {
       return requestBlob(url, {
         method: 'POST',
         body: JSON.stringify(data),
-        ...options,
+        ...options
       });
     },
-    [requestBlob],
+    [requestBlob]
   );
 
   /**
@@ -186,15 +186,15 @@ export const useSimpleApi = (): UseSimpleApiReturn => {
     <T = unknown>(
       url: string,
       data?: unknown,
-      options: ApiRequestOptions = {},
+      options: ApiRequestOptions = {}
     ): Promise<T> => {
       return request<T>(url, {
         method: 'PUT',
         body: JSON.stringify(data),
-        ...options,
+        ...options
       });
     },
-    [request],
+    [request]
   );
 
   /**
@@ -204,7 +204,7 @@ export const useSimpleApi = (): UseSimpleApiReturn => {
     <T = unknown>(url: string, options: ApiRequestOptions = {}): Promise<T> => {
       return request<T>(url, { method: 'DELETE', ...options });
     },
-    [request],
+    [request]
   );
 
   return {
@@ -214,7 +214,7 @@ export const useSimpleApi = (): UseSimpleApiReturn => {
     postBlob,
     put,
     delete: del,
-    request,
+    request
   };
 };
 

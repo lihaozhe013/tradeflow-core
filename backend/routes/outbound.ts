@@ -32,13 +32,13 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
   if (isProvided(req.query['customer_short_name'])) {
     where.partner = {
       short_name: {
-        contains: req.query['customer_short_name'] as string,
-      },
+        contains: req.query['customer_short_name'] as string
+      }
     };
   }
   if (isProvided(req.query['product_model'])) {
     where.product = {
-      product_model: { contains: req.query['product_model'] as string },
+      product_model: { contains: req.query['product_model'] as string }
     };
   }
   if (isProvided(req.query['start_date'])) {
@@ -53,7 +53,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     'outbound_date',
     'unit_price',
     'total_price',
-    'id',
+    'id'
   ];
   let orderBy: Prisma.OutboundRecordOrderByWithRelationInput = { id: 'desc' }; // Default
 
@@ -65,7 +65,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       outbound_date: 'outbound_date',
       unit_price: 'unit_price',
       total_price: 'total_price',
-      id: 'id',
+      id: 'id'
     };
     const prismaField = fieldMap[sortField];
     const sortOrder =
@@ -75,7 +75,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
         : 'desc';
     if (prismaField) {
       orderBy = {
-        [prismaField]: sortOrder,
+        [prismaField]: sortOrder
       } as Prisma.OutboundRecordOrderByWithRelationInput;
     }
   }
@@ -86,15 +86,15 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       orderBy,
       skip,
       take: limit,
-      include: { partner: true, product: true },
+      include: { partner: true, product: true }
     }),
-    prisma.outboundRecord.count({ where }),
+    prisma.outboundRecord.count({ where })
   ]);
 
   // Rows are already in snake_case
   const rows = rawRows.map((row) => ({
     ...row,
-    product_model: row.product?.product_model || null,
+    product_model: row.product?.product_model || null
   }));
 
   res.json({
@@ -103,8 +103,8 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       page: pageNum,
       limit: limit,
       total,
-      pages: Math.ceil(total / limit),
-    },
+      pages: Math.ceil(total / limit)
+    }
   });
 });
 
@@ -123,7 +123,7 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
     invoice_number,
     receipt_number,
     order_number,
-    remark,
+    remark
   } = req.body;
 
   const total_price = decimalCalc.calculateTotalPrice(quantity, unit_price);
@@ -140,9 +140,9 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
       invoice_number,
       receipt_number,
       order_number,
-      remark,
+      remark
     },
-    include: { product: true },
+    include: { product: true }
   });
 
   await inventoryService.onOutboundCreate(result);
@@ -166,14 +166,14 @@ router.put('/:id', async (req: Request, res: Response): Promise<void> => {
     invoice_number,
     receipt_number,
     order_number,
-    remark,
+    remark
   } = req.body;
 
   const total_price = decimalCalc.calculateTotalPrice(quantity, unit_price);
 
   const oldRecord = await prisma.outboundRecord.findUnique({
     where: { id },
-    include: { product: true },
+    include: { product: true }
   });
   if (!oldRecord) {
     res.status(404).json({ error: 'No outbound records exist' });
@@ -193,9 +193,9 @@ router.put('/:id', async (req: Request, res: Response): Promise<void> => {
       invoice_number,
       receipt_number,
       order_number,
-      remark,
+      remark
     },
-    include: { product: true },
+    include: { product: true }
   });
 
   await inventoryService.onOutboundUpdate(oldRecord, result);
@@ -245,7 +245,7 @@ router.post('/batch', async (req: Request, res: Response): Promise<void> => {
     invoice_number: 'invoice_number',
     receipt_number: 'receipt_number',
     order_number: 'order_number',
-    remark: 'remark',
+    remark: 'remark'
   };
 
   const updateData: Prisma.OutboundRecordUpdateInput = {};
@@ -277,7 +277,7 @@ router.post('/batch', async (req: Request, res: Response): Promise<void> => {
       if (needsRecalculation) {
         const oldRecord = await prisma.outboundRecord.findUnique({
           where: { id: recordId },
-          include: { product: true },
+          include: { product: true }
         });
         if (!oldRecord) {
           notFound.push(recordId);
@@ -294,13 +294,13 @@ router.post('/batch', async (req: Request, res: Response): Promise<void> => {
           : unitPrice;
         const total_price = decimalCalc.calculateTotalPrice(
           finalQuantity,
-          finalUnitPrice,
+          finalUnitPrice
         );
 
         const result = await prisma.outboundRecord.update({
           where: { id: recordId },
           data: { ...updateData, total_price: total_price },
-          include: { product: true },
+          include: { product: true }
         });
 
         await inventoryService.onOutboundUpdate(oldRecord, result);
@@ -308,7 +308,7 @@ router.post('/batch', async (req: Request, res: Response): Promise<void> => {
       } else {
         const oldRecord = await prisma.outboundRecord.findUnique({
           where: { id: recordId },
-          include: { product: true },
+          include: { product: true }
         });
         if (!oldRecord) {
           notFound.push(recordId); // unlikely if we are here?
@@ -317,7 +317,7 @@ router.post('/batch', async (req: Request, res: Response): Promise<void> => {
         const result = await prisma.outboundRecord.update({
           where: { id: recordId },
           data: updateData,
-          include: { product: true },
+          include: { product: true }
         });
         await inventoryService.onOutboundUpdate(oldRecord, result);
         completed++;
@@ -336,7 +336,7 @@ router.post('/batch', async (req: Request, res: Response): Promise<void> => {
     message: 'Batch update completed!',
     updated: completed,
     notFound: notFound,
-    errors: errors,
+    errors: errors
   });
 });
 

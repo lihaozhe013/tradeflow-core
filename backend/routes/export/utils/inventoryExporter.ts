@@ -16,6 +16,6 @@ export function generateInventoryExcel(data: InventoryExportRow[]): Buffer {
 
   return XLSX.write(workbook, {
     type: 'buffer',
-    bookType: 'xlsx',
+    bookType: 'xlsx'
   }) as unknown as Buffer;
 }

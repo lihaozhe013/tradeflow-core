@@ -28,12 +28,12 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       orderBy: [
         { effective_date: 'desc' },
         { partner_short_name: 'asc' },
-        { product_model: 'asc' }, // Ensure deterministic ordering
+        { product_model: 'asc' } // Ensure deterministic ordering
       ],
       skip,
-      take: limit,
+      take: limit
     }),
-    prisma.productPrice.count({ where }),
+    prisma.productPrice.count({ where })
   ]);
 
   res.json({
@@ -42,8 +42,8 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       page,
       limit,
       total,
-      pages: Math.ceil(total / limit),
-    },
+      pages: Math.ceil(total / limit)
+    }
   });
 });
 
@@ -55,7 +55,7 @@ router.get('/current', async (req: Request, res: Response): Promise<void> => {
 
   if (!partner_short_name || !product_model) {
     res.status(400).json({
-      error: 'Missing required argument: partner_short_name & product_model',
+      error: 'Missing required argument: partner_short_name & product_model'
     });
     return;
   }
@@ -66,9 +66,9 @@ router.get('/current', async (req: Request, res: Response): Promise<void> => {
     where: {
       partner_short_name: partner_short_name as string,
       product_model: product_model as string,
-      effective_date: { lte: targetDate },
+      effective_date: { lte: targetDate }
     },
-    orderBy: { effective_date: 'desc' },
+    orderBy: { effective_date: 'desc' }
   });
 
   if (!row) {
@@ -93,8 +93,8 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
       partner_short_name,
       product_model,
       effective_date,
-      unit_price,
-    },
+      unit_price
+    }
   });
   res.json({ id: result.id, message: 'Product price created!' });
 });
@@ -113,8 +113,8 @@ router.put('/:id', async (req: Request, res: Response): Promise<void> => {
       partner_short_name,
       product_model,
       effective_date,
-      unit_price,
-    },
+      unit_price
+    }
   });
   res.json({ message: 'Product price updated!' });
 });
@@ -125,7 +125,7 @@ router.put('/:id', async (req: Request, res: Response): Promise<void> => {
 router.delete('/:id', async (req: Request, res: Response): Promise<void> => {
   const id = Number(req.params['id']);
   await prisma.productPrice.delete({
-    where: { id },
+    where: { id }
   });
   res.json({ message: 'Product price delete!' });
 });
@@ -140,7 +140,7 @@ router.get('/auto', async (req: Request, res: Response): Promise<void> => {
   if (!partner_short_name || !product_model || !date) {
     res.status(400).json({
       error:
-        'Missing required argument: partner_short_name, product_model, date',
+        'Missing required argument: partner_short_name, product_model, date'
     });
     return;
   }
@@ -149,10 +149,10 @@ router.get('/auto', async (req: Request, res: Response): Promise<void> => {
     where: {
       partner_short_name: partner_short_name as string,
       product_model: product_model as string,
-      effective_date: { lte: date as string },
+      effective_date: { lte: date as string }
     },
     orderBy: { effective_date: 'desc' },
-    select: { unit_price: true },
+    select: { unit_price: true }
   });
 
   if (!row) {

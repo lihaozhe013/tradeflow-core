@@ -3,55 +3,55 @@ import {
   TransactionFilters,
   ReceivablePayableFilters,
   InvoiceFilters,
-  AnalysisExportOptions,
+  AnalysisExportOptions
 } from '@/routes/export/utils/types';
 import { getBaseInfoData } from '@/routes/export/utils/basicDataQueries';
 import { generateBaseInfoExcel } from '@/routes/export/utils/baseInfoExporter';
 import { getInboundOutboundData } from '@/routes/export/utils/transactionQueries';
 import {
   generateTransactionExcel,
-  generateStatementExcel,
+  generateStatementExcel
 } from '@/routes/export/utils/transactionExporter';
 import {
   getReceivableSummary,
   getReceivableDetails,
-  getReceivablePayments,
+  getReceivablePayments
 } from '@/routes/export/utils/receivableQueries';
 import {
   getPayableSummary,
   getPayableDetails,
-  getPayablePayments,
+  getPayablePayments
 } from '@/routes/export/utils/payableQueries';
 import { generateFinancialExcel } from '@/routes/export/utils/financialExporter';
 import { generateAnalysisExcel } from '@/routes/export/utils/analysisExporter';
 import { generateAdvancedAnalysisExcel } from '@/routes/export/utils/advancedAnalysisExporter';
 import {
   getInvoiceData,
-  getAllInvoiceData,
+  getAllInvoiceData
 } from '@/routes/export/utils/invoiceQueries';
 import {
   generateInvoiceExcel,
-  generateMultiInvoiceExcel,
+  generateMultiInvoiceExcel
 } from '@/routes/export/utils/invoiceExporter';
 import { getInventoryData } from '@/routes/export/utils/inventoryQueries';
 import { generateInventoryExcel } from '@/routes/export/utils/inventoryExporter';
 
 export async function exportBaseInfo(
-  options: BasicDataFilters = {},
+  options: BasicDataFilters = {}
 ): Promise<Buffer> {
   const data = await getBaseInfoData(options.tables || '123');
   return generateBaseInfoExcel(data, options);
 }
 
 export async function exportInboundOutbound(
-  options: TransactionFilters = {},
+  options: TransactionFilters = {}
 ): Promise<Buffer> {
   const data = await getInboundOutboundData(options);
   return generateTransactionExcel(data, options);
 }
 
 export async function exportReceivablePayable(
-  options: ReceivablePayableFilters = {},
+  options: ReceivablePayableFilters = {}
 ): Promise<Buffer> {
   const { outboundFrom, outboundTo, paymentFrom, paymentTo } = options || {};
   const data = {
@@ -59,44 +59,44 @@ export async function exportReceivablePayable(
       outboundFrom,
       outboundTo,
       paymentFrom,
-      paymentTo,
+      paymentTo
     }),
     receivable_details: await getReceivableDetails({
       outboundFrom,
-      outboundTo,
+      outboundTo
     }),
     receivable_payments: await getReceivablePayments({
       paymentFrom,
-      paymentTo,
+      paymentTo
     }),
     payable_summary: await getPayableSummary({
       outboundFrom,
       outboundTo,
       paymentFrom,
-      paymentTo,
+      paymentTo
     }),
     payable_details: await getPayableDetails({ outboundFrom, outboundTo }),
-    payable_payments: await getPayablePayments({ paymentFrom, paymentTo }),
+    payable_payments: await getPayablePayments({ paymentFrom, paymentTo })
   };
   return generateFinancialExcel(data); // Use "data" directly, assuming type compatibility will be checked
 }
 
 export async function exportStatement(
-  options: TransactionFilters = {},
+  options: TransactionFilters = {}
 ): Promise<Buffer> {
   const data = await getInboundOutboundData(options);
   return generateStatementExcel(data, options);
 }
 
 export async function exportAnalysis(
-  options: AnalysisExportOptions,
+  options: AnalysisExportOptions
 ): Promise<Buffer> {
   // Purely formatting provided data
   return generateAnalysisExcel(options);
 }
 
 export async function exportAdvancedAnalysis(
-  options: { exportType?: string; startDate?: string; endDate?: string } = {},
+  options: { exportType?: string; startDate?: string; endDate?: string } = {}
 ): Promise<Buffer> {
   // Fetches data internally via analysisQueries and formats
   return await generateAdvancedAnalysisExcel(options);
@@ -114,7 +114,7 @@ export async function exportInvoice(options: InvoiceFilters): Promise<Buffer> {
   const data = await getInvoiceData({
     partnerCode,
     dateFrom,
-    dateTo,
+    dateTo
   });
   return generateInvoiceExcel(data);
 }

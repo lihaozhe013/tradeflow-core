@@ -11,7 +11,7 @@ export function generateCacheKey(
   endDate: string,
   customerCode?: string,
   productModel?: string,
-  type: string = 'outbound',
+  type: string = 'outbound'
 ): string {
   const customer = customerCode || 'All';
   const product = productModel || 'All';
@@ -23,7 +23,7 @@ export function generateDetailCacheKey(
   endDate: string,
   customerCode?: string,
   productModel?: string,
-  type: string = 'outbound',
+  type: string = 'outbound'
 ): string {
   const customer = customerCode || 'All';
   const product = productModel || 'All';
@@ -38,7 +38,7 @@ export function getCacheFilePath(): string {
  * Clear expired cache data (over 30 days)
  */
 export function cleanExpiredCache(
-  cacheData: Record<string, CacheEntry>,
+  cacheData: Record<string, CacheEntry>
 ): Record<string, CacheEntry> {
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);

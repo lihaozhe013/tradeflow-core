@@ -27,7 +27,7 @@ export function generateAnalysisExcel(options: AnalysisExportOptions): Buffer {
     startDate,
     endDate,
     customerCode,
-    productModel,
+    productModel
   } = options;
   const workbook = XLSX.utils.book_new();
 
@@ -38,34 +38,34 @@ export function generateAnalysisExcel(options: AnalysisExportOptions): Buffer {
       {
         metric_name: labels.sales_amount || 'Sales Amount',
         amount: formatCurrency(analysisData.sales_amount),
-        remark: `${labels.time_period || 'Time Period'}: ${startDate} - ${endDate}`,
+        remark: `${labels.time_period || 'Time Period'}: ${startDate} - ${endDate}`
       },
       {
         metric_name: labels.cost_amount || 'Cost Amount',
         amount: formatCurrency(analysisData.cost_amount),
         remark: `${labels.customer_filter || 'Customer'}: ${
           customerCode || labels.all || 'All'
-        }, ${labels.product_filter || 'Product'}: ${productModel || labels.all || 'All'}`,
+        }, ${labels.product_filter || 'Product'}: ${productModel || labels.all || 'All'}`
       },
       {
         metric_name: labels.profit_amount || 'Profit Amount',
         amount: formatCurrency(analysisData.profit_amount),
-        remark: `${labels.last_updated || 'Last Updated'}: ${analysisData.last_updated || ''}`,
+        remark: `${labels.last_updated || 'Last Updated'}: ${analysisData.last_updated || ''}`
       },
       {
         metric_name: labels.profit_rate || 'Profit Margin',
         amount: formatPercentage(analysisData.profit_rate),
-        remark: labels.calculation_method || 'Weighted average cost method',
-      },
+        remark: labels.calculation_method || 'Weighted average cost method'
+      }
     ];
     const summaryWorksheet = ExportUtils.createWorksheet(
       summaryData,
-      TEMPLATES.analysis_summary,
+      TEMPLATES.analysis_summary
     );
     XLSX.utils.book_append_sheet(
       workbook,
       summaryWorksheet,
-      TEMPLATES.analysis_summary.sheetName,
+      TEMPLATES.analysis_summary.sheetName
     );
   }
 
@@ -85,7 +85,7 @@ export function generateAnalysisExcel(options: AnalysisExportOptions): Buffer {
         sales_amount: formatCurrency(item.sales_amount),
         cost_amount: formatCurrency(item.cost_amount),
         profit_amount: formatCurrency(item.profit_amount),
-        profit_rate: formatPercentage(item.profit_rate),
+        profit_rate: formatPercentage(item.profit_rate)
       }));
     } else if (!hasSpecificCustomer && hasSpecificProduct) {
       // Group by customer for specific product
@@ -97,7 +97,7 @@ export function generateAnalysisExcel(options: AnalysisExportOptions): Buffer {
         sales_amount: formatCurrency(item.sales_amount),
         cost_amount: formatCurrency(item.cost_amount),
         profit_amount: formatCurrency(item.profit_amount),
-        profit_rate: formatPercentage(item.profit_rate),
+        profit_rate: formatPercentage(item.profit_rate)
       }));
     } else {
       // General detail (assuming by product model) or custom
@@ -110,19 +110,19 @@ export function generateAnalysisExcel(options: AnalysisExportOptions): Buffer {
         sales_amount: formatCurrency(item.sales_amount),
         cost_amount: formatCurrency(item.cost_amount),
         profit_amount: formatCurrency(item.profit_amount),
-        profit_rate: formatPercentage(item.profit_rate),
+        profit_rate: formatPercentage(item.profit_rate)
       }));
     }
 
     const detailWorksheet = ExportUtils.createWorksheet(
       formattedDetailData,
-      template,
+      template
     );
     XLSX.utils.book_append_sheet(workbook, detailWorksheet, template.sheetName);
   }
 
   return XLSX.write(workbook, {
     type: 'buffer',
-    bookType: 'xlsx',
+    bookType: 'xlsx'
   }) as unknown as Buffer;
 }

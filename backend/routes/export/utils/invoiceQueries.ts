@@ -3,7 +3,7 @@ import { prisma } from '@/prismaClient';
 import { InvoiceFilters, InvoiceItemDto } from '@/routes/export/utils/types';
 
 export async function getInvoiceData(
-  filters: InvoiceFilters,
+  filters: InvoiceFilters
 ): Promise<InvoiceItemDto[]> {
   const { partnerCode, dateFrom, dateTo } = filters;
   if (!partnerCode) throw new Error('Partner Code is required');
@@ -11,9 +11,9 @@ export async function getInvoiceData(
   // Resolve partner codes (match against code or short_name)
   const partners = await prisma.partner.findMany({
     where: {
-      OR: [{ code: partnerCode }, { short_name: partnerCode }],
+      OR: [{ code: partnerCode }, { short_name: partnerCode }]
     },
-    select: { code: true },
+    select: { code: true }
   });
 
   if (partners.length === 0) {
@@ -24,7 +24,7 @@ export async function getInvoiceData(
 
   // Inbound query conditions
   const inboundConditions: Prisma.Sql[] = [
-    Prisma.sql`r.supplier_code IN (${Prisma.join(partnerCodes)})`,
+    Prisma.sql`r.supplier_code IN (${Prisma.join(partnerCodes)})`
   ];
   if (dateFrom)
     inboundConditions.push(Prisma.sql`r.inbound_date >= ${dateFrom}`);
@@ -32,7 +32,7 @@ export async function getInvoiceData(
 
   // Outbound query conditions
   const outboundConditions: Prisma.Sql[] = [
-    Prisma.sql`r.customer_code IN (${Prisma.join(partnerCodes)})`,
+    Prisma.sql`r.customer_code IN (${Prisma.join(partnerCodes)})`
   ];
   if (dateFrom)
     outboundConditions.push(Prisma.sql`r.outbound_date >= ${dateFrom}`);
@@ -91,12 +91,12 @@ export async function getInvoiceData(
     total_price:
       typeof row.total_price === 'bigint'
         ? Number(row.total_price)
-        : Number(row.total_price),
+        : Number(row.total_price)
   }));
 }
 
 export async function getAllInvoiceData(
-  filters: Omit<InvoiceFilters, 'partnerCode'>,
+  filters: Omit<InvoiceFilters, 'partnerCode'>
 ): Promise<Record<string, InvoiceItemDto[]>> {
   const { dateFrom, dateTo } = filters;
 
@@ -164,7 +164,7 @@ export async function getAllInvoiceData(
   // We map the results and group them by partner's short_name
   // First fetch all partners to get short names
   const partners = await prisma.partner.findMany({
-    select: { code: true, short_name: true },
+    select: { code: true, short_name: true }
   });
   const partnerMap = new Map(partners.map((p) => [p.code, p.short_name]));
 
@@ -188,7 +188,7 @@ export async function getAllInvoiceData(
       total_price:
         typeof row.total_price === 'bigint'
           ? Number(row.total_price)
-          : Number(row.total_price),
+          : Number(row.total_price)
     });
   }
 

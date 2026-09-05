@@ -7,7 +7,7 @@ import tsparser from '@typescript-eslint/parser';
 
 const config = [
   {
-    ignores: ['dist', 'node_modules', 'build', '**/*.d.ts'],
+    ignores: ['dist', 'node_modules', 'build', '**/*.d.ts']
   },
   // Configuration for TypeScript source files
   {
@@ -20,13 +20,13 @@ const config = [
         ecmaVersion: 'latest',
         ecmaFeatures: { jsx: true },
         sourceType: 'module',
-        project: './tsconfig.json',
-      },
+        project: './tsconfig.json'
+      }
     },
     plugins: {
       'react-hooks': reactHooks,
       'react-refresh': reactRefresh,
-      '@typescript-eslint': tseslint,
+      '@typescript-eslint': tseslint
     },
     rules: {
       ...js.configs.recommended.rules,
@@ -47,15 +47,15 @@ const config = [
       // React specific rules
       'react-refresh/only-export-components': [
         'warn',
-        { allowConstantExport: true },
+        { allowConstantExport: true }
       ],
 
       // General rules
       'no-unused-vars': 'off',
       'prefer-const': 'off',
       'no-console': 'off',
-      'no-debugger': 'off',
-    },
+      'no-debugger': 'off'
+    }
   },
   // Configuration for TypeScript config files
   {
@@ -67,11 +67,11 @@ const config = [
       parserOptions: {
         ecmaVersion: 'latest',
         sourceType: 'module',
-        project: './tsconfig.node.json',
-      },
+        project: './tsconfig.node.json'
+      }
     },
     plugins: {
-      '@typescript-eslint': tseslint,
+      '@typescript-eslint': tseslint
     },
     rules: {
       ...js.configs.recommended.rules,
@@ -79,8 +79,8 @@ const config = [
       'no-console': 'off',
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-unused-vars': 'off',
-      '@typescript-eslint/ban-ts-comment': 'off',
-    },
+      '@typescript-eslint/ban-ts-comment': 'off'
+    }
   },
   // Configuration for JavaScript files
   {
@@ -91,12 +91,12 @@ const config = [
       parserOptions: {
         ecmaVersion: 'latest',
         ecmaFeatures: { jsx: true },
-        sourceType: 'module',
-      },
+        sourceType: 'module'
+      }
     },
     plugins: {
       'react-hooks': reactHooks,
-      'react-refresh': reactRefresh,
+      'react-refresh': reactRefresh
     },
     rules: {
       ...js.configs.recommended.rules,
@@ -111,10 +111,10 @@ const config = [
       // React specific rules
       'react-refresh/only-export-components': [
         'warn',
-        { allowConstantExport: true },
-      ],
-    },
-  },
+        { allowConstantExport: true }
+      ]
+    }
+  }
 ];
 
 export default config as any;

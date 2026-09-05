@@ -27,7 +27,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     limit = 10,
     supplier_short_name,
     sort_field = 'balance',
-    sort_order = 'desc',
+    sort_order = 'desc'
   } = req.query;
 
   let whereClause = 'WHERE p.type = 0';
@@ -43,7 +43,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     'total_payable',
     'total_paid',
     'balance',
-    'last_payment_date',
+    'last_payment_date'
   ];
   let orderBy = 'balance DESC';
   if (sort_field && allowedSortFields.includes(sort_field as string)) {
@@ -98,7 +98,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       total_payable: totalPayable,
       total_paid: totalPaid,
       balance: balance,
-      payment_count: paymentCount,
+      payment_count: paymentCount
     };
   });
 
@@ -112,7 +112,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     data: processedRows,
     total: total,
     page: Number(page),
-    limit: Number(limit),
+    limit: Number(limit)
   });
 });
 
@@ -132,18 +132,18 @@ router.get(
         where: { supplier_code },
         orderBy: [{ pay_date: 'desc' }, { id: 'desc' }],
         skip,
-        take: Number(limit),
+        take: Number(limit)
       }),
-      prisma.payablePayment.count({ where: { supplier_code } }),
+      prisma.payablePayment.count({ where: { supplier_code } })
     ]);
 
     res.json({
       data: rows,
       total,
       page: Number(page),
-      limit: Number(limit),
+      limit: Number(limit)
     });
-  },
+  }
 );
 
 /**
@@ -154,8 +154,7 @@ router.post('/payments', async (req: Request, res: Response): Promise<void> => {
 
   if (!supplier_code || amount === undefined || !pay_date) {
     res.status(400).json({
-      error:
-        'Supplier ID, payment amount, and payment date are required fields',
+      error: 'Supplier ID, payment amount, and payment date are required fields'
     });
     return;
   }
@@ -166,8 +165,8 @@ router.post('/payments', async (req: Request, res: Response): Promise<void> => {
       amount,
       pay_date,
       pay_method: pay_method || '',
-      remark: remark || '',
-    },
+      remark: remark || ''
+    }
   });
   res.json({ id: result.id, message: 'Payment record created!' });
 });
@@ -184,7 +183,7 @@ router.put(
     if (!supplier_code || amount === undefined || !pay_date) {
       res.status(400).json({
         error:
-          'Supplier ID, payment amount, and payment date are required fields',
+          'Supplier ID, payment amount, and payment date are required fields'
       });
       return;
     }
@@ -196,12 +195,12 @@ router.put(
         amount,
         pay_date,
         pay_method: pay_method || '',
-        remark: remark || '',
-      },
+        remark: remark || ''
+      }
     });
 
     res.json({ message: 'Payment record updated!' });
-  },
+  }
 );
 
 /**
@@ -213,7 +212,7 @@ router.delete(
     const id = Number(req.params['id']);
     await prisma.payablePayment.delete({ where: { id } });
     res.json({ message: 'Payment record deleted!' });
-  },
+  }
 );
 
 /**
@@ -227,11 +226,11 @@ router.get(
       inbound_page = 1,
       inbound_limit = 10,
       payment_page = 1,
-      payment_limit = 10,
+      payment_limit = 10
     } = req.query;
 
     const supplier = await prisma.partner.findFirst({
-      where: { code: supplier_code, type: 0 },
+      where: { code: supplier_code, type: 0 }
     });
 
     if (!supplier) {
@@ -248,39 +247,39 @@ router.get(
       paymentRecords,
       paymentCount,
       inboundAgg,
-      paymentAgg,
+      paymentAgg
     ] = await Promise.all([
       prisma.inboundRecord.findMany({
         where: { supplier_code },
         orderBy: { inbound_date: 'desc' },
         skip: inboundSkip,
-        take: Number(inbound_limit),
+        take: Number(inbound_limit)
       }),
       prisma.inboundRecord.count({ where: { supplier_code } }),
       prisma.payablePayment.findMany({
         where: { supplier_code },
         orderBy: [{ pay_date: 'desc' }, { id: 'desc' }],
         skip: paymentSkip,
-        take: Number(payment_limit),
+        take: Number(payment_limit)
       }),
       prisma.payablePayment.count({ where: { supplier_code } }),
       prisma.inboundRecord.aggregate({
         where: { supplier_code },
-        _sum: { total_price: true },
+        _sum: { total_price: true }
       }),
       prisma.payablePayment.aggregate({
         where: { supplier_code },
-        _sum: { amount: true },
-      }),
+        _sum: { amount: true }
+      })
     ]);
 
     const totalPayable = decimalCalc.fromSqlResult(
       inboundAgg._sum?.total_price || 0,
-      0,
+      0
     );
     const totalPaid = decimalCalc.fromSqlResult(
       paymentAgg._sum?.amount || 0,
-      0,
+      0
     );
     const balance = decimalCalc.calculateBalance(totalPayable, totalPaid);
 
@@ -289,22 +288,22 @@ router.get(
       summary: {
         total_payable: totalPayable,
         total_paid: totalPaid,
-        balance: balance,
+        balance: balance
       },
       inbound_records: {
         data: inboundRecords,
         total: inboundCount,
         page: Number(inbound_page),
-        limit: Number(inbound_limit),
+        limit: Number(inbound_limit)
       },
       payment_records: {
         data: paymentRecords,
         total: paymentCount,
         page: Number(payment_page),
-        limit: Number(payment_limit),
-      },
+        limit: Number(payment_limit)
+      }
     });
-  },
+  }
 );
 
 /**
@@ -321,7 +320,7 @@ router.get(
 
     const where: Prisma.InboundRecordWhereInput = {
       supplier_code,
-      OR: [{ invoice_number: null }, { invoice_number: '' }],
+      OR: [{ invoice_number: null }, { invoice_number: '' }]
     };
 
     const [rows, total] = await prisma.$transaction([
@@ -329,18 +328,18 @@ router.get(
         where,
         orderBy: { inbound_date: 'desc' },
         skip,
-        take: Number(limit),
+        take: Number(limit)
       }),
-      prisma.inboundRecord.count({ where }),
+      prisma.inboundRecord.count({ where })
     ]);
 
     res.json({
       data: rows,
       total,
       page: Number(page),
-      limit: Number(limit),
+      limit: Number(limit)
     });
-  },
+  }
 );
 
 /**
@@ -357,7 +356,7 @@ router.get('/invoiced/:supplier_code', (req: Request, res: Response): void => {
   if (!cachedRecords) {
     res.status(404).json({
       error: 'No cached data found. Please refresh the cache first.',
-      message: 'Cache not initialized',
+      message: 'Cache not initialized'
     });
     return;
   }
@@ -371,7 +370,7 @@ router.get('/invoiced/:supplier_code', (req: Request, res: Response): void => {
     total: cachedRecords.length,
     page: Number(page),
     limit: Number(limit),
-    last_updated: lastUpdated,
+    last_updated: lastUpdated
   });
 });
 
@@ -392,9 +391,9 @@ router.post(
       message: 'Invoice cache refreshed successfully',
       total: invoicedRecords.length,
       last_updated: lastUpdated,
-      data: invoicedRecords,
+      data: invoicedRecords
     });
-  },
+  }
 );
 
 export default router;

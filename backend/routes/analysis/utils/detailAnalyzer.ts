@@ -28,7 +28,7 @@ export async function calculateDetailAnalysis(
   endDate: string,
   partnerCode: string | null | undefined, // Generalized customerCode argument
   productModel: string | null | undefined,
-  analysisType: AnalysisType = 'outbound',
+  analysisType: AnalysisType = 'outbound'
 ): Promise<DetailItem[]> {
   // Determine the grouping type
   const groupByPartner = !partnerCode || partnerCode === 'All';
@@ -41,7 +41,7 @@ export async function calculateDetailAnalysis(
       partnerCode,
       productModel,
       groupByPartner,
-      groupByProduct,
+      groupByProduct
     );
   }
 
@@ -51,7 +51,7 @@ export async function calculateDetailAnalysis(
     partnerCode,
     productModel,
     groupByPartner,
-    groupByProduct,
+    groupByProduct
   );
 }
 
@@ -61,7 +61,7 @@ async function handleInboundAnalysis(
   supplierCode: string | null | undefined,
   productModel: string | null | undefined,
   groupBySupplier: boolean,
-  _groupByProduct: boolean,
+  _groupByProduct: boolean
 ): Promise<DetailItem[]> {
   // Logic: Group by Supplier if Supplier is "All", otherwise Group by Product
   const groupField = groupBySupplier
@@ -108,12 +108,12 @@ async function handleInboundAnalysis(
     const normalPurchase = decimalCalc.fromSqlResult(
       group.normal_purchase,
       0,
-      2,
+      2
     );
     const specialIncome = decimalCalc.fromSqlResult(group.special_income, 0, 2);
     const purchaseAmount = decimalCalc.toDbNumber(
       decimalCalc.subtract(normalPurchase, specialIncome),
-      2,
+      2
     );
 
     return {
@@ -124,7 +124,7 @@ async function handleInboundAnalysis(
       product_model: groupBySupplier
         ? productModel || undefined
         : group.group_key,
-      purchase_amount: purchaseAmount,
+      purchase_amount: purchaseAmount
     };
   });
 
@@ -137,7 +137,7 @@ async function handleOutboundAnalysis(
   customerCode: string | null | undefined,
   productModel: string | null | undefined,
   groupByCustomer: boolean,
-  _groupByProduct: boolean,
+  _groupByProduct: boolean
 ): Promise<DetailItem[]> {
   // Logic: Group by Customer if Customer is "All", otherwise Group by Product
   const groupField = groupByCustomer
@@ -203,23 +203,23 @@ async function handleOutboundAnalysis(
       startDate,
       endDate,
       currentCustomerCode === 'All' ? null : currentCustomerCode,
-      currentProductModel === 'All' ? null : currentProductModel,
+      currentProductModel === 'All' ? null : currentProductModel
     );
 
     const normalSales = decimalCalc.fromSqlResult(group.normal_sales, 0, 2);
     const specialExpense = decimalCalc.fromSqlResult(
       group.special_expense,
       0,
-      2,
+      2
     );
     const salesAmount = decimalCalc.toDbNumber(
       decimalCalc.subtract(normalSales, specialExpense),
-      2,
+      2
     );
     const cost = decimalCalc.toDbNumber(costAmount ?? 0, 2);
     const profit = decimalCalc.toDbNumber(
       decimalCalc.subtract(salesAmount, cost),
-      2,
+      2
     );
 
     // Calculate the profit margin
@@ -227,7 +227,7 @@ async function handleOutboundAnalysis(
     if (salesAmount !== 0) {
       const rate = decimalCalc.multiply(
         decimalCalc.divide(profit, salesAmount),
-        100,
+        100
       );
       profitRate = decimalCalc.toDbNumber(rate, 2);
     }
@@ -240,7 +240,7 @@ async function handleOutboundAnalysis(
         sales_amount: salesAmount,
         cost_amount: cost,
         profit_amount: profit,
-        profit_rate: profitRate,
+        profit_rate: profitRate
       } as DetailItem;
     } else {
       return null;
@@ -249,7 +249,7 @@ async function handleOutboundAnalysis(
 
   const results = await Promise.all(detailPromises);
   const validResults = results.filter(
-    (item): item is DetailItem => item !== null,
+    (item): item is DetailItem => item !== null
   );
   return validResults;
 }

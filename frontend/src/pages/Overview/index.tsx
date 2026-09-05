@@ -10,7 +10,7 @@ import {
   Space,
   Statistic,
   List,
-  Avatar,
+  Avatar
 } from 'antd';
 import {
   ShoppingCartOutlined,
@@ -18,7 +18,7 @@ import {
   DollarOutlined,
   SyncOutlined,
   ImportOutlined,
-  ExportOutlined,
+  ExportOutlined
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
@@ -44,10 +44,10 @@ const OverviewMain = () => {
     data: stats,
     loading,
     error,
-    refetch,
+    refetch
   } = useSimpleApiData<OverviewStatsResponse>(
     '/overview/stats',
-    DEFAULT_OVERVIEW_STATS,
+    DEFAULT_OVERVIEW_STATS
   );
 
   // 刷新统计数据
@@ -93,14 +93,14 @@ const OverviewMain = () => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          background: 'linear-gradient(135deg, #f8fafc 0%, #e9f5ff 100%)',
+          background: 'linear-gradient(135deg, #f8fafc 0%, #e9f5ff 100%)'
         }}
       >
         <Card
           style={{
             textAlign: 'center',
             borderRadius: '16px',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.1)'
           }}
         >
           <Spin size="large" />
@@ -120,7 +120,7 @@ const OverviewMain = () => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          background: 'linear-gradient(135deg, #f8fafc 0%, #e9f5ff 100%)',
+          background: 'linear-gradient(135deg, #f8fafc 0%, #e9f5ff 100%)'
         }}
       >
         <Alert
@@ -131,7 +131,7 @@ const OverviewMain = () => {
           style={{
             borderRadius: '16px',
             boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
-            maxWidth: '500px',
+            maxWidth: '500px'
           }}
         />
       </div>
@@ -146,7 +146,7 @@ const OverviewMain = () => {
         padding: '24px',
         borderRadius: '12px',
         boxShadow: '0 4px 32px rgba(0,0,0,0.04)',
-        transition: 'border-radius 0.3s',
+        transition: 'border-radius 0.3s'
       }}
     >
       {/* 页面标题区域 */}
@@ -156,7 +156,7 @@ const OverviewMain = () => {
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          padding: '0 8px',
+          padding: '0 8px'
         }}
       >
         <div>
@@ -167,7 +167,7 @@ const OverviewMain = () => {
               margin: 0,
               fontSize: '36px',
               fontWeight: 'bold',
-              letterSpacing: 2,
+              letterSpacing: 2
             }}
           >
             {t('overview.title')}
@@ -190,7 +190,7 @@ const OverviewMain = () => {
                   border: 'none',
                   color: 'white',
                   boxShadow: '0 2px 8px rgba(82,196,26,0.2)',
-                  marginRight: '8px',
+                  marginRight: '8px'
                 }}
               >
                 {t('overview.quickInbound')}
@@ -206,7 +206,7 @@ const OverviewMain = () => {
                   border: 'none',
                   color: 'white',
                   boxShadow: '0 2px 8px rgba(250,140,22,0.2)',
-                  marginRight: '8px',
+                  marginRight: '8px'
                 }}
               >
                 {t('overview.quickOutbound')}
@@ -225,7 +225,7 @@ const OverviewMain = () => {
                 background: '#1677ff',
                 border: 'none',
                 color: 'white',
-                boxShadow: '0 2px 8px rgba(22,119,255,0.08)',
+                boxShadow: '0 2px 8px rgba(22,119,255,0.08)'
               }}
             >
               {t('overview.refreshData')}
@@ -240,7 +240,7 @@ const OverviewMain = () => {
           display: 'flex',
           flexDirection: 'row',
           gap: 24,
-          minHeight: '600px',
+          minHeight: '600px'
         }}
       >
         {/* 左侧：销售额分布，1/3宽度，100%高度 */}
@@ -250,7 +250,7 @@ const OverviewMain = () => {
             maxWidth: '33.33%',
             minWidth: 320,
             display: 'flex',
-            flexDirection: 'column',
+            flexDirection: 'column'
           }}
         >
           <TopSalesPieChart />
@@ -262,7 +262,7 @@ const OverviewMain = () => {
             flex: '1 1 0',
             display: 'flex',
             flexDirection: 'column',
-            gap: 24,
+            gap: 24
           }}
         >
           {/* 上半部分：概览卡片，占右侧50%高度 */}
@@ -273,14 +273,14 @@ const OverviewMain = () => {
               style={{
                 borderRadius: '16px',
                 boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
-                height: '205px',
+                height: '205px'
               }}
               styles={{
                 body: {
                   height: '100%',
                   display: 'flex',
-                  flexDirection: 'column',
-                },
+                  flexDirection: 'column'
+                }
               }}
             >
               <div style={{ flex: 1 }}>
@@ -324,7 +324,7 @@ const OverviewMain = () => {
                 style={{
                   color: '#999',
                   fontSize: 12,
-                  marginBottom: 50,
+                  marginBottom: 50
                 }}
               >
                 {t('overview.includesOnlyTheModtRecentYear')}
@@ -349,15 +349,15 @@ const OverviewMain = () => {
                   borderRadius: '16px',
                   boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
                   height: '370px',
-                  width: '100%',
+                  width: '100%'
                 }}
                 styles={{
                   body: {
                     padding: 16,
                     height: '100%',
                     display: 'flex',
-                    flexDirection: 'column',
-                  },
+                    flexDirection: 'column'
+                  }
                 }}
               >
                 <div style={{ flex: 1, overflow: 'auto' }}>
@@ -375,7 +375,7 @@ const OverviewMain = () => {
                               style={{
                                 backgroundColor: '#e6f4ff',
                                 color: '#1677ff',
-                                fontWeight: 600,
+                                fontWeight: 600
                               }}
                               size={24}
                             >
@@ -395,7 +395,7 @@ const OverviewMain = () => {
                       maxHeight: 140,
                       overflow: 'hidden',
                       width: '100%',
-                      background: 'none',
+                      background: 'none'
                     }}
                   />
                   {outOfStockCount > 5 && (
@@ -410,7 +410,7 @@ const OverviewMain = () => {
                       display: 'flex',
                       justifyContent: 'center',
                       marginBottom: 8,
-                      width: '100%',
+                      width: '100%'
                     }}
                   >
                     <Button

@@ -14,11 +14,11 @@ const Report = () => {
   const [loading, setLoading] = useState(false);
   const [dateRange, setDateRange] = useState([
     dayjs().subtract(1, 'month'),
-    dayjs(),
+    dayjs()
   ]);
   const [paymentDateRange, setPaymentDateRange] = useState([
     dayjs().subtract(1, 'month'),
-    dayjs(),
+    dayjs()
   ]);
   const [selectedProduct, setSelectedProduct] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState('');
@@ -35,7 +35,7 @@ const Report = () => {
       statement: t('export.statement'),
       'receivable-payable': t('export.receivablePayable'),
       invoice: t('export.invoice'),
-      inventory: t('export.inventoryExport'),
+      inventory: t('export.inventoryExport')
     };
     const typeName = typeMap[exportType] || exportType;
     return `${typeName}_${timestamp}.xlsx`;

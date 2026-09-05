@@ -34,33 +34,33 @@ export interface RequestInstance {
   // 便捷方法
   get<T = unknown>(
     url: string,
-    options?: Omit<RequestOptions, 'method' | 'body'>,
+    options?: Omit<RequestOptions, 'method' | 'body'>
   ): Promise<T>;
   post<T = unknown>(
     url: string,
     data?: unknown,
-    options?: Omit<RequestOptions, 'method' | 'body'>,
+    options?: Omit<RequestOptions, 'method' | 'body'>
   ): Promise<T>;
   put<T = unknown>(
     url: string,
     data?: unknown,
-    options?: Omit<RequestOptions, 'method' | 'body'>,
+    options?: Omit<RequestOptions, 'method' | 'body'>
   ): Promise<T>;
   delete<T = unknown>(
     url: string,
-    options?: Omit<RequestOptions, 'method' | 'body'>,
+    options?: Omit<RequestOptions, 'method' | 'body'>
   ): Promise<T>;
 
   // 文件操作方法
   upload<T = unknown>(
     url: string,
     formData: FormData,
-    options?: UploadOptions,
+    options?: UploadOptions
   ): Promise<T>;
   download(
     url: string,
     filename?: string,
-    options?: DownloadOptions,
+    options?: DownloadOptions
   ): Promise<void>;
 }
 
@@ -70,7 +70,7 @@ export class RequestError extends Error {
     message: string,
     public readonly status?: number,
     public readonly statusText?: string,
-    public readonly data?: unknown,
+    public readonly data?: unknown
   ) {
     super(message);
     this.name = 'RequestError';

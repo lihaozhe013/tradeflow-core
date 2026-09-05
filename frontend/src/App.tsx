@@ -5,7 +5,7 @@ import {
   Route,
   Link,
   Navigate,
-  useLocation,
+  useLocation
 } from 'react-router-dom';
 import type { Location } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -18,14 +18,14 @@ import {
   Space,
   Dropdown,
   Button,
-  Tag,
+  Tag
 } from 'antd';
 import type { MenuProps, SelectProps } from 'antd';
 import {
   GlobalOutlined,
   UserOutlined,
   LogoutOutlined,
-  SettingOutlined,
+  SettingOutlined
 } from '@ant-design/icons';
 import Inbound from '@/pages/Inbound';
 import Outbound from '@/pages/Outbound';
@@ -157,7 +157,7 @@ function UserMenu(): React.ReactElement {
           <span>{displayName}</span>
         </Space>
       ),
-      disabled: true,
+      disabled: true
     },
     { type: 'divider' },
     {
@@ -167,8 +167,8 @@ function UserMenu(): React.ReactElement {
           <LogoutOutlined />
           <span>{t('common.logout')}</span>
         </Space>
-      ),
-    },
+      )
+    }
   ];
 
   const handleMenuClick: MenuProps['onClick'] = ({ key }) => {
@@ -206,7 +206,7 @@ interface LanguageOption {
 const supportedLanguages: readonly LanguageValue[] = [
   'zh',
   'en',
-  'ko',
+  'ko'
 ] as const;
 
 function LanguageSelector(): React.ReactElement {
@@ -215,7 +215,7 @@ function LanguageSelector(): React.ReactElement {
   const languageOptions: LanguageOption[] = [
     { value: 'zh', label: t('common.chinese'), flag: '🇨🇳' },
     { value: 'en', label: t('common.english'), flag: '🇺🇸' },
-    { value: 'ko', label: t('common.korean'), flag: '🇰🇷' },
+    { value: 'ko', label: t('common.korean'), flag: '🇰🇷' }
   ];
 
   const selectOptions: SelectProps<LanguageValue>['options'] =
@@ -226,11 +226,11 @@ function LanguageSelector(): React.ReactElement {
           <span>{option.flag}</span>
           <span>{option.label}</span>
         </Space>
-      ),
+      )
     }));
 
   const currentLanguage = supportedLanguages.includes(
-    i18n.language as LanguageValue,
+    i18n.language as LanguageValue
   )
     ? (i18n.language as LanguageValue)
     : 'zh';
@@ -289,7 +289,7 @@ interface AppContentInnerProps {
 
 function AppContentInner({
   location,
-  t,
+  t
 }: AppContentInnerProps): React.ReactElement {
   const { hasPermission } = usePermissions();
   const canAccessRestrictedPages = hasPermission('editor');
@@ -316,12 +316,12 @@ function AppContentInner({
   const advancedItems: MenuProps['items'] = [
     {
       key: 'audit',
-      label: <Link to="/audit">{t('nav.audit')}</Link>,
+      label: <Link to="/audit">{t('nav.audit')}</Link>
     },
     {
       key: 'users',
-      label: <Link to="/users">{t('nav.users')}</Link>,
-    },
+      label: <Link to="/users">{t('nav.users')}</Link>
+    }
   ];
 
   const overviewMenuItem = {
@@ -330,7 +330,7 @@ function AppContentInner({
       <Link to="/overview" style={{ fontWeight: 'bold' }}>
         {t('nav.overview')}
       </Link>
-    ),
+    )
   };
 
   const restrictedFinancialMenuItems: Required<MenuProps>['items'] = [
@@ -340,7 +340,7 @@ function AppContentInner({
         <Link to="/receivable" style={{ fontWeight: 'bold' }}>
           {t('nav.receivable')}
         </Link>
-      ),
+      )
     },
     {
       key: 'payable',
@@ -348,7 +348,7 @@ function AppContentInner({
         <Link to="/payable" style={{ fontWeight: 'bold' }}>
           {t('nav.payable')}
         </Link>
-      ),
+      )
     },
     {
       key: 'analysis',
@@ -356,7 +356,7 @@ function AppContentInner({
         <Link to="/analysis" style={{ fontWeight: 'bold' }}>
           {t('nav.analysis')}
         </Link>
-      ),
+      )
     },
     {
       key: 'export',
@@ -364,8 +364,8 @@ function AppContentInner({
         <Link to="/export" style={{ fontWeight: 'bold' }}>
           {t('nav.export')}
         </Link>
-      ),
-    },
+      )
+    }
   ];
 
   const menuItems: Required<MenuProps>['items'] = [
@@ -376,7 +376,7 @@ function AppContentInner({
         <Link to="/inbound" style={{ fontWeight: 'bold' }}>
           {t('nav.inbound')}
         </Link>
-      ),
+      )
     },
     {
       key: 'outbound',
@@ -384,7 +384,7 @@ function AppContentInner({
         <Link to="/outbound" style={{ fontWeight: 'bold' }}>
           {t('nav.outbound')}
         </Link>
-      ),
+      )
     },
     {
       key: 'inventory',
@@ -392,7 +392,7 @@ function AppContentInner({
         <Link to="/inventory" style={{ fontWeight: 'bold' }}>
           {t('nav.inventory')}
         </Link>
-      ),
+      )
     },
     {
       key: 'partners',
@@ -400,7 +400,7 @@ function AppContentInner({
         <Link to="/partners" style={{ fontWeight: 'bold' }}>
           {t('nav.partners')}
         </Link>
-      ),
+      )
     },
     {
       key: 'products',
@@ -408,7 +408,7 @@ function AppContentInner({
         <Link to="/products" style={{ fontWeight: 'bold' }}>
           {t('nav.products')}
         </Link>
-      ),
+      )
     },
     {
       key: 'product-prices',
@@ -416,7 +416,7 @@ function AppContentInner({
         <Link to="/product-prices" style={{ fontWeight: 'bold' }}>
           {t('nav.productPrices')}
         </Link>
-      ),
+      )
     },
     ...(canAccessRestrictedPages ? restrictedFinancialMenuItems : []),
     ...(advancedItems.length > 0
@@ -427,10 +427,10 @@ function AppContentInner({
               <span style={{ fontWeight: 'bold' }}>{t('nav.advanced')}</span>
             ),
             // icon: <SettingOutlined />,
-            children: advancedItems,
-          },
+            children: advancedItems
+          }
         ]
-      : []),
+      : [])
   ];
 
   const selectedKey = getSelectedKey();
@@ -443,7 +443,7 @@ function AppContentInner({
           height: '50px',
           lineHeight: '50px',
           display: 'flex',
-          alignItems: 'center',
+          alignItems: 'center'
         }}
       >
         <div style={{ flex: 1 }}>
@@ -539,7 +539,7 @@ function AppContentInner({
           textAlign: 'center',
           background: '#fff',
           borderTop: '1px solid #e8e8e8',
-          padding: '12px 24px',
+          padding: '12px 24px'
         }}
       >
         <Space>

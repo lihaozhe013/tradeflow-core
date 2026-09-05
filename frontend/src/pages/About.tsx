@@ -9,25 +9,25 @@ function About() {
   const {
     data: aboutData,
     loading,
-    error,
+    error
   } = useSimpleApiData('/about', {
     title: '',
     company: {
       name: '',
       description: '',
-      slogan: '',
+      slogan: ''
     },
     system: {
       version: '0.1.0',
       releaseDate: '2025-01-01',
       techStack: 'React + Node.js + SQLite',
-      team: '',
+      team: ''
     },
     contact: {
       email: 'example@example.com',
       phone: '+1 xxx-xxx-xxxx',
-      address: '',
-    },
+      address: ''
+    }
   });
 
   if (loading) {
@@ -124,7 +124,7 @@ function About() {
                 'linear-gradient(135deg, rgba(223, 218, 215, 0.2) 0%, rgba(223, 218, 215, 0.2) 100%)',
               border: 'none',
               borderRadius: '12px',
-              padding: '20px',
+              padding: '20px'
             }}
           >
             <Image
@@ -133,7 +133,7 @@ function About() {
               style={{
                 width: '300px',
                 height: '300px',
-                objectFit: 'contain',
+                objectFit: 'contain'
               }}
               preview={false}
             />
@@ -142,7 +142,7 @@ function About() {
               style={{
                 color: '#000000ff',
                 marginTop: '20px',
-                textAlign: 'center',
+                textAlign: 'center'
               }}
             >
               {aboutData?.company?.name ?? t('about.systemName')}

@@ -9,7 +9,7 @@ import {
   Row,
   Col,
   AutoComplete,
-  Radio,
+  Radio
 } from 'antd';
 import type { FC, Dispatch, SetStateAction } from 'react';
 import type { FormInstance } from 'antd/es/form';
@@ -21,7 +21,7 @@ import type {
   OutboundFormValues,
   OutboundRecord,
   Partner,
-  Product,
+  Product
 } from '../types';
 
 interface OutboundModalProps {
@@ -44,7 +44,7 @@ interface OutboundModalProps {
 
 const filterOption = (
   inputValue: string,
-  option?: DefaultOptionType,
+  option?: DefaultOptionType
 ): boolean => {
   const valueText =
     typeof option?.value === 'string' ? option.value.toLowerCase() : '';
@@ -69,7 +69,7 @@ const OutboundModal: FC<OutboundModalProps> = ({
   onProductCodeChange,
   onProductModelChange,
   onPartnerOrProductChange,
-  onPriceOrQuantityChange,
+  onPriceOrQuantityChange
 }) => {
   const { t } = useTranslation();
 
@@ -100,7 +100,7 @@ const OutboundModal: FC<OutboundModalProps> = ({
               label={t('outbound.customerCode')}
               name="customer_code"
               rules={[
-                { required: true, message: t('outbound.inputCustomerCode') },
+                { required: true, message: t('outbound.inputCustomerCode') }
               ]}
             >
               <AutoComplete
@@ -108,7 +108,7 @@ const OutboundModal: FC<OutboundModalProps> = ({
                 onChange={(value) => onCustomerCodeChange(value ?? '')}
                 options={partners.map((partner) => ({
                   value: partner.code ?? '',
-                  label: `${partner.code ?? ''} - ${partner.short_name}`,
+                  label: `${partner.code ?? ''} - ${partner.short_name}`
                 }))}
                 filterOption={filterOption}
               />
@@ -121,8 +121,8 @@ const OutboundModal: FC<OutboundModalProps> = ({
               rules={[
                 {
                   required: true,
-                  message: t('outbound.inputCustomerShortName'),
-                },
+                  message: t('outbound.inputCustomerShortName')
+                }
               ]}
             >
               <AutoComplete
@@ -130,7 +130,7 @@ const OutboundModal: FC<OutboundModalProps> = ({
                 onChange={(value) => onCustomerShortNameChange(value ?? '')}
                 options={partners.map((partner) => ({
                   value: partner.short_name,
-                  label: `${partner.short_name} - ${partner.code ?? ''}`,
+                  label: `${partner.short_name} - ${partner.code ?? ''}`
                 }))}
                 filterOption={filterOption}
               />
@@ -152,7 +152,7 @@ const OutboundModal: FC<OutboundModalProps> = ({
               label={t('outbound.productCode')}
               name="product_code"
               rules={[
-                { required: true, message: t('outbound.inputProductCode') },
+                { required: true, message: t('outbound.inputProductCode') }
               ]}
             >
               <AutoComplete
@@ -160,7 +160,7 @@ const OutboundModal: FC<OutboundModalProps> = ({
                 onChange={(value) => onProductCodeChange(value ?? '')}
                 options={products.map((product) => ({
                   value: product.code ?? '',
-                  label: `${product.code ?? ''} - ${product.product_model}`,
+                  label: `${product.code ?? ''} - ${product.product_model}`
                 }))}
                 filterOption={filterOption}
               />
@@ -171,7 +171,7 @@ const OutboundModal: FC<OutboundModalProps> = ({
               label={t('outbound.productModel')}
               name="product_model"
               rules={[
-                { required: true, message: t('outbound.inputProductModel') },
+                { required: true, message: t('outbound.inputProductModel') }
               ]}
             >
               <AutoComplete
@@ -179,7 +179,7 @@ const OutboundModal: FC<OutboundModalProps> = ({
                 onChange={(value) => onProductModelChange(value ?? '')}
                 options={products.map((product) => ({
                   value: product.product_model,
-                  label: `${product.product_model} - ${product.code ?? ''}`,
+                  label: `${product.product_model} - ${product.code ?? ''}`
                 }))}
                 filterOption={filterOption}
               />
@@ -190,7 +190,7 @@ const OutboundModal: FC<OutboundModalProps> = ({
               label={t('outbound.outboundDate')}
               name="outbound_date"
               rules={[
-                { required: true, message: t('outbound.selectOutboundDate') },
+                { required: true, message: t('outbound.selectOutboundDate') }
               ]}
             >
               <DatePicker
@@ -212,8 +212,8 @@ const OutboundModal: FC<OutboundModalProps> = ({
                 { required: true, message: t('outbound.inputQuantity') },
                 {
                   type: 'number',
-                  message: t('outbound.quantityGreaterThanZero'),
-                },
+                  message: t('outbound.quantityGreaterThanZero')
+                }
               ]}
             >
               <InputNumber
@@ -232,7 +232,7 @@ const OutboundModal: FC<OutboundModalProps> = ({
               <Radio.Group
                 options={[
                   { label: t('outbound.autoFetch'), value: false },
-                  { label: t('outbound.manualInput'), value: true },
+                  { label: t('outbound.manualInput'), value: true }
                 ]}
                 onChange={handleManualPriceChange}
                 optionType="button"
@@ -247,7 +247,7 @@ const OutboundModal: FC<OutboundModalProps> = ({
               name="unit_price"
               rules={[
                 { required: true, message: t('outbound.inputUnitPrice') },
-                { type: 'number' },
+                { type: 'number' }
               ]}
             >
               <InputNumber

@@ -1,7 +1,7 @@
 import type {
   User,
   LoginResponse,
-  GetCurrentUserResponse,
+  GetCurrentUserResponse
 } from '@/auth/auth.types';
 import { hasRolePermission } from '@/auth/permissions';
 export type {
@@ -10,7 +10,7 @@ export type {
   GetCurrentUserResponse,
   TokenManager,
   UserManager,
-  AuthAPI,
+  AuthAPI
 } from '@/auth/auth.types';
 
 // 认证工具函数
@@ -34,7 +34,7 @@ export const tokenManager = {
   clearToken() {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
-  },
+  }
 };
 
 // 用户信息管理
@@ -57,7 +57,7 @@ export const userManager = {
     } else {
       localStorage.removeItem(USER_KEY);
     }
-  },
+  }
 };
 
 // 检查是否已认证
@@ -69,7 +69,7 @@ export const isAuthenticated = () => {
 
 // 检查用户角色
 export const hasRole = (
-  requiredRole: 'reader' | 'editor' | 'superuser',
+  requiredRole: 'reader' | 'editor' | 'superuser'
 ): boolean => {
   const user = userManager.getUser();
   return hasRolePermission(user?.role, requiredRole);
@@ -81,9 +81,9 @@ export const authAPI = {
     const response = await fetch('/api/auth/login', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ username, password }),
+      body: JSON.stringify({ username, password })
     });
 
     if (!response.ok) {
@@ -103,7 +103,7 @@ export const authAPI = {
     }
 
     const response = await fetch('/api/auth/me', {
-      headers,
+      headers
     });
 
     if (!response.ok) {
@@ -117,5 +117,5 @@ export const authAPI = {
     // 无状态JWT，只需清除本地存储
     tokenManager.clearToken();
     userManager.setUser(null);
-  },
+  }
 };

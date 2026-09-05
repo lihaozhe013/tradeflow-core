@@ -5,11 +5,11 @@ import {
   ReceivablePayableFilters as ReceivableFilters,
   ReceivablePaymentDto,
   ReceivableSummaryDto,
-  OutboundRecordDto,
+  OutboundRecordDto
 } from '@/routes/export/utils/types';
 
 export async function getReceivableSummary(
-  filters: ReceivableFilters = {},
+  filters: ReceivableFilters = {}
 ): Promise<ReceivableSummaryDto[]> {
   const conditions: Prisma.Sql[] = [Prisma.sql`1=1`];
 
@@ -21,12 +21,12 @@ export async function getReceivableSummary(
   }
   if (filters.paymentFrom) {
     conditions.push(
-      Prisma.sql`(p.pay_date IS NULL OR p.pay_date >= ${filters.paymentFrom})`,
+      Prisma.sql`(p.pay_date IS NULL OR p.pay_date >= ${filters.paymentFrom})`
     );
   }
   if (filters.paymentTo) {
     conditions.push(
-      Prisma.sql`(p.pay_date IS NULL OR p.pay_date <= ${filters.paymentTo})`,
+      Prisma.sql`(p.pay_date IS NULL OR p.pay_date <= ${filters.paymentTo})`
     );
   }
 
@@ -65,13 +65,13 @@ export async function getReceivableSummary(
       customer_full_name: row.customer_full_name,
       total_sales: totalSales,
       total_payments: totalPayments,
-      balance,
+      balance
     };
   });
 }
 
 export async function getReceivableDetails(
-  filters: ReceivableFilters = {},
+  filters: ReceivableFilters = {}
 ): Promise<(OutboundRecordDto & { record_id: number })[]> {
   const where: Prisma.OutboundRecordWhereInput = {};
   const dateConditions: Prisma.StringFilter = {};
@@ -90,19 +90,19 @@ export async function getReceivableDetails(
   const rows = await prisma.outboundRecord.findMany({
     where,
     include: { partner: true, product: true },
-    orderBy: [{ outbound_date: 'desc' }, { id: 'desc' }],
+    orderBy: [{ outbound_date: 'desc' }, { id: 'desc' }]
   });
   return rows.map((r) => ({
     ...r,
     record_id: r.id,
     product_model: r.product?.product_model || '',
     customer_short_name: r.partner?.short_name || '',
-    customer_full_name: r.partner?.full_name || '',
+    customer_full_name: r.partner?.full_name || ''
   })) as unknown as (OutboundRecordDto & { record_id: number })[];
 }
 
 export async function getReceivablePayments(
-  filters: ReceivableFilters = {},
+  filters: ReceivableFilters = {}
 ): Promise<ReceivablePaymentDto[]> {
   const where: Prisma.ReceivablePaymentWhereInput = {};
   const dateConditions: Prisma.StringFilter = {};
@@ -120,6 +120,6 @@ export async function getReceivablePayments(
 
   return await prisma.receivablePayment.findMany({
     where,
-    orderBy: [{ pay_date: 'desc' }, { id: 'desc' }],
+    orderBy: [{ pay_date: 'desc' }, { id: 'desc' }]
   });
 }

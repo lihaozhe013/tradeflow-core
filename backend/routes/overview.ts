@@ -73,7 +73,7 @@ interface StatsCache {
  * Helper: Build weighted average cost map from inbound records
  */
 function buildAvgCostMap(
-  inboundRecords: InboundGroup[],
+  inboundRecords: InboundGroup[]
 ): Record<string, AvgCostData> {
   return inboundRecords.reduce(
     (map, item) => {
@@ -87,14 +87,14 @@ function buildAvgCostMap(
           avg_cost_price: decimalCalc.fromSqlResult(
             totalPrice / totalQty,
             0,
-            4,
+            4
           ),
-          total_inbound_quantity: decimalCalc.fromSqlResult(totalQty, 0),
+          total_inbound_quantity: decimalCalc.fromSqlResult(totalQty, 0)
         };
       }
       return map;
     },
-    {} as Record<string, AvgCostData>,
+    {} as Record<string, AvgCostData>
   );
 }
 
@@ -103,7 +103,7 @@ function buildAvgCostMap(
  */
 function calculateOutboundCost(
   record: OutboundRow,
-  avgCostMap: Record<string, AvgCostData>,
+  avgCostMap: Record<string, AvgCostData>
 ) {
   const productModel = record.product_code || 'unknown';
   const soldQuantity = decimalCalc.decimal(record.quantity || 0);
@@ -146,12 +146,12 @@ async function calculateSoldGoodsCost(): Promise<number> {
     by: ['product_code'],
     where: {
       unit_price: { gte: 0 },
-      inbound_date: { gte: oneYearAgoStr },
+      inbound_date: { gte: oneYearAgoStr }
     },
     _sum: {
       quantity: true,
-      total_price: true, // Assuming total_price corresponds to quantity * unit_price
-    },
+      total_price: true // Assuming total_price corresponds to quantity * unit_price
+    }
   });
 
   const avgCostMap = buildAvgCostMap(inboundRecords);
@@ -160,13 +160,13 @@ async function calculateSoldGoodsCost(): Promise<number> {
   const outboundRecords = await prisma.outboundRecord.findMany({
     where: {
       unit_price: { gte: 0 },
-      outbound_date: { gte: oneYearAgoStr },
+      outbound_date: { gte: oneYearAgoStr }
     },
     select: {
       product_code: true,
       quantity: true,
-      unit_price: true, // as selling_price
-    },
+      unit_price: true // as selling_price
+    }
   });
 
   if (outboundRecords.length === 0) {
@@ -183,12 +183,12 @@ async function calculateSoldGoodsCost(): Promise<number> {
   const specialIncomeRecords = await prisma.inboundRecord.findMany({
     where: {
       unit_price: { lt: 0 },
-      inbound_date: { gte: oneYearAgoStr },
+      inbound_date: { gte: oneYearAgoStr }
     },
     select: {
       quantity: true,
-      unit_price: true,
-    },
+      unit_price: true
+    }
   });
 
   const totalSpecialIncome = specialIncomeRecords
@@ -197,13 +197,13 @@ async function calculateSoldGoodsCost(): Promise<number> {
 
   const finalCost = decimalCalc.subtract(
     totalSoldGoodsCost,
-    totalSpecialIncome,
+    totalSpecialIncome
   );
 
   // Ensure cost is not negative and keep two decimal places
   return decimalCalc.toDbNumber(
     decimalCalc.decimal(Math.max(0, finalCost.toNumber())),
-    2,
+    2
   );
 }
 
@@ -234,7 +234,7 @@ router.post('/stats', async (_req: Request, res: Response): Promise<void> => {
 
   const outOfInventoryPromise = prisma.inventory.findMany({
     where: { quantity: { lte: 0 } },
-    select: { product_model: true },
+    select: { product_model: true }
   });
 
   // Convert to simple array of objects { product_model: string }
@@ -245,14 +245,14 @@ router.post('/stats', async (_req: Request, res: Response): Promise<void> => {
   // -------------------------------------------------------------------------
   const counts = {
     total_inbound: await prisma.inboundRecord.count({
-      where: { inbound_date: { gte: oneYearAgoStr } },
+      where: { inbound_date: { gte: oneYearAgoStr } }
     }),
     total_outbound: await prisma.outboundRecord.count({
-      where: { outbound_date: { gte: oneYearAgoStr } },
+      where: { outbound_date: { gte: oneYearAgoStr } }
     }),
     suppliers_count: await prisma.partner.count({ where: { type: 0 } }),
     customers_count: await prisma.partner.count({ where: { type: 1 } }),
-    products_count: await prisma.product.count(),
+    products_count: await prisma.product.count()
   };
 
   // Purchase Amount: Normal (>0)
@@ -260,11 +260,11 @@ router.post('/stats', async (_req: Request, res: Response): Promise<void> => {
   // Assuming 'total_price' field stores (quantity * unit_price).
   const normalPurchaseAgg = await prisma.inboundRecord.aggregate({
     _sum: { total_price: true },
-    where: { unit_price: { gte: 0 }, inbound_date: { gte: oneYearAgoStr } },
+    where: { unit_price: { gte: 0 }, inbound_date: { gte: oneYearAgoStr } }
   });
   const normalPurchase = decimalCalc.fromSqlResult(
     normalPurchaseAgg._sum.total_price || 0,
-    0,
+    0
   );
 
   // Purchase Amount: Special Income (Abs(negative))
@@ -272,44 +272,44 @@ router.post('/stats', async (_req: Request, res: Response): Promise<void> => {
   // Fetching raw records for negative items:
   const negativeInbound = await prisma.inboundRecord.findMany({
     where: { unit_price: { lt: 0 }, inbound_date: { gte: oneYearAgoStr } },
-    select: { quantity: true, unit_price: true },
+    select: { quantity: true, unit_price: true }
   });
   let specialIncomeDec = decimalCalc.decimal(0);
   for (const r of negativeInbound) {
     specialIncomeDec = decimalCalc.add(
       specialIncomeDec,
-      Math.abs((r.quantity || 0) * (r.unit_price || 0)),
+      Math.abs((r.quantity || 0) * (r.unit_price || 0))
     );
   }
 
   // Sales Amount: Normal (>0)
   const normalSalesAgg = await prisma.outboundRecord.aggregate({
     _sum: { total_price: true },
-    where: { unit_price: { gte: 0 }, outbound_date: { gte: oneYearAgoStr } },
+    where: { unit_price: { gte: 0 }, outbound_date: { gte: oneYearAgoStr } }
   });
   const normalSales = decimalCalc.fromSqlResult(
     normalSalesAgg._sum.total_price || 0,
-    0,
+    0
   );
 
   // Sales Amount: Special Expense (Abs(negative))
   const negativeOutbound = await prisma.outboundRecord.findMany({
     where: { unit_price: { lt: 0 }, outbound_date: { gte: oneYearAgoStr } },
-    select: { quantity: true, unit_price: true },
+    select: { quantity: true, unit_price: true }
   });
   let specialExpenseDec = decimalCalc.decimal(0);
   for (const r of negativeOutbound) {
     specialExpenseDec = decimalCalc.add(
       specialExpenseDec,
-      Math.abs((r.quantity || 0) * (r.unit_price || 0)),
+      Math.abs((r.quantity || 0) * (r.unit_price || 0))
     );
   }
 
   const totalPurchaseAmt = decimalCalc.toDbNumber(
-    decimalCalc.subtract(normalPurchase, specialIncomeDec),
+    decimalCalc.subtract(normalPurchase, specialIncomeDec)
   );
   const totalSalesAmt = decimalCalc.toDbNumber(
-    decimalCalc.subtract(normalSales, specialExpenseDec),
+    decimalCalc.subtract(normalSales, specialExpenseDec)
   );
 
   // Sold Goods Cost
@@ -323,7 +323,7 @@ router.post('/stats', async (_req: Request, res: Response): Promise<void> => {
     total_purchase_amount: totalPurchaseAmt,
     total_sales_amount: totalSalesAmt,
     sold_goods_cost: soldGoodsCost,
-    inventoryed_products: inventoryCount,
+    inventoryed_products: inventoryCount
   };
 
   // -------------------------------------------------------------------------
@@ -334,17 +334,17 @@ router.post('/stats', async (_req: Request, res: Response): Promise<void> => {
   const topSalesGroups = await prisma.outboundRecord.groupBy({
     by: ['product_code'],
     where: { unit_price: { gte: 0 }, outbound_date: { gte: oneYearAgoStr } },
-    _sum: { total_price: true },
+    _sum: { total_price: true }
     // Prisma doesn't support 'orderBy' in groupBy easily for aggregates in all versions
     // We will sort in JS.
   });
 
   const allProductsOverview = await prisma.product.findMany({
-    select: { code: true, product_model: true },
+    select: { code: true, product_model: true }
   });
   const pMapOverview = new Map<string, string>();
   allProductsOverview.forEach((p) =>
-    pMapOverview.set(p.code, p.product_model || 'unknown'),
+    pMapOverview.set(p.code, p.product_model || 'unknown')
   );
 
   const processedRows = topSalesGroups
@@ -352,7 +352,7 @@ router.post('/stats', async (_req: Request, res: Response): Promise<void> => {
       product_model:
         (g.product_code ? pMapOverview.get(g.product_code) : 'unknown') ||
         'unknown',
-      total_sales: decimalCalc.fromSqlResult(g._sum.total_price || 0, 0, 2),
+      total_sales: decimalCalc.fromSqlResult(g._sum.total_price || 0, 0, 2)
     }))
     .sort((a, b) => b.total_sales - a.total_sales); // Descending
 
@@ -380,7 +380,7 @@ router.post('/stats', async (_req: Request, res: Response): Promise<void> => {
   const monthStartStr = monthStart.toISOString().split('T')[0];
 
   const allProductModels = await prisma.product.findMany({
-    select: { code: true, product_model: true },
+    select: { code: true, product_model: true }
   });
 
   // We can optimize this loop by fetching all records and processing in memory if dataset is small,
@@ -392,7 +392,7 @@ router.post('/stats', async (_req: Request, res: Response): Promise<void> => {
   const beforeMonthInboundAgg = await prisma.inboundRecord.groupBy({
     by: ['product_code'],
     where: { inbound_date: { lt: monthStartStr } },
-    _sum: { quantity: true },
+    _sum: { quantity: true }
   });
   // Convert to Map
   const beforeInMap: Record<string, number> = {};
@@ -404,7 +404,7 @@ router.post('/stats', async (_req: Request, res: Response): Promise<void> => {
   const beforeMonthOutboundAgg = await prisma.outboundRecord.groupBy({
     by: ['product_code'],
     where: { outbound_date: { lt: monthStartStr } },
-    _sum: { quantity: true },
+    _sum: { quantity: true }
   });
   const beforeOutMap: Record<string, number> = {};
   beforeMonthOutboundAgg.forEach((x) => {
@@ -415,7 +415,7 @@ router.post('/stats', async (_req: Request, res: Response): Promise<void> => {
   const curMonthInboundAgg = await prisma.inboundRecord.groupBy({
     by: ['product_code'],
     where: { inbound_date: { gte: monthStartStr } },
-    _sum: { quantity: true },
+    _sum: { quantity: true }
   });
   const curInMap: Record<string, number> = {};
   curMonthInboundAgg.forEach((x) => {
@@ -426,7 +426,7 @@ router.post('/stats', async (_req: Request, res: Response): Promise<void> => {
   const curMonthOutboundAgg = await prisma.outboundRecord.groupBy({
     by: ['product_code'],
     where: { outbound_date: { gte: monthStartStr } },
-    _sum: { quantity: true },
+    _sum: { quantity: true }
   });
   const curOutMap: Record<string, number> = {};
   curMonthOutboundAgg.forEach((x) => {
@@ -442,7 +442,7 @@ router.post('/stats', async (_req: Request, res: Response): Promise<void> => {
     const beforeOut = decimalCalc.fromSqlResult(
       beforeOutMap[p.code] || 0,
       0,
-      0,
+      0
     );
 
     const curIn = decimalCalc.fromSqlResult(curInMap[p.code] || 0, 0, 0);
@@ -452,16 +452,16 @@ router.post('/stats', async (_req: Request, res: Response): Promise<void> => {
     // Note: This logic assumes simple inventory (no adjustments/losses other than outbound).
     const monthStartInventory = decimalCalc.toDbNumber(
       decimalCalc.subtract(beforeIn, beforeOut),
-      0,
+      0
     );
 
     const monthlyChange = decimalCalc.toDbNumber(
       decimalCalc.subtract(curIn, curOut),
-      0,
+      0
     );
     const currentInventory = decimalCalc.toDbNumber(
       decimalCalc.add(monthStartInventory, monthlyChange),
-      0,
+      0
     );
 
     monthlyChanges[p.product_model || 'unknown'] = {
@@ -469,7 +469,7 @@ router.post('/stats', async (_req: Request, res: Response): Promise<void> => {
       month_start_inventory: monthStartInventory,
       current_inventory: currentInventory,
       monthly_change: monthlyChange,
-      query_date: new Date().toISOString(),
+      query_date: new Date().toISOString()
     };
   }
   stats.monthly_inventory_changes = monthlyChanges;
@@ -504,7 +504,7 @@ router.get(
     if (!productModel) {
       return res.status(400).json({
         success: false,
-        message: 'Product model cannot be empty',
+        message: 'Product model cannot be empty'
       });
     }
 
@@ -520,22 +520,22 @@ router.get(
       ) {
         return res.json({
           success: true,
-          data: stats.monthly_inventory_changes[productModel],
+          data: stats.monthly_inventory_changes[productModel]
         });
       } else {
         return res.json({
           success: false,
           message:
-            'Monthly inventory change data not found for this product, please refresh statistics first',
+            'Monthly inventory change data not found for this product, please refresh statistics first'
         });
       }
     }
 
     return res.status(503).json({
       success: false,
-      error: 'Statistics data not generated, please refresh first.',
+      error: 'Statistics data not generated, please refresh first.'
     });
-  },
+  }
 );
 
 export default router;

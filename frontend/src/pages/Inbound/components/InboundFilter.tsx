@@ -20,7 +20,7 @@ const InboundFilter: FC<InboundFilterProps> = ({
   setFilters,
   partners,
   products,
-  onFilter,
+  onFilter
 }) => {
   const { t } = useTranslation();
   const rangeValue = useMemo<[Dayjs | null, Dayjs | null] | null>(() => {
@@ -37,15 +37,15 @@ const InboundFilter: FC<InboundFilterProps> = ({
       dateRange: dates
         ? [
             dates[0]?.format('YYYY-MM-DD') ?? null,
-            dates[1]?.format('YYYY-MM-DD') ?? null,
+            dates[1]?.format('YYYY-MM-DD') ?? null
           ]
-        : [null, null],
+        : [null, null]
     }));
   };
 
   const filterByLabel = (
     input: string,
-    option?: DefaultOptionType,
+    option?: DefaultOptionType
   ): boolean => {
     const label = typeof option?.label === 'string' ? option.label : undefined;
     return label ? label.toLowerCase().includes(input.toLowerCase()) : false;
@@ -63,12 +63,12 @@ const InboundFilter: FC<InboundFilterProps> = ({
           onChange={(value) =>
             setFilters((prev) => ({
               ...prev,
-              supplier_short_name: value ?? undefined,
+              supplier_short_name: value ?? undefined
             }))
           }
           options={partners.map((p) => ({
             label: `${p.short_name}(${p.code})`,
-            value: p.short_name,
+            value: p.short_name
           }))}
           filterOption={filterByLabel}
         />
@@ -83,12 +83,12 @@ const InboundFilter: FC<InboundFilterProps> = ({
           onChange={(value) =>
             setFilters((prev) => ({
               ...prev,
-              product_model: value ?? undefined,
+              product_model: value ?? undefined
             }))
           }
           options={products.map((p) => ({
             label: `${p.product_model}(${p.code})`,
-            value: p.product_model,
+            value: p.product_model
           }))}
           filterOption={filterByLabel}
         />

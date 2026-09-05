@@ -17,7 +17,7 @@ const AnalysisConditions: React.FC<AnalysisConditionsProps> = ({
   selectedPartner,
   selectedProduct,
   partners,
-  analysisType,
+  analysisType
 }) => {
   const { t } = useTranslation();
 

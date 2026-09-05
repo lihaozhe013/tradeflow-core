@@ -10,7 +10,7 @@ export {
   RequestError,
   NetworkError,
   AuthenticationError,
-  AuthorizationError,
+  AuthorizationError
 } from './request';
 
 export type {
@@ -19,5 +19,5 @@ export type {
   UploadOptions,
   DownloadOptions,
   HttpMethod,
-  ResponseType,
+  ResponseType
 } from './types';

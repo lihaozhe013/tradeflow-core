@@ -10,7 +10,7 @@ export function generateFinancialExcel(data: ReceivablePayableData): Buffer {
     const template = TEMPLATES.receivable_summary;
     const worksheet = ExportUtils.createWorksheet(
       data.receivable_summary,
-      template,
+      template
     );
     XLSX.utils.book_append_sheet(workbook, worksheet, template.sheetName);
   }
@@ -18,7 +18,7 @@ export function generateFinancialExcel(data: ReceivablePayableData): Buffer {
     const template = TEMPLATES.receivable_details;
     const worksheet = ExportUtils.createWorksheet(
       data.receivable_details,
-      template,
+      template
     );
     XLSX.utils.book_append_sheet(workbook, worksheet, template.sheetName);
   }
@@ -26,7 +26,7 @@ export function generateFinancialExcel(data: ReceivablePayableData): Buffer {
     const template = TEMPLATES.receivable_payments;
     const worksheet = ExportUtils.createWorksheet(
       data.receivable_payments,
-      template,
+      template
     );
     XLSX.utils.book_append_sheet(workbook, worksheet, template.sheetName);
   }
@@ -34,7 +34,7 @@ export function generateFinancialExcel(data: ReceivablePayableData): Buffer {
     const template = TEMPLATES.payable_summary;
     const worksheet = ExportUtils.createWorksheet(
       data.payable_summary,
-      template,
+      template
     );
     XLSX.utils.book_append_sheet(workbook, worksheet, template.sheetName);
   }
@@ -42,7 +42,7 @@ export function generateFinancialExcel(data: ReceivablePayableData): Buffer {
     const template = TEMPLATES.payable_details;
     const worksheet = ExportUtils.createWorksheet(
       data.payable_details,
-      template,
+      template
     );
     XLSX.utils.book_append_sheet(workbook, worksheet, template.sheetName);
   }
@@ -50,12 +50,12 @@ export function generateFinancialExcel(data: ReceivablePayableData): Buffer {
     const template = TEMPLATES.payable_payments;
     const worksheet = ExportUtils.createWorksheet(
       data.payable_payments,
-      template,
+      template
     );
     XLSX.utils.book_append_sheet(workbook, worksheet, template.sheetName);
   }
   return XLSX.write(workbook, {
     type: 'buffer',
-    bookType: 'xlsx',
+    bookType: 'xlsx'
   }) as unknown as Buffer;
 }

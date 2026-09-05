@@ -27,7 +27,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     limit = 10,
     customer_short_name,
     sort_field = 'balance',
-    sort_order = 'desc',
+    sort_order = 'desc'
   } = req.query;
 
   let whereClause = 'WHERE p.type = 1';
@@ -44,7 +44,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     'total_receivable',
     'total_paid',
     'balance',
-    'last_payment_date',
+    'last_payment_date'
   ];
   let orderBy = 'balance DESC';
   if (sort_field && allowedSortFields.includes(sort_field as string)) {
@@ -102,7 +102,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       total_receivable: totalReceivable,
       total_paid: totalPaid,
       balance: balance,
-      payment_count: paymentCount,
+      payment_count: paymentCount
     };
   });
 
@@ -117,7 +117,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     data: processedRows,
     total: total,
     page: Number(page),
-    limit: Number(limit),
+    limit: Number(limit)
   });
 });
 
@@ -137,18 +137,18 @@ router.get(
         where: { customer_code },
         orderBy: [{ pay_date: 'desc' }, { id: 'desc' }],
         skip,
-        take: Number(limit),
+        take: Number(limit)
       }),
-      prisma.receivablePayment.count({ where: { customer_code } }),
+      prisma.receivablePayment.count({ where: { customer_code } })
     ]);
 
     res.json({
       data: rows,
       total,
       page: Number(page),
-      limit: Number(limit),
+      limit: Number(limit)
     });
-  },
+  }
 );
 
 /**
@@ -159,8 +159,7 @@ router.post('/payments', async (req: Request, res: Response): Promise<void> => {
 
   if (!customer_code || amount === undefined || !pay_date) {
     res.status(400).json({
-      error:
-        'Customer ID, payment amount, and payment date are required fields',
+      error: 'Customer ID, payment amount, and payment date are required fields'
     });
     return;
   }
@@ -171,8 +170,8 @@ router.post('/payments', async (req: Request, res: Response): Promise<void> => {
       amount,
       pay_date,
       pay_method: pay_method || '',
-      remark: remark || '',
-    },
+      remark: remark || ''
+    }
   });
   res.json({ id: result.id, message: 'Payment record created!' });
 });
@@ -189,7 +188,7 @@ router.put(
     if (!customer_code || amount === undefined || !pay_date) {
       res.status(400).json({
         error:
-          'Customer ID, payment amount, and payment date are required fields',
+          'Customer ID, payment amount, and payment date are required fields'
       });
       return;
     }
@@ -201,11 +200,11 @@ router.put(
         amount,
         pay_date,
         pay_method: pay_method || '',
-        remark: remark || '',
-      },
+        remark: remark || ''
+      }
     });
     res.json({ message: 'Payment record updated!' });
-  },
+  }
 );
 
 /**
@@ -217,7 +216,7 @@ router.delete(
     const id = Number(req.params['id']);
     await prisma.receivablePayment.delete({ where: { id } });
     res.json({ message: 'Payment record deleted!' });
-  },
+  }
 );
 
 /**
@@ -231,11 +230,11 @@ router.get(
       outbound_page = 1,
       outbound_limit = 10,
       payment_page = 1,
-      payment_limit = 10,
+      payment_limit = 10
     } = req.query;
 
     const customer = await prisma.partner.findFirst({
-      where: { code: customer_code, type: 1 },
+      where: { code: customer_code, type: 1 }
     });
 
     if (!customer) {
@@ -253,39 +252,39 @@ router.get(
       paymentRecords,
       paymentCount,
       outboundAgg,
-      paymentAgg,
+      paymentAgg
     ] = await Promise.all([
       prisma.outboundRecord.findMany({
         where: { customer_code },
         orderBy: { outbound_date: 'desc' },
         skip: outboundSkip,
-        take: Number(outbound_limit),
+        take: Number(outbound_limit)
       }),
       prisma.outboundRecord.count({ where: { customer_code } }),
       prisma.receivablePayment.findMany({
         where: { customer_code },
         orderBy: [{ pay_date: 'desc' }, { id: 'desc' }],
         skip: paymentSkip,
-        take: Number(payment_limit),
+        take: Number(payment_limit)
       }),
       prisma.receivablePayment.count({ where: { customer_code } }),
       prisma.outboundRecord.aggregate({
         where: { customer_code },
-        _sum: { total_price: true },
+        _sum: { total_price: true }
       }),
       prisma.receivablePayment.aggregate({
         where: { customer_code },
-        _sum: { amount: true },
-      }),
+        _sum: { amount: true }
+      })
     ]);
 
     const totalReceivable = decimalCalc.fromSqlResult(
       outboundAgg._sum?.total_price || 0,
-      0,
+      0
     );
     const totalPaid = decimalCalc.fromSqlResult(
       paymentAgg._sum?.amount || 0,
-      0,
+      0
     );
     const balance = decimalCalc.calculateBalance(totalReceivable, totalPaid);
 
@@ -294,22 +293,22 @@ router.get(
       summary: {
         total_receivable: totalReceivable,
         total_paid: totalPaid,
-        balance: balance,
+        balance: balance
       },
       outbound_records: {
         data: outboundRecords,
         total: outboundCount,
         page: Number(outbound_page),
-        limit: Number(outbound_limit),
+        limit: Number(outbound_limit)
       },
       payment_records: {
         data: paymentRecords,
         total: paymentCount,
         page: Number(payment_page),
-        limit: Number(payment_limit),
-      },
+        limit: Number(payment_limit)
+      }
     });
-  },
+  }
 );
 
 /**
@@ -326,7 +325,7 @@ router.get(
 
     const where: Prisma.OutboundRecordWhereInput = {
       customer_code,
-      OR: [{ invoice_number: null }, { invoice_number: '' }],
+      OR: [{ invoice_number: null }, { invoice_number: '' }]
     };
 
     const [rows, total] = await prisma.$transaction([
@@ -334,18 +333,18 @@ router.get(
         where,
         orderBy: { outbound_date: 'desc' },
         skip,
-        take: Number(limit),
+        take: Number(limit)
       }),
-      prisma.outboundRecord.count({ where }),
+      prisma.outboundRecord.count({ where })
     ]);
 
     res.json({
       data: rows,
       total,
       page: Number(page),
-      limit: Number(limit),
+      limit: Number(limit)
     });
-  },
+  }
 );
 
 /**
@@ -362,7 +361,7 @@ router.get('/invoiced/:customer_code', (req: Request, res: Response): void => {
   if (!cachedRecords) {
     res.status(404).json({
       error: 'No cached data found. Please refresh the cache first.',
-      message: 'Cache not initialized',
+      message: 'Cache not initialized'
     });
     return;
   }
@@ -376,7 +375,7 @@ router.get('/invoiced/:customer_code', (req: Request, res: Response): void => {
     total: cachedRecords.length,
     page: Number(page),
     limit: Number(limit),
-    last_updated: lastUpdated,
+    last_updated: lastUpdated
   });
 });
 
@@ -395,9 +394,9 @@ router.post(
       message: 'Invoice cache refreshed successfully',
       total: invoicedRecords.length,
       last_updated: lastUpdated,
-      data: invoicedRecords,
+      data: invoicedRecords
     });
-  },
+  }
 );
 
 export default router;

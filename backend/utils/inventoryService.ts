@@ -9,7 +9,7 @@ export const inventoryService = {
    */
   async getAllInventory() {
     return await prisma.inventory.findMany({
-      orderBy: { product_model: 'asc' },
+      orderBy: { product_model: 'asc' }
     });
   },
 
@@ -27,11 +27,11 @@ export const inventoryService = {
         // 2. Fetch all records with product included
         const inbounds = await tx.inboundRecord.findMany({
           orderBy: { inbound_date: 'asc' },
-          include: { product: true },
+          include: { product: true }
         });
         const outbounds = await tx.outboundRecord.findMany({
           orderBy: { outbound_date: 'asc' },
-          include: { product: true },
+          include: { product: true }
         });
 
         // 3. Create events timeline
@@ -50,7 +50,7 @@ export const inventoryService = {
             type: 'INBOUND',
             qty: r.quantity,
             model: r.product.product_model,
-            refId: r.id,
+            refId: r.id
           });
         }
 
@@ -61,7 +61,7 @@ export const inventoryService = {
             type: 'OUTBOUND',
             qty: -r.quantity, // Negative for outbound
             model: r.product.product_model,
-            refId: r.id,
+            refId: r.id
           });
         }
 
@@ -81,7 +81,7 @@ export const inventoryService = {
             change_qty: e.qty,
             change_type: e.type,
             reference_id: e.refId,
-            date: e.date,
+            date: e.date
           };
         });
 
@@ -95,7 +95,7 @@ export const inventoryService = {
         // 5. Update inventory table
         const invData = Object.entries(totals).map(([model, qty]) => ({
           product_model: model,
-          quantity: qty,
+          quantity: qty
         }));
 
         if (invData.length > 0) {
@@ -104,12 +104,12 @@ export const inventoryService = {
 
         return {
           processed_events: ledgerData.length,
-          products_count: invData.length,
+          products_count: invData.length
         };
       },
       {
-        timeout: 20000, // Increase timeout for full recalc
-      },
+        timeout: 20000 // Increase timeout for full recalc
+      }
     );
   },
 
@@ -117,7 +117,7 @@ export const inventoryService = {
    * Handle Inbound Create
    */
   async onInboundCreate(
-    record: Prisma.InboundRecordGetPayload<{ include: { product: true } }>,
+    record: Prisma.InboundRecordGetPayload<{ include: { product: true } }>
   ) {
     const product_model = record.product?.product_model;
     if (!product_model || !record.quantity) return;
@@ -128,13 +128,13 @@ export const inventoryService = {
           change_qty: record.quantity!,
           change_type: 'INBOUND',
           reference_id: record.id,
-          date: record.inbound_date || new Date().toISOString(),
-        },
+          date: record.inbound_date || new Date().toISOString()
+        }
       });
       await tx.inventory.upsert({
         where: { product_model: product_model },
         update: { quantity: { increment: record.quantity! } },
-        create: { product_model: product_model, quantity: record.quantity! },
+        create: { product_model: product_model, quantity: record.quantity! }
       });
     });
   },
@@ -143,7 +143,7 @@ export const inventoryService = {
    * Handle Outbound Create
    */
   async onOutboundCreate(
-    record: Prisma.OutboundRecordGetPayload<{ include: { product: true } }>,
+    record: Prisma.OutboundRecordGetPayload<{ include: { product: true } }>
   ) {
     const product_model = record.product?.product_model;
     if (!product_model || !record.quantity) return;
@@ -159,13 +159,13 @@ export const inventoryService = {
           change_qty: changeQty,
           change_type: 'OUTBOUND',
           reference_id: record.id,
-          date: record.outbound_date || new Date().toISOString(),
-        },
+          date: record.outbound_date || new Date().toISOString()
+        }
       });
       await tx.inventory.upsert({
         where: { product_model: product_model },
         update: { quantity: { increment: changeQty } },
-        create: { product_model: product_model, quantity: changeQty },
+        create: { product_model: product_model, quantity: changeQty }
       });
     });
   },
@@ -177,7 +177,7 @@ export const inventoryService = {
     // Ideally pass the record if available to avoid refetch, but we need to match Ledger anyway
     await prisma.$transaction(async (tx) => {
       const entries = await tx.inventoryLedger.findMany({
-        where: { reference_id: id, change_type: 'INBOUND' },
+        where: { reference_id: id, change_type: 'INBOUND' }
       });
 
       for (const entry of entries) {
@@ -187,12 +187,12 @@ export const inventoryService = {
           update: { quantity: { decrement: entry.change_qty } },
           create: {
             product_model: entry.product_model,
-            quantity: -entry.change_qty,
-          },
+            quantity: -entry.change_qty
+          }
         });
       }
       await tx.inventoryLedger.deleteMany({
-        where: { reference_id: id, change_type: 'INBOUND' },
+        where: { reference_id: id, change_type: 'INBOUND' }
       });
     });
   },
@@ -203,7 +203,7 @@ export const inventoryService = {
   async onOutboundDelete(id: number) {
     await prisma.$transaction(async (tx) => {
       const entries = await tx.inventoryLedger.findMany({
-        where: { reference_id: id, change_type: 'OUTBOUND' },
+        where: { reference_id: id, change_type: 'OUTBOUND' }
       });
 
       for (const entry of entries) {
@@ -213,12 +213,12 @@ export const inventoryService = {
           update: { quantity: { decrement: entry.change_qty } }, // change_qty is negative, so decrementing negative adds it back
           create: {
             product_model: entry.product_model,
-            quantity: -entry.change_qty,
-          },
+            quantity: -entry.change_qty
+          }
         });
       }
       await tx.inventoryLedger.deleteMany({
-        where: { reference_id: id, change_type: 'OUTBOUND' },
+        where: { reference_id: id, change_type: 'OUTBOUND' }
       });
     });
   },
@@ -228,7 +228,7 @@ export const inventoryService = {
    */
   async onInboundUpdate(
     oldRecord: Prisma.InboundRecordGetPayload<{ include: { product: true } }>,
-    newRecord: Prisma.InboundRecordGetPayload<{ include: { product: true } }>,
+    newRecord: Prisma.InboundRecordGetPayload<{ include: { product: true } }>
   ) {
     // Revert Old, Apply New
     await this.onInboundDelete(oldRecord.id);
@@ -240,10 +240,10 @@ export const inventoryService = {
    */
   async onOutboundUpdate(
     oldRecord: Prisma.OutboundRecordGetPayload<{ include: { product: true } }>,
-    newRecord: Prisma.OutboundRecordGetPayload<{ include: { product: true } }>,
+    newRecord: Prisma.OutboundRecordGetPayload<{ include: { product: true } }>
   ) {
     // Revert Old, Apply New
     await this.onOutboundDelete(oldRecord.id);
     await this.onOutboundCreate(newRecord);
-  },
+  }
 };

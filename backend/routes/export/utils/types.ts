@@ -5,7 +5,7 @@ import {
   PayablePayment,
   Product,
   ProductPrice,
-  ReceivablePayment,
+  ReceivablePayment
 } from '@/prisma/client';
 
 export interface BasicDataFilters {

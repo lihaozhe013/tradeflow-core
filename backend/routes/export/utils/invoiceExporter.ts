@@ -10,12 +10,12 @@ export function generateInvoiceExcel(data: InvoiceItemDto[]): Buffer {
   XLSX.utils.book_append_sheet(workbook, worksheet, template.sheetName);
   return XLSX.write(workbook, {
     type: 'buffer',
-    bookType: 'xlsx',
+    bookType: 'xlsx'
   }) as unknown as Buffer;
 }
 
 export function generateMultiInvoiceExcel(
-  dataMap: Record<string, InvoiceItemDto[]>,
+  dataMap: Record<string, InvoiceItemDto[]>
 ): Buffer {
   const template = TEMPLATES.invoice;
   const workbook = XLSX.utils.book_new();
@@ -48,6 +48,6 @@ export function generateMultiInvoiceExcel(
 
   return XLSX.write(workbook, {
     type: 'buffer',
-    bookType: 'xlsx',
+    bookType: 'xlsx'
   }) as unknown as Buffer;
 }

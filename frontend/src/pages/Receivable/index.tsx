@@ -8,7 +8,7 @@ import {
   Typography,
   Row,
   Col,
-  Divider,
+  Divider
 } from 'antd';
 import type { TableProps } from 'antd/es/table';
 import type { SorterResult } from 'antd/es/table/interface';
@@ -30,7 +30,7 @@ import type {
   ReceivablePaymentRecord,
   ReceivableRecord,
   ReceivableSorterState,
-  TableSortOrder,
+  TableSortOrder
 } from './types';
 
 const { Title } = Typography;
@@ -38,7 +38,7 @@ const { Title } = Typography;
 const DEFAULT_PAGINATION: PaginationState = {
   current: 1,
   pageSize: 10,
-  total: 0,
+  total: 0
 };
 
 const toApiSortOrder = (order?: TableSortOrder): 'asc' | 'desc' => {
@@ -66,14 +66,14 @@ const Receivable: FC = () => {
   const [filters, setFilters] = useState<ReceivableFilters>({});
   const [sorter, setSorter] = useState<ReceivableSorterState>({
     field: 'balance',
-    order: 'descend',
+    order: 'descend'
   });
 
   const apiInstance = useSimpleApi();
   const { data: customersResponse } = useSimpleApiData<
     ApiListResponse<Customer>
   >('/partners?type=1', {
-    data: [],
+    data: []
   });
 
   const customers = useMemo<Customer[]>(() => {
@@ -97,18 +97,18 @@ const Receivable: FC = () => {
           limit: String(limit),
           customer_short_name: customerName ?? '',
           sort_field: field ?? 'balance',
-          sort_order: order,
+          sort_order: order
         });
 
         const result = await apiInstance.get<ReceivableListResponse>(
-          `/receivable?${query.toString()}`,
+          `/receivable?${query.toString()}`
         );
 
         setReceivableRecords(Array.isArray(result?.data) ? result.data : []);
         setPagination((prev) => ({
           ...prev,
           current: result?.page ?? page,
-          total: result?.total ?? prev.total,
+          total: result?.total ?? prev.total
         }));
       } catch (error) {
         console.error('获取应收账款数据失败:', error);
@@ -118,7 +118,7 @@ const Receivable: FC = () => {
         setLoading(false);
       }
     },
-    [apiInstance, t, pagination, filters, sorter],
+    [apiInstance, t, pagination, filters, sorter]
   );
 
   useEffect(() => {
@@ -129,7 +129,7 @@ const Receivable: FC = () => {
     pagination.pageSize,
     filters.customer_short_name,
     sorter.field,
-    sorter.order,
+    sorter.order
   ]);
 
   const handleFilter = (filterValues: ReceivableFilters): void => {
@@ -140,12 +140,12 @@ const Receivable: FC = () => {
   const handleTableChange: TableProps<ReceivableRecord>['onChange'] = (
     paginationConfig,
     _filtersConfig,
-    sorterConfig,
+    sorterConfig
   ) => {
     setPagination((prev) => ({
       ...prev,
       current: paginationConfig.current ?? prev.current,
-      pageSize: DEFAULT_PAGINATION.pageSize,
+      pageSize: DEFAULT_PAGINATION.pageSize
     }));
 
     const sorterResult = Array.isArray(sorterConfig)
@@ -169,13 +169,13 @@ const Receivable: FC = () => {
       pay_date: null,
       amount: undefined,
       pay_method: undefined,
-      remark: undefined,
+      remark: undefined
     });
   };
 
   const handleEditPayment = (
     paymentRecord: ReceivablePaymentRecord,
-    customerRecord: ReceivableRecord,
+    customerRecord: ReceivableRecord
   ): void => {
     if (!canWrite) return;
     setSelectedCustomer(customerRecord);
@@ -186,24 +186,24 @@ const Receivable: FC = () => {
       amount: paymentRecord.amount,
       pay_method: paymentRecord.pay_method ?? undefined,
       remark: paymentRecord.remark ?? undefined,
-      pay_date: paymentRecord.pay_date ? dayjs(paymentRecord.pay_date) : null,
+      pay_date: paymentRecord.pay_date ? dayjs(paymentRecord.pay_date) : null
     });
   };
 
   const handleSavePayment = async (
-    values: ReceivablePaymentFormValues,
+    values: ReceivablePaymentFormValues
   ): Promise<void> => {
     if (!canWrite) return;
     try {
       const payload = {
         ...values,
-        pay_date: values.pay_date ? values.pay_date.format('YYYY-MM-DD') : null,
+        pay_date: values.pay_date ? values.pay_date.format('YYYY-MM-DD') : null
       };
 
       if (editingPayment) {
         await apiInstance.put(
           `/receivable/payments/${editingPayment.id}`,
-          payload,
+          payload
         );
       } else {
         await apiInstance.post('/receivable/payments', payload);
@@ -211,8 +211,8 @@ const Receivable: FC = () => {
 
       message.success(
         t('receivable.saveSuccess', {
-          action: editingPayment ? t('common.edit') : t('common.add'),
-        }),
+          action: editingPayment ? t('common.edit') : t('common.add')
+        })
       );
       setModalVisible(false);
       fetchReceivableRecords();

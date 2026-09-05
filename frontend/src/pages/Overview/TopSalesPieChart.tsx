@@ -5,7 +5,7 @@ import {
   Cell,
   ResponsiveContainer,
   Legend,
-  Tooltip,
+  Tooltip
 } from 'recharts';
 import type { PieLabelRenderProps } from 'recharts';
 import { useTranslation } from 'react-i18next';
@@ -28,17 +28,17 @@ const TopSalesPieChart = () => {
     '#FF7C7C',
     '#8DD1E1',
     '#D084D0',
-    '#D9D9D9',
+    '#D9D9D9'
   ] as const;
 
   // 使用useSimpleApiData获取销售数据
   const {
     data: salesResponse,
     loading,
-    error,
+    error
   } = useSimpleApiData<TopSalesResponse>(
     '/overview/top-sales-products',
-    DEFAULT_TOP_SALES_RESPONSE,
+    DEFAULT_TOP_SALES_RESPONSE
   );
 
   const resolvedResponse = salesResponse ?? DEFAULT_TOP_SALES_RESPONSE;
@@ -47,7 +47,7 @@ const TopSalesPieChart = () => {
   const chartData = resolvedResponse.success
     ? resolvedResponse.data.map((item) => ({
         name: item.product_model,
-        value: item.total_sales,
+        value: item.total_sales
       }))
     : [];
 
@@ -60,7 +60,7 @@ const TopSalesPieChart = () => {
     midAngle = 0,
     innerRadius = 0,
     outerRadius = 0,
-    percent = 0,
+    percent = 0
   }: PieLabelRenderProps) => {
     const percentNumber =
       typeof percent === 'number'
@@ -102,7 +102,7 @@ const TopSalesPieChart = () => {
           minHeight: 280,
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'center',
+          justifyContent: 'center'
         }}
       >
         <Spin />
@@ -119,7 +119,7 @@ const TopSalesPieChart = () => {
       style={{
         borderRadius: '16px',
         boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
-        minHeight: 270,
+        minHeight: 270
       }}
       bodyStyle={{ padding: '8px' }}
     >
@@ -159,7 +159,7 @@ const TopSalesPieChart = () => {
                 | string
                 | Array<number | string>
                 | ReadonlyArray<number | string>
-                | undefined,
+                | undefined
             ) => [value, t('overview.salesAmount')]}
             labelFormatter={(label: any) =>
               `${t('overview.product')}: ${label}`

@@ -5,7 +5,7 @@ export { calculatePurchaseData } from '@/routes/analysis/utils/purchaseCalculato
 export { getFilterOptions } from '@/routes/analysis/utils/dataQueries';
 export {
   validateAnalysisParams,
-  validateBasicParams,
+  validateBasicParams
 } from '@/routes/analysis/utils/validator';
 export {
   generateCacheKey,
@@ -13,6 +13,6 @@ export {
   getCacheFilePath,
   cleanExpiredCache,
   readCache,
-  writeCache,
+  writeCache
 } from '@/routes/analysis/utils/cacheManager';
 export * from '@/routes/analysis/utils/types';

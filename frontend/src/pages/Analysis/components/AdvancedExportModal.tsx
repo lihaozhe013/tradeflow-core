@@ -17,7 +17,7 @@ const AdvancedExportModal: React.FC<AdvancedExportModalProps> = ({
   onCancel,
   onExport,
   exporting,
-  analysisType,
+  analysisType
 }) => {
   const { t } = useTranslation();
 

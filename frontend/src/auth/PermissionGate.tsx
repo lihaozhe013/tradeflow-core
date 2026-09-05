@@ -11,7 +11,7 @@ interface PermissionGateProps {
 const PermissionGate = ({
   capability,
   children,
-  fallback = null,
+  fallback = null
 }: PermissionGateProps): ReactNode => {
   const { hasCapability } = usePermissions();
 

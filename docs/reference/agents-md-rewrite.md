@@ -2,11 +2,11 @@
 
 ## Objective
 
-Rewrite the repository-level `AGENTS.md` so it describes the current
-TradeFlow Core repository accurately, keeps the project overview concise,
-removes references to project-maintained API and data-flow documents, and
-incorporates the requested language, dependency, TypeScript, logging, code
-organization, safety, and validation constraints.
+Rewrite the repository-level `AGENTS.md` so it describes the current TradeFlow
+Core repository accurately, keeps the project overview concise, removes
+references to project-maintained API and data-flow documents, and incorporates
+the requested language, dependency, TypeScript, logging, code organization,
+safety, and validation constraints.
 
 ## Scope
 

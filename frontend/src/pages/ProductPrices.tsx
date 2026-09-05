@@ -22,7 +22,7 @@ import {
   Row,
   Col,
   Divider,
-  AutoComplete,
+  AutoComplete
 } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
@@ -88,13 +88,13 @@ type ProductPriceFilters = {
 const DEFAULT_PAGINATION: PaginationInfo = {
   current: 1,
   pageSize: 10,
-  total: 0,
+  total: 0
 };
 
 const ProductPrices: FC = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [editingPrice, setEditingPrice] = useState<ProductPriceItem | null>(
-    null,
+    null
   );
   const [form] = Form.useForm<ProductPriceFormValues>();
   const [filterForm] = Form.useForm<ProductPriceFilters>();
@@ -110,7 +110,7 @@ const ProductPrices: FC = () => {
 
   const buildProductPricesUrl = useCallback(() => {
     const params = new URLSearchParams({
-      page: current.toString(),
+      page: current.toString()
     });
 
     Object.entries(filters).forEach(([key, value]) => {
@@ -125,25 +125,25 @@ const ProductPrices: FC = () => {
   const {
     data: productPricesResponse,
     loading,
-    refetch: refreshProductPrices,
+    refetch: refreshProductPrices
   } = useSimpleApiData<ApiListResponse<ProductPriceItem>>(
     buildProductPricesUrl(),
     {
       data: [],
-      pagination: DEFAULT_PAGINATION,
-    },
+      pagination: DEFAULT_PAGINATION
+    }
   );
 
   const { data: partnersResponse } = useSimpleApiData<
     ApiListResponse<PartnerItem>
   >('/partners', {
-    data: [],
+    data: []
   });
 
   const { data: productsResponse } = useSimpleApiData<
     ApiListResponse<ProductItem>
   >('/products', {
-    data: [],
+    data: []
   });
 
   const productPrices = productPricesResponse?.data ?? [];
@@ -169,7 +169,7 @@ const ProductPrices: FC = () => {
     setEditingPrice(null);
     form.resetFields();
     form.setFieldsValue({
-      effective_date: dayjs(),
+      effective_date: dayjs()
     });
     setModalVisible(true);
   };
@@ -181,7 +181,7 @@ const ProductPrices: FC = () => {
       ...record,
       effective_date: record.effective_date
         ? dayjs(record.effective_date)
-        : null,
+        : null
     });
     setModalVisible(true);
   };
@@ -202,7 +202,7 @@ const ProductPrices: FC = () => {
     try {
       if (!values.partner_short_name || !values.product_model) {
         message.error(
-          t('common.validationError', { defaultValue: 'Validation error' }),
+          t('common.validationError', { defaultValue: 'Validation error' })
         );
         return;
       }
@@ -211,7 +211,7 @@ const ProductPrices: FC = () => {
         ...values,
         effective_date: values.effective_date
           ? values.effective_date.format('YYYY-MM-DD')
-          : null,
+          : null
       };
 
       if (editingPrice) {
@@ -233,33 +233,33 @@ const ProductPrices: FC = () => {
       title: 'ID',
       dataIndex: 'id',
       key: 'id',
-      width: 80,
+      width: 80
     },
     {
       title: t('productPrices.partnerShortName'),
       dataIndex: 'partner_short_name',
       key: 'partner_short_name',
-      width: 120,
+      width: 120
     },
     {
       title: t('productPrices.productModel'),
       dataIndex: 'product_model',
       key: 'product_model',
-      width: 150,
+      width: 150
     },
     {
       title: t('productPrices.unitPrice'),
       dataIndex: 'unit_price',
       key: 'unit_price',
       width: 120,
-      render: (price) => `${currency_unit_symbol}${price}`,
+      render: (price) => `${currency_unit_symbol}${price}`
     },
     {
       title: t('productPrices.effectiveDate'),
       dataIndex: 'effective_date',
       key: 'effective_date',
-      width: 120,
-    },
+      width: 120
+    }
   ];
 
   if (canWrite) {
@@ -288,36 +288,36 @@ const ProductPrices: FC = () => {
             </Button>
           </Popconfirm>
         </Space>
-      ),
+      )
     });
   }
 
   const partnerCodeOptions: AutoCompleteProps['options'] = partners.map(
     (partner) => ({
       value: partner.code,
-      label: `${partner.code} - ${partner.short_name}`,
-    }),
+      label: `${partner.code} - ${partner.short_name}`
+    })
   );
 
   const partnerShortNameOptions: SelectProps['options'] = partners.map(
     (partner) => ({
       value: partner.short_name,
-      label: `${partner.short_name} - ${partner.full_name}`,
-    }),
+      label: `${partner.short_name} - ${partner.full_name}`
+    })
   );
 
   const productCodeOptions: AutoCompleteProps['options'] = products.map(
     (product) => ({
       value: product.code,
-      label: `${product.code} - ${product.product_model}`,
-    }),
+      label: `${product.code} - ${product.product_model}`
+    })
   );
 
   const productModelOptions: SelectProps['options'] = products.map(
     (product) => ({
       value: product.product_model,
-      label: `${product.product_model} - ${product.category ?? ''}`,
-    }),
+      label: `${product.product_model} - ${product.category ?? ''}`
+    })
   );
 
   const handlePartnerCodeChange = (code: string): void => {
@@ -325,7 +325,7 @@ const ProductPrices: FC = () => {
     if (partner) {
       form.setFieldsValue({
         partner_code: partner.code,
-        partner_short_name: partner.short_name,
+        partner_short_name: partner.short_name
       });
     } else {
       form.setFieldsValue({ partner_short_name: undefined });
@@ -337,7 +337,7 @@ const ProductPrices: FC = () => {
     if (partner) {
       form.setFieldsValue({
         partner_code: partner.code,
-        partner_short_name: partner.short_name,
+        partner_short_name: partner.short_name
       });
     } else {
       form.setFieldsValue({ partner_code: undefined });
@@ -349,7 +349,7 @@ const ProductPrices: FC = () => {
     if (product) {
       form.setFieldsValue({
         product_code: product.code,
-        product_model: product.product_model,
+        product_model: product.product_model
       });
     } else {
       form.setFieldsValue({ product_model: undefined });
@@ -361,7 +361,7 @@ const ProductPrices: FC = () => {
     if (product) {
       form.setFieldsValue({
         product_code: product.code,
-        product_model: product.product_model,
+        product_model: product.product_model
       });
     } else {
       form.setFieldsValue({ product_code: undefined });
@@ -375,17 +375,17 @@ const ProductPrices: FC = () => {
       product_model: values.product_model,
       effective_date: values.effective_date
         ? values.effective_date.format('YYYY-MM-DD')
-        : undefined,
+        : undefined
     });
     setPagination((prev) => ({ ...prev, current: 1 }));
   };
 
   const handleTableChange: TableProps<ProductPriceItem>['onChange'] = (
-    paginationConfig,
+    paginationConfig
   ) => {
     setPagination((prev) => ({
       ...prev,
-      current: paginationConfig.current ?? prev.current,
+      current: paginationConfig.current ?? prev.current
     }));
   };
 
@@ -498,8 +498,8 @@ const ProductPrices: FC = () => {
                 t('productPrices.paginationTotal', {
                   start: range[0],
                   end: range[1],
-                  total,
-                }),
+                  total
+                })
             }}
             scroll={{ x: 800 }}
           />
@@ -554,8 +554,8 @@ const ProductPrices: FC = () => {
                   rules={[
                     {
                       required: true,
-                      message: t('productPrices.selectPartner'),
-                    },
+                      message: t('productPrices.selectPartner')
+                    }
                   ]}
                 >
                   <Select
@@ -602,8 +602,8 @@ const ProductPrices: FC = () => {
                   rules={[
                     {
                       required: true,
-                      message: t('productPrices.selectProductModel'),
-                    },
+                      message: t('productPrices.selectProductModel')
+                    }
                   ]}
                 >
                   <Select
@@ -629,8 +629,8 @@ const ProductPrices: FC = () => {
                 {
                   type: 'number',
                   min: 0,
-                  message: t('productPrices.unitPriceMin'),
-                },
+                  message: t('productPrices.unitPriceMin')
+                }
               ]}
             >
               <InputNumber
@@ -648,8 +648,8 @@ const ProductPrices: FC = () => {
               rules={[
                 {
                   required: true,
-                  message: t('productPrices.selectEffectiveDate'),
-                },
+                  message: t('productPrices.selectEffectiveDate')
+                }
               ]}
             >
               <DatePicker

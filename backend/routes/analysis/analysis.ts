@@ -2,7 +2,7 @@ import {
   Router,
   Request,
   Response,
-  type Router as ExpressRouter,
+  type Router as ExpressRouter
 } from 'express';
 import decimalCalc from '@/utils/decimalCalculator';
 import {
@@ -16,7 +16,7 @@ import {
   generateCacheKey,
   generateDetailCacheKey,
   readCache,
-  writeCache,
+  writeCache
 } from '@/routes/analysis/utils';
 import type { DetailItem, AnalysisType } from '@/routes/analysis/utils/types';
 
@@ -30,7 +30,7 @@ router.get('/data', (req: Request, res: Response) => {
     customer_code,
     supplier_code,
     product_model,
-    type,
+    type
   } = req.query as Record<string, string | undefined>;
 
   const analysisType = (type as AnalysisType) || 'outbound';
@@ -41,7 +41,7 @@ router.get('/data', (req: Request, res: Response) => {
   if (!validation.isValid) {
     res.status(400).json({
       success: false,
-      message: validation.error,
+      message: validation.error
     });
     return;
   }
@@ -51,14 +51,14 @@ router.get('/data', (req: Request, res: Response) => {
     end_date!,
     partnerCode,
     product_model,
-    analysisType,
+    analysisType
   );
   const cache = readCache();
 
   if (cache[cacheKey]) {
     res.json({
       success: true,
-      data: cache[cacheKey],
+      data: cache[cacheKey]
     });
     return;
   }
@@ -66,7 +66,7 @@ router.get('/data', (req: Request, res: Response) => {
   res.status(503).json({
     success: false,
     error:
-      'Analysis data has not been generated. Please click the refresh button to calculate the data.',
+      'Analysis data has not been generated. Please click the refresh button to calculate the data.'
   });
   return;
 });
@@ -79,7 +79,7 @@ router.get('/detail', (req: Request, res: Response) => {
     customer_code,
     supplier_code,
     product_model,
-    type,
+    type
   } = req.query as Record<string, string | undefined>;
 
   const analysisType = (type as AnalysisType) || 'outbound';
@@ -90,7 +90,7 @@ router.get('/detail', (req: Request, res: Response) => {
   if (!validation.isValid) {
     res.status(400).json({
       success: false,
-      message: validation.error,
+      message: validation.error
     });
     return;
   }
@@ -100,21 +100,21 @@ router.get('/detail', (req: Request, res: Response) => {
     end_date!,
     partnerCode,
     product_model,
-    analysisType,
+    analysisType
   );
   const cache = readCache();
 
   if (cache[detailCacheKey]) {
     res.json({
       success: true,
-      data: cache[detailCacheKey],
+      data: cache[detailCacheKey]
     });
     return;
   }
 
   res.json({
     success: true,
-    data: [],
+    data: []
   });
   return;
 });
@@ -127,7 +127,7 @@ router.post('/refresh', async (req: Request, res: Response) => {
     customer_code,
     supplier_code,
     product_model,
-    type,
+    type
   } = req.body as Record<string, string | undefined>;
 
   const analysisType = (type as AnalysisType) || 'outbound';
@@ -138,13 +138,13 @@ router.post('/refresh', async (req: Request, res: Response) => {
     start_date,
     end_date,
     customer_code: partnerCode, // validating generic partner code
-    product_model,
+    product_model
   });
 
   if (!validation.isValid) {
     res.status(400).json({
       success: false,
-      message: validation.error,
+      message: validation.error
     });
     return;
   }
@@ -152,39 +152,39 @@ router.post('/refresh', async (req: Request, res: Response) => {
   // Helper to save result and respond
   const saveAndRespond = (
     data: Record<string, unknown>,
-    detailData: DetailItem[],
+    detailData: DetailItem[]
   ) => {
     const cacheKey = generateCacheKey(
       start_date!,
       end_date!,
       partnerCode,
       product_model,
-      analysisType,
+      analysisType
     );
     const detailCacheKey = generateDetailCacheKey(
       start_date!,
       end_date!,
       partnerCode,
       product_model,
-      analysisType,
+      analysisType
     );
     const cache = readCache();
 
     cache[cacheKey] = data as unknown as Record<string, unknown>;
     cache[detailCacheKey] = {
       detail_data: detailData,
-      last_updated: new Date().toISOString(),
+      last_updated: new Date().toISOString()
     } as unknown as Record<string, unknown>;
 
     if (writeCache(cache)) {
       res.json({
         success: true,
-        data: data,
+        data: data
       });
     } else {
       res.status(500).json({
         success: false,
-        message: 'Cache save failed',
+        message: 'Cache save failed'
       });
     }
   };
@@ -194,7 +194,7 @@ router.post('/refresh', async (req: Request, res: Response) => {
       start_date!,
       end_date!,
       partnerCode,
-      product_model,
+      product_model
     );
 
     const resultData = {
@@ -204,9 +204,9 @@ router.post('/refresh', async (req: Request, res: Response) => {
         end_date,
         supplier_code: partnerCode || 'All',
         product_model: product_model || 'All',
-        type: 'inbound',
+        type: 'inbound'
       },
-      last_updated: new Date().toISOString(),
+      last_updated: new Date().toISOString()
     };
 
     const detailData = await calculateDetailAnalysis(
@@ -214,7 +214,7 @@ router.post('/refresh', async (req: Request, res: Response) => {
       end_date!,
       partnerCode,
       product_model,
-      'inbound',
+      'inbound'
     );
 
     saveAndRespond(resultData, detailData || []);
@@ -226,28 +226,28 @@ router.post('/refresh', async (req: Request, res: Response) => {
     start_date!,
     end_date!,
     customer_code,
-    product_model,
+    product_model
   );
 
   const costAmount = await calculateFilteredSoldGoodsCost(
     start_date!,
     end_date!,
     customer_code,
-    product_model,
+    product_model
   );
 
   const salesAmount = salesData.sales_amount;
   const cost = decimalCalc.toDbNumber(costAmount ?? 0, 2);
   const profit = decimalCalc.toDbNumber(
     decimalCalc.subtract(salesAmount, cost),
-    2,
+    2
   );
 
   let profitRate = 0;
   if (salesAmount > 0) {
     const rate = decimalCalc.multiply(
       decimalCalc.divide(profit, salesAmount),
-      100,
+      100
     );
     profitRate = decimalCalc.toDbNumber(rate, 2);
   }
@@ -261,9 +261,9 @@ router.post('/refresh', async (req: Request, res: Response) => {
       start_date,
       end_date,
       customer_code: customer_code || 'All',
-      product_model: product_model || 'All',
+      product_model: product_model || 'All'
     },
-    last_updated: new Date().toISOString(),
+    last_updated: new Date().toISOString()
   };
 
   const detailData = await calculateDetailAnalysis(
@@ -271,7 +271,7 @@ router.post('/refresh', async (req: Request, res: Response) => {
     end_date!,
     customer_code,
     product_model,
-    'outbound',
+    'outbound'
   );
 
   saveAndRespond(resultData, detailData || []);
@@ -282,7 +282,7 @@ router.get('/filter-options', async (_req: Request, res: Response) => {
   const options = await getFilterOptions();
   res.json({
     success: true,
-    ...options,
+    ...options
   });
 });
 
@@ -300,12 +300,12 @@ router.post('/clean-cache', (_req: Request, res: Response) => {
       success: true,
       message: `Cleaning completed. ${cleanedCount} expired cache entries deleted.`,
       original_size: originalSize,
-      new_size: newSize,
+      new_size: newSize
     });
   } else {
     res.status(500).json({
       success: false,
-      message: 'Cache clearing failed',
+      message: 'Cache clearing failed'
     });
   }
 });

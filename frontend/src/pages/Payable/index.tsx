@@ -7,7 +7,7 @@ import {
   Typography,
   Row,
   Col,
-  Divider,
+  Divider
 } from 'antd';
 import type { TableProps } from 'antd/es/table';
 import type { SorterResult } from 'antd/es/table/interface';
@@ -30,7 +30,7 @@ import type {
   PayableRecord,
   PayableSorterState,
   Supplier,
-  TableSortOrder,
+  TableSortOrder
 } from './types';
 
 const { Title } = Typography;
@@ -38,7 +38,7 @@ const { Title } = Typography;
 const DEFAULT_PAGINATION: PaginationState = {
   current: 1,
   pageSize: 10,
-  total: 0,
+  total: 0
 };
 
 const toApiSortOrder = (order?: TableSortOrder): 'asc' | 'desc' => {
@@ -64,14 +64,14 @@ const Payable: FC = () => {
   const [filters, setFilters] = useState<PayableFilters>({});
   const [sorter, setSorter] = useState<PayableSorterState>({
     field: 'balance',
-    order: 'descend',
+    order: 'descend'
   });
 
   const apiInstance = useSimpleApi();
   const { data: suppliersResponse } = useSimpleApiData<
     ApiListResponse<Supplier>
   >('/partners?type=0', {
-    data: [],
+    data: []
   });
 
   const suppliers = useMemo<Supplier[]>(() => {
@@ -95,18 +95,18 @@ const Payable: FC = () => {
           limit: String(limit),
           supplier_short_name: supplierName ?? '',
           sort_field: field ?? 'balance',
-          sort_order: order,
+          sort_order: order
         });
 
         const result = await apiInstance.get<PayableListResponse>(
-          `/payable?${query.toString()}`,
+          `/payable?${query.toString()}`
         );
 
         setPayableRecords(Array.isArray(result?.data) ? result.data : []);
         setPagination((prev) => ({
           ...prev,
           current: result?.page ?? page,
-          total: result?.total ?? prev.total,
+          total: result?.total ?? prev.total
         }));
       } catch (error) {
         console.error('获取应付账款数据失败:', error);
@@ -116,7 +116,7 @@ const Payable: FC = () => {
         setLoading(false);
       }
     },
-    [apiInstance, t, pagination, filters, sorter],
+    [apiInstance, t, pagination, filters, sorter]
   );
 
   useEffect(() => {
@@ -127,7 +127,7 @@ const Payable: FC = () => {
     pagination.pageSize,
     filters.supplier_short_name,
     sorter.field,
-    sorter.order,
+    sorter.order
   ]);
 
   const handleFilter = (filterValues: PayableFilters): void => {
@@ -138,12 +138,12 @@ const Payable: FC = () => {
   const handleTableChange: TableProps<PayableRecord>['onChange'] = (
     paginationConfig,
     _filtersConfig,
-    sorterConfig,
+    sorterConfig
   ) => {
     setPagination((prev) => ({
       ...prev,
       current: paginationConfig.current ?? prev.current,
-      pageSize: DEFAULT_PAGINATION.pageSize,
+      pageSize: DEFAULT_PAGINATION.pageSize
     }));
 
     const sorterResult = Array.isArray(sorterConfig)
@@ -167,13 +167,13 @@ const Payable: FC = () => {
       pay_date: null,
       amount: undefined,
       pay_method: undefined,
-      remark: undefined,
+      remark: undefined
     });
   };
 
   const handleEditPayment = (
     paymentRecord: PayablePaymentRecord,
-    supplierRecord: PayableRecord,
+    supplierRecord: PayableRecord
   ): void => {
     if (!canWrite) return;
     setSelectedSupplier(supplierRecord);
@@ -184,24 +184,24 @@ const Payable: FC = () => {
       amount: paymentRecord.amount,
       pay_method: paymentRecord.pay_method ?? undefined,
       remark: paymentRecord.remark ?? undefined,
-      pay_date: paymentRecord.pay_date ? dayjs(paymentRecord.pay_date) : null,
+      pay_date: paymentRecord.pay_date ? dayjs(paymentRecord.pay_date) : null
     });
   };
 
   const handleSavePayment = async (
-    values: PayablePaymentFormValues,
+    values: PayablePaymentFormValues
   ): Promise<void> => {
     if (!canWrite) return;
     try {
       const payload = {
         ...values,
-        pay_date: values.pay_date ? values.pay_date.format('YYYY-MM-DD') : null,
+        pay_date: values.pay_date ? values.pay_date.format('YYYY-MM-DD') : null
       };
 
       if (editingPayment) {
         await apiInstance.put(
           `/payable/payments/${editingPayment.id}`,
-          payload,
+          payload
         );
       } else {
         await apiInstance.post('/payable/payments', payload);
@@ -211,8 +211,8 @@ const Payable: FC = () => {
         t('payable.saveSuccess', {
           action: editingPayment
             ? t('payable.editPayment')
-            : t('payable.addPayment'),
-        }),
+            : t('payable.addPayment')
+        })
       );
       setModalVisible(false);
       fetchPayableRecords();

@@ -33,7 +33,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
   if (!usePagination) {
     const rows = await prisma.product.findMany({
       where,
-      orderBy: { code: 'asc' },
+      orderBy: { code: 'asc' }
     });
     res.json({ data: rows });
     return;
@@ -49,9 +49,9 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       where,
       orderBy: { code: 'asc' },
       skip,
-      take: limitNum,
+      take: limitNum
     }),
-    prisma.product.count({ where }),
+    prisma.product.count({ where })
   ]);
 
   res.json({
@@ -60,8 +60,8 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       page: pageNum,
       limit: limitNum,
       total,
-      pages: Math.ceil(total / limitNum),
-    },
+      pages: Math.ceil(total / limitNum)
+    }
   });
 });
 
@@ -76,8 +76,8 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
       code,
       category,
       product_model,
-      remark,
-    },
+      remark
+    }
   });
   res.json({ code, message: 'Product info created!' });
 });
@@ -94,8 +94,8 @@ router.put('/:code', async (req: Request, res: Response): Promise<void> => {
     data: {
       category,
       product_model,
-      remark,
-    },
+      remark
+    }
   });
 
   res.json({ message: 'Product info updated!' });
@@ -108,7 +108,7 @@ router.delete('/:code', async (req: Request, res: Response): Promise<void> => {
   const code = req.params['code'] as string;
 
   await prisma.product.delete({
-    where: { code },
+    where: { code }
   });
 
   res.json({ message: 'Product info deleted!' });
@@ -152,12 +152,12 @@ router.post('/bindings', async (req: Request, res: Response): Promise<void> => {
 
   const conflicts = await prisma.product.findMany({
     where: {
-      OR: [{ code: { in: bCodes } }, { product_model: { in: bModels } }],
+      OR: [{ code: { in: bCodes } }, { product_model: { in: bModels } }]
     },
     select: {
       code: true,
-      product_model: true,
-    },
+      product_model: true
+    }
   });
 
   if (conflicts.length > 0) {
@@ -171,10 +171,10 @@ router.post('/bindings', async (req: Request, res: Response): Promise<void> => {
       prisma.product.create({
         data: {
           code: b.code,
-          product_model: b.product_model,
-        },
-      }),
-    ),
+          product_model: b.product_model
+        }
+      })
+    )
   );
 
   res.json({ message: 'Binded' });

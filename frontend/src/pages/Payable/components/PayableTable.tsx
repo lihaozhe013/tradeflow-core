@@ -11,7 +11,7 @@ import {
   Space,
   Typography,
   Row,
-  Col,
+  Col
 } from 'antd';
 import type { ColumnsType, TablePaginationConfig } from 'antd/es/table';
 import type { SortOrder } from 'antd/es/table/interface';
@@ -26,7 +26,7 @@ import type {
   PayableFilters,
   PayablePaymentRecord,
   PayableRecord,
-  PayableSorterState,
+  PayableSorterState
 } from '../types';
 
 const { Search } = Input;
@@ -49,7 +49,7 @@ interface PayableTableProps {
   readonly onAddPayment: (record: PayableRecord) => void;
   readonly onEditPayment: (
     payment: PayablePaymentRecord,
-    supplier: PayableRecord,
+    supplier: PayableRecord
   ) => void;
   readonly onDeletePayment: (paymentId: number) => Promise<void> | void;
   readonly apiInstance: UseSimpleApiReturn;
@@ -59,7 +59,7 @@ interface PayableTableProps {
 const DEFAULT_MODAL_PAGINATION: ModalPaginationState = {
   current: 1,
   pageSize: 5,
-  total: 0,
+  total: 0
 };
 
 const formatCurrency = (amount: number | null | undefined): string => {
@@ -68,7 +68,7 @@ const formatCurrency = (amount: number | null | undefined): string => {
   }
   return `${currency_unit_symbol}${Number(amount).toLocaleString('zh-CN', {
     minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+    maximumFractionDigits: 2
   })}`;
 };
 
@@ -84,7 +84,7 @@ const PayableTable: FC<PayableTableProps> = ({
   onEditPayment,
   onDeletePayment,
   apiInstance,
-  canWrite,
+  canWrite
 }) => {
   const { t } = useTranslation();
   const [detailsVisible, setDetailsVisible] = useState(false);
@@ -121,17 +121,17 @@ const PayableTable: FC<PayableTableProps> = ({
   const fetchSupplierDetails = async (
     supplierCode: string,
     paymentPage = 1,
-    inboundPage = 1,
+    inboundPage = 1
   ): Promise<void> => {
     try {
       const inboundQuery = new URLSearchParams({
         page: String(inboundPage),
-        limit: String(DEFAULT_MODAL_PAGINATION.pageSize),
+        limit: String(DEFAULT_MODAL_PAGINATION.pageSize)
       });
 
       // Fetch payment records from details endpoint
       const detailsResult = await apiInstance.get<PayableDetailResponse>(
-        `/payable/details/${supplierCode}?payment_page=${paymentPage}&payment_limit=${DEFAULT_MODAL_PAGINATION.pageSize}`,
+        `/payable/details/${supplierCode}?payment_page=${paymentPage}&payment_limit=${DEFAULT_MODAL_PAGINATION.pageSize}`
       );
 
       // Fetch uninvoiced records
@@ -148,8 +148,8 @@ const PayableTable: FC<PayableTableProps> = ({
           data: uninvoicedResult?.data ?? [],
           total: uninvoicedResult?.total ?? 0,
           page: uninvoicedResult?.page ?? inboundPage,
-          limit: DEFAULT_MODAL_PAGINATION.pageSize,
-        },
+          limit: DEFAULT_MODAL_PAGINATION.pageSize
+        }
       };
 
       setSupplierDetails(result ?? null);
@@ -159,7 +159,7 @@ const PayableTable: FC<PayableTableProps> = ({
         setPaymentPagination({
           current: paymentRecords.page,
           pageSize: paymentRecords.limit,
-          total: paymentRecords.total,
+          total: paymentRecords.total
         });
       }
 
@@ -168,7 +168,7 @@ const PayableTable: FC<PayableTableProps> = ({
         setInboundPagination({
           current: inboundRecords.page,
           pageSize: inboundRecords.limit,
-          total: inboundRecords.total,
+          total: inboundRecords.total
         });
       }
     } catch (error) {
@@ -198,7 +198,7 @@ const PayableTable: FC<PayableTableProps> = ({
       await fetchSupplierDetails(
         selectedSupplier.supplier_code,
         page,
-        inboundPagination.current,
+        inboundPagination.current
       );
     }
   };
@@ -208,7 +208,7 @@ const PayableTable: FC<PayableTableProps> = ({
       await fetchSupplierDetails(
         selectedSupplier.supplier_code,
         paymentPagination.current,
-        page,
+        page
       );
     }
   };
@@ -218,14 +218,14 @@ const PayableTable: FC<PayableTableProps> = ({
   };
 
   const handleDeletePaymentConfirm = async (
-    paymentId: number,
+    paymentId: number
   ): Promise<void> => {
     await Promise.resolve(onDeletePayment(paymentId));
     if (detailsVisible && selectedSupplier) {
       await fetchSupplierDetails(
         selectedSupplier.supplier_code,
         paymentPagination.current,
-        inboundPagination.current,
+        inboundPagination.current
       );
     }
   };
@@ -240,7 +240,7 @@ const PayableTable: FC<PayableTableProps> = ({
       key: 'supplier_code',
       width: 120,
       sorter: true,
-      sortOrder: getColumnSortOrder('supplier_code'),
+      sortOrder: getColumnSortOrder('supplier_code')
     },
     {
       title: t('payable.supplierShortName'),
@@ -248,14 +248,14 @@ const PayableTable: FC<PayableTableProps> = ({
       key: 'supplier_short_name',
       width: 150,
       sorter: true,
-      sortOrder: getColumnSortOrder('supplier_short_name'),
+      sortOrder: getColumnSortOrder('supplier_short_name')
     },
     {
       title: t('payable.supplierFullName'),
       dataIndex: 'supplier_full_name',
       key: 'supplier_full_name',
       width: 200,
-      ellipsis: true,
+      ellipsis: true
     },
     {
       title: t('payable.totalPayable'),
@@ -265,7 +265,7 @@ const PayableTable: FC<PayableTableProps> = ({
       align: 'right',
       sorter: true,
       sortOrder: getColumnSortOrder('total_payable'),
-      render: (value) => formatCurrency(value),
+      render: (value) => formatCurrency(value)
     },
     {
       title: t('payable.totalPaid'),
@@ -275,7 +275,7 @@ const PayableTable: FC<PayableTableProps> = ({
       align: 'right',
       sorter: true,
       sortOrder: getColumnSortOrder('total_paid'),
-      render: (value) => formatCurrency(value),
+      render: (value) => formatCurrency(value)
     },
     {
       title: t('payable.balance'),
@@ -285,7 +285,7 @@ const PayableTable: FC<PayableTableProps> = ({
       align: 'right',
       sorter: true,
       sortOrder: getColumnSortOrder('balance'),
-      render: (value) => getBalanceTag(value),
+      render: (value) => getBalanceTag(value)
     },
     {
       title: t('payable.lastPaymentDate'),
@@ -294,14 +294,14 @@ const PayableTable: FC<PayableTableProps> = ({
       width: 120,
       sorter: true,
       sortOrder: getColumnSortOrder('last_payment_date'),
-      render: (value) => value ?? '-',
+      render: (value) => value ?? '-'
     },
     {
       title: t('payable.lastPaymentMethod'),
       dataIndex: 'last_payment_method',
       key: 'last_payment_method',
       width: 100,
-      render: (value) => value ?? '-',
+      render: (value) => value ?? '-'
     },
     {
       title: t('payable.action'),
@@ -329,22 +329,22 @@ const PayableTable: FC<PayableTableProps> = ({
             </Button>
           )}
         </Space>
-      ),
-    },
+      )
+    }
   ];
 
   const searchStats = useMemo(() => {
     const totalPayable = data.reduce(
       (sum, item) => sum + (item.total_payable ?? 0),
-      0,
+      0
     );
     const totalUnpaid = data.reduce(
       (sum, item) => sum + Math.max(item.balance ?? 0, 0),
-      0,
+      0
     );
     return {
       totalPayable,
-      totalUnpaid,
+      totalUnpaid
     };
   }, [data]);
 
@@ -352,7 +352,7 @@ const PayableTable: FC<PayableTableProps> = ({
     ...pagination,
     showQuickJumper: true,
     showTotal: (total, range) =>
-      t('payable.paginationTotal', { start: range[0], end: range[1], total }),
+      t('payable.paginationTotal', { start: range[0], end: range[1], total })
   };
 
   return (
@@ -372,7 +372,7 @@ const PayableTable: FC<PayableTableProps> = ({
             {t('payable.totalSuppliers', {
               count: pagination.total,
               totalPayable: formatCurrency(searchStats.totalPayable),
-              totalUnpaid: formatCurrency(searchStats.totalUnpaid),
+              totalUnpaid: formatCurrency(searchStats.totalUnpaid)
             })}
           </Text>
         </Col>
@@ -469,24 +469,24 @@ const PayableTable: FC<PayableTableProps> = ({
                   size: 'small',
                   onChange: handlePaymentPageChange,
                   showTotal: (total, range) =>
-                    `${range[0]}-${range[1]} / ${total}`,
+                    `${range[0]}-${range[1]} / ${total}`
                 }}
                 scroll={{ y: 200 }}
                 columns={[
                   {
                     title: t('payable.paymentAmount'),
                     dataIndex: 'amount',
-                    render: (value) => formatCurrency(value),
+                    render: (value) => formatCurrency(value)
                   },
                   { title: t('payable.paymentDate'), dataIndex: 'pay_date' },
                   {
                     title: t('payable.paymentMethod'),
-                    dataIndex: 'pay_method',
+                    dataIndex: 'pay_method'
                   },
                   {
                     title: t('payable.remark'),
                     dataIndex: 'remark',
-                    ellipsis: true,
+                    ellipsis: true
                   },
                   ...(canWrite
                     ? [
@@ -521,10 +521,10 @@ const PayableTable: FC<PayableTableProps> = ({
                                 />
                               </Popconfirm>
                             </Space>
-                          ),
-                        },
+                          )
+                        }
                       ]
-                    : []),
+                    : [])
                 ]}
               />
             </div>
@@ -551,51 +551,51 @@ const PayableTable: FC<PayableTableProps> = ({
                   size: 'small',
                   onChange: handleInboundPageChange,
                   showTotal: (total, range) =>
-                    `${range[0]}-${range[1]} / ${total}`,
+                    `${range[0]}-${range[1]} / ${total}`
                 }}
                 scroll={{ y: 200 }}
                 columns={[
                   {
                     title: t('payable.inboundDate'),
                     dataIndex: 'inbound_date',
-                    width: 100,
+                    width: 100
                   },
                   {
                     title: t('payable.productModel'),
                     dataIndex: 'product_model',
-                    width: 120,
+                    width: 120
                   },
                   {
                     title: t('payable.quantity'),
                     dataIndex: 'quantity',
                     width: 80,
-                    align: 'right',
+                    align: 'right'
                   },
                   {
                     title: t('payable.unitPrice'),
                     dataIndex: 'unit_price',
                     width: 100,
                     align: 'right',
-                    render: (value) => formatCurrency(value),
+                    render: (value) => formatCurrency(value)
                   },
                   {
                     title: t('payable.totalPrice'),
                     dataIndex: 'total_price',
                     width: 100,
                     align: 'right',
-                    render: (value) => formatCurrency(value),
+                    render: (value) => formatCurrency(value)
                   },
                   {
                     title: t('payable.orderNumber'),
                     dataIndex: 'order_number',
                     width: 120,
-                    ellipsis: true,
+                    ellipsis: true
                   },
                   {
                     title: t('payable.remark'),
                     dataIndex: 'remark',
-                    ellipsis: true,
-                  },
+                    ellipsis: true
+                  }
                 ]}
               />
             </div>

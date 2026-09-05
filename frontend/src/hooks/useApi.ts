@@ -7,7 +7,7 @@ import type {
   UseApiReturn,
   UseApiDataReturn,
   UseApiDataOptions,
-  ApiRequestOptions,
+  ApiRequestOptions
 } from '@/hooks/types';
 
 /**
@@ -39,7 +39,7 @@ export const useApi = (): UseApiReturn => {
   const request = useCallback(
     async <T = unknown>(
       url: string,
-      options: RequestOptions = {},
+      options: RequestOptions = {}
     ): Promise<T> => {
       setLoading(true);
       setError(null);
@@ -68,7 +68,7 @@ export const useApi = (): UseApiReturn => {
         setLoading(false);
       }
     },
-    [logout],
+    [logout]
   );
 
   /**
@@ -77,11 +77,11 @@ export const useApi = (): UseApiReturn => {
   const get = useCallback(
     async <T = unknown>(
       url: string,
-      options: ApiRequestOptions = {},
+      options: ApiRequestOptions = {}
     ): Promise<T> => {
       return await request<T>(url, { method: 'GET', ...options });
     },
-    [request],
+    [request]
   );
 
   /**
@@ -91,15 +91,15 @@ export const useApi = (): UseApiReturn => {
     async <T = unknown>(
       url: string,
       data?: unknown,
-      options: ApiRequestOptions = {},
+      options: ApiRequestOptions = {}
     ): Promise<T> => {
       return await request<T>(url, {
         method: 'POST',
         body: JSON.stringify(data),
-        ...options,
+        ...options
       });
     },
-    [request],
+    [request]
   );
 
   /**
@@ -109,15 +109,15 @@ export const useApi = (): UseApiReturn => {
     async <T = unknown>(
       url: string,
       data?: unknown,
-      options: ApiRequestOptions = {},
+      options: ApiRequestOptions = {}
     ): Promise<T> => {
       return await request<T>(url, {
         method: 'PUT',
         body: JSON.stringify(data),
-        ...options,
+        ...options
       });
     },
-    [request],
+    [request]
   );
 
   /**
@@ -126,11 +126,11 @@ export const useApi = (): UseApiReturn => {
   const del = useCallback(
     async <T = unknown>(
       url: string,
-      options: ApiRequestOptions = {},
+      options: ApiRequestOptions = {}
     ): Promise<T> => {
       return await request<T>(url, { method: 'DELETE', ...options });
     },
-    [request],
+    [request]
   );
 
   /**
@@ -140,17 +140,17 @@ export const useApi = (): UseApiReturn => {
     async <T = unknown>(
       url: string,
       formData: FormData,
-      options: ApiRequestOptions = {},
+      options: ApiRequestOptions = {}
     ): Promise<T> => {
       const { headers, ...restOptions } = options;
       return await request<T>(url, {
         method: 'POST',
         body: formData,
         // 不设置 Content-Type，让浏览器自动设置 multipart/form-data
-        ...restOptions,
+        ...restOptions
       });
     },
-    [request],
+    [request]
   );
 
   /**
@@ -160,13 +160,13 @@ export const useApi = (): UseApiReturn => {
     async (
       url: string,
       filename?: string,
-      options: ApiRequestOptions = {},
+      options: ApiRequestOptions = {}
     ): Promise<void> => {
       try {
         setLoading(true);
         const response = await apiRequest<Response>(url, {
           ...options,
-          responseType: 'blob',
+          responseType: 'blob'
         });
 
         if (response instanceof Response) {
@@ -190,7 +190,7 @@ export const useApi = (): UseApiReturn => {
         setLoading(false);
       }
     },
-    [],
+    []
   );
 
   return {
@@ -203,7 +203,7 @@ export const useApi = (): UseApiReturn => {
     delete: del,
     upload,
     download,
-    clearError: () => setError(null),
+    clearError: () => setError(null)
   };
 };
 
@@ -227,13 +227,13 @@ export const useApi = (): UseApiReturn => {
  */
 export const useApiData = <T = unknown>(
   url: string,
-  options: UseApiDataOptions<T> = {},
+  options: UseApiDataOptions<T> = {}
 ): UseApiDataReturn<T> => {
   const {
     immediate = true, // 是否立即加载
     onSuccess, // 成功回调
     onError, // 错误回调
-    defaultData = null, // 默认数据
+    defaultData = null // 默认数据
   } = options;
 
   const [data, setData] = useState<T | null>(defaultData);
@@ -284,14 +284,14 @@ export const useApiData = <T = unknown>(
         const errorMessage = err instanceof Error ? err.message : '请求失败';
         setError(errorMessage);
         onErrorRef.current?.(
-          err instanceof Error ? err : new Error(errorMessage),
+          err instanceof Error ? err : new Error(errorMessage)
         );
         return null;
       } finally {
         setLoading(false);
       }
     },
-    [url, get, post, defaultData],
+    [url, get, post, defaultData]
   );
 
   /**
@@ -315,7 +315,7 @@ export const useApiData = <T = unknown>(
     refresh,
     fetchData,
     setData,
-    clearError: () => setError(null),
+    clearError: () => setError(null)
   };
 };
 

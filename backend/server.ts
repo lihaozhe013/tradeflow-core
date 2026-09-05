@@ -9,7 +9,7 @@ import { requestLogger, errorLogger } from '@/utils/loggerMiddleware';
 import {
   authenticateToken,
   authorize,
-  checkWritePermission,
+  checkWritePermission
 } from '@/utils/auth';
 import { initCacheFiles } from '@/utils/initCache';
 import overviewRoutes from '@/routes/overview';
@@ -50,8 +50,8 @@ if (process.env['NODE_ENV'] !== 'production') {
   app.use(
     cors({
       origin: ['http://localhost:5173', `http://localhost:${PORT}`],
-      credentials: true,
-    }),
+      credentials: true
+    })
   );
   logger.info('Dev Mode: CORS cross-origin support has been enabled.');
 }
@@ -105,7 +105,7 @@ app.use(
       error: err.message,
       stack: err.stack,
       url: req.originalUrl,
-      method: req.method,
+      method: req.method
     });
 
     res.status(500).json({
@@ -113,9 +113,9 @@ app.use(
       message:
         process.env['NODE_ENV'] === 'production'
           ? 'Internal Server Error'
-          : err.message,
+          : err.message
     });
-  },
+  }
 );
 
 // =============================================================================
@@ -148,7 +148,7 @@ if (shouldHostFrontend && config.frontend) {
   }
 } else {
   logger.info(
-    'Frontend hosting has been disabled. Use a standalone frontend CDN server!',
+    'Frontend hosting has been disabled. Use a standalone frontend CDN server!'
   );
 }
 
@@ -161,6 +161,6 @@ app.listen(PORT, () => {
     port: PORT,
     environment: process.env['NODE_ENV'] || 'development',
     pid: process.pid,
-    frontend_hosted: shouldHostFrontend,
+    frontend_hosted: shouldHostFrontend
   });
 });

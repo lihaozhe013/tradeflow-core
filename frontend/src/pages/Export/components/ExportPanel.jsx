@@ -9,7 +9,7 @@ import {
   Space,
   Form,
   Input,
-  message,
+  message
 } from 'antd';
 import { DatabaseOutlined, FileExcelOutlined } from '@ant-design/icons';
 
@@ -25,7 +25,7 @@ const ExportPanel = ({
   selectedProduct,
   setSelectedProduct,
   selectedCustomer,
-  setSelectedCustomer,
+  setSelectedCustomer
 }) => {
   const { t } = useTranslation();
   return (
@@ -135,7 +135,7 @@ const ExportPanel = ({
                     dateFrom: dateRange[0].format('YYYY-MM-DD'),
                     dateTo: dateRange[1].format('YYYY-MM-DD'),
                     productCode: selectedProduct || undefined,
-                    customerCode: selectedCustomer || undefined,
+                    customerCode: selectedCustomer || undefined
                   })
                 }
                 loading={loading}
@@ -152,7 +152,7 @@ const ExportPanel = ({
                     dateFrom: dateRange[0].format('YYYY-MM-DD'),
                     dateTo: dateRange[1].format('YYYY-MM-DD'),
                     productCode: selectedProduct || undefined,
-                    customerCode: selectedCustomer || undefined,
+                    customerCode: selectedCustomer || undefined
                   })
                 }
                 loading={loading}
@@ -169,7 +169,7 @@ const ExportPanel = ({
                     dateFrom: dateRange[0].format('YYYY-MM-DD'),
                     dateTo: dateRange[1].format('YYYY-MM-DD'),
                     productCode: selectedProduct || undefined,
-                    customerCode: selectedCustomer || undefined,
+                    customerCode: selectedCustomer || undefined
                   })
                 }
                 loading={loading}
@@ -225,7 +225,7 @@ const ExportPanel = ({
                     dateFrom: dateRange[0].format('YYYY-MM-DD'),
                     dateTo: dateRange[1].format('YYYY-MM-DD'),
                     productCode: selectedProduct || undefined,
-                    customerCode: selectedCustomer || undefined,
+                    customerCode: selectedCustomer || undefined
                   })
                 }
                 loading={loading}
@@ -242,7 +242,7 @@ const ExportPanel = ({
                     dateFrom: dateRange[0].format('YYYY-MM-DD'),
                     dateTo: dateRange[1].format('YYYY-MM-DD'),
                     productCode: selectedProduct || undefined,
-                    customerCode: selectedCustomer || undefined,
+                    customerCode: selectedCustomer || undefined
                   })
                 }
                 loading={loading}
@@ -259,7 +259,7 @@ const ExportPanel = ({
                     dateFrom: dateRange[0].format('YYYY-MM-DD'),
                     dateTo: dateRange[1].format('YYYY-MM-DD'),
                     productCode: selectedProduct || undefined,
-                    customerCode: selectedCustomer || undefined,
+                    customerCode: selectedCustomer || undefined
                   })
                 }
                 loading={loading}
@@ -297,7 +297,7 @@ const ExportPanel = ({
                   format="YYYY-MM-DD"
                   placeholder={[
                     t('export.paymentStart'),
-                    t('export.paymentEnd'),
+                    t('export.paymentEnd')
                   ]}
                 />
               </Form.Item>
@@ -312,7 +312,7 @@ const ExportPanel = ({
                     outboundFrom: dateRange[0].format('YYYY-MM-DD'),
                     outboundTo: dateRange[1].format('YYYY-MM-DD'),
                     paymentFrom: paymentDateRange[0].format('YYYY-MM-DD'),
-                    paymentTo: paymentDateRange[1].format('YYYY-MM-DD'),
+                    paymentTo: paymentDateRange[1].format('YYYY-MM-DD')
                   })
                 }
                 loading={loading}
@@ -362,7 +362,7 @@ const ExportPanel = ({
                   handleExport('invoice', {
                     partnerCode: selectedCustomer,
                     dateFrom: dateRange[0].format('YYYY-MM-DD'),
-                    dateTo: dateRange[1].format('YYYY-MM-DD'),
+                    dateTo: dateRange[1].format('YYYY-MM-DD')
                   });
                 }}
                 loading={loading}

@@ -5,11 +5,11 @@ import {
   ReceivablePayableFilters as PayableFilters,
   PayablePaymentDto,
   PayableSummaryDto,
-  InboundRecordDto,
+  InboundRecordDto
 } from '@/routes/export/utils/types';
 
 export async function getPayableSummary(
-  filters: PayableFilters = {},
+  filters: PayableFilters = {}
 ): Promise<PayableSummaryDto[]> {
   const conditions: Prisma.Sql[] = [Prisma.sql`1=1`];
 
@@ -21,12 +21,12 @@ export async function getPayableSummary(
   }
   if (filters.paymentFrom) {
     conditions.push(
-      Prisma.sql`(p.pay_date IS NULL OR p.pay_date >= ${filters.paymentFrom})`,
+      Prisma.sql`(p.pay_date IS NULL OR p.pay_date >= ${filters.paymentFrom})`
     );
   }
   if (filters.paymentTo) {
     conditions.push(
-      Prisma.sql`(p.pay_date IS NULL OR p.pay_date <= ${filters.paymentTo})`,
+      Prisma.sql`(p.pay_date IS NULL OR p.pay_date <= ${filters.paymentTo})`
     );
   }
 
@@ -65,13 +65,13 @@ export async function getPayableSummary(
       supplier_full_name: row.supplier_full_name,
       total_purchase: totalPurchase,
       total_payments: totalPayments,
-      balance,
+      balance
     };
   });
 }
 
 export async function getPayableDetails(
-  filters: PayableFilters = {},
+  filters: PayableFilters = {}
 ): Promise<(InboundRecordDto & { record_id: number })[]> {
   const where: Prisma.InboundRecordWhereInput = {};
   const dateConditions: Prisma.StringFilter = {};
@@ -90,7 +90,7 @@ export async function getPayableDetails(
   const rows = await prisma.inboundRecord.findMany({
     where,
     include: { partner: true, product: true },
-    orderBy: [{ inbound_date: 'desc' }, { id: 'desc' }],
+    orderBy: [{ inbound_date: 'desc' }, { id: 'desc' }]
   });
 
   return rows.map((r) => ({
@@ -98,12 +98,12 @@ export async function getPayableDetails(
     record_id: r.id,
     product_model: r.product?.product_model || '',
     supplier_short_name: r.partner?.short_name || '',
-    supplier_full_name: r.partner?.full_name || '',
+    supplier_full_name: r.partner?.full_name || ''
   })) as unknown as (InboundRecordDto & { record_id: number })[];
 }
 
 export async function getPayablePayments(
-  filters: PayableFilters = {},
+  filters: PayableFilters = {}
 ): Promise<PayablePaymentDto[]> {
   const where: Prisma.PayablePaymentWhereInput = {};
   const dateConditions: Prisma.StringFilter = {};
@@ -121,6 +121,6 @@ export async function getPayablePayments(
 
   return await prisma.payablePayment.findMany({
     where,
-    orderBy: [{ pay_date: 'desc' }, { id: 'desc' }],
+    orderBy: [{ pay_date: 'desc' }, { id: 'desc' }]
   });
 }

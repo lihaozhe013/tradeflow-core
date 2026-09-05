@@ -3,12 +3,12 @@ import ExportUtils from '@/routes/export/utils/exportUtils';
 import { TEMPLATES } from '@/routes/export/utils/exportTemplates';
 import {
   InboundOutboundData,
-  TransactionFilters,
+  TransactionFilters
 } from '@/routes/export/utils/types';
 
 export function generateTransactionExcel(
   data: InboundOutboundData,
-  options: TransactionFilters,
+  options: TransactionFilters
 ): Buffer {
   const workbook = XLSX.utils.book_new();
 
@@ -24,13 +24,13 @@ export function generateTransactionExcel(
   }
   return XLSX.write(workbook, {
     type: 'buffer',
-    bookType: 'xlsx',
+    bookType: 'xlsx'
   }) as unknown as Buffer;
 }
 
 export function generateStatementExcel(
   data: InboundOutboundData,
-  options: TransactionFilters,
+  options: TransactionFilters
 ): Buffer {
   const workbook = XLSX.utils.book_new();
 
@@ -46,6 +46,6 @@ export function generateStatementExcel(
   }
   return XLSX.write(workbook, {
     type: 'buffer',
-    bookType: 'xlsx',
+    bookType: 'xlsx'
   }) as unknown as Buffer;
 }

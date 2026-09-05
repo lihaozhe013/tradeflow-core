@@ -10,7 +10,7 @@ Decimal.config({
   toExpNeg: -9,
   toExpPos: 21,
   modulo: Decimal.ROUND_DOWN,
-  crypto: false,
+  crypto: false
 });
 
 class DecimalCalculator {
@@ -25,14 +25,14 @@ class DecimalCalculator {
 
   subtract(
     a: number | string | Decimal,
-    b: number | string | Decimal,
+    b: number | string | Decimal
   ): Decimal {
     return this.decimal(a).sub(this.decimal(b));
   }
 
   multiply(
     a: number | string | Decimal,
-    b: number | string | Decimal,
+    b: number | string | Decimal
   ): Decimal {
     return this.decimal(a).mul(this.decimal(b));
   }
@@ -53,7 +53,7 @@ class DecimalCalculator {
    */
   calculateTotalPrice(
     quantity: number | string,
-    unitPrice: number | string,
+    unitPrice: number | string
   ): number {
     const q = this.decimal(quantity);
     const p = this.decimal(unitPrice);
@@ -69,7 +69,7 @@ class DecimalCalculator {
    */
   calculateBalance(
     totalAmount: number | string,
-    paidAmount: number | string,
+    paidAmount: number | string
   ): number {
     const total = this.decimal(totalAmount);
     const paid = this.decimal(paidAmount);
@@ -94,7 +94,7 @@ class DecimalCalculator {
    */
   toDbNumber(
     value: number | string | Decimal,
-    decimalPlaces: number = 5,
+    decimalPlaces: number = 5
   ): number {
     const decimal = this.decimal(value);
     return this.toNumber(decimal, decimalPlaces);
@@ -109,7 +109,7 @@ class DecimalCalculator {
   fromSqlResult(
     sqlResult: number | string | null | undefined | bigint | Decimal,
     defaultValue: number = 0,
-    decimalPlaces: number = 5,
+    decimalPlaces: number = 5
   ): number {
     if (sqlResult === null || sqlResult === undefined) {
       return defaultValue;

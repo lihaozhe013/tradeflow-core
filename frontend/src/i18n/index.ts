@@ -9,14 +9,14 @@ import koTranslation from './locales/ko/ko-Kr.json'; // 如果有更多语言就
 
 const resources = {
   en: {
-    translation: enTranslation,
+    translation: enTranslation
   },
   zh: {
-    translation: zhTranslation,
+    translation: zhTranslation
   },
   ko: {
-    translation: koTranslation,
-  },
+    translation: koTranslation
+  }
 };
 
 i18n
@@ -32,14 +32,14 @@ i18n
     fallbackLng: 'en', // 当当前语言没有翻译时，使用的备用语言，改为中文
     debug: false, // 生产环境关闭调试信息
     interpolation: {
-      escapeValue: false, // React 默认会转义，所以不需要 i18next 再次转义
+      escapeValue: false // React 默认会转义，所以不需要 i18next 再次转义
     },
     detection: {
       order: ['localStorage', 'navigator', 'htmlTag'], // 优先从localStorage读取
       // 可选的缓存机制，将检测到的语言存储在 localStorage 中
       caches: ['localStorage'],
-      lookupLocalStorage: 'i18nextLng', // localStorage的key名
-    },
+      lookupLocalStorage: 'i18nextLng' // localStorage的key名
+    }
   });
 
 export default i18n;

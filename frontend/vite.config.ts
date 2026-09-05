@@ -24,7 +24,7 @@ export default defineConfig({
   base: './',
   // Replace __COMMIT_HASH__ with a hardcoded string literal at build time
   define: {
-    __COMMIT_HASH__: JSON.stringify(COMMIT_HASH),
+    __COMMIT_HASH__: JSON.stringify(COMMIT_HASH)
   },
   plugins: [react()],
   resolve: {
@@ -38,8 +38,8 @@ export default defineConfig({
       '@/auth': path.resolve(frontendRoot, './src/auth'),
       '@/config': path.resolve(frontendRoot, './src/config'),
       '@/i18n': path.resolve(frontendRoot, './src/i18n'),
-      '@/types': path.resolve(frontendRoot, './src/types'),
-    },
+      '@/types': path.resolve(frontendRoot, './src/types')
+    }
   },
   server: {
     host: '0.0.0.0',
@@ -48,14 +48,14 @@ export default defineConfig({
       '/api': {
         target: frontendConfig.server.url,
         changeOrigin: true,
-        secure: false,
+        secure: false
       },
       '/exported-files': {
         target: frontendConfig.server.url,
         changeOrigin: true,
-        secure: false,
-      },
-    },
+        secure: false
+      }
+    }
   },
   build: {
     outDir: 'dist',
@@ -75,10 +75,10 @@ export default defineConfig({
               return 'vendor';
             }
           }
-        },
-      },
+        }
+      }
     },
-    chunkSizeWarningLimit: 2000,
+    chunkSizeWarningLimit: 2000
   },
   preview: {
     host: '0.0.0.0',
@@ -87,8 +87,8 @@ export default defineConfig({
       '/api': {
         target: frontendConfig.server.url,
         changeOrigin: true,
-        secure: false,
-      },
-    },
-  },
+        secure: false
+      }
+    }
+  }
 });

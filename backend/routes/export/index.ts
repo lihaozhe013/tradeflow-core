@@ -2,7 +2,7 @@ import {
   Router,
   Request,
   Response,
-  type Router as ExpressRouter,
+  type Router as ExpressRouter
 } from 'express';
 import { logger } from '@/utils/logger';
 import * as ExportService from '@/routes/export/utils';
@@ -11,7 +11,7 @@ import {
   TransactionFilters,
   ReceivablePayableFilters,
   InvoiceFilters,
-  AnalysisExportOptions,
+  AnalysisExportOptions
 } from '@/routes/export/utils/types';
 
 const router: ExpressRouter = Router();
@@ -20,17 +20,17 @@ const router: ExpressRouter = Router();
 router.post('/base-info', async (req: Request, res: Response) => {
   const { tables } = req.body as BasicDataFilters;
   const buffer = await ExportService.exportBaseInfo({
-    tables: tables || '123',
+    tables: tables || '123'
   });
   const filename = ExportService.generateFilename('base-info');
 
   res.setHeader(
     'Content-Type',
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
   );
   res.setHeader(
     'Content-Disposition',
-    `attachment; filename="${encodeURIComponent(filename)}"`,
+    `attachment; filename="${encodeURIComponent(filename)}"`
   );
   res.send(buffer);
 });
@@ -44,18 +44,18 @@ router.post('/inbound-outbound', async (req: Request, res: Response) => {
     dateFrom,
     dateTo,
     productCode,
-    customerCode,
+    customerCode
   });
 
   const filename = ExportService.generateFilename('inbound-outbound');
 
   res.setHeader(
     'Content-Type',
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
   );
   res.setHeader(
     'Content-Disposition',
-    `attachment; filename="${encodeURIComponent(filename)}"`,
+    `attachment; filename="${encodeURIComponent(filename)}"`
   );
   res.send(buffer);
 });
@@ -69,18 +69,18 @@ router.post('/statement', async (req: Request, res: Response) => {
     dateFrom,
     dateTo,
     productCode,
-    customerCode,
+    customerCode
   });
 
   const filename = ExportService.generateFilename('statement');
 
   res.setHeader(
     'Content-Type',
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
   );
   res.setHeader(
     'Content-Disposition',
-    `attachment; filename="${encodeURIComponent(filename)}"`,
+    `attachment; filename="${encodeURIComponent(filename)}"`
   );
   res.send(buffer);
 });
@@ -93,17 +93,17 @@ router.post('/receivable-payable', async (req: Request, res: Response) => {
     outboundFrom,
     outboundTo,
     paymentFrom,
-    paymentTo,
+    paymentTo
   });
 
   const filename = ExportService.generateFilename('receivable-payable');
   res.setHeader(
     'Content-Type',
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
   );
   res.setHeader(
     'Content-Disposition',
-    `attachment; filename="${encodeURIComponent(filename)}"`,
+    `attachment; filename="${encodeURIComponent(filename)}"`
   );
   res.send(buffer);
 });
@@ -120,17 +120,17 @@ router.post('/invoice', async (req: Request, res: Response) => {
   const buffer = await ExportService.exportInvoice({
     partnerCode,
     dateFrom,
-    dateTo,
+    dateTo
   });
   const filename = ExportService.generateFilename('invoice');
 
   res.setHeader(
     'Content-Type',
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
   );
   res.setHeader(
     'Content-Disposition',
-    `attachment; filename="${encodeURIComponent(filename)}"`,
+    `attachment; filename="${encodeURIComponent(filename)}"`
   );
   res.send(buffer);
 });
@@ -143,7 +143,7 @@ router.post('/analysis', async (req: Request, res: Response) => {
     startDate,
     endDate,
     customerCode,
-    productModel,
+    productModel
   } = req.body as AnalysisExportOptions;
 
   if (!analysisData) {
@@ -159,17 +159,17 @@ router.post('/analysis', async (req: Request, res: Response) => {
     startDate,
     endDate,
     customerCode,
-    productModel,
+    productModel
   });
   const filename = ExportService.generateFilename('analysis');
 
   res.setHeader(
     'Content-Type',
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
   );
   res.setHeader(
     'Content-Disposition',
-    `attachment; filename="${encodeURIComponent(filename)}"`,
+    `attachment; filename="${encodeURIComponent(filename)}"`
   );
   res.send(buffer);
 });
@@ -185,28 +185,28 @@ router.post('/advanced-analysis', async (req: Request, res: Response) => {
   logger.info(`[Export] Starting advanced analysis export`, {
     exportType,
     startDate,
-    endDate,
+    endDate
   });
 
   const buffer = await ExportService.exportAdvancedAnalysis({
     exportType,
     startDate,
-    endDate,
+    endDate
   });
   const filename = ExportService.generateFilename(`${exportType}-analysis`);
 
   logger.info(`[Export] Advanced analysis export successful`, {
     filename,
-    size: buffer.length,
+    size: buffer.length
   });
 
   res.setHeader(
     'Content-Type',
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
   );
   res.setHeader(
     'Content-Disposition',
-    `attachment; filename="${encodeURIComponent(filename)}"`,
+    `attachment; filename="${encodeURIComponent(filename)}"`
   );
   res.send(buffer);
 });
@@ -218,11 +218,11 @@ router.post('/inventory', async (_req: Request, res: Response) => {
 
   res.setHeader(
     'Content-Type',
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
   );
   res.setHeader(
     'Content-Disposition',
-    `attachment; filename="${encodeURIComponent(filename)}"`,
+    `attachment; filename="${encodeURIComponent(filename)}"`
   );
   res.send(buffer);
 });
@@ -235,37 +235,37 @@ router.get('/status', (_req: Request, res: Response) => {
     available_exports: [
       {
         name: 'base-info',
-        description: 'Base information export (partners, products, prices)',
+        description: 'Base information export (partners, products, prices)'
       },
       {
         name: 'inbound-outbound',
-        description: 'Transaction records export',
+        description: 'Transaction records export'
       },
       {
         name: 'receivable-payable',
-        description: 'Financial records export',
+        description: 'Financial records export'
       },
       {
         name: 'statement',
-        description: 'Statement export',
+        description: 'Statement export'
       },
       {
         name: 'analysis',
-        description: 'Analysis data export',
+        description: 'Analysis data export'
       },
       {
         name: 'advanced-analysis',
-        description: 'Advanced analysis export (customer/product)',
+        description: 'Advanced analysis export (customer/product)'
       },
       {
         name: 'invoice',
-        description: 'Invoice export',
+        description: 'Invoice export'
       },
       {
         name: 'inventory',
-        description: 'Current inventory data export',
-      },
-    ],
+        description: 'Current inventory data export'
+      }
+    ]
   });
 });
 

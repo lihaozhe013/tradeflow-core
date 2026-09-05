@@ -9,7 +9,7 @@ import type {
   Customer,
   ReceivablePaymentFormValues,
   ReceivablePaymentRecord,
-  ReceivableRecord,
+  ReceivableRecord
 } from '../types';
 
 const { TextArea } = Input;
@@ -21,7 +21,7 @@ interface ReceivableModalProps {
   readonly customers: Customer[];
   readonly form: FormInstance<ReceivablePaymentFormValues>;
   readonly onSave: (
-    values: ReceivablePaymentFormValues,
+    values: ReceivablePaymentFormValues
   ) => Promise<void> | void;
   readonly onCancel: () => void;
 }
@@ -33,7 +33,7 @@ const ReceivableModal: FC<ReceivableModalProps> = ({
   customers,
   form,
   onSave,
-  onCancel,
+  onCancel
 }) => {
   const { t } = useTranslation();
 
@@ -41,9 +41,9 @@ const ReceivableModal: FC<ReceivableModalProps> = ({
     () =>
       customers.map((customer) => ({
         value: customer.code,
-        label: `${customer.code} - ${customer.short_name}`,
+        label: `${customer.code} - ${customer.short_name}`
       })),
-    [customers],
+    [customers]
   );
 
   const handleSubmit = async (): Promise<void> => {
@@ -64,7 +64,7 @@ const ReceivableModal: FC<ReceivableModalProps> = ({
 
   const filterCustomerOption = (
     input: string,
-    option?: DefaultOptionType,
+    option?: DefaultOptionType
   ): boolean => {
     const label = typeof option?.label === 'string' ? option.label : '';
     return label.toLowerCase().includes(input.toLowerCase());
@@ -87,7 +87,7 @@ const ReceivableModal: FC<ReceivableModalProps> = ({
         form={form}
         layout="vertical"
         initialValues={{
-          pay_method: DEFAULT_PAYMENT_METHOD,
+          pay_method: DEFAULT_PAYMENT_METHOD
         }}
       >
         <Form.Item
@@ -110,7 +110,7 @@ const ReceivableModal: FC<ReceivableModalProps> = ({
           label={t('receivable.paymentAmount')}
           rules={[
             { required: true, message: t('receivable.inputAmount') },
-            { type: 'number', message: t('receivable.inputAmountValid') },
+            { type: 'number', message: t('receivable.inputAmountValid') }
           ]}
         >
           <InputNumber
@@ -121,7 +121,7 @@ const ReceivableModal: FC<ReceivableModalProps> = ({
               value !== undefined && value !== null
                 ? `${currency_unit_symbol} ${value}`.replace(
                     /\B(?=(\d{3})+(?!\d))/g,
-                    ',',
+                    ','
                   )
                 : ''
             }
@@ -158,7 +158,7 @@ const ReceivableModal: FC<ReceivableModalProps> = ({
             placeholder={t('receivable.selectMethod') ?? ''}
             options={PAYMENT_METHODS.map((method) => ({
               value: method,
-              label: method,
+              label: method
             }))}
           />
         </Form.Item>

@@ -37,7 +37,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
   if (!usePagination) {
     const rows = await prisma.partner.findMany({
       where,
-      orderBy: { short_name: 'asc' },
+      orderBy: { short_name: 'asc' }
     });
 
     res.json({ data: rows });
@@ -54,9 +54,9 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       where,
       orderBy: { short_name: 'asc' },
       skip,
-      take: limitNum,
+      take: limitNum
     }),
-    prisma.partner.count({ where }),
+    prisma.partner.count({ where })
   ]);
 
   res.json({
@@ -65,8 +65,8 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       page: pageNum,
       limit: limitNum,
       total,
-      pages: Math.ceil(total / limitNum),
-    },
+      pages: Math.ceil(total / limitNum)
+    }
   });
 });
 
@@ -81,7 +81,7 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
     address,
     contact_person,
     contact_phone,
-    type,
+    type
   } = req.body;
 
   await prisma.partner.create({
@@ -92,8 +92,8 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
       address,
       contact_person,
       contact_phone,
-      type,
-    },
+      type
+    }
   });
   res.json({ short_name, message: 'Customer/Supplier created!' });
 });
@@ -116,12 +116,12 @@ router.put(
         address,
         contact_person,
         contact_phone,
-        type,
-      },
+        type
+      }
     });
 
     res.json({ message: 'Customer/Supplier updated!' });
-  },
+  }
 );
 
 /**
@@ -132,10 +132,10 @@ router.delete(
   async (req: Request, res: Response): Promise<void> => {
     const short_name = req.params['short_name'] as string;
     await prisma.partner.delete({
-      where: { short_name: short_name },
+      where: { short_name: short_name }
     });
     res.json({ message: 'Customer/Supplier deleted!' });
-  },
+  }
 );
 
 /**
@@ -185,14 +185,14 @@ router.post('/bindings', async (req: Request, res: Response): Promise<void> => {
       OR: [
         { code: { in: bCodes } },
         { short_name: { in: bShorts } },
-        { full_name: { in: bFulls } },
-      ],
+        { full_name: { in: bFulls } }
+      ]
     },
     select: {
       code: true,
       short_name: true,
-      full_name: true,
-    },
+      full_name: true
+    }
   });
 
   if (conflicts.length > 0) {
@@ -209,10 +209,10 @@ router.post('/bindings', async (req: Request, res: Response): Promise<void> => {
           short_name: b.short_name,
           full_name: b.full_name,
           // defaults
-          type: 0,
-        },
-      }),
-    ),
+          type: 0
+        }
+      })
+    )
   );
 
   res.json({ message: 'Binded' });

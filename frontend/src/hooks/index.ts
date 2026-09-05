@@ -15,7 +15,7 @@ export type {
   UseApiDataReturn,
   UseApiDataOptions,
   UseSimpleApiReturn,
-  UseSimpleApiDataReturn,
+  UseSimpleApiDataReturn
 } from '@/hooks/types';
 
 /**

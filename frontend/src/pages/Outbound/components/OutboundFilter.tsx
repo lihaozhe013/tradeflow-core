@@ -20,7 +20,7 @@ const OutboundFilter: FC<OutboundFilterProps> = ({
   setFilters,
   partners,
   products,
-  onFilter,
+  onFilter
 }) => {
   const { t } = useTranslation();
 
@@ -38,15 +38,15 @@ const OutboundFilter: FC<OutboundFilterProps> = ({
       dateRange: dates
         ? [
             dates[0]?.format('YYYY-MM-DD') ?? null,
-            dates[1]?.format('YYYY-MM-DD') ?? null,
+            dates[1]?.format('YYYY-MM-DD') ?? null
           ]
-        : [null, null],
+        : [null, null]
     }));
   };
 
   const filterByLabel = (
     input: string,
-    option?: DefaultOptionType,
+    option?: DefaultOptionType
   ): boolean => {
     const label = typeof option?.label === 'string' ? option.label : undefined;
     return label ? label.toLowerCase().includes(input.toLowerCase()) : false;
@@ -64,12 +64,12 @@ const OutboundFilter: FC<OutboundFilterProps> = ({
           onChange={(value) =>
             setFilters((prev) => ({
               ...prev,
-              customer_short_name: value ?? undefined,
+              customer_short_name: value ?? undefined
             }))
           }
           options={partners.map((partner) => ({
             label: `${partner.short_name}(${partner.code ?? ''})`,
-            value: partner.short_name,
+            value: partner.short_name
           }))}
           filterOption={filterByLabel}
         />
@@ -84,12 +84,12 @@ const OutboundFilter: FC<OutboundFilterProps> = ({
           onChange={(value) =>
             setFilters((prev) => ({
               ...prev,
-              product_model: value ?? undefined,
+              product_model: value ?? undefined
             }))
           }
           options={products.map((product) => ({
             label: `${product.product_model}(${product.code ?? ''})`,
-            value: product.product_model,
+            value: product.product_model
           }))}
           filterOption={filterByLabel}
         />
@@ -102,7 +102,7 @@ const OutboundFilter: FC<OutboundFilterProps> = ({
           format="YYYY-MM-DD"
           placeholder={[
             t('outbound.startDate') ?? '',
-            t('outbound.endDate') ?? '',
+            t('outbound.endDate') ?? ''
           ]}
         />
       </Col>

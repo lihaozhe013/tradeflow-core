@@ -7,7 +7,7 @@ async function generateHash() {
       type: argon2.argon2id,
       memoryCost: 2 ** 16, // 64 MB
       timeCost: 3,
-      parallelism: 1,
+      parallelism: 1
     });
     console.log('Password:', password);
     console.log('Hash:', hash);

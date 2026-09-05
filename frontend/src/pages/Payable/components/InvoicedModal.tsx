@@ -26,7 +26,7 @@ interface ModalPaginationState {
 const DEFAULT_PAGINATION: ModalPaginationState = {
   current: 1,
   pageSize: 10,
-  total: 0,
+  total: 0
 };
 
 const formatCurrency = (amount: number | null | undefined): string => {
@@ -35,7 +35,7 @@ const formatCurrency = (amount: number | null | undefined): string => {
   }
   return `${currency_unit_symbol}${Number(amount).toLocaleString('zh-CN', {
     minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+    maximumFractionDigits: 2
   })}`;
 };
 
@@ -45,7 +45,7 @@ const InvoicedModal: FC<InvoicedModalProps> = ({
   supplierName,
   onCancel,
   apiInstance,
-  canWrite,
+  canWrite
 }) => {
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -65,31 +65,31 @@ const InvoicedModal: FC<InvoicedModalProps> = ({
         setLoading(true);
         const query = new URLSearchParams({
           page: String(page),
-          limit: String(DEFAULT_PAGINATION.pageSize),
+          limit: String(DEFAULT_PAGINATION.pageSize)
         });
 
         const result =
           await apiInstanceRef.current.get<InvoicedRecordsResponse>(
-            `/payable/invoiced/${supplierCode}?${query.toString()}`,
+            `/payable/invoiced/${supplierCode}?${query.toString()}`
           );
 
         setData(result?.data ?? []);
         setPagination({
           current: result?.page ?? page,
           pageSize: DEFAULT_PAGINATION.pageSize,
-          total: result?.total ?? 0,
+          total: result?.total ?? 0
         });
         setLastUpdated(result?.last_updated ?? null);
       } catch (error) {
         console.error('获取已开票记录失败:', error);
         message.error(
-          'Failed to fetch invoiced records. Please refresh the cache first.',
+          'Failed to fetch invoiced records. Please refresh the cache first.'
         );
       } finally {
         setLoading(false);
       }
     },
-    [supplierCode],
+    [supplierCode]
   );
 
   const handleRefreshCache = async (): Promise<void> => {
@@ -125,14 +125,14 @@ const InvoicedModal: FC<InvoicedModalProps> = ({
       title: 'Invoice Number',
       dataIndex: 'invoice_number',
       key: 'invoice_number',
-      width: 150,
+      width: 150
     },
     {
       title: 'Invoice Date',
       dataIndex: 'invoice_date',
       key: 'invoice_date',
       width: 120,
-      render: (value) => value ?? '-',
+      render: (value) => value ?? '-'
     },
     {
       title: 'Total Amount',
@@ -140,15 +140,15 @@ const InvoicedModal: FC<InvoicedModalProps> = ({
       key: 'total_amount',
       width: 150,
       align: 'right',
-      render: (value) => formatCurrency(value),
+      render: (value) => formatCurrency(value)
     },
     {
       title: 'Record Count',
       dataIndex: 'record_count',
       key: 'record_count',
       width: 120,
-      align: 'center',
-    },
+      align: 'center'
+    }
   ];
 
   return (
@@ -165,7 +165,7 @@ const InvoicedModal: FC<InvoicedModalProps> = ({
           marginBottom: 16,
           display: 'flex',
           justifyContent: 'space-between',
-          alignItems: 'center',
+          alignItems: 'center'
         }}
       >
         <Text type="secondary">
@@ -193,7 +193,7 @@ const InvoicedModal: FC<InvoicedModalProps> = ({
         pagination={{
           ...pagination,
           showSizeChanger: false,
-          showTotal: (total, range) => `${range[0]}-${range[1]} / ${total}`,
+          showTotal: (total, range) => `${range[0]}-${range[1]} / ${total}`
         }}
         onChange={handleTableChange}
         size="small"

@@ -37,7 +37,7 @@ interface ProtectedRouteProps {
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children,
   requireRole = 'reader', // 默认需要 reader 权限
-  fallback = null,
+  fallback = null
 }) => {
   const { isAuthenticated, isLoading, hasPermission, user } = useAuth();
   const location = useLocation();
@@ -51,7 +51,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
-          height: '100vh',
+          height: '100vh'
         }}
       >
         <Spin size="large" />
@@ -78,7 +78,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
           role:
             user?.role === 'reader'
               ? t('auth.roles.reader')
-              : t('auth.roles.editor'),
+              : t('auth.roles.editor')
         })}
         extra={
           <Button type="primary" onClick={() => window.history.back()}>

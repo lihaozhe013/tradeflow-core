@@ -14,7 +14,7 @@ export function generateFilename(exportType: string): string {
     'receivable-payable': 'Receivable-Payable-Export',
     invoice: 'Invoice-Export',
     statement: 'Statement-Export',
-    analysis: 'Analysis-Export',
+    analysis: 'Analysis-Export'
   };
   const typeName = typeMap[exportType] || exportType;
   return `${typeName}_${timestamp}.xlsx`;
@@ -36,12 +36,12 @@ export function createWorksheet(data: unknown[], template: ExportTemplate) {
             .split('.')
             .reduce<unknown>(
               (obj, key) => (obj as Record<string, unknown>)?.[key],
-              row,
+              row
             ) ?? ''
         );
       }
       return row[col.key] ?? '';
-    }),
+    })
   );
 
   const wsData = [headers, ...dataRows];
@@ -56,5 +56,5 @@ export function createWorksheet(data: unknown[], template: ExportTemplate) {
 
 export default {
   generateFilename,
-  createWorksheet,
+  createWorksheet
 };

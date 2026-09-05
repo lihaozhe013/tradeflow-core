@@ -44,7 +44,7 @@ interface LoginAttempt {
 
 const READER_SELF_SERVICE_PATHS = new Set([
   '/api/users/me',
-  '/api/users/me/password',
+  '/api/users/me/password'
 ]);
 
 export function getAuthConfig(): AuthConfig {
@@ -54,12 +54,12 @@ export function getAuthConfig(): AuthConfig {
     tokenExpiresInHours: auth?.tokenExpiresInHours || 12,
     loginRateLimit: {
       windowMinutes: auth?.loginRateLimit?.windowMinutes || 5,
-      maxAttempts: auth?.loginRateLimit?.maxAttempts || 20,
+      maxAttempts: auth?.loginRateLimit?.maxAttempts || 20
     },
     allowExportsForReader:
       auth?.allowExportsForReader !== undefined
         ? auth.allowExportsForReader
-        : true,
+        : true
   };
 }
 
@@ -75,7 +75,7 @@ export function ensureJwtSecret(): string {
     return fs.readFileSync(secretPath, 'utf8').trim();
   } catch (e) {
     logger.error('Failed to ensure JWT secret', {
-      error: (e as Error).message,
+      error: (e as Error).message
     });
     // fallback to in-memory secret (not persisted)
     return crypto.randomBytes(64).toString('hex');
@@ -96,7 +96,7 @@ export async function findUser(username: string): Promise<User | null> {
     return await prisma.user.findUnique({ where: { username } });
   } catch (e) {
     logger.error(`Failed to find user: ${username}`, {
-      error: (e as Error).message,
+      error: (e as Error).message
     });
     return null;
   }
@@ -108,11 +108,11 @@ export async function createUser(data: User): Promise<User> {
 
 export async function updateUser(
   username: string,
-  data: Partial<User>,
+  data: Partial<User>
 ): Promise<User> {
   return await prisma.user.update({
     where: { username },
-    data,
+    data
   });
 }
 
@@ -122,13 +122,13 @@ export async function deleteUser(username: string): Promise<User> {
 
 export async function verifyPassword(
   plain: string,
-  hash: string,
+  hash: string
 ): Promise<boolean> {
   try {
     return await argon2.verify(hash, plain);
   } catch (e) {
     logger.error('Password verification failed', {
-      error: (e as Error).message,
+      error: (e as Error).message
     });
     return false;
   }
@@ -139,19 +139,19 @@ export async function hashPassword(plain: string): Promise<string> {
 }
 
 export function getPublicUser(
-  u: User | null | undefined,
+  u: User | null | undefined
 ): { username: string; role: string; display_name: string } | null {
   if (!u) return null;
   return {
     username: u.username,
     role: u.role,
-    display_name: u.display_name || u.username,
+    display_name: u.display_name || u.username
   };
 }
 
 export function signToken(
   user: User,
-  expiresInHours?: number,
+  expiresInHours?: number
 ): { token: string; expires_in: number } {
   const secret = ensureJwtSecret();
   const expSeconds =
@@ -160,11 +160,11 @@ export function signToken(
     sub: user.username,
     role: user.role,
     name: user.display_name || user.username,
-    pwd_ver: user.last_password_change || new Date(0).toISOString(),
+    pwd_ver: user.last_password_change || new Date(0).toISOString()
   };
   const token = jwt.sign(payload, secret, {
     algorithm: 'HS256',
-    expiresIn: expSeconds,
+    expiresIn: expSeconds
   });
   return { token, expires_in: expSeconds };
 }
@@ -175,7 +175,7 @@ const attempts = new Map<string, LoginAttempt>();
 export function loginRateLimiter(
   req: Request,
   res: Response,
-  next: NextFunction,
+  next: NextFunction
 ): void {
   const { windowMinutes, maxAttempts } = getAuthConfig().loginRateLimit;
   const windowMs = windowMinutes * 60 * 1000;
@@ -196,7 +196,7 @@ export function loginRateLimiter(
   if (rec.count > maxAttempts) {
     res.status(429).json({
       success: false,
-      message: 'Too many login attempts. Please try later.',
+      message: 'Too many login attempts. Please try later.'
     });
     return;
   }
@@ -206,7 +206,7 @@ export function loginRateLimiter(
 export async function authenticateToken(
   req: Request,
   res: Response,
-  next: NextFunction,
+  next: NextFunction
 ): Promise<void> {
   const { enabled } = getAuthConfig();
   if (!enabled) {
@@ -215,7 +215,7 @@ export async function authenticateToken(
       username: 'dev',
       role: 'editor',
       name: 'Developer',
-      pwd_ver: new Date().toISOString(),
+      pwd_ver: new Date().toISOString()
     };
     next();
     return;
@@ -236,7 +236,7 @@ export async function authenticateToken(
   try {
     const secret = ensureJwtSecret();
     const decoded = jwt.verify(token, secret, {
-      algorithms: ['HS256'],
+      algorithms: ['HS256']
     }) as JWTPayload;
 
     // Check DB
@@ -256,14 +256,14 @@ export async function authenticateToken(
       username: user.username,
       role: user.role,
       name: user.display_name || user.username,
-      pwd_ver: decoded.pwd_ver,
+      pwd_ver: decoded.pwd_ver
     };
     next();
   } catch (e) {
     res.status(401).json({
       success: false,
       message: 'Unauthorized',
-      error: (e as Error).message,
+      error: (e as Error).message
     });
   }
 }
@@ -287,7 +287,7 @@ export function authorize(roles: string | string[] = ['editor', 'reader']) {
 export function checkWritePermission(
   req: Request,
   res: Response,
-  next: NextFunction,
+  next: NextFunction
 ): void {
   if (!req.user) {
     res.status(401).json({ success: false, message: 'Unauthorized' });
@@ -332,13 +332,13 @@ export function checkWritePermission(
         username: req.user.username,
         method: method,
         url: req.originalUrl,
-        ip: req.ip,
+        ip: req.ip
       });
       res.status(403).json({
         success: false,
         message:
           'Read-only users are not authorized to perform this operation.',
-        error_code: 'READ_ONLY_ACCESS_DENIED',
+        error_code: 'READ_ONLY_ACCESS_DENIED'
       });
       return;
     }
@@ -348,6 +348,6 @@ export function checkWritePermission(
   res.status(403).json({
     success: false,
     message: 'INSUFFICIENT_PERMISSIONS',
-    error_code: 'INSUFFICIENT_PERMISSIONS',
+    error_code: 'INSUFFICIENT_PERMISSIONS'
   });
 }

@@ -6,7 +6,7 @@ import {
   AutoComplete,
   Button,
   Space,
-  Segmented,
+  Segmented
 } from 'antd';
 import { ReloadOutlined, DownloadOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
@@ -14,7 +14,7 @@ import type { Dayjs } from 'dayjs';
 import type {
   PartnerOption,
   ProductOption,
-  AnalysisType,
+  AnalysisType
 } from '@/types/analysis';
 
 const { RangePicker } = DatePicker;
@@ -23,7 +23,7 @@ interface AnalysisFiltersProps {
   dateRange: [Dayjs, Dayjs];
   onDateRangeChange: (
     dates: [Dayjs | null, Dayjs | null] | null,
-    dateStrings: [string, string],
+    dateStrings: [string, string]
   ) => void;
   selectedPartner: string | null;
   onPartnerChange: (value: string | null) => void;
@@ -57,7 +57,7 @@ const AnalysisFilters: React.FC<AnalysisFiltersProps> = ({
   hasData,
   canUseReaderPost,
   analysisType,
-  onAnalysisTypeChange,
+  onAnalysisTypeChange
 }) => {
   const { t } = useTranslation();
 
@@ -72,12 +72,12 @@ const AnalysisFilters: React.FC<AnalysisFiltersProps> = ({
                 options={[
                   {
                     label: t('analysis.sales') || 'Outbound (Sales)',
-                    value: 'outbound',
+                    value: 'outbound'
                   },
                   {
                     label: t('analysis.purchase') || 'Inbound (Purchase)',
-                    value: 'inbound',
-                  },
+                    value: 'inbound'
+                  }
                 ]}
                 value={analysisType}
                 onChange={(val) => onAnalysisTypeChange(val as AnalysisType)}
@@ -120,7 +120,7 @@ const AnalysisFilters: React.FC<AnalysisFiltersProps> = ({
             }
             options={partners.map((p) => ({
               value: p.code,
-              label: `${p.code} - ${p.name}`,
+              label: `${p.code} - ${p.name}`
             }))}
             filterOption={(inputValue, option) =>
               (option?.label ?? '')
@@ -142,7 +142,7 @@ const AnalysisFilters: React.FC<AnalysisFiltersProps> = ({
             placeholder={t('analysis.selectProduct')}
             options={products.map((product) => ({
               value: product.model,
-              label: `${product.model} - ${product.name}`,
+              label: `${product.model} - ${product.name}`
             }))}
             filterOption={(inputValue, option) =>
               (option?.label ?? '')

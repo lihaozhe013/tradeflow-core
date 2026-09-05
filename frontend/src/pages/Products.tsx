@@ -16,7 +16,7 @@ import {
   Typography,
   Row,
   Col,
-  Divider,
+  Divider
 } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { PRODUCT_CATEGORIES } from '@/config';
@@ -64,13 +64,13 @@ type ProductFilters = {
 const DEFAULT_PAGINATION: PaginationInfo = {
   current: 1,
   pageSize: 20,
-  total: 0,
+  total: 0
 };
 
 const Products: FC = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [editingProduct, setEditingProduct] = useState<ProductItem | null>(
-    null,
+    null
   );
   const [form] = Form.useForm<ProductFormValues>();
   const [filterForm] = Form.useForm<ProductFilters>();
@@ -95,13 +95,13 @@ const Products: FC = () => {
         if (nextFilters.category)
           query.append('category', nextFilters.category);
         const result = await get<ProductListResponse>(
-          `/products?${query.toString()}`,
+          `/products?${query.toString()}`
         );
         setProducts(Array.isArray(result?.data) ? result.data : []);
         setPagination((prev) => ({
           current: result?.pagination?.page ?? page,
           pageSize: result?.pagination?.limit ?? prev.pageSize,
-          total: result?.pagination?.total ?? prev.total,
+          total: result?.pagination?.total ?? prev.total
         }));
       } catch {
         setProducts([]);
@@ -109,7 +109,7 @@ const Products: FC = () => {
         setLoading(false);
       }
     },
-    [filters, get],
+    [filters, get]
   );
 
   useEffect(() => {
@@ -164,26 +164,26 @@ const Products: FC = () => {
       title: t('products.code'),
       dataIndex: 'code',
       key: 'code',
-      width: 120,
+      width: 120
     },
     {
       title: t('products.productModel'),
       dataIndex: 'product_model',
       key: 'product_model',
-      width: 200,
+      width: 200
     },
     {
       title: t('products.category'),
       dataIndex: 'category',
       key: 'category',
-      width: 150,
+      width: 150
     },
     {
       title: t('products.remark'),
       dataIndex: 'remark',
       key: 'remark',
-      width: 300,
-    },
+      width: 300
+    }
   ];
 
   if (canWrite) {
@@ -212,7 +212,7 @@ const Products: FC = () => {
             </Button>
           </Popconfirm>
         </Space>
-      ),
+      )
     });
   }
 
@@ -220,7 +220,7 @@ const Products: FC = () => {
     (changedValues) => {
       if (changedValues?.code) {
         const match = productOptions.find(
-          (product) => product.code === changedValues.code,
+          (product) => product.code === changedValues.code
         );
         if (match) {
           form.setFieldsValue({ product_model: match.product_model });
@@ -230,7 +230,7 @@ const Products: FC = () => {
 
       if (changedValues?.product_model) {
         const match = productOptions.find(
-          (product) => product.product_model === changedValues.product_model,
+          (product) => product.product_model === changedValues.product_model
         );
         if (match) {
           form.setFieldsValue({ code: match.code });
@@ -239,7 +239,7 @@ const Products: FC = () => {
     };
 
   const handleTableChange: TableProps<ProductItem>['onChange'] = (
-    paginationConfig,
+    paginationConfig
   ) => {
     const nextPage = paginationConfig.current ?? 1;
     fetchProducts(nextPage, filters);
@@ -250,7 +250,7 @@ const Products: FC = () => {
     const nextFilters: ProductFilters = {
       code: values.code?.trim() || undefined,
       product_model: values.product_model?.trim() || undefined,
-      category: values.category,
+      category: values.category
     };
     setFilters(nextFilters);
     fetchProducts(1, nextFilters);
@@ -312,7 +312,7 @@ const Products: FC = () => {
               placeholder={t('products.selectCategory')}
               options={PRODUCT_CATEGORIES.map((name) => ({
                 value: name,
-                label: name,
+                label: name
               }))}
               filterOption={(input, option) => {
                 const label =
@@ -346,8 +346,8 @@ const Products: FC = () => {
                 t('products.paginationTotal', {
                   start: range[0],
                   end: range[1],
-                  total,
-                }),
+                  total
+                })
             }}
             scroll={{ x: 900 }}
           />
@@ -377,7 +377,7 @@ const Products: FC = () => {
               name="code"
               rules={[
                 { required: true, message: t('products.inputCode') },
-                { max: 50, message: t('products.codeMax') },
+                { max: 50, message: t('products.codeMax') }
               ]}
             >
               <Input
@@ -391,7 +391,7 @@ const Products: FC = () => {
               name="product_model"
               rules={[
                 { required: true, message: t('products.inputProductModel') },
-                { max: 100, message: t('products.productModelMax') },
+                { max: 100, message: t('products.productModelMax') }
               ]}
             >
               <Input
@@ -405,7 +405,7 @@ const Products: FC = () => {
               name="category"
               rules={[
                 { required: true, message: t('products.selectCategory') },
-                { max: 100, message: t('products.categoryMax') },
+                { max: 100, message: t('products.categoryMax') }
               ]}
             >
               <Select
@@ -414,7 +414,7 @@ const Products: FC = () => {
                 placeholder={t('products.selectCategory')}
                 options={PRODUCT_CATEGORIES.map((name) => ({
                   value: name,
-                  label: name,
+                  label: name
                 }))}
                 filterOption={(input, option) => {
                   const label =

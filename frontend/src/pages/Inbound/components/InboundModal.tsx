@@ -9,7 +9,7 @@ import {
   Row,
   Col,
   AutoComplete,
-  Radio,
+  Radio
 } from 'antd';
 import type { FC, Dispatch, SetStateAction } from 'react';
 import type { FormInstance } from 'antd/es/form';
@@ -21,7 +21,7 @@ import type {
   InboundFormValues,
   InboundRecord,
   Partner,
-  Product,
+  Product
 } from '../types';
 
 interface InboundModalProps {
@@ -44,7 +44,7 @@ interface InboundModalProps {
 
 const filterOption = (
   inputValue: string,
-  option?: DefaultOptionType,
+  option?: DefaultOptionType
 ): boolean => {
   const valueText =
     typeof option?.value === 'string' ? option.value.toLowerCase() : '';
@@ -69,7 +69,7 @@ const InboundModal: FC<InboundModalProps> = ({
   onProductCodeChange,
   onProductModelChange,
   onPartnerOrProductChange,
-  onPriceOrQuantityChange,
+  onPriceOrQuantityChange
 }) => {
   const { t } = useTranslation();
 
@@ -100,7 +100,7 @@ const InboundModal: FC<InboundModalProps> = ({
               label={t('inbound.supplierCode')}
               name="supplier_code"
               rules={[
-                { required: true, message: t('inbound.inputSupplierCode') },
+                { required: true, message: t('inbound.inputSupplierCode') }
               ]}
             >
               <AutoComplete
@@ -108,7 +108,7 @@ const InboundModal: FC<InboundModalProps> = ({
                 onChange={(value) => onSupplierCodeChange(value ?? '')}
                 options={partners.map((partner) => ({
                   value: partner.code ?? '',
-                  label: `${partner.code ?? ''} - ${partner.short_name}`,
+                  label: `${partner.code ?? ''} - ${partner.short_name}`
                 }))}
                 filterOption={filterOption}
               />
@@ -121,8 +121,8 @@ const InboundModal: FC<InboundModalProps> = ({
               rules={[
                 {
                   required: true,
-                  message: t('inbound.inputSupplierShortName'),
-                },
+                  message: t('inbound.inputSupplierShortName')
+                }
               ]}
             >
               <AutoComplete
@@ -130,7 +130,7 @@ const InboundModal: FC<InboundModalProps> = ({
                 onChange={(value) => onSupplierShortNameChange(value ?? '')}
                 options={partners.map((partner) => ({
                   value: partner.short_name,
-                  label: `${partner.short_name} - ${partner.code ?? ''}`,
+                  label: `${partner.short_name} - ${partner.code ?? ''}`
                 }))}
                 filterOption={filterOption}
               />
@@ -152,7 +152,7 @@ const InboundModal: FC<InboundModalProps> = ({
               label={t('inbound.productCode')}
               name="product_code"
               rules={[
-                { required: true, message: t('inbound.inputProductCode') },
+                { required: true, message: t('inbound.inputProductCode') }
               ]}
             >
               <AutoComplete
@@ -160,7 +160,7 @@ const InboundModal: FC<InboundModalProps> = ({
                 onChange={(value) => onProductCodeChange(value ?? '')}
                 options={products.map((product) => ({
                   value: product.code ?? '',
-                  label: `${product.code ?? ''} - ${product.product_model}`,
+                  label: `${product.code ?? ''} - ${product.product_model}`
                 }))}
                 filterOption={filterOption}
               />
@@ -171,7 +171,7 @@ const InboundModal: FC<InboundModalProps> = ({
               label={t('inbound.productModel')}
               name="product_model"
               rules={[
-                { required: true, message: t('inbound.inputProductModel') },
+                { required: true, message: t('inbound.inputProductModel') }
               ]}
             >
               <AutoComplete
@@ -179,7 +179,7 @@ const InboundModal: FC<InboundModalProps> = ({
                 onChange={(value) => onProductModelChange(value ?? '')}
                 options={products.map((product) => ({
                   value: product.product_model,
-                  label: `${product.product_model} - ${product.code ?? ''}`,
+                  label: `${product.product_model} - ${product.code ?? ''}`
                 }))}
                 filterOption={filterOption}
               />
@@ -190,7 +190,7 @@ const InboundModal: FC<InboundModalProps> = ({
               label={t('inbound.inboundDate')}
               name="inbound_date"
               rules={[
-                { required: true, message: t('inbound.selectInboundDate') },
+                { required: true, message: t('inbound.selectInboundDate') }
               ]}
             >
               <DatePicker
@@ -212,8 +212,8 @@ const InboundModal: FC<InboundModalProps> = ({
                 { required: true, message: t('inbound.inputQuantity') },
                 {
                   type: 'number',
-                  message: t('inbound.quantityGreaterThanZero'),
-                },
+                  message: t('inbound.quantityGreaterThanZero')
+                }
               ]}
             >
               <InputNumber
@@ -232,7 +232,7 @@ const InboundModal: FC<InboundModalProps> = ({
               <Radio.Group
                 options={[
                   { label: t('inbound.autoFetch'), value: false },
-                  { label: t('inbound.manualInput'), value: true },
+                  { label: t('inbound.manualInput'), value: true }
                 ]}
                 onChange={handleManualPriceChange}
                 optionType="button"
@@ -247,7 +247,7 @@ const InboundModal: FC<InboundModalProps> = ({
               name="unit_price"
               rules={[
                 { required: true, message: t('inbound.inputUnitPrice') },
-                { type: 'number' },
+                { type: 'number' }
               ]}
             >
               <InputNumber

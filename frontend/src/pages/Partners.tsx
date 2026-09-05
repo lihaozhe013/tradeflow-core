@@ -16,7 +16,7 @@ import {
   Typography,
   Row,
   Col,
-  Divider,
+  Divider
 } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useSimpleApi } from '@/hooks/useSimpleApi';
@@ -71,13 +71,13 @@ type PartnerFilters = {
 const DEFAULT_PAGINATION: PaginationInfo = {
   current: 1,
   pageSize: 20,
-  total: 0,
+  total: 0
 };
 
 const Partners: FC = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [editingPartner, setEditingPartner] = useState<PartnerItem | null>(
-    null,
+    null
   );
   const [form] = Form.useForm<PartnerFormValues>();
   const [filterForm] = Form.useForm<PartnerFilters>();
@@ -104,13 +104,13 @@ const Partners: FC = () => {
         if (nextFilters.type !== undefined)
           query.append('type', String(nextFilters.type));
         const result = await get<PartnerListResponse>(
-          `/partners?${query.toString()}`,
+          `/partners?${query.toString()}`
         );
         setPartners(Array.isArray(result?.data) ? result.data : []);
         setPagination((prev) => ({
           current: result?.pagination?.page ?? page,
           pageSize: result?.pagination?.limit ?? prev.pageSize,
-          total: result?.pagination?.total ?? prev.total,
+          total: result?.pagination?.total ?? prev.total
         }));
       } catch {
         setPartners([]);
@@ -118,7 +118,7 @@ const Partners: FC = () => {
         setLoading(false);
       }
     },
-    [filters, get],
+    [filters, get]
   );
 
   useEffect(() => {
@@ -160,7 +160,7 @@ const Partners: FC = () => {
         values.type === undefined
       ) {
         message.error(
-          t('common.validationError', { defaultValue: 'Validation error' }),
+          t('common.validationError', { defaultValue: 'Validation error' })
         );
         return;
       }
@@ -184,19 +184,19 @@ const Partners: FC = () => {
       title: t('partners.code'),
       dataIndex: 'code',
       key: 'code',
-      width: 80,
+      width: 80
     },
     {
       title: t('partners.shortName'),
       dataIndex: 'short_name',
       key: 'short_name',
-      width: 100,
+      width: 100
     },
     {
       title: t('partners.fullName'),
       dataIndex: 'full_name',
       key: 'full_name',
-      width: 200,
+      width: 200
     },
     {
       title: t('partners.type'),
@@ -204,26 +204,26 @@ const Partners: FC = () => {
       key: 'type',
       width: 80,
       render: (type) =>
-        type === 0 ? t('partners.supplier') : t('partners.customer'),
+        type === 0 ? t('partners.supplier') : t('partners.customer')
     },
     {
       title: t('partners.address'),
       dataIndex: 'address',
       key: 'address',
-      width: 200,
+      width: 200
     },
     {
       title: t('partners.contactPerson'),
       dataIndex: 'contact_person',
       key: 'contact_person',
-      width: 100,
+      width: 100
     },
     {
       title: t('partners.contactPhone'),
       dataIndex: 'contact_phone',
       key: 'contact_phone',
-      width: 120,
-    },
+      width: 120
+    }
   ];
 
   if (canWrite) {
@@ -252,7 +252,7 @@ const Partners: FC = () => {
             </Button>
           </Popconfirm>
         </Space>
-      ),
+      )
     });
   }
 
@@ -260,12 +260,12 @@ const Partners: FC = () => {
     (changedValues) => {
       if (changedValues?.code) {
         const match = partnerOptions.find(
-          (partner) => partner.code === changedValues.code,
+          (partner) => partner.code === changedValues.code
         );
         if (match) {
           form.setFieldsValue({
             short_name: match.short_name,
-            full_name: match.full_name,
+            full_name: match.full_name
           });
         }
         return;
@@ -273,7 +273,7 @@ const Partners: FC = () => {
 
       if (changedValues?.short_name) {
         const match = partnerOptions.find(
-          (partner) => partner.short_name === changedValues.short_name,
+          (partner) => partner.short_name === changedValues.short_name
         );
         if (match) {
           form.setFieldsValue({ code: match.code, full_name: match.full_name });
@@ -283,19 +283,19 @@ const Partners: FC = () => {
 
       if (changedValues?.full_name) {
         const match = partnerOptions.find(
-          (partner) => partner.full_name === changedValues.full_name,
+          (partner) => partner.full_name === changedValues.full_name
         );
         if (match) {
           form.setFieldsValue({
             code: match.code,
-            short_name: match.short_name,
+            short_name: match.short_name
           });
         }
       }
     };
 
   const handleTableChange: TableProps<PartnerItem>['onChange'] = (
-    paginationConfig,
+    paginationConfig
   ) => {
     const nextPage = paginationConfig.current ?? 1;
     fetchPartners(nextPage, filters);
@@ -307,7 +307,7 @@ const Partners: FC = () => {
       code: values.code?.trim() || undefined,
       short_name: values.short_name?.trim() || undefined,
       full_name: values.full_name?.trim() || undefined,
-      type: values.type,
+      type: values.type
     };
     setFilters(nextFilters);
     fetchPartners(1, nextFilters);
@@ -400,8 +400,8 @@ const Partners: FC = () => {
                 t('partners.paginationTotal', {
                   start: range[0],
                   end: range[1],
-                  total,
-                }),
+                  total
+                })
             }}
             scroll={{ x: 900 }}
           />
@@ -442,7 +442,7 @@ const Partners: FC = () => {
               name="short_name"
               rules={[
                 { required: true, message: t('partners.inputShortName') },
-                { max: 50, message: t('partners.shortNameMax') },
+                { max: 50, message: t('partners.shortNameMax') }
               ]}
             >
               <Input
@@ -456,7 +456,7 @@ const Partners: FC = () => {
               name="full_name"
               rules={[
                 { required: true, message: t('partners.inputFullName') },
-                { max: 200, message: t('partners.fullNameMax') },
+                { max: 200, message: t('partners.fullNameMax') }
               ]}
             >
               <Input placeholder={t('partners.inputFullName')} />

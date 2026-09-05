@@ -4,7 +4,7 @@ import {
   UserOutlined,
   LockOutlined,
   LoginOutlined,
-  GlobalOutlined,
+  GlobalOutlined
 } from '@ant-design/icons';
 import { useAuth } from '@/auth/useAuth';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -47,17 +47,17 @@ const LoginPage: React.FC = () => {
   const supportedLanguages: readonly LanguageValue[] = [
     'zh',
     'en',
-    'ko',
+    'ko'
   ] as const;
 
   const languageOptions = [
     { value: 'zh', label: '🇨🇳 中文', flag: '🇨🇳' },
     { value: 'en', label: '🇺🇸 English', flag: '🇺🇸' },
-    { value: 'ko', label: '🇰🇷 한국어', flag: '🇰🇷' },
+    { value: 'ko', label: '🇰🇷 한국어', flag: '🇰🇷' }
   ];
 
   const currentLanguage = supportedLanguages.includes(
-    i18n.language as LanguageValue,
+    i18n.language as LanguageValue
   )
     ? (i18n.language as LanguageValue)
     : 'zh';
@@ -141,8 +141,8 @@ const LoginPage: React.FC = () => {
               rules={[
                 {
                   required: true,
-                  message: t('auth.usernameRequired'),
-                },
+                  message: t('auth.usernameRequired')
+                }
               ]}
             >
               <Input
@@ -158,8 +158,8 @@ const LoginPage: React.FC = () => {
               rules={[
                 {
                   required: true,
-                  message: t('auth.passwordRequired'),
-                },
+                  message: t('auth.passwordRequired')
+                }
               ]}
             >
               <Input.Password

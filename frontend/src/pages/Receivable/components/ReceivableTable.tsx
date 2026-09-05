@@ -11,7 +11,7 @@ import {
   Space,
   Typography,
   Row,
-  Col,
+  Col
 } from 'antd';
 import { currency_unit_symbol } from '@/config/types';
 import type { ColumnsType, TablePaginationConfig } from 'antd/es/table';
@@ -27,7 +27,7 @@ import type {
   ReceivableOutboundRecord,
   ReceivablePaymentRecord,
   ReceivableRecord,
-  ReceivableSorterState,
+  ReceivableSorterState
 } from '../types';
 
 const { Search } = Input;
@@ -50,7 +50,7 @@ interface ReceivableTableProps {
   readonly onAddPayment: (record: ReceivableRecord) => void;
   readonly onEditPayment: (
     payment: ReceivablePaymentRecord,
-    customer: ReceivableRecord,
+    customer: ReceivableRecord
   ) => void;
   readonly onDeletePayment: (paymentId: number) => Promise<void> | void;
   readonly apiInstance: UseSimpleApiReturn;
@@ -60,7 +60,7 @@ interface ReceivableTableProps {
 const DEFAULT_MODAL_PAGINATION: ModalPaginationState = {
   current: 1,
   pageSize: 5,
-  total: 0,
+  total: 0
 };
 
 const formatCurrency = (amount: number | null | undefined): string => {
@@ -69,7 +69,7 @@ const formatCurrency = (amount: number | null | undefined): string => {
   }
   return `${currency_unit_symbol}${Number(amount).toLocaleString('zh-CN', {
     minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+    maximumFractionDigits: 2
   })}`;
 };
 
@@ -85,7 +85,7 @@ const ReceivableTable: FC<ReceivableTableProps> = ({
   onEditPayment,
   onDeletePayment,
   apiInstance,
-  canWrite,
+  canWrite
 }) => {
   const { t } = useTranslation();
   const [detailsVisible, setDetailsVisible] = useState(false);
@@ -113,7 +113,7 @@ const ReceivableTable: FC<ReceivableTableProps> = ({
       return (
         <Tag color="green">
           {t('receivable.overpaid', {
-            amount: formatCurrency(Math.abs(numeric)),
+            amount: formatCurrency(Math.abs(numeric))
           })}
         </Tag>
       );
@@ -124,17 +124,17 @@ const ReceivableTable: FC<ReceivableTableProps> = ({
   const fetchCustomerDetails = async (
     customerCode: string,
     paymentPage = 1,
-    outboundPage = 1,
+    outboundPage = 1
   ): Promise<void> => {
     try {
       const outboundQuery = new URLSearchParams({
         page: String(outboundPage),
-        limit: String(DEFAULT_MODAL_PAGINATION.pageSize),
+        limit: String(DEFAULT_MODAL_PAGINATION.pageSize)
       });
 
       // Fetch payment records from details endpoint
       const detailsResult = await apiInstance.get<ReceivableDetailResponse>(
-        `/receivable/details/${customerCode}?payment_page=${paymentPage}&payment_limit=${DEFAULT_MODAL_PAGINATION.pageSize}`,
+        `/receivable/details/${customerCode}?payment_page=${paymentPage}&payment_limit=${DEFAULT_MODAL_PAGINATION.pageSize}`
       );
 
       // Fetch uninvoiced records
@@ -150,8 +150,8 @@ const ReceivableTable: FC<ReceivableTableProps> = ({
         outbound_records: { data: uninvoicedResult?.data ?? [] },
         outbound_pagination: {
           page: uninvoicedResult?.page ?? outboundPage,
-          total: uninvoicedResult?.total ?? 0,
-        },
+          total: uninvoicedResult?.total ?? 0
+        }
       };
 
       setCustomerDetails(result ?? null);
@@ -161,7 +161,7 @@ const ReceivableTable: FC<ReceivableTableProps> = ({
         setPaymentPagination({
           current: paymentPaginationInfo.page,
           pageSize: DEFAULT_MODAL_PAGINATION.pageSize,
-          total: paymentPaginationInfo.total,
+          total: paymentPaginationInfo.total
         });
       }
 
@@ -170,7 +170,7 @@ const ReceivableTable: FC<ReceivableTableProps> = ({
         setOutboundPagination({
           current: outboundPaginationInfo.page,
           pageSize: DEFAULT_MODAL_PAGINATION.pageSize,
-          total: outboundPaginationInfo.total,
+          total: outboundPaginationInfo.total
         });
       }
     } catch (error) {
@@ -200,7 +200,7 @@ const ReceivableTable: FC<ReceivableTableProps> = ({
       await fetchCustomerDetails(
         selectedCustomer.customer_code,
         page,
-        outboundPagination.current,
+        outboundPagination.current
       );
     }
   };
@@ -210,7 +210,7 @@ const ReceivableTable: FC<ReceivableTableProps> = ({
       await fetchCustomerDetails(
         selectedCustomer.customer_code,
         paymentPagination.current,
-        page,
+        page
       );
     }
   };
@@ -220,20 +220,20 @@ const ReceivableTable: FC<ReceivableTableProps> = ({
   };
 
   const handleDeletePaymentConfirm = async (
-    paymentId: number,
+    paymentId: number
   ): Promise<void> => {
     await Promise.resolve(onDeletePayment(paymentId));
     if (detailsVisible && selectedCustomer) {
       await fetchCustomerDetails(
         selectedCustomer.customer_code,
         paymentPagination.current,
-        outboundPagination.current,
+        outboundPagination.current
       );
     }
   };
 
   const getColumnSortOrder = (
-    field: ReceivableSorterState['field'],
+    field: ReceivableSorterState['field']
   ): SortOrder => (sorter.field === field ? (sorter.order ?? null) : null);
 
   const tableColumns: ColumnsType<ReceivableRecord> = [
@@ -243,7 +243,7 @@ const ReceivableTable: FC<ReceivableTableProps> = ({
       key: 'customer_code',
       width: 120,
       sorter: true,
-      sortOrder: getColumnSortOrder('customer_code'),
+      sortOrder: getColumnSortOrder('customer_code')
     },
     {
       title: t('receivable.customerShortName'),
@@ -251,14 +251,14 @@ const ReceivableTable: FC<ReceivableTableProps> = ({
       key: 'customer_short_name',
       width: 150,
       sorter: true,
-      sortOrder: getColumnSortOrder('customer_short_name'),
+      sortOrder: getColumnSortOrder('customer_short_name')
     },
     {
       title: t('receivable.customerFullName'),
       dataIndex: 'customer_full_name',
       key: 'customer_full_name',
       width: 200,
-      ellipsis: true,
+      ellipsis: true
     },
     {
       title: t('receivable.totalReceivable'),
@@ -268,7 +268,7 @@ const ReceivableTable: FC<ReceivableTableProps> = ({
       align: 'right',
       sorter: true,
       sortOrder: getColumnSortOrder('total_receivable'),
-      render: (value) => formatCurrency(value),
+      render: (value) => formatCurrency(value)
     },
     {
       title: t('receivable.totalPaid'),
@@ -278,7 +278,7 @@ const ReceivableTable: FC<ReceivableTableProps> = ({
       align: 'right',
       sorter: true,
       sortOrder: getColumnSortOrder('total_paid'),
-      render: (value) => formatCurrency(value),
+      render: (value) => formatCurrency(value)
     },
     {
       title: t('receivable.balance'),
@@ -288,7 +288,7 @@ const ReceivableTable: FC<ReceivableTableProps> = ({
       align: 'right',
       sorter: true,
       sortOrder: getColumnSortOrder('balance'),
-      render: (value) => getBalanceTag(value),
+      render: (value) => getBalanceTag(value)
     },
     {
       title: t('receivable.lastPaymentDate'),
@@ -297,14 +297,14 @@ const ReceivableTable: FC<ReceivableTableProps> = ({
       width: 120,
       sorter: true,
       sortOrder: getColumnSortOrder('last_payment_date'),
-      render: (value) => value ?? '-',
+      render: (value) => value ?? '-'
     },
     {
       title: t('receivable.lastPaymentMethod'),
       dataIndex: 'last_payment_method',
       key: 'last_payment_method',
       width: 100,
-      render: (value) => value ?? '-',
+      render: (value) => value ?? '-'
     },
     {
       title: t('receivable.action'),
@@ -332,22 +332,22 @@ const ReceivableTable: FC<ReceivableTableProps> = ({
             </Button>
           )}
         </Space>
-      ),
-    },
+      )
+    }
   ];
 
   const searchStats = useMemo(() => {
     const totalReceivable = data.reduce(
       (sum, item) => sum + (item.total_receivable ?? 0),
-      0,
+      0
     );
     const totalUnpaid = data.reduce(
       (sum, item) => sum + Math.max(item.balance ?? 0, 0),
-      0,
+      0
     );
     return {
       totalReceivable,
-      totalUnpaid,
+      totalUnpaid
     };
   }, [data]);
 
@@ -358,8 +358,8 @@ const ReceivableTable: FC<ReceivableTableProps> = ({
       t('receivable.paginationTotal', {
         start: range[0],
         end: range[1],
-        total,
-      }),
+        total
+      })
   };
 
   return (
@@ -379,7 +379,7 @@ const ReceivableTable: FC<ReceivableTableProps> = ({
             {t('receivable.totalCustomers', {
               count: pagination.total,
               totalReceivable: formatCurrency(searchStats.totalReceivable),
-              totalUnpaid: formatCurrency(searchStats.totalUnpaid),
+              totalUnpaid: formatCurrency(searchStats.totalUnpaid)
             })}
           </Text>
         </Col>
@@ -476,24 +476,24 @@ const ReceivableTable: FC<ReceivableTableProps> = ({
                   size: 'small',
                   onChange: handlePaymentPageChange,
                   showTotal: (total, range) =>
-                    `${range[0]}-${range[1]} / ${total}`,
+                    `${range[0]}-${range[1]} / ${total}`
                 }}
                 scroll={{ y: 200 }}
                 columns={[
                   {
                     title: t('receivable.paymentAmount'),
                     dataIndex: 'amount',
-                    render: (value) => formatCurrency(value),
+                    render: (value) => formatCurrency(value)
                   },
                   { title: t('receivable.paymentDate'), dataIndex: 'pay_date' },
                   {
                     title: t('receivable.paymentMethod'),
-                    dataIndex: 'pay_method',
+                    dataIndex: 'pay_method'
                   },
                   {
                     title: t('receivable.remark'),
                     dataIndex: 'remark',
-                    ellipsis: true,
+                    ellipsis: true
                   },
                   ...(canWrite
                     ? [
@@ -528,10 +528,10 @@ const ReceivableTable: FC<ReceivableTableProps> = ({
                                 />
                               </Popconfirm>
                             </Space>
-                          ),
-                        },
+                          )
+                        }
                       ]
-                    : []),
+                    : [])
                 ]}
               />
             </div>
@@ -558,51 +558,51 @@ const ReceivableTable: FC<ReceivableTableProps> = ({
                   size: 'small',
                   onChange: handleOutboundPageChange,
                   showTotal: (total, range) =>
-                    `${range[0]}-${range[1]} / ${total}`,
+                    `${range[0]}-${range[1]} / ${total}`
                 }}
                 scroll={{ y: 200 }}
                 columns={[
                   {
                     title: t('receivable.outboundDate'),
                     dataIndex: 'outbound_date',
-                    width: 100,
+                    width: 100
                   },
                   {
                     title: t('receivable.productModel'),
                     dataIndex: 'product_model',
-                    width: 120,
+                    width: 120
                   },
                   {
                     title: t('receivable.quantity'),
                     dataIndex: 'quantity',
                     width: 80,
-                    align: 'right',
+                    align: 'right'
                   },
                   {
                     title: t('receivable.unitPrice'),
                     dataIndex: 'unit_price',
                     width: 100,
                     align: 'right',
-                    render: (value) => formatCurrency(value),
+                    render: (value) => formatCurrency(value)
                   },
                   {
                     title: t('receivable.totalPrice'),
                     dataIndex: 'total_price',
                     width: 100,
                     align: 'right',
-                    render: (value) => formatCurrency(value),
+                    render: (value) => formatCurrency(value)
                   },
                   {
                     title: t('receivable.orderNumber'),
                     dataIndex: 'order_number',
                     width: 120,
-                    ellipsis: true,
+                    ellipsis: true
                   },
                   {
                     title: t('receivable.remark'),
                     dataIndex: 'remark',
-                    ellipsis: true,
-                  },
+                    ellipsis: true
+                  }
                 ]}
               />
             </div>

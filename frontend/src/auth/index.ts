@@ -23,13 +23,13 @@ export type {
   GetCurrentUserResponse,
   TokenManager,
   UserManager,
-  AuthAPI,
+  AuthAPI
 } from '@/auth/auth';
 
 export type {
   AuthContextState,
   LoginResult,
-  AuthContextValue,
+  AuthContextValue
 } from '@/auth/useAuth.d';
 
 export type { UsePermissionsReturn } from '@/auth/usePermissions';
@@ -41,7 +41,7 @@ export {
   userManager,
   authAPI,
   isAuthenticated,
-  hasRole,
+  hasRole
 } from '@/auth/auth';
 
 /**

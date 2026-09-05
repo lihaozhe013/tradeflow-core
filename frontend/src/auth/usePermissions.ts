@@ -144,9 +144,9 @@ export const usePermissions = (): UsePermissionsReturn => {
             action:
               requiredRole === 'editor'
                 ? t('common.edit')
-                : t('auth.permission.view'),
-          }),
-    }),
+                : t('auth.permission.view')
+          })
+    })
   };
 };
 

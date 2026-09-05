@@ -11,7 +11,7 @@ export interface InventoryExportRow {
 export async function getInventoryData(): Promise<InventoryExportRow[]> {
   const items = await prisma.inventory.findMany({
     where: { quantity: { gt: 0 } },
-    orderBy: { product_model: 'asc' },
+    orderBy: { product_model: 'asc' }
   });
 
   const results: InventoryExportRow[] = [];
@@ -24,7 +24,7 @@ export async function getInventoryData(): Promise<InventoryExportRow[]> {
     const priceRow = await prisma.inboundRecord.findFirst({
       where: { product: { product_model: item.product_model } },
       orderBy: [{ inbound_date: 'desc' }, { id: 'desc' }],
-      select: { unit_price: true },
+      select: { unit_price: true }
     });
 
     if (priceRow && priceRow.unit_price) {
@@ -37,7 +37,7 @@ export async function getInventoryData(): Promise<InventoryExportRow[]> {
       product_model: item.product_model,
       quantity: item.quantity,
       unit_cost: unitCost,
-      total_value: totalValue,
+      total_value: totalValue
     });
   }
 

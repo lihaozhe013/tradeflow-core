@@ -9,13 +9,13 @@ import type {
   RequestOptions,
   UploadOptions,
   DownloadOptions,
-  RequestInstance,
+  RequestInstance
 } from './types';
 import {
   RequestError,
   NetworkError,
   AuthenticationError,
-  AuthorizationError,
+  AuthorizationError
 } from './types';
 
 /**
@@ -32,7 +32,7 @@ const createRequest = (baseURL = ''): RequestInstance => {
    */
   const request = async <T = unknown>(
     url: string,
-    options: RequestOptions = {},
+    options: RequestOptions = {}
   ): Promise<T> => {
     const token = tokenManager.getToken();
     const {
@@ -44,7 +44,7 @@ const createRequest = (baseURL = ''): RequestInstance => {
     // 默认配置
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      ...(fetchOptions.headers as Record<string, string> | undefined),
+      ...(fetchOptions.headers as Record<string, string> | undefined)
     };
 
     // 添加认证头
@@ -68,7 +68,7 @@ const createRequest = (baseURL = ''): RequestInstance => {
     const config: RequestInit = {
       ...fetchOptions,
       headers,
-      ...(body && { body }),
+      ...(body && { body })
     };
 
     const fullUrl = `${baseURL}${url}`;
@@ -78,7 +78,7 @@ const createRequest = (baseURL = ''): RequestInstance => {
         !canRoleUseRequest(userManager.getUser()?.role, config.method, fullUrl)
       ) {
         throw new AuthorizationError(
-          'Read-only users are not authorized to perform this operation.',
+          'Read-only users are not authorized to perform this operation.'
         );
       }
 
@@ -119,7 +119,7 @@ const createRequest = (baseURL = ''): RequestInstance => {
           errorMessage,
           response.status,
           response.statusText,
-          errorData,
+          errorData
         );
       }
 
@@ -163,7 +163,7 @@ const createRequest = (baseURL = ''): RequestInstance => {
 
       // 包装未知错误
       throw new RequestError(
-        error instanceof Error ? error.message : '请求失败',
+        error instanceof Error ? error.message : '请求失败'
       );
     }
   };
@@ -171,7 +171,7 @@ const createRequest = (baseURL = ''): RequestInstance => {
   // 便捷方法
   request.get = <T = unknown>(
     url: string,
-    options: Omit<RequestOptions, 'method' | 'body'> = {},
+    options: Omit<RequestOptions, 'method' | 'body'> = {}
   ): Promise<T> => {
     return request<T>(url, { method: 'GET', ...options });
   };
@@ -179,30 +179,30 @@ const createRequest = (baseURL = ''): RequestInstance => {
   request.post = <T = unknown>(
     url: string,
     data?: unknown,
-    options: Omit<RequestOptions, 'method' | 'body'> = {},
+    options: Omit<RequestOptions, 'method' | 'body'> = {}
   ): Promise<T> => {
     return request<T>(url, {
       method: 'POST',
       body: data as Record<string, unknown>,
-      ...options,
+      ...options
     });
   };
 
   request.put = <T = unknown>(
     url: string,
     data?: unknown,
-    options: Omit<RequestOptions, 'method' | 'body'> = {},
+    options: Omit<RequestOptions, 'method' | 'body'> = {}
   ): Promise<T> => {
     return request<T>(url, {
       method: 'PUT',
       body: data as Record<string, unknown>,
-      ...options,
+      ...options
     });
   };
 
   request.delete = <T = unknown>(
     url: string,
-    options: Omit<RequestOptions, 'method' | 'body'> = {},
+    options: Omit<RequestOptions, 'method' | 'body'> = {}
   ): Promise<T> => {
     return request<T>(url, { method: 'DELETE', ...options });
   };
@@ -211,7 +211,7 @@ const createRequest = (baseURL = ''): RequestInstance => {
   request.upload = <T = unknown>(
     url: string,
     formData: FormData,
-    options: UploadOptions = {},
+    options: UploadOptions = {}
   ): Promise<T> => {
     const { onProgress, ...restOptions } = options;
 
@@ -226,9 +226,9 @@ const createRequest = (baseURL = ''): RequestInstance => {
       headers: {
         // 不设置 Content-Type，让浏览器自动设置（包含 boundary）
         ...(restOptions.headers as Record<string, string>),
-        'Content-Type': undefined as unknown as string,
+        'Content-Type': undefined as unknown as string
       },
-      ...restOptions,
+      ...restOptions
     });
   };
 
@@ -236,7 +236,7 @@ const createRequest = (baseURL = ''): RequestInstance => {
   request.download = async (
     url: string,
     filename?: string,
-    options: DownloadOptions = {},
+    options: DownloadOptions = {}
   ): Promise<void> => {
     const { onProgress, ...restOptions } = options;
 
@@ -247,7 +247,7 @@ const createRequest = (baseURL = ''): RequestInstance => {
 
     const blob = await request<Blob>(url, {
       ...restOptions,
-      responseType: 'blob',
+      responseType: 'blob'
     });
 
     const downloadUrl = window.URL.createObjectURL(blob);
@@ -274,7 +274,7 @@ export {
   RequestError,
   NetworkError,
   AuthenticationError,
-  AuthorizationError,
+  AuthorizationError
 } from '@/utils/types';
 
 // 导出类型
@@ -284,7 +284,7 @@ export type {
   DownloadOptions,
   RequestInstance,
   HttpMethod,
-  ResponseType,
+  ResponseType
 } from '@/utils/types';
 
 export default apiRequest;

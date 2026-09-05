@@ -12,12 +12,12 @@ export default [
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-unused-vars': [
         'error',
-        { argsIgnorePattern: '^_' },
+        { argsIgnorePattern: '^_' }
       ],
-      'no-console': ['warn', { allow: ['warn', 'error', 'info'] }],
-    },
+      'no-console': ['warn', { allow: ['warn', 'error', 'info'] }]
+    }
   },
   {
-    ignores: ['dist/', 'node_modules/', 'coverage/', 'prisma/'],
-  },
+    ignores: ['dist/', 'node_modules/', 'coverage/', 'prisma/']
+  }
 ];

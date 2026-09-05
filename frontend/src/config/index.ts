@@ -3,7 +3,7 @@ import type {
   PaymentMethod,
   PaymentMethodConfig,
   ProductCategory,
-  SelectOption,
+  SelectOption
 } from '@/config/types';
 
 // 付款方式相关配置
@@ -24,7 +24,7 @@ export const getPaymentMethodOptions =
   (): readonly SelectOption<PaymentMethod>[] => {
     return PAYMENT_METHODS.map((method) => ({
       value: method,
-      label: method,
+      label: method
     }));
   };
 
@@ -34,7 +34,7 @@ export const getPaymentMethodOptions =
  * @returns 付款方式标签
  */
 export const getPaymentMethodLabel = (
-  value: PaymentMethod | null | undefined,
+  value: PaymentMethod | null | undefined
 ): string => {
   return value ?? '';
 };
@@ -47,7 +47,7 @@ export const getProductCategoryOptions =
   (): readonly SelectOption<ProductCategory>[] => {
     return PRODUCT_CATEGORIES.map((category) => ({
       value: category,
-      label: category,
+      label: category
     }));
   };
 
@@ -57,7 +57,7 @@ export const getProductCategoryOptions =
  * @returns 是否为有效付款方式
  */
 export const isValidPaymentMethod = (
-  method: string,
+  method: string
 ): method is PaymentMethod => {
   return (PAYMENT_METHODS as readonly string[]).includes(method);
 };
@@ -68,7 +68,7 @@ export const isValidPaymentMethod = (
  * @returns 是否为有效产品类别
  */
 export const isValidProductCategory = (
-  category: string,
+  category: string
 ): category is ProductCategory => {
   return (PRODUCT_CATEGORIES as readonly string[]).includes(category);
 };
@@ -79,7 +79,7 @@ export const isValidProductCategory = (
  * @returns 付款方式配置，如果不存在则返回 undefined
  */
 export const getPaymentMethodConfig = (
-  method: PaymentMethod,
+  method: PaymentMethod
 ): PaymentMethodConfig | undefined => {
   const configKey = method
     .toLowerCase()
@@ -108,5 +108,5 @@ export type {
   SelectOption,
   AuthConfig,
   ServerConfig,
-  FrontendConfig,
+  FrontendConfig
 } from '@/config/types';

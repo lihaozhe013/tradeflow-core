@@ -13,7 +13,7 @@ interface AnalysisStatisticsProps {
 const AnalysisStatistics: React.FC<AnalysisStatisticsProps> = ({
   data,
   loading,
-  analysisType,
+  analysisType
 }) => {
   const { t } = useTranslation();
 
@@ -47,7 +47,7 @@ const AnalysisStatistics: React.FC<AnalysisStatisticsProps> = ({
             precision={2}
             prefix="¥"
             valueStyle={{
-              color: (data.sales_amount ?? 0) >= 0 ? '#3f8600' : '#cf1322',
+              color: (data.sales_amount ?? 0) >= 0 ? '#3f8600' : '#cf1322'
             }}
           />
         </Card>
@@ -69,7 +69,7 @@ const AnalysisStatistics: React.FC<AnalysisStatisticsProps> = ({
             value={data.profit_amount ?? 0}
             precision={2}
             valueStyle={{
-              color: (data.profit_amount ?? 0) >= 0 ? '#3f8600' : '#cf1322',
+              color: (data.profit_amount ?? 0) >= 0 ? '#3f8600' : '#cf1322'
             }}
             prefix={
               <>
@@ -92,7 +92,7 @@ const AnalysisStatistics: React.FC<AnalysisStatisticsProps> = ({
             precision={2}
             suffix="%"
             valueStyle={{
-              color: (data.profit_rate ?? 0) >= 0 ? '#3f8600' : '#cf1322',
+              color: (data.profit_rate ?? 0) >= 0 ? '#3f8600' : '#cf1322'
             }}
           />
         </Card>

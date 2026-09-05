@@ -4,11 +4,11 @@ import {
   InboundOutboundData,
   InboundRecordDto,
   OutboundRecordDto,
-  TransactionFilters,
+  TransactionFilters
 } from '@/routes/export/utils/types';
 
 export async function getInboundOutboundData(
-  filters: TransactionFilters = {},
+  filters: TransactionFilters = {}
 ): Promise<InboundOutboundData> {
   const { tables = '12' } = filters;
   const result: InboundOutboundData = {};
@@ -23,7 +23,7 @@ export async function getInboundOutboundData(
 }
 
 export async function getInboundData(
-  filters: TransactionFilters = {},
+  filters: TransactionFilters = {}
 ): Promise<InboundRecordDto[]> {
   const andConditions: Prisma.InboundRecordWhereInput[] = [];
 
@@ -38,8 +38,8 @@ export async function getInboundData(
     andConditions.push({
       OR: [
         { product_code: { contains: filters.productCode } },
-        { product: { product_model: { contains: filters.productCode } } },
-      ],
+        { product: { product_model: { contains: filters.productCode } } }
+      ]
     });
   }
 
@@ -47,8 +47,8 @@ export async function getInboundData(
     andConditions.push({
       OR: [
         { supplier_code: { contains: filters.customerCode } },
-        { partner: { short_name: { contains: filters.customerCode } } },
-      ],
+        { partner: { short_name: { contains: filters.customerCode } } }
+      ]
     });
   }
 
@@ -59,21 +59,21 @@ export async function getInboundData(
     where,
     include: {
       partner: true,
-      product: true,
+      product: true
     },
-    orderBy: [{ inbound_date: 'desc' }, { id: 'desc' }],
+    orderBy: [{ inbound_date: 'desc' }, { id: 'desc' }]
   });
 
   return records.map((record) => ({
     ...record,
     product_model: record.product?.product_model || '',
     supplier_short_name: record.partner?.short_name || '',
-    supplier_full_name: record.partner?.full_name || '',
+    supplier_full_name: record.partner?.full_name || ''
   })) as unknown as InboundRecordDto[];
 }
 
 export async function getOutboundData(
-  filters: TransactionFilters = {},
+  filters: TransactionFilters = {}
 ): Promise<OutboundRecordDto[]> {
   const andConditions: Prisma.OutboundRecordWhereInput[] = [];
 
@@ -88,8 +88,8 @@ export async function getOutboundData(
     andConditions.push({
       OR: [
         { product_code: { contains: filters.productCode } },
-        { product: { product_model: { contains: filters.productCode } } },
-      ],
+        { product: { product_model: { contains: filters.productCode } } }
+      ]
     });
   }
 
@@ -97,8 +97,8 @@ export async function getOutboundData(
     andConditions.push({
       OR: [
         { customer_code: { contains: filters.customerCode } },
-        { partner: { short_name: { contains: filters.customerCode } } },
-      ],
+        { partner: { short_name: { contains: filters.customerCode } } }
+      ]
     });
   }
 
@@ -109,15 +109,15 @@ export async function getOutboundData(
     where,
     include: {
       partner: true,
-      product: true,
+      product: true
     },
-    orderBy: [{ outbound_date: 'desc' }, { id: 'desc' }],
+    orderBy: [{ outbound_date: 'desc' }, { id: 'desc' }]
   });
 
   return records.map((record) => ({
     ...record,
     product_model: record.product?.product_model || '',
     customer_short_name: record.partner?.short_name || '',
-    customer_full_name: record.partner?.full_name || '',
+    customer_full_name: record.partner?.full_name || ''
   })) as unknown as OutboundRecordDto[];
 }

@@ -10,7 +10,7 @@ const isWindows = process.platform === 'win32';
 const packageManager = isWindows ? 'pnpm.cmd' : 'pnpm';
 const services = [
   { name: 'backend', directory: 'backend' },
-  { name: 'frontend', directory: 'frontend' },
+  { name: 'frontend', directory: 'frontend' }
 ];
 
 const children = new Map();
@@ -32,7 +32,7 @@ function reportLogFailure(error) {
   logFailureReported = true;
   debugLogStream = null;
   console.error(
-    `[dev] Unable to write ${debugLogPath}: ${error.message}. Continuing without file logging.`,
+    `[dev] Unable to write ${debugLogPath}: ${error.message}. Continuing without file logging.`
   );
 }
 
@@ -40,7 +40,7 @@ function openDebugLog() {
   try {
     debugLogStream = createWriteStream(debugLogPath, {
       encoding: 'utf8',
-      flags: 'w',
+      flags: 'w'
     });
     debugLogStream.on('error', reportLogFailure);
   } catch (error) {
@@ -73,7 +73,7 @@ function writeSystemLine(message, output = process.stdout) {
 function attachOutput(serviceName, channel, stream, output) {
   const reader = createInterface({
     crlfDelay: Infinity,
-    input: stream,
+    input: stream
   });
 
   reader.on('line', (line) => {
@@ -98,13 +98,13 @@ function terminateChild(child, signal = 'SIGTERM') {
         'taskkill',
         ['/pid', String(child.pid), '/T', '/F'],
         {
-          stdio: 'ignore',
-        },
+          stdio: 'ignore'
+        }
       );
       killer.on('error', (error) => {
         writeSystemLine(
           `Failed to stop child process ${child.pid}: ${error.message}`,
-          process.stderr,
+          process.stderr
         );
       });
       return;
@@ -114,7 +114,7 @@ function terminateChild(child, signal = 'SIGTERM') {
   } catch (error) {
     writeSystemLine(
       `Failed to stop child process ${child.pid}: ${error.message}`,
-      process.stderr,
+      process.stderr
     );
   }
 }
@@ -179,7 +179,7 @@ function shutdown(requestedExitCode = 0, terminationSignal = 'SIGTERM') {
 function startService(service) {
   const options = {
     cwd: resolve(rootDir, service.directory),
-    stdio: ['inherit', 'pipe', 'pipe'],
+    stdio: ['inherit', 'pipe', 'pipe']
   };
 
   // Node refuses to spawn .cmd/.bat shims without a shell on Windows, and
@@ -197,7 +197,7 @@ function startService(service) {
     exitCode = 1;
     writeSystemLine(
       `${service.name} failed to start: ${error.message}`,
-      process.stderr,
+      process.stderr
     );
     void shutdown(exitCode);
   });
@@ -210,7 +210,7 @@ function startService(service) {
     exitCode = code ?? 1;
     writeSystemLine(
       `${service.name} exited with ${signal ? `signal ${signal}` : `code ${code}`}.`,
-      exitCode === 0 ? process.stdout : process.stderr,
+      exitCode === 0 ? process.stdout : process.stderr
     );
     void shutdown(exitCode);
   });

@@ -53,7 +53,7 @@ class InvoiceCacheService {
       fs.writeFileSync(
         this.cachePath,
         JSON.stringify(this.cache, null, 2),
-        'utf-8',
+        'utf-8'
       );
       logger.info('Invoice cache saved successfully');
     } catch (error) {
@@ -66,27 +66,27 @@ class InvoiceCacheService {
    * Refresh cache for a specific customer (outbound/receivable)
    */
   public async refreshCustomerCache(
-    customer_code: string,
+    customer_code: string
   ): Promise<InvoicedRecord[]> {
     try {
       const groups = await prisma.outboundRecord.groupBy({
         by: ['invoice_number'],
         where: {
           customer_code: customer_code,
-          invoice_number: { not: null, notIn: [''] },
+          invoice_number: { not: null, notIn: [''] }
         },
         _sum: {
-          total_price: true,
+          total_price: true
         },
         _min: {
-          invoice_date: true,
+          invoice_date: true
         },
         _max: {
-          outbound_date: true,
+          outbound_date: true
         },
         _count: {
-          _all: true,
-        },
+          _all: true
+        }
       });
 
       groups.sort((a, b) => {
@@ -99,12 +99,12 @@ class InvoiceCacheService {
         invoice_number: g.invoice_number!,
         invoice_date: g._min.invoice_date ?? g._max.outbound_date ?? null,
         total_amount: decimalCalc.fromSqlResult(g._sum.total_price || 0, 0),
-        record_count: g._count._all,
+        record_count: g._count._all
       }));
 
       this.cache[customer_code] = {
         invoiced_records: invoicedRecords,
-        last_updated: new Date().toISOString(),
+        last_updated: new Date().toISOString()
       };
 
       this.saveCache();
@@ -112,7 +112,7 @@ class InvoiceCacheService {
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
       logger.error(
-        `Failed to refresh invoice cache for customer ${customer_code}: ${message}`,
+        `Failed to refresh invoice cache for customer ${customer_code}: ${message}`
       );
       throw err;
     }
@@ -122,27 +122,27 @@ class InvoiceCacheService {
    * Refresh cache for a specific supplier (inbound/payable)
    */
   public async refreshSupplierCache(
-    supplier_code: string,
+    supplier_code: string
   ): Promise<InvoicedRecord[]> {
     try {
       const groups = await prisma.inboundRecord.groupBy({
         by: ['invoice_number'],
         where: {
           supplier_code: supplier_code,
-          invoice_number: { not: null, notIn: [''] },
+          invoice_number: { not: null, notIn: [''] }
         },
         _sum: {
-          total_price: true,
+          total_price: true
         },
         _min: {
-          invoice_date: true,
+          invoice_date: true
         },
         _max: {
-          inbound_date: true,
+          inbound_date: true
         },
         _count: {
-          _all: true,
-        },
+          _all: true
+        }
       });
 
       groups.sort((a, b) => {
@@ -155,12 +155,12 @@ class InvoiceCacheService {
         invoice_number: g.invoice_number!,
         invoice_date: g._min.invoice_date ?? g._max.inbound_date ?? null,
         total_amount: decimalCalc.fromSqlResult(g._sum.total_price || 0, 0),
-        record_count: g._count._all,
+        record_count: g._count._all
       }));
 
       this.cache[supplier_code] = {
         invoiced_records: invoicedRecords,
-        last_updated: new Date().toISOString(),
+        last_updated: new Date().toISOString()
       };
 
       this.saveCache();
@@ -168,7 +168,7 @@ class InvoiceCacheService {
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
       logger.error(
-        `Failed to refresh invoice cache for supplier ${supplier_code}: ${message}`,
+        `Failed to refresh invoice cache for supplier ${supplier_code}: ${message}`
       );
       throw err;
     }
@@ -180,7 +180,7 @@ class InvoiceCacheService {
    * Get cached invoiced records for a customer
    */
   public getCachedInvoicedRecords(
-    customer_code: string,
+    customer_code: string
   ): InvoicedRecord[] | null {
     const customerCache = this.cache[customer_code];
     if (!customerCache) {

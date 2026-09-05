@@ -12,7 +12,7 @@ export function getConfigDir(): string {
   const appRoot = getAppRoot();
   const candidatePaths = ['config', '../config', '../../config'];
   const resolvedCandidatePaths = candidatePaths.map((relativePath) =>
-    path.resolve(appRoot, relativePath),
+    path.resolve(appRoot, relativePath)
   );
   const foundPath = resolvedCandidatePaths.find((fullPath) => {
     try {
@@ -29,7 +29,7 @@ export function getCacheDir(): string {
   const appRoot = getAppRoot();
   const candidatePaths = ['cache', '../cache', '../../cache'];
   const resolvedCandidatePaths = candidatePaths.map((relativePath) =>
-    path.resolve(appRoot, relativePath),
+    path.resolve(appRoot, relativePath)
   );
   const foundPath = resolvedCandidatePaths.find((fullPath) => {
     try {

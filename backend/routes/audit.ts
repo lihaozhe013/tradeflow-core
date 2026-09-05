@@ -51,9 +51,9 @@ router.get('/logs', async (req: Request, res: Response): Promise<void> => {
       where,
       orderBy: { created_at: 'desc' },
       skip,
-      take: limit,
+      take: limit
     }),
-    prisma.systemLog.count({ where }),
+    prisma.systemLog.count({ where })
   ]);
 
   res.json({
@@ -62,8 +62,8 @@ router.get('/logs', async (req: Request, res: Response): Promise<void> => {
       items,
       total,
       page: pageNum,
-      pageSize: limit,
-    },
+      pageSize: limit
+    }
   });
 });
 

@@ -17,9 +17,9 @@ export const DEFAULT_OVERVIEW_STATS: OverviewStatsResponse = {
   overview: {
     total_sales_amount: 0,
     sold_goods_cost: 0,
-    total_purchase_amount: 0,
+    total_purchase_amount: 0
   },
-  out_of_inventory_products: [],
+  out_of_inventory_products: []
 };
 
 export type TopSalesRecord = {
@@ -35,5 +35,5 @@ export type TopSalesResponse = {
 
 export const DEFAULT_TOP_SALES_RESPONSE: TopSalesResponse = {
   success: false,
-  data: [],
+  data: []
 };

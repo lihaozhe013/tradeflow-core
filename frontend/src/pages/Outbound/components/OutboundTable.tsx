@@ -32,7 +32,7 @@ const OutboundTable: FC<OutboundTableProps> = ({
   onEdit,
   onDelete,
   onTableChange,
-  pagination,
+  pagination
 }) => {
   const { t } = useTranslation();
   const columns: ColumnsType<OutboundRecord> = [
@@ -40,7 +40,7 @@ const OutboundTable: FC<OutboundTableProps> = ({
       title: t('outbound.id'),
       dataIndex: 'id',
       key: 'id',
-      width: 80,
+      width: 80
     },
     {
       title: t('outbound.customerShortName'),
@@ -49,10 +49,10 @@ const OutboundTable: FC<OutboundTableProps> = ({
       width: 100,
       filters: partners.map((p) => ({
         text: p.short_name,
-        value: p.short_name,
+        value: p.short_name
       })),
       onFilter: (value, record) => record.partner?.short_name === value,
-      render: (_, record) => record.partner?.short_name,
+      render: (_, record) => record.partner?.short_name
     },
     {
       title: t('outbound.productModel'),
@@ -61,15 +61,15 @@ const OutboundTable: FC<OutboundTableProps> = ({
       width: 180,
       filters: products.map((product) => ({
         text: product.product_model,
-        value: product.product_model,
+        value: product.product_model
       })),
-      onFilter: (value, record) => record.product_model === value,
+      onFilter: (value, record) => record.product_model === value
     },
     {
       title: t('outbound.quantity'),
       dataIndex: 'quantity',
       key: 'quantity',
-      width: 80,
+      width: 80
     },
     {
       title: t('outbound.unitPrice'),
@@ -77,7 +77,7 @@ const OutboundTable: FC<OutboundTableProps> = ({
       key: 'unit_price',
       width: 100,
       render: (price) => `${currency_unit_symbol}${price}`,
-      sorter: true,
+      sorter: true
     },
     {
       title: t('outbound.totalPrice'),
@@ -85,33 +85,33 @@ const OutboundTable: FC<OutboundTableProps> = ({
       key: 'total_price',
       width: 100,
       render: (price) => `${currency_unit_symbol}${price}`,
-      sorter: true,
+      sorter: true
     },
     {
       title: t('outbound.outboundDate'),
       dataIndex: 'outbound_date',
       key: 'outbound_date',
       width: 100,
-      sorter: true,
+      sorter: true
     },
     {
       title: t('outbound.orderNumber'),
       dataIndex: 'order_number',
       key: 'order_number',
-      width: 160,
+      width: 160
     },
     {
       title: t('outbound.receiptNumber'),
       dataIndex: 'receipt_number',
       key: 'receipt_number',
-      width: 140,
+      width: 140
     },
     {
       title: t('outbound.invoiceNumber'),
       dataIndex: 'invoice_number',
       key: 'invoice_number',
-      width: 140,
-    },
+      width: 140
+    }
   ];
 
   if (canWrite) {
@@ -140,7 +140,7 @@ const OutboundTable: FC<OutboundTableProps> = ({
             </Button>
           </Popconfirm>
         </Space>
-      ),
+      )
     });
   }
 
@@ -149,7 +149,7 @@ const OutboundTable: FC<OutboundTableProps> = ({
     preserveSelectedRowKeys: true,
     onChange: (keys: Key[]) => {
       setSelectedRowKeys(keys);
-    },
+    }
   };
 
   return (

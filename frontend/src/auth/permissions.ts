@@ -14,7 +14,7 @@ const isKnownRole = (role: Role | null | undefined): role is Role =>
 
 export const hasRolePermission = (
   role: Role | null | undefined,
-  requiredRole: Role,
+  requiredRole: Role
 ): boolean => {
   if (!isKnownRole(role)) return false;
 
@@ -31,7 +31,7 @@ export const hasRolePermission = (
 
 export const hasCapability = (
   role: Role | null | undefined,
-  capability: Capability,
+  capability: Capability
 ): boolean => {
   if (!isKnownRole(role)) return false;
 
@@ -67,18 +67,18 @@ const isReaderPostPathAllowed = (url: string): boolean => {
 
   const path = normalizePath(url);
   return READER_POST_PREFIXES.some(
-    (prefix) => path === prefix || path.startsWith(`${prefix}/`),
+    (prefix) => path === prefix || path.startsWith(`${prefix}/`)
   );
 };
 
 const isReaderSelfServicePathAllowed = (url: string): boolean =>
   READER_SELF_SERVICE_PATHS.includes(
-    normalizePath(url) as (typeof READER_SELF_SERVICE_PATHS)[number],
+    normalizePath(url) as (typeof READER_SELF_SERVICE_PATHS)[number]
   );
 
 export const canReaderUseRequest = (
   method: string | undefined,
-  url: string,
+  url: string
 ): boolean => {
   const normalizedMethod = (method ?? 'GET').toUpperCase();
 
@@ -95,5 +95,5 @@ export const canReaderUseRequest = (
 export const canRoleUseRequest = (
   role: Role | null | undefined,
   method: string | undefined,
-  url: string,
+  url: string
 ): boolean => role !== 'reader' || canReaderUseRequest(method, url);

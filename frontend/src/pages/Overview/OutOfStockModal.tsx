@@ -13,7 +13,7 @@ type OutOfStockModalProps = {
 const OutOfStockModal = ({
   visible,
   onClose,
-  products,
+  products
 }: OutOfStockModalProps) => {
   const { t } = useTranslation();
 
@@ -40,7 +40,7 @@ const OutOfStockModal = ({
             textAlign: 'center',
             color: '#52c41a',
             fontSize: 18,
-            padding: '32px 0',
+            padding: '32px 0'
           }}
         >
           {t('overview.inventoryNormal')}

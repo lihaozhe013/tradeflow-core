@@ -7,7 +7,7 @@ import type {
   AnalysisType,
   AnalysisData,
   DetailItem,
-  PartnerOption,
+  PartnerOption
 } from '@/types/analysis';
 
 export const useAnalysisExport = () => {
@@ -23,7 +23,7 @@ export const useAnalysisExport = () => {
     selectedPartner: string | null,
     selectedProduct: string | null,
     partners: PartnerOption[],
-    analysisType: AnalysisType,
+    analysisType: AnalysisType
   ) => {
     if (!analysisData) {
       message.warning(t('analysis.noDataToExport'));
@@ -44,7 +44,7 @@ export const useAnalysisExport = () => {
         const partner = partners.find((c) => c.code === partnerCode);
         return {
           ...item,
-          partner_name: partner ? partner.name : partnerCode,
+          partner_name: partner ? partner.name : partnerCode
         };
       });
 
@@ -61,12 +61,12 @@ export const useAnalysisExport = () => {
           selectedProduct && selectedProduct !== 'All'
             ? selectedProduct
             : undefined,
-        type: analysisType,
+        type: analysisType
       };
 
       const blob = await (apiInstance as any).postBlob(
         '/export/analysis',
-        requestBody,
+        requestBody
       );
 
       downloadFile(blob, `Data_Analysis_Export_${analysisType}.xlsx`);
@@ -82,7 +82,7 @@ export const useAnalysisExport = () => {
   const performAdvancedExport = async (
     exportType: string,
     dateRange: [Dayjs, Dayjs],
-    analysisType: AnalysisType,
+    analysisType: AnalysisType
   ) => {
     try {
       setExporting(true);
@@ -91,12 +91,12 @@ export const useAnalysisExport = () => {
         exportType,
         startDate: dateRange[0].format('YYYY-MM-DD'),
         endDate: dateRange[1].format('YYYY-MM-DD'),
-        type: analysisType,
+        type: analysisType
       };
 
       const blob = await (apiInstance as any).postBlob(
         '/export/advanced-analysis',
-        requestBody,
+        requestBody
       );
 
       const defaultFilename = `Advanced_Export_${analysisType}_${exportType}.xlsx`;
@@ -124,7 +124,7 @@ export const useAnalysisExport = () => {
   return {
     exporting,
     performNormalExport,
-    performAdvancedExport,
+    performAdvancedExport
   };
 };
 

@@ -31,7 +31,7 @@ const Analysis: React.FC = () => {
     detailData,
     fetchFilterOptions,
     fetchAnalysisData,
-    refreshAnalysisData,
+    refreshAnalysisData
   } = useAnalysisData();
 
   const { exporting, performNormalExport, performAdvancedExport } =
@@ -44,7 +44,7 @@ const Analysis: React.FC = () => {
   // Filters
   const [dateRange, setDateRange] = useState<[Dayjs, Dayjs]>([
     dayjs().subtract(1, 'month').startOf('month'),
-    dayjs().subtract(1, 'month').endOf('month'),
+    dayjs().subtract(1, 'month').endOf('month')
   ]);
   const [selectedPartner, setSelectedPartner] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
@@ -62,7 +62,7 @@ const Analysis: React.FC = () => {
         dateRange,
         selectedPartner,
         selectedProduct,
-        analysisType,
+        analysisType
       );
     }
   }, [
@@ -70,7 +70,7 @@ const Analysis: React.FC = () => {
     selectedPartner,
     selectedProduct,
     analysisType,
-    fetchAnalysisData,
+    fetchAnalysisData
   ]);
 
   const handleAnalysisTypeChange = (type: AnalysisType) => {
@@ -109,7 +109,7 @@ const Analysis: React.FC = () => {
       selectedPartner,
       selectedProduct,
       activePartners,
-      analysisType,
+      analysisType
     );
   };
 
@@ -129,7 +129,7 @@ const Analysis: React.FC = () => {
       dateRange,
       selectedPartner,
       selectedProduct,
-      analysisType,
+      analysisType
     );
   };
 

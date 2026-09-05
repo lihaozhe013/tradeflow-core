@@ -3,7 +3,7 @@ import ExportUtils from '@/routes/export/utils/exportUtils';
 import { TEMPLATES } from '@/routes/export/utils/exportTemplates';
 import {
   getCustomerAnalysisData,
-  getProductAnalysisData,
+  getProductAnalysisData
 } from './analysisQueries';
 
 /**
@@ -56,7 +56,7 @@ function getUniqueSheetName(workbook: XLSX.WorkBook, name: string): string {
  * Export advanced analysis data
  */
 export async function generateAdvancedAnalysisExcel(
-  options: { exportType?: string; startDate?: string; endDate?: string } = {},
+  options: { exportType?: string; startDate?: string; endDate?: string } = {}
 ): Promise<Buffer> {
   const { exportType, startDate, endDate } = options;
 
@@ -69,7 +69,7 @@ export async function generateAdvancedAnalysisExcel(
   if (exportType === 'customer') {
     const customerData = await getCustomerAnalysisData(
       startDate || '',
-      endDate || '',
+      endDate || ''
     );
     const detailLabels = TEMPLATES.analysis_customer_detail.labels || {};
 
@@ -82,13 +82,13 @@ export async function generateAdvancedAnalysisExcel(
         sales_amount: formatCurrency(customer.sales_amount),
         cost_amount: formatCurrency(customer.cost_amount),
         profit_amount: formatCurrency(customer.profit_amount),
-        profit_rate: formatPercentage(customer.profit_rate),
+        profit_rate: formatPercentage(customer.profit_rate)
       }));
 
     if (summaryData.length > 0) {
       const summaryWorksheet = ExportUtils.createWorksheet(
         summaryData,
-        TEMPLATES.analysis_customer_summary,
+        TEMPLATES.analysis_customer_summary
       );
       const sheetName =
         TEMPLATES.analysis_customer_summary.sheetName || 'Summary';
@@ -96,7 +96,7 @@ export async function generateAdvancedAnalysisExcel(
       XLSX.utils.book_append_sheet(
         workbook,
         summaryWorksheet,
-        safeSummarySheetName,
+        safeSummarySheetName
       );
     }
 
@@ -115,22 +115,22 @@ export async function generateAdvancedAnalysisExcel(
             sales_amount: formatCurrency(item.sales_amount),
             cost_amount: formatCurrency(item.cost_amount),
             profit_amount: formatCurrency(item.profit_amount),
-            profit_rate: formatPercentage(item.profit_rate),
+            profit_rate: formatPercentage(item.profit_rate)
           }));
 
         if (detailData.length > 0) {
           const detailWorksheet = ExportUtils.createWorksheet(
             detailData,
-            TEMPLATES.analysis_customer_detail,
+            TEMPLATES.analysis_customer_detail
           );
           const detailSheetName = getUniqueSheetName(
             workbook,
-            `${customer.customer_name}-${detailLabels.detail_suffix || 'Details'}`,
+            `${customer.customer_name}-${detailLabels.detail_suffix || 'Details'}`
           );
           XLSX.utils.book_append_sheet(
             workbook,
             detailWorksheet,
-            detailSheetName,
+            detailSheetName
           );
         }
       }
@@ -139,7 +139,7 @@ export async function generateAdvancedAnalysisExcel(
     // Product export
     const productData = await getProductAnalysisData(
       startDate || '',
-      endDate || '',
+      endDate || ''
     );
     const detailLabels = TEMPLATES.analysis_product_detail.labels || {};
 
@@ -152,13 +152,13 @@ export async function generateAdvancedAnalysisExcel(
         sales_amount: formatCurrency(product.sales_amount),
         cost_amount: formatCurrency(product.cost_amount),
         profit_amount: formatCurrency(product.profit_amount),
-        profit_rate: formatPercentage(product.profit_rate),
+        profit_rate: formatPercentage(product.profit_rate)
       }));
 
     if (summaryData.length > 0) {
       const summaryWorksheet = ExportUtils.createWorksheet(
         summaryData,
-        TEMPLATES.analysis_product_summary,
+        TEMPLATES.analysis_product_summary
       );
       const sheetName =
         TEMPLATES.analysis_product_summary.sheetName || 'Summary';
@@ -166,7 +166,7 @@ export async function generateAdvancedAnalysisExcel(
       XLSX.utils.book_append_sheet(
         workbook,
         summaryWorksheet,
-        safeSummarySheetName,
+        safeSummarySheetName
       );
     }
 
@@ -186,22 +186,22 @@ export async function generateAdvancedAnalysisExcel(
             sales_amount: formatCurrency(item.sales_amount),
             cost_amount: formatCurrency(item.cost_amount),
             profit_amount: formatCurrency(item.profit_amount),
-            profit_rate: formatPercentage(item.profit_rate),
+            profit_rate: formatPercentage(item.profit_rate)
           }));
 
         if (detailData.length > 0) {
           const detailWorksheet = ExportUtils.createWorksheet(
             detailData,
-            TEMPLATES.analysis_product_detail,
+            TEMPLATES.analysis_product_detail
           );
           const detailSheetName = getUniqueSheetName(
             workbook,
-            `${product.product_model}-${detailLabels.detail_suffix || 'Details'}`,
+            `${product.product_model}-${detailLabels.detail_suffix || 'Details'}`
           );
           XLSX.utils.book_append_sheet(
             workbook,
             detailWorksheet,
-            detailSheetName,
+            detailSheetName
           );
         }
       }
@@ -210,6 +210,6 @@ export async function generateAdvancedAnalysisExcel(
 
   return XLSX.write(workbook, {
     type: 'buffer',
-    bookType: 'xlsx',
+    bookType: 'xlsx'
   }) as unknown as Buffer;
 }

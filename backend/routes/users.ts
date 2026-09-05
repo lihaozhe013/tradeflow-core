@@ -5,7 +5,7 @@ import {
   authorize,
   hashPassword,
   signToken,
-  verifyPassword,
+  verifyPassword
 } from '@/utils/auth';
 
 const router: Router = express.Router();
@@ -35,7 +35,7 @@ router.put('/me', async (req: Request, res: Response): Promise<void> => {
 
   const updated = await prisma.user.update({
     where: { username: req.user!.username },
-    data: { display_name },
+    data: { display_name }
   });
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -60,7 +60,7 @@ router.put(
     ) {
       res.status(400).json({
         success: false,
-        message: 'Missing oldPassword or newPassword',
+        message: 'Missing oldPassword or newPassword'
       });
       return;
     }
@@ -68,13 +68,13 @@ router.put(
     if (newPassword.length < 6) {
       res.status(400).json({
         success: false,
-        message: 'New password must be at least 6 characters',
+        message: 'New password must be at least 6 characters'
       });
       return;
     }
 
     const user = await prisma.user.findUnique({
-      where: { username: req.user!.username },
+      where: { username: req.user!.username }
     });
 
     if (!user) {
@@ -95,13 +95,13 @@ router.put(
       where: { username: req.user!.username },
       data: {
         password_hash: hash,
-        last_password_change: new Date().toISOString(),
-      },
+        last_password_change: new Date().toISOString()
+      }
     });
 
     const { token, expires_in } = signToken(updated);
     res.json({ success: true, message: 'Password updated', token, expires_in });
-  },
+  }
 );
 
 /**
@@ -128,7 +128,7 @@ router.post(
     if (password.length < 6) {
       res.status(400).json({
         success: false,
-        message: 'Password must be at least 6 characters',
+        message: 'Password must be at least 6 characters'
       });
       return;
     }
@@ -169,8 +169,8 @@ router.post(
           role,
           display_name: displayName,
           enabled,
-          last_password_change: new Date().toISOString(),
-        },
+          last_password_change: new Date().toISOString()
+        }
       });
 
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -183,14 +183,14 @@ router.post(
       ) {
         res.status(409).json({
           success: false,
-          message: 'Username already exists',
+          message: 'Username already exists'
         });
         return;
       }
 
       throw error;
     }
-  },
+  }
 );
 
 /**
@@ -204,7 +204,7 @@ router.get(
     const page = Math.max(1, Number(req.query['page']) || 1);
     const pageSize = Math.min(
       100,
-      Math.max(1, Number(req.query['pageSize']) || 20),
+      Math.max(1, Number(req.query['pageSize']) || 20)
     );
     const skip = (page - 1) * pageSize;
 
@@ -212,9 +212,9 @@ router.get(
       prisma.user.findMany({
         orderBy: { username: 'asc' },
         skip,
-        take: pageSize,
+        take: pageSize
       }),
-      prisma.user.count(),
+      prisma.user.count()
     ]);
 
     const safeUsers = users.map((u) => {
@@ -229,10 +229,10 @@ router.get(
         items: safeUsers,
         total,
         page,
-        pageSize,
-      },
+        pageSize
+      }
     });
-  },
+  }
 );
 
 /**
@@ -264,13 +264,13 @@ router.put(
 
     const updated = await prisma.user.update({
       where: { username },
-      data,
+      data
     });
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password_hash: _, ...safeUser } = updated;
     res.json({ success: true, data: safeUser });
-  },
+  }
 );
 
 /**
@@ -292,7 +292,7 @@ router.put(
     if (!newPassword || newPassword.length < 6) {
       res.status(400).json({
         success: false,
-        message: 'New password must be at least 6 characters',
+        message: 'New password must be at least 6 characters'
       });
       return;
     }
@@ -308,12 +308,12 @@ router.put(
       where: { username },
       data: {
         password_hash: hash,
-        last_password_change: new Date().toISOString(),
-      },
+        last_password_change: new Date().toISOString()
+      }
     });
 
     res.json({ success: true, message: 'Password reset successfully' });
-  },
+  }
 );
 
 /**
@@ -340,7 +340,7 @@ router.delete(
 
     await prisma.user.delete({ where: { username } });
     res.json({ success: true, message: 'User deleted' });
-  },
+  }
 );
 
 export default router;

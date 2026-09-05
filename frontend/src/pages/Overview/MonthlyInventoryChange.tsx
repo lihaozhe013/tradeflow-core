@@ -8,13 +8,13 @@ import {
   Col,
   Spin,
   Alert,
-  Typography,
+  Typography
 } from 'antd';
 import {
   ArrowUpOutlined,
   ArrowDownOutlined,
   InboxOutlined,
-  StockOutlined,
+  StockOutlined
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useSimpleApi, useSimpleApiData } from '@/hooks/useSimpleApi';
@@ -57,12 +57,12 @@ const MonthlyInventoryChange = () => {
   const {
     data: productsResponse,
     loading: productsLoading,
-    error: productsError,
+    error: productsError
   } = useSimpleApiData<ProductsResponse>('/products');
 
   const products = useMemo(
     () => productsResponse?.data ?? [],
-    [productsResponse],
+    [productsResponse]
   );
 
   // 当产品列表加载完成时，自动选择第一个产品
@@ -80,7 +80,7 @@ const MonthlyInventoryChange = () => {
         setInventoryError(null);
 
         const result = await get<MonthlyInventoryChangeResponse>(
-          `/overview/monthly-inventory-change/${encodeURIComponent(productModel)}`,
+          `/overview/monthly-inventory-change/${encodeURIComponent(productModel)}`
         );
 
         if (result.success && result.data) {
@@ -90,7 +90,7 @@ const MonthlyInventoryChange = () => {
           setInventoryError(
             result.message ??
               result.error ??
-              t('overview.inventoryChangeFailed'),
+              t('overview.inventoryChangeFailed')
           );
         }
       } catch (err) {
@@ -100,7 +100,7 @@ const MonthlyInventoryChange = () => {
         setInventoryLoading(false);
       }
     },
-    [get, t],
+    [get, t]
   );
 
   // 当选择的产品改变时，获取库存变化数据
@@ -141,7 +141,7 @@ const MonthlyInventoryChange = () => {
       style={{
         borderRadius: '16px',
         boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
-        height: 370,
+        height: 370
       }}
       extra={
         <Select
@@ -211,7 +211,7 @@ const MonthlyInventoryChange = () => {
               }
               valueStyle={{
                 color: getTrendColor(inventoryData.monthly_change),
-                fontSize: '16px',
+                fontSize: '16px'
               }}
             />
           </Col>

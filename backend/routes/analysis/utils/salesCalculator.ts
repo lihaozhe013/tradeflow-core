@@ -7,11 +7,11 @@ export async function calculateSalesData(
   startDate: string,
   endDate: string,
   customerCode: string | null | undefined,
-  productModel: string | null | undefined,
+  productModel: string | null | undefined
 ): Promise<SalesData> {
   const baseConditions: Prisma.Sql[] = [
     Prisma.sql`r.outbound_date >= ${startDate}`,
-    Prisma.sql`r.outbound_date <= ${endDate}`,
+    Prisma.sql`r.outbound_date <= ${endDate}`
   ];
   if (customerCode && customerCode !== 'All') {
     baseConditions.push(Prisma.sql`r.customer_code = ${customerCode}`);
@@ -41,16 +41,16 @@ export async function calculateSalesData(
   const specialExpense = decimalCalc.fromSqlResult(
     salesRow?.special_expense,
     0,
-    2,
+    2
   );
   const salesAmount = decimalCalc.toDbNumber(
     decimalCalc.subtract(normalSales, specialExpense),
-    2,
+    2
   );
 
   return {
     normal_sales: normalSales,
     special_expense: specialExpense,
-    sales_amount: salesAmount,
+    sales_amount: salesAmount
   };
 }

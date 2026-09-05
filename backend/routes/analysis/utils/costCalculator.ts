@@ -11,12 +11,12 @@ export async function calculateFilteredSoldGoodsCost(
   startDate: string,
   endDate: string,
   customerCode: string | null | undefined,
-  productModel: string | null | undefined,
+  productModel: string | null | undefined
 ): Promise<number> {
   // 1. Fetch all INBOUND records (Supply) - Sorted Oldest First
   // We need 'all' history to trace the FIFO queue correctly.
   const inboundWhere: Prisma.InboundRecordWhereInput = {
-    quantity: { gt: 0 },
+    quantity: { gt: 0 }
   };
   if (productModel && productModel !== 'All') {
     inboundWhere.product = { product_model: productModel };
@@ -30,14 +30,14 @@ export async function calculateFilteredSoldGoodsCost(
       product: { select: { product_model: true } },
       quantity: true,
       unit_price: true,
-      inbound_date: true,
-    },
+      inbound_date: true
+    }
   });
 
   // 2. Fetch all OUTBOUND records (Demand) - Sorted Oldest First
   // We also need history to know what was consumed before the start_date
   const outboundWhere: Prisma.OutboundRecordWhereInput = {
-    quantity: { gt: 0 },
+    quantity: { gt: 0 }
   };
   // Optimization: We only strictly need outbound records <= endDate.
   // Future outbound records don't affect the cost of the period we are analyzing.
@@ -60,8 +60,8 @@ export async function calculateFilteredSoldGoodsCost(
       quantity: true,
       outbound_date: true,
       customer_code: true,
-      unit_price: true, // selling price (for fallback)
-    },
+      unit_price: true // selling price (for fallback)
+    }
   });
 
   // 3. FIFO Simulation
@@ -90,7 +90,7 @@ export async function calculateFilteredSoldGoodsCost(
     }
     inventoryState[inRecord.product?.product_model]!.push({
       quantity_remaining: inRecord.quantity,
-      unit_price: inRecord.unit_price || 0,
+      unit_price: inRecord.unit_price || 0
     });
   }
 
@@ -127,7 +127,7 @@ export async function calculateFilteredSoldGoodsCost(
         if (isTargetRecord) {
           const costChunk = decimalCalc.multiply(
             qtyToFulfill,
-            batch.unit_price,
+            batch.unit_price
           );
           currentRecordCost = decimalCalc.add(currentRecordCost, costChunk);
         }
@@ -138,7 +138,7 @@ export async function calculateFilteredSoldGoodsCost(
         if (isTargetRecord) {
           const costChunk = decimalCalc.multiply(
             batch.quantity_remaining,
-            batch.unit_price,
+            batch.unit_price
           );
           currentRecordCost = decimalCalc.add(currentRecordCost, costChunk);
         }

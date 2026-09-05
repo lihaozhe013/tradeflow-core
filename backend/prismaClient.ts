@@ -26,7 +26,7 @@ function createPrismaClient() {
     connectionString,
     max: poolMax,
     idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 5000,
+    connectionTimeoutMillis: 5000
   });
 
   const adapter = new PrismaPg(pool);
@@ -38,7 +38,7 @@ function createPrismaClient() {
 
   return new PrismaClient({
     adapter,
-    log,
+    log
   });
 }
 

@@ -5,7 +5,7 @@ import { BaseInfoData, BasicDataFilters } from '@/routes/export/utils/types';
 
 export function generateBaseInfoExcel(
   data: BaseInfoData,
-  options: BasicDataFilters = {},
+  options: BasicDataFilters = {}
 ): Buffer {
   const { tables = '123' } = options;
   const workbook = XLSX.utils.book_new();
@@ -27,6 +27,6 @@ export function generateBaseInfoExcel(
   }
   return XLSX.write(workbook, {
     type: 'buffer',
-    bookType: 'xlsx',
+    bookType: 'xlsx'
   }) as unknown as Buffer;
 }

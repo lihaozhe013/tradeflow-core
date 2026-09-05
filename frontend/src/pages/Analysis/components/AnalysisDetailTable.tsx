@@ -18,7 +18,7 @@ const AnalysisDetailTable: React.FC<AnalysisDetailTableProps> = ({
   partners,
   selectedPartner,
   selectedProduct: _selectedProduct,
-  analysisType,
+  analysisType
 }) => {
   const { t } = useTranslation();
 
@@ -42,13 +42,13 @@ const AnalysisDetailTable: React.FC<AnalysisDetailTableProps> = ({
             : t('analysis.supplier') || 'Supplier',
         dataIndex: 'group_key',
         key: 'group_key',
-        render: (text: string) => getPartnerName(text),
+        render: (text: string) => getPartnerName(text)
       });
     } else {
       commonColumns.push({
         title: t('analysis.product'),
         dataIndex: 'group_key',
-        key: 'group_key',
+        key: 'group_key'
       });
     }
 
@@ -61,8 +61,8 @@ const AnalysisDetailTable: React.FC<AnalysisDetailTableProps> = ({
           key: 'purchase_amount',
           render: (val: number) => `¥${val?.toFixed(2) || '0.00'}`,
           sorter: (a: DetailItem, b: DetailItem) =>
-            (a.purchase_amount ?? 0) - (b.purchase_amount ?? 0),
-        },
+            (a.purchase_amount ?? 0) - (b.purchase_amount ?? 0)
+        }
       ];
     }
 
@@ -75,7 +75,7 @@ const AnalysisDetailTable: React.FC<AnalysisDetailTableProps> = ({
         key: 'sales_amount',
         render: (val: number) => `¥${val?.toFixed(2) || '0.00'}`,
         sorter: (a: DetailItem, b: DetailItem) =>
-          (a.sales_amount ?? 0) - (b.sales_amount ?? 0),
+          (a.sales_amount ?? 0) - (b.sales_amount ?? 0)
       },
       {
         title: t('analysis.cost'),
@@ -83,7 +83,7 @@ const AnalysisDetailTable: React.FC<AnalysisDetailTableProps> = ({
         key: 'cost_amount',
         render: (val: number) => `¥${val?.toFixed(2) || '0.00'}`,
         sorter: (a: DetailItem, b: DetailItem) =>
-          (a.cost_amount ?? 0) - (b.cost_amount ?? 0),
+          (a.cost_amount ?? 0) - (b.cost_amount ?? 0)
       },
       {
         title: t('analysis.profit'),
@@ -95,7 +95,7 @@ const AnalysisDetailTable: React.FC<AnalysisDetailTableProps> = ({
           </span>
         ),
         sorter: (a: DetailItem, b: DetailItem) =>
-          (a.profit_amount ?? 0) - (b.profit_amount ?? 0),
+          (a.profit_amount ?? 0) - (b.profit_amount ?? 0)
       },
       {
         title: t('analysis.profitRate'),
@@ -107,8 +107,8 @@ const AnalysisDetailTable: React.FC<AnalysisDetailTableProps> = ({
           </span>
         ),
         sorter: (a: DetailItem, b: DetailItem) =>
-          (a.profit_rate ?? 0) - (b.profit_rate ?? 0),
-      },
+          (a.profit_rate ?? 0) - (b.profit_rate ?? 0)
+      }
     ];
   };
 

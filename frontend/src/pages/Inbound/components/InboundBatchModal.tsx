@@ -7,7 +7,7 @@ import {
   InputNumber,
   DatePicker,
   Button,
-  Radio,
+  Radio
 } from 'antd';
 import type { FormInstance, RadioChangeEvent } from 'antd';
 import type { DefaultOptionType } from 'antd/es/select';
@@ -37,7 +37,7 @@ interface InboundBatchModalProps {
 
 const filterOption = (
   inputValue: string,
-  option?: DefaultOptionType,
+  option?: DefaultOptionType
 ): boolean => {
   const valueText =
     typeof option?.value === 'string' ? option.value.toLowerCase() : '';
@@ -62,7 +62,7 @@ const InboundBatchModal: FC<InboundBatchModalProps> = ({
   onProductCodeChange,
   onProductModelChange,
   onPartnerOrProductChange,
-  onPriceOrQuantityChange,
+  onPriceOrQuantityChange
 }) => {
   const { t } = useTranslation();
 
@@ -87,7 +87,7 @@ const InboundBatchModal: FC<InboundBatchModalProps> = ({
           marginBottom: 16,
           padding: 12,
           background: '#f0f2f5',
-          borderRadius: 4,
+          borderRadius: 4
         }}
       >
         <strong>Note:</strong> {t('inbound.onlyFieldsFilledWillBeUpdated')}
@@ -101,7 +101,7 @@ const InboundBatchModal: FC<InboundBatchModalProps> = ({
                 onChange={(value) => onSupplierCodeChange(value ?? '')}
                 options={partners.map((partner) => ({
                   value: partner.code ?? '',
-                  label: `${partner.code ?? ''} - ${partner.short_name}`,
+                  label: `${partner.code ?? ''} - ${partner.short_name}`
                 }))}
                 filterOption={filterOption}
                 allowClear
@@ -118,7 +118,7 @@ const InboundBatchModal: FC<InboundBatchModalProps> = ({
                 onChange={(value) => onSupplierShortNameChange(value ?? '')}
                 options={partners.map((partner) => ({
                   value: partner.short_name,
-                  label: `${partner.short_name} - ${partner.code ?? ''}`,
+                  label: `${partner.short_name} - ${partner.code ?? ''}`
                 }))}
                 filterOption={filterOption}
                 allowClear
@@ -143,7 +143,7 @@ const InboundBatchModal: FC<InboundBatchModalProps> = ({
                 onChange={(value) => onProductCodeChange(value ?? '')}
                 options={products.map((product) => ({
                   value: product.code ?? '',
-                  label: `${product.code ?? ''} - ${product.product_model}`,
+                  label: `${product.code ?? ''} - ${product.product_model}`
                 }))}
                 filterOption={filterOption}
                 allowClear
@@ -157,7 +157,7 @@ const InboundBatchModal: FC<InboundBatchModalProps> = ({
                 onChange={(value) => onProductModelChange(value ?? '')}
                 options={products.map((product) => ({
                   value: product.product_model,
-                  label: `${product.product_model} - ${product.code ?? ''}`,
+                  label: `${product.product_model} - ${product.code ?? ''}`
                 }))}
                 filterOption={filterOption}
                 allowClear
@@ -185,8 +185,8 @@ const InboundBatchModal: FC<InboundBatchModalProps> = ({
               rules={[
                 {
                   type: 'number',
-                  message: t('inbound.quantityGreaterThanZero'),
-                },
+                  message: t('inbound.quantityGreaterThanZero')
+                }
               ]}
             >
               <InputNumber
@@ -205,7 +205,7 @@ const InboundBatchModal: FC<InboundBatchModalProps> = ({
               <Radio.Group
                 options={[
                   { label: t('inbound.autoFetch'), value: false },
-                  { label: t('inbound.manualInput'), value: true },
+                  { label: t('inbound.manualInput'), value: true }
                 ]}
                 onChange={handleManualPriceChange}
                 optionType="button"
@@ -221,8 +221,8 @@ const InboundBatchModal: FC<InboundBatchModalProps> = ({
               rules={[
                 {
                   type: 'number',
-                  message: t('inbound.priceGreaterThanZero'),
-                },
+                  message: t('inbound.priceGreaterThanZero')
+                }
               ]}
             >
               <InputNumber

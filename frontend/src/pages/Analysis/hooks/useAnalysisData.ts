@@ -9,7 +9,7 @@ import type {
   DetailItem,
   PartnerOption,
   ProductOption,
-  AnalysisApiResult,
+  AnalysisApiResult
 } from '@/types/analysis';
 
 export const useAnalysisData = () => {
@@ -28,7 +28,7 @@ export const useAnalysisData = () => {
     try {
       setLoading(true);
       const result = (await get(
-        '/analysis/filter-options',
+        '/analysis/filter-options'
       )) as AnalysisApiResult<any>;
 
       if (result.success) {
@@ -51,7 +51,7 @@ export const useAnalysisData = () => {
       dateRange: [Dayjs, Dayjs],
       selectedPartner: string | null,
       selectedProduct: string | null,
-      analysisType: AnalysisType,
+      analysisType: AnalysisType
     ) => {
       if (!dateRange || !dateRange[0] || !dateRange[1]) {
         message.warning(t('analysis.selectTimeRange'));
@@ -70,7 +70,7 @@ export const useAnalysisData = () => {
         const params = new URLSearchParams({
           start_date: dateRange[0].format('YYYY-MM-DD'),
           end_date: dateRange[1].format('YYYY-MM-DD'),
-          type: analysisType,
+          type: analysisType
         });
 
         if (selectedPartner && selectedPartner !== 'All') {
@@ -86,7 +86,7 @@ export const useAnalysisData = () => {
         }
 
         const result = (await get(
-          `/analysis/data?${params.toString()}`,
+          `/analysis/data?${params.toString()}`
         )) as AnalysisApiResult<AnalysisData>;
 
         if (result.success && result.data) {
@@ -101,7 +101,7 @@ export const useAnalysisData = () => {
         }
 
         const detailResult = (await get(
-          `/analysis/detail?${params.toString()}`,
+          `/analysis/detail?${params.toString()}`
         )) as AnalysisApiResult<any>;
 
         if (detailResult.success && detailResult.data) {
@@ -131,7 +131,7 @@ export const useAnalysisData = () => {
         setLoading(false);
       }
     },
-    [get, t],
+    [get, t]
   );
 
   const refreshAnalysisData = useCallback(
@@ -139,7 +139,7 @@ export const useAnalysisData = () => {
       dateRange: [Dayjs, Dayjs],
       selectedPartner: string | null,
       selectedProduct: string | null,
-      analysisType: AnalysisType,
+      analysisType: AnalysisType
     ) => {
       if (!dateRange || !dateRange[0] || !dateRange[1]) {
         return;
@@ -152,7 +152,7 @@ export const useAnalysisData = () => {
           end_date: dateRange[1].format('YYYY-MM-DD'),
           product_model:
             selectedProduct === 'All' ? undefined : selectedProduct,
-          type: analysisType,
+          type: analysisType
         };
 
         if (selectedPartner && selectedPartner !== 'All') {
@@ -165,7 +165,7 @@ export const useAnalysisData = () => {
 
         const result = (await post(
           '/analysis/refresh',
-          payload,
+          payload
         )) as AnalysisApiResult<AnalysisData>;
 
         if (result.success && result.data) {
@@ -175,7 +175,7 @@ export const useAnalysisData = () => {
           const params = new URLSearchParams({
             start_date: payload.start_date,
             end_date: payload.end_date,
-            type: analysisType,
+            type: analysisType
           });
           if (payload.supplier_code)
             params.append('supplier_code', payload.supplier_code);
@@ -185,7 +185,7 @@ export const useAnalysisData = () => {
             params.append('product_model', payload.product_model);
 
           const detailResult = (await get(
-            `/analysis/detail?${params.toString()}`,
+            `/analysis/detail?${params.toString()}`
           )) as AnalysisApiResult<any>;
           if (detailResult.success && detailResult.data) {
             const data = detailResult.data as any;
@@ -205,7 +205,7 @@ export const useAnalysisData = () => {
         setRefreshing(false);
       }
     },
-    [post, get, t],
+    [post, get, t]
   );
 
   return {
@@ -218,7 +218,7 @@ export const useAnalysisData = () => {
     detailData,
     fetchFilterOptions,
     fetchAnalysisData,
-    refreshAnalysisData,
+    refreshAnalysisData
   };
 };
 
