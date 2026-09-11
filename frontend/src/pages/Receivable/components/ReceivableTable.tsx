@@ -48,10 +48,7 @@ interface ReceivableTableProps {
   readonly onFilter: (filters: ReceivableFilters) => void;
   readonly onTableChange: NonNullable<TableProps<ReceivableRecord>['onChange']>;
   readonly onAddPayment: (record: ReceivableRecord) => void;
-  readonly onEditPayment: (
-    payment: ReceivablePaymentRecord,
-    customer: ReceivableRecord
-  ) => void;
+  readonly onEditPayment: (payment: ReceivablePaymentRecord, customer: ReceivableRecord) => void;
   readonly onDeletePayment: (paymentId: number) => Promise<void> | void;
   readonly apiInstance: UseSimpleApiReturn;
   readonly canWrite: boolean;
@@ -89,10 +86,8 @@ const ReceivableTable: FC<ReceivableTableProps> = ({
 }) => {
   const { t } = useTranslation();
   const [detailsVisible, setDetailsVisible] = useState(false);
-  const [selectedCustomer, setSelectedCustomer] =
-    useState<ReceivableRecord | null>(null);
-  const [customerDetails, setCustomerDetails] =
-    useState<ReceivableDetailResponse | null>(null);
+  const [selectedCustomer, setSelectedCustomer] = useState<ReceivableRecord | null>(null);
+  const [customerDetails, setCustomerDetails] = useState<ReceivableDetailResponse | null>(null);
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [paymentPagination, setPaymentPagination] =
     useState<ModalPaginationState>(DEFAULT_MODAL_PAGINATION);
@@ -104,9 +99,7 @@ const ReceivableTable: FC<ReceivableTableProps> = ({
     const numeric = Number(balance ?? 0);
     if (numeric > 0) {
       return (
-        <Tag color="volcano">
-          {t('receivable.unpaid', { amount: formatCurrency(numeric) })}
-        </Tag>
+        <Tag color="volcano">{t('receivable.unpaid', { amount: formatCurrency(numeric) })}</Tag>
       );
     }
     if (numeric < 0) {
@@ -197,21 +190,13 @@ const ReceivableTable: FC<ReceivableTableProps> = ({
 
   const handlePaymentPageChange = async (page: number): Promise<void> => {
     if (selectedCustomer) {
-      await fetchCustomerDetails(
-        selectedCustomer.customer_code,
-        page,
-        outboundPagination.current
-      );
+      await fetchCustomerDetails(selectedCustomer.customer_code, page, outboundPagination.current);
     }
   };
 
   const handleOutboundPageChange = async (page: number): Promise<void> => {
     if (selectedCustomer) {
-      await fetchCustomerDetails(
-        selectedCustomer.customer_code,
-        paymentPagination.current,
-        page
-      );
+      await fetchCustomerDetails(selectedCustomer.customer_code, paymentPagination.current, page);
     }
   };
 
@@ -219,9 +204,7 @@ const ReceivableTable: FC<ReceivableTableProps> = ({
     onFilter({ customer_short_name: value || undefined });
   };
 
-  const handleDeletePaymentConfirm = async (
-    paymentId: number
-  ): Promise<void> => {
+  const handleDeletePaymentConfirm = async (paymentId: number): Promise<void> => {
     await Promise.resolve(onDeletePayment(paymentId));
     if (detailsVisible && selectedCustomer) {
       await fetchCustomerDetails(
@@ -232,9 +215,8 @@ const ReceivableTable: FC<ReceivableTableProps> = ({
     }
   };
 
-  const getColumnSortOrder = (
-    field: ReceivableSorterState['field']
-  ): SortOrder => (sorter.field === field ? (sorter.order ?? null) : null);
+  const getColumnSortOrder = (field: ReceivableSorterState['field']): SortOrder =>
+    sorter.field === field ? (sorter.order ?? null) : null;
 
   const tableColumns: ColumnsType<ReceivableRecord> = [
     {
@@ -337,14 +319,8 @@ const ReceivableTable: FC<ReceivableTableProps> = ({
   ];
 
   const searchStats = useMemo(() => {
-    const totalReceivable = data.reduce(
-      (sum, item) => sum + (item.total_receivable ?? 0),
-      0
-    );
-    const totalUnpaid = data.reduce(
-      (sum, item) => sum + Math.max(item.balance ?? 0, 0),
-      0
-    );
+    const totalReceivable = data.reduce((sum, item) => sum + (item.total_receivable ?? 0), 0);
+    const totalUnpaid = data.reduce((sum, item) => sum + Math.max(item.balance ?? 0, 0), 0);
     return {
       totalReceivable,
       totalUnpaid
@@ -405,25 +381,20 @@ const ReceivableTable: FC<ReceivableTableProps> = ({
         style={{ top: 20 }}
       >
         {detailsLoading ? (
-          <div style={{ textAlign: 'center', padding: 50 }}>
-            {t('receivable.loading')}
-          </div>
+          <div style={{ textAlign: 'center', padding: 50 }}>{t('receivable.loading')}</div>
         ) : customerDetails ? (
           <div>
             <div style={{ marginBottom: 24 }}>
               <Title level={5}>{t('receivable.customerInfo')}</Title>
               <Row gutter={16}>
                 <Col span={8}>
-                  {t('receivable.customerCode')}:{' '}
-                  {customerDetails.customer?.code ?? '-'}
+                  {t('receivable.customerCode')}: {customerDetails.customer?.code ?? '-'}
                 </Col>
                 <Col span={8}>
-                  {t('receivable.customerShortName')}:{' '}
-                  {customerDetails.customer?.short_name ?? '-'}
+                  {t('receivable.customerShortName')}: {customerDetails.customer?.short_name ?? '-'}
                 </Col>
                 <Col span={8}>
-                  {t('receivable.customerFullName')}:{' '}
-                  {customerDetails.customer?.full_name ?? '-'}
+                  {t('receivable.customerFullName')}: {customerDetails.customer?.full_name ?? '-'}
                 </Col>
               </Row>
             </div>
@@ -436,12 +407,10 @@ const ReceivableTable: FC<ReceivableTableProps> = ({
                   {formatCurrency(customerDetails.summary?.total_receivable)}
                 </Col>
                 <Col span={8}>
-                  {t('receivable.totalPaid')}:{' '}
-                  {formatCurrency(customerDetails.summary?.total_paid)}
+                  {t('receivable.totalPaid')}: {formatCurrency(customerDetails.summary?.total_paid)}
                 </Col>
                 <Col span={8}>
-                  {t('receivable.balance')}:
-                  {getBalanceTag(customerDetails.summary?.balance)}
+                  {t('receivable.balance')}:{getBalanceTag(customerDetails.summary?.balance)}
                 </Col>
               </Row>
             </div>
@@ -475,8 +444,7 @@ const ReceivableTable: FC<ReceivableTableProps> = ({
                   showSizeChanger: false,
                   size: 'small',
                   onChange: handlePaymentPageChange,
-                  showTotal: (total, range) =>
-                    `${range[0]}-${range[1]} / ${total}`
+                  showTotal: (total, range) => `${range[0]}-${range[1]} / ${total}`
                 }}
                 scroll={{ y: 200 }}
                 columns={[
@@ -516,16 +484,9 @@ const ReceivableTable: FC<ReceivableTableProps> = ({
                               </Button>
                               <Popconfirm
                                 title={t('receivable.deletePaymentConfirm')}
-                                onConfirm={() =>
-                                  handleDeletePaymentConfirm(record.id)
-                                }
+                                onConfirm={() => handleDeletePaymentConfirm(record.id)}
                               >
-                                <Button
-                                  type="link"
-                                  size="small"
-                                  danger
-                                  icon={<DeleteOutlined />}
-                                />
+                                <Button type="link" size="small" danger icon={<DeleteOutlined />} />
                               </Popconfirm>
                             </Space>
                           )
@@ -557,8 +518,7 @@ const ReceivableTable: FC<ReceivableTableProps> = ({
                   showSizeChanger: false,
                   size: 'small',
                   onChange: handleOutboundPageChange,
-                  showTotal: (total, range) =>
-                    `${range[0]}-${range[1]} / ${total}`
+                  showTotal: (total, range) => `${range[0]}-${range[1]} / ${total}`
                 }}
                 scroll={{ y: 200 }}
                 columns={[

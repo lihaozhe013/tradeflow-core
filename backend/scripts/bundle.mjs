@@ -52,17 +52,9 @@ async function main() {
             if (hasExt) {
               candidates.push(base);
               // Special-case .js in TS sources
-              if (base.endsWith('.js'))
-                candidates.push(base.replace(/\.js$/, '.ts'));
+              if (base.endsWith('.js')) candidates.push(base.replace(/\.js$/, '.ts'));
             } else {
-              for (const ext of [
-                '.ts',
-                '.tsx',
-                '.js',
-                '.mjs',
-                '.cjs',
-                '.json'
-              ]) {
+              for (const ext of ['.ts', '.tsx', '.js', '.mjs', '.cjs', '.json']) {
                 candidates.push(base + ext);
               }
               for (const ext of ['.ts', '.tsx', '.js', '.mjs']) {
@@ -78,15 +70,10 @@ async function main() {
       }
     ],
     define: {
-      'process.env.NODE_ENV': JSON.stringify(
-        process.env.NODE_ENV || 'production'
-      )
+      'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'production')
     }
   });
-  console.info(
-    'esbuild: backend bundled ->',
-    path.relative(process.cwd(), outfile)
-  );
+  console.info('esbuild: backend bundled ->', path.relative(process.cwd(), outfile));
 }
 
 main().catch((err) => {

@@ -10,8 +10,7 @@ const router: Router = express.Router();
  * - editor/reader: can only view own logs
  */
 router.get('/logs', async (req: Request, res: Response): Promise<void> => {
-  const { page, pageSize, startDate, endDate, username, resource, params } =
-    req.query;
+  const { page, pageSize, startDate, endDate, username, resource, params } = req.query;
 
   const pageNum = Math.max(1, Number(page) || 1);
   const limit = Math.min(100, Math.max(1, Number(pageSize) || 20));

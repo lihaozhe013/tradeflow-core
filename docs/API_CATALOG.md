@@ -1,7 +1,7 @@
 # API Catalog
 
-Base URL: `/api` Auth: JWT via `POST /api/auth/login` →
-`Authorization: Bearer <token>` (except `/api/auth/*`)
+Base URL: `/api` Auth: JWT via `POST /api/auth/login` → `Authorization: Bearer <token>` (except
+`/api/auth/*`)
 
 ## Auth
 

@@ -34,10 +34,7 @@ export function createWorksheet(data: unknown[], template: ExportTemplate) {
         return (
           col.key
             .split('.')
-            .reduce<unknown>(
-              (obj, key) => (obj as Record<string, unknown>)?.[key],
-              row
-            ) ?? ''
+            .reduce<unknown>((obj, key) => (obj as Record<string, unknown>)?.[key], row) ?? ''
         );
       }
       return row[col.key] ?? '';

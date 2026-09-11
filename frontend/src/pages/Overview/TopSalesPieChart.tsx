@@ -1,12 +1,5 @@
 import { Card, Spin, Alert } from 'antd';
-import {
-  PieChart,
-  Pie,
-  Cell,
-  ResponsiveContainer,
-  Legend,
-  Tooltip
-} from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import type { PieLabelRenderProps } from 'recharts';
 import { useTranslation } from 'react-i18next';
 import { useSimpleApiData } from '@/hooks/useSimpleApi';
@@ -63,11 +56,7 @@ const TopSalesPieChart = () => {
     percent = 0
   }: PieLabelRenderProps) => {
     const percentNumber =
-      typeof percent === 'number'
-        ? percent
-        : typeof percent === 'string'
-          ? parseFloat(percent)
-          : 0;
+      typeof percent === 'number' ? percent : typeof percent === 'string' ? parseFloat(percent) : 0;
 
     if (Number.isNaN(percentNumber) || percentNumber < 0.05) return null; // 小于5%不显示标签
 
@@ -123,9 +112,7 @@ const TopSalesPieChart = () => {
       }}
       bodyStyle={{ padding: '8px' }}
     >
-      <div
-        style={{ color: '#999', fontSize: 12, marginBottom: 8, marginLeft: 17 }}
-      >
+      <div style={{ color: '#999', fontSize: 12, marginBottom: 8, marginLeft: 17 }}>
         {t('overview.includesOnlyTheModtRecentYear')}
       </div>
       <ResponsiveContainer width="100%" height={500}>
@@ -161,14 +148,9 @@ const TopSalesPieChart = () => {
                 | ReadonlyArray<number | string>
                 | undefined
             ) => [value, t('overview.salesAmount')]}
-            labelFormatter={(label: any) =>
-              `${t('overview.product')}: ${label}`
-            }
+            labelFormatter={(label: any) => `${t('overview.product')}: ${label}`}
           />
-          <Legend
-            wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }}
-            iconSize={8}
-          />
+          <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} iconSize={8} />
         </PieChart>
       </ResponsiveContainer>
     </Card>

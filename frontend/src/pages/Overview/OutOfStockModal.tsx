@@ -10,11 +10,7 @@ type OutOfStockModalProps = {
   products: OutOfStockProduct[];
 };
 
-const OutOfStockModal = ({
-  visible,
-  onClose,
-  products
-}: OutOfStockModalProps) => {
+const OutOfStockModal = ({ visible, onClose, products }: OutOfStockModalProps) => {
   const { t } = useTranslation();
 
   return (

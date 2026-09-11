@@ -1,11 +1,4 @@
-import {
-  useState,
-  useCallback,
-  useEffect,
-  useMemo,
-  type ChangeEvent,
-  type FC
-} from 'react';
+import { useState, useCallback, useEffect, useMemo, type ChangeEvent, type FC } from 'react';
 import type { ColumnsType, TableProps } from 'antd/es/table';
 import {
   Table,
@@ -58,8 +51,7 @@ const DEFAULT_PAGINATION: PaginationInfo = {
 
 const Inventory: FC = () => {
   const [productFilter, setProductFilter] = useState('');
-  const [pagination, setPagination] =
-    useState<PaginationInfo>(DEFAULT_PAGINATION);
+  const [pagination, setPagination] = useState<PaginationInfo>(DEFAULT_PAGINATION);
   const { t } = useTranslation();
   const { canWrite } = usePermissions();
 
@@ -121,17 +113,13 @@ const Inventory: FC = () => {
     refreshTotalCost();
   };
 
-  const handleProductFilterChange = (
-    event: ChangeEvent<HTMLInputElement>
-  ): void => {
+  const handleProductFilterChange = (event: ChangeEvent<HTMLInputElement>): void => {
     const { value } = event.target;
     setProductFilter(value);
     setPagination((prev) => ({ ...prev, current: 1 }));
   };
 
-  const handleTableChange: TableProps<InventoryItem>['onChange'] = (
-    paginationConfig
-  ) => {
+  const handleTableChange: TableProps<InventoryItem>['onChange'] = (paginationConfig) => {
     setPagination((prev) => ({
       ...prev,
       current: paginationConfig.current ?? prev.current
@@ -144,8 +132,7 @@ const Inventory: FC = () => {
       dataIndex: 'product_model',
       key: 'product_model',
       width: 200,
-      sorter: (a, b) =>
-        (a.product_model ?? '').localeCompare(b.product_model ?? '')
+      sorter: (a, b) => (a.product_model ?? '').localeCompare(b.product_model ?? '')
     },
     {
       title: t('inventory.currentInventory'),
@@ -187,11 +174,7 @@ const Inventory: FC = () => {
   return (
     <div>
       <Card>
-        <Row
-          justify="space-between"
-          align="middle"
-          style={{ marginBottom: 16 }}
-        >
+        <Row justify="space-between" align="middle" style={{ marginBottom: 16 }}>
           <Col>
             <Title level={2} style={{ margin: 0 }}>
               {t('inventory.title')}
@@ -237,10 +220,7 @@ const Inventory: FC = () => {
           <Col>
             <Space>
               <strong>{t('inventory.totalCostEstimate')}: </strong>
-              <Tag
-                color="blue"
-                style={{ fontSize: '14px', padding: '4px 8px' }}
-              >
+              <Tag color="blue" style={{ fontSize: '14px', padding: '4px 8px' }}>
                 {currency_unit_symbol}
                 {totalCostEstimate.toLocaleString('en-US', {
                   minimumFractionDigits: 2,

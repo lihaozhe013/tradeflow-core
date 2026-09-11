@@ -13,12 +13,7 @@ import {
   message,
   Switch
 } from 'antd';
-import {
-  EditOutlined,
-  DeleteOutlined,
-  KeyOutlined,
-  PlusOutlined
-} from '@ant-design/icons';
+import { EditOutlined, DeleteOutlined, KeyOutlined, PlusOutlined } from '@ant-design/icons';
 import type { ColumnsType, TablePaginationConfig } from 'antd/es/table';
 import { useTranslation } from 'react-i18next';
 import { useApi } from '@/hooks/useApi';
@@ -64,9 +59,7 @@ function Users(): React.ReactElement {
   const getRef = useRef(get);
   getRef.current = get;
 
-  const [displayName, setDisplayName] = useState(
-    (currentUser?.display_name as string) || ''
-  );
+  const [displayName, setDisplayName] = useState((currentUser?.display_name as string) || '');
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -284,9 +277,7 @@ function Users(): React.ReactElement {
       key: 'enabled',
       width: 80,
       render: (enabled: boolean) => (
-        <Tag color={enabled ? 'green' : 'red'}>
-          {enabled ? t('users.yes') : t('users.no')}
-        </Tag>
+        <Tag color={enabled ? 'green' : 'red'}>{enabled ? t('users.yes') : t('users.no')}</Tag>
       )
     },
     {
@@ -338,11 +329,7 @@ function Users(): React.ReactElement {
             />
           </Form.Item>
           <Form.Item>
-            <Button
-              type="primary"
-              onClick={handleSaveDisplayName}
-              loading={loading}
-            >
+            <Button type="primary" onClick={handleSaveDisplayName} loading={loading}>
               {t('users.save')}
             </Button>
           </Form.Item>
@@ -373,11 +360,7 @@ function Users(): React.ReactElement {
             />
           </Form.Item>
           <Form.Item>
-            <Button
-              type="primary"
-              onClick={handleChangePassword}
-              loading={loading}
-            >
+            <Button type="primary" onClick={handleChangePassword} loading={loading}>
               {t('users.changePasswordButton')}
             </Button>
           </Form.Item>
@@ -388,11 +371,7 @@ function Users(): React.ReactElement {
         <Card
           title={t('users.userList')}
           extra={
-            <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={handleOpenCreate}
-            >
+            <Button type="primary" icon={<PlusOutlined />} onClick={handleOpenCreate}>
               {t('users.createUser')}
             </Button>
           }
@@ -450,9 +429,7 @@ function Users(): React.ReactElement {
             <Select value={createRole} onChange={setCreateRole}>
               <Select.Option value="reader">{t('users.reader')}</Select.Option>
               <Select.Option value="editor">{t('users.editor')}</Select.Option>
-              <Select.Option value="superuser">
-                {t('users.superuser')}
-              </Select.Option>
+              <Select.Option value="superuser">{t('users.superuser')}</Select.Option>
             </Select>
           </Form.Item>
           <Form.Item label={t('users.enabled')} valuePropName="checked">
@@ -474,18 +451,13 @@ function Users(): React.ReactElement {
             <Input value={editingUser?.username} disabled />
           </Form.Item>
           <Form.Item label={t('users.displayName')}>
-            <Input
-              value={editDisplayName}
-              onChange={(e) => setEditDisplayName(e.target.value)}
-            />
+            <Input value={editDisplayName} onChange={(e) => setEditDisplayName(e.target.value)} />
           </Form.Item>
           <Form.Item label={t('users.role')}>
             <Select value={editRole} onChange={setEditRole}>
               <Select.Option value="reader">{t('users.reader')}</Select.Option>
               <Select.Option value="editor">{t('users.editor')}</Select.Option>
-              <Select.Option value="superuser">
-                {t('users.superuser')}
-              </Select.Option>
+              <Select.Option value="superuser">{t('users.superuser')}</Select.Option>
             </Select>
           </Form.Item>
           <Form.Item label={t('users.enabled')} valuePropName="checked">

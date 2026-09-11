@@ -14,9 +14,7 @@ export function generateInvoiceExcel(data: InvoiceItemDto[]): Buffer {
   }) as unknown as Buffer;
 }
 
-export function generateMultiInvoiceExcel(
-  dataMap: Record<string, InvoiceItemDto[]>
-): Buffer {
+export function generateMultiInvoiceExcel(dataMap: Record<string, InvoiceItemDto[]>): Buffer {
   const template = TEMPLATES.invoice;
   const workbook = XLSX.utils.book_new();
 
@@ -24,9 +22,7 @@ export function generateMultiInvoiceExcel(
     if (!data || data.length === 0) continue;
     const worksheet = ExportUtils.createWorksheet(data, template);
     // Sheet names in Excel have a 31 character limit and cannot contain certain characters like [ ] * ? : / \
-    const safeSheetName = partnerName
-      .replace(/[[\]*?:/\\]/g, '')
-      .substring(0, 31);
+    const safeSheetName = partnerName.replace(/[[\]*?:/\\]/g, '').substring(0, 31);
 
     // Check if a sheet with the same name exists (in case truncation makes matches)
     let finalSheetName = safeSheetName;

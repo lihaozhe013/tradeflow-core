@@ -1,15 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useMemo } from 'react';
-import {
-  Card,
-  Select,
-  Statistic,
-  Row,
-  Col,
-  Spin,
-  Alert,
-  Typography
-} from 'antd';
+import { Card, Select, Statistic, Row, Col, Spin, Alert, Typography } from 'antd';
 import {
   ArrowUpOutlined,
   ArrowDownOutlined,
@@ -44,8 +35,7 @@ type MonthlyInventoryChangeResponse = {
 const MonthlyInventoryChange = () => {
   const { t } = useTranslation();
   const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
-  const [inventoryData, setInventoryData] =
-    useState<MonthlyInventoryChangeData | null>(null);
+  const [inventoryData, setInventoryData] = useState<MonthlyInventoryChangeData | null>(null);
   const [inventoryLoading, setInventoryLoading] = useState(false);
   const [inventoryError, setInventoryError] = useState<string | null>(null);
 
@@ -60,10 +50,7 @@ const MonthlyInventoryChange = () => {
     error: productsError
   } = useSimpleApiData<ProductsResponse>('/products');
 
-  const products = useMemo(
-    () => productsResponse?.data ?? [],
-    [productsResponse]
-  );
+  const products = useMemo(() => productsResponse?.data ?? [], [productsResponse]);
 
   // 当产品列表加载完成时，自动选择第一个产品
   useEffect(() => {
@@ -87,11 +74,7 @@ const MonthlyInventoryChange = () => {
           setInventoryData(result.data);
         } else {
           setInventoryData(null);
-          setInventoryError(
-            result.message ??
-              result.error ??
-              t('overview.inventoryChangeFailed')
-          );
+          setInventoryError(result.message ?? result.error ?? t('overview.inventoryChangeFailed'));
         }
       } catch (err) {
         console.error(t('overview.inventoryChangeFailed'), err);

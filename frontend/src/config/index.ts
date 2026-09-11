@@ -13,29 +13,25 @@ export const PAYMENT_METHOD_CONFIG = typedConfigData.paymentMethods.config;
 
 // 产品类别相关配置
 export const PRODUCT_CATEGORIES = typedConfigData.productCategories.list;
-export const DEFAULT_PRODUCT_CATEGORY =
-  typedConfigData.productCategories.default;
+export const DEFAULT_PRODUCT_CATEGORY = typedConfigData.productCategories.default;
 
 /**
  * 获取付款方式选项（用于下拉框）
  * @returns 付款方式选项数组
  */
-export const getPaymentMethodOptions =
-  (): readonly SelectOption<PaymentMethod>[] => {
-    return PAYMENT_METHODS.map((method) => ({
-      value: method,
-      label: method
-    }));
-  };
+export const getPaymentMethodOptions = (): readonly SelectOption<PaymentMethod>[] => {
+  return PAYMENT_METHODS.map((method) => ({
+    value: method,
+    label: method
+  }));
+};
 
 /**
  * 获取付款方式标签
  * @param value - 付款方式值
  * @returns 付款方式标签
  */
-export const getPaymentMethodLabel = (
-  value: PaymentMethod | null | undefined
-): string => {
+export const getPaymentMethodLabel = (value: PaymentMethod | null | undefined): string => {
   return value ?? '';
 };
 
@@ -43,22 +39,19 @@ export const getPaymentMethodLabel = (
  * 获取产品类别选项（用于下拉框）
  * @returns 产品类别选项数组
  */
-export const getProductCategoryOptions =
-  (): readonly SelectOption<ProductCategory>[] => {
-    return PRODUCT_CATEGORIES.map((category) => ({
-      value: category,
-      label: category
-    }));
-  };
+export const getProductCategoryOptions = (): readonly SelectOption<ProductCategory>[] => {
+  return PRODUCT_CATEGORIES.map((category) => ({
+    value: category,
+    label: category
+  }));
+};
 
 /**
  * 检查是否为有效的付款方式
  * @param method - 待检查的付款方式
  * @returns 是否为有效付款方式
  */
-export const isValidPaymentMethod = (
-  method: string
-): method is PaymentMethod => {
+export const isValidPaymentMethod = (method: string): method is PaymentMethod => {
   return (PAYMENT_METHODS as readonly string[]).includes(method);
 };
 
@@ -67,9 +60,7 @@ export const isValidPaymentMethod = (
  * @param category - 待检查的产品类别
  * @returns 是否为有效产品类别
  */
-export const isValidProductCategory = (
-  category: string
-): category is ProductCategory => {
+export const isValidProductCategory = (category: string): category is ProductCategory => {
   return (PRODUCT_CATEGORIES as readonly string[]).includes(category);
 };
 
@@ -78,9 +69,7 @@ export const isValidProductCategory = (
  * @param method - 付款方式
  * @returns 付款方式配置，如果不存在则返回 undefined
  */
-export const getPaymentMethodConfig = (
-  method: PaymentMethod
-): PaymentMethodConfig | undefined => {
+export const getPaymentMethodConfig = (method: PaymentMethod): PaymentMethodConfig | undefined => {
   const configKey = method
     .toLowerCase()
     .replace(/['\s]/g, '_') as keyof typeof PAYMENT_METHOD_CONFIG;

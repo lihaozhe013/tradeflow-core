@@ -50,11 +50,7 @@ class InvoiceCacheService {
    */
   private saveCache(): void {
     try {
-      fs.writeFileSync(
-        this.cachePath,
-        JSON.stringify(this.cache, null, 2),
-        'utf-8'
-      );
+      fs.writeFileSync(this.cachePath, JSON.stringify(this.cache, null, 2), 'utf-8');
       logger.info('Invoice cache saved successfully');
     } catch (error) {
       logger.error(`Failed to save invoice cache: ${error}`);
@@ -65,9 +61,7 @@ class InvoiceCacheService {
   /**
    * Refresh cache for a specific customer (outbound/receivable)
    */
-  public async refreshCustomerCache(
-    customer_code: string
-  ): Promise<InvoicedRecord[]> {
+  public async refreshCustomerCache(customer_code: string): Promise<InvoicedRecord[]> {
     try {
       const groups = await prisma.outboundRecord.groupBy({
         by: ['invoice_number'],
@@ -111,9 +105,7 @@ class InvoiceCacheService {
       return invoicedRecords;
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
-      logger.error(
-        `Failed to refresh invoice cache for customer ${customer_code}: ${message}`
-      );
+      logger.error(`Failed to refresh invoice cache for customer ${customer_code}: ${message}`);
       throw err;
     }
   }
@@ -121,9 +113,7 @@ class InvoiceCacheService {
   /**
    * Refresh cache for a specific supplier (inbound/payable)
    */
-  public async refreshSupplierCache(
-    supplier_code: string
-  ): Promise<InvoicedRecord[]> {
+  public async refreshSupplierCache(supplier_code: string): Promise<InvoicedRecord[]> {
     try {
       const groups = await prisma.inboundRecord.groupBy({
         by: ['invoice_number'],
@@ -167,9 +157,7 @@ class InvoiceCacheService {
       return invoicedRecords;
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
-      logger.error(
-        `Failed to refresh invoice cache for supplier ${supplier_code}: ${message}`
-      );
+      logger.error(`Failed to refresh invoice cache for supplier ${supplier_code}: ${message}`);
       throw err;
     }
   }
@@ -179,9 +167,7 @@ class InvoiceCacheService {
   /**
    * Get cached invoiced records for a customer
    */
-  public getCachedInvoicedRecords(
-    customer_code: string
-  ): InvoicedRecord[] | null {
+  public getCachedInvoicedRecords(customer_code: string): InvoicedRecord[] | null {
     const customerCache = this.cache[customer_code];
     if (!customerCache) {
       return null;

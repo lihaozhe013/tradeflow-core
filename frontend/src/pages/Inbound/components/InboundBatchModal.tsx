@@ -1,14 +1,4 @@
-import {
-  Modal,
-  Form,
-  Row,
-  Col,
-  Input,
-  InputNumber,
-  DatePicker,
-  Button,
-  Radio
-} from 'antd';
+import { Modal, Form, Row, Col, Input, InputNumber, DatePicker, Button, Radio } from 'antd';
 import type { FormInstance, RadioChangeEvent } from 'antd';
 import type { DefaultOptionType } from 'antd/es/select';
 import type { Dayjs } from 'dayjs';
@@ -35,14 +25,9 @@ interface InboundBatchModalProps {
   readonly onPriceOrQuantityChange: () => void;
 }
 
-const filterOption = (
-  inputValue: string,
-  option?: DefaultOptionType
-): boolean => {
-  const valueText =
-    typeof option?.value === 'string' ? option.value.toLowerCase() : '';
-  const labelText =
-    typeof option?.label === 'string' ? option.label.toLowerCase() : '';
+const filterOption = (inputValue: string, option?: DefaultOptionType): boolean => {
+  const valueText = typeof option?.value === 'string' ? option.value.toLowerCase() : '';
+  const labelText = typeof option?.label === 'string' ? option.label.toLowerCase() : '';
   const needle = inputValue.toLowerCase();
   return (valueText.includes(needle) || labelText.includes(needle)) ?? false;
 };
@@ -109,10 +94,7 @@ const InboundBatchModal: FC<InboundBatchModalProps> = ({
             </Form.Item>
           </Col>
           <Col span={8}>
-            <Form.Item
-              label={t('inbound.supplierShortName')}
-              name="supplier_short_name"
-            >
+            <Form.Item label={t('inbound.supplierShortName')} name="supplier_short_name">
               <AutoComplete
                 placeholder={t('inbound.inputSupplierShortName') ?? ''}
                 onChange={(value) => onSupplierShortNameChange(value ?? '')}
@@ -126,10 +108,7 @@ const InboundBatchModal: FC<InboundBatchModalProps> = ({
             </Form.Item>
           </Col>
           <Col span={8}>
-            <Form.Item
-              label={t('inbound.supplierFullName')}
-              name="supplier_full_name"
-            >
+            <Form.Item label={t('inbound.supplierFullName')} name="supplier_full_name">
               <Input placeholder={t('inbound.autoFill') ?? ''} disabled />
             </Form.Item>
           </Col>
@@ -228,9 +207,7 @@ const InboundBatchModal: FC<InboundBatchModalProps> = ({
               <InputNumber
                 style={{ width: '100%' }}
                 placeholder={
-                  manualPrice
-                    ? (t('inbound.inputUnitPrice') ?? '')
-                    : (t('inbound.autoFetch') ?? '')
+                  manualPrice ? (t('inbound.inputUnitPrice') ?? '') : (t('inbound.autoFetch') ?? '')
                 }
                 disabled={!manualPrice}
                 onChange={onPriceOrQuantityChange}
@@ -271,16 +248,11 @@ const InboundBatchModal: FC<InboundBatchModalProps> = ({
         </Row>
 
         <Form.Item label={t('inbound.remark')} name="remark">
-          <Input.TextArea
-            placeholder={t('inbound.inputRemark') ?? ''}
-            rows={3}
-          />
+          <Input.TextArea placeholder={t('inbound.inputRemark') ?? ''} rows={3} />
         </Form.Item>
 
         <div className="form-actions">
-          <Button onClick={() => setModalVisible(false)}>
-            {t('common.cancel')}
-          </Button>
+          <Button onClick={() => setModalVisible(false)}>{t('common.cancel')}</Button>
           <Button type="primary" htmlType="submit">
             {t('inbound.batchUpdate', { selectedCount })}
           </Button>

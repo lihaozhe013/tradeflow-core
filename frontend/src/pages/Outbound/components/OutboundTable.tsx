@@ -121,12 +121,7 @@ const OutboundTable: FC<OutboundTableProps> = ({
       width: 80,
       render: (_value, record) => (
         <Space size="small">
-          <Button
-            type="link"
-            icon={<EditOutlined />}
-            onClick={() => onEdit(record)}
-            size="small"
-          >
+          <Button type="link" icon={<EditOutlined />} onClick={() => onEdit(record)} size="small">
             {t('common.edit')}
           </Button>
           <Popconfirm

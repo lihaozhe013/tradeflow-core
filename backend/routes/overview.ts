@@ -72,9 +72,7 @@ interface StatsCache {
 /**
  * Helper: Build weighted average cost map from inbound records
  */
-function buildAvgCostMap(
-  inboundRecords: InboundGroup[]
-): Record<string, AvgCostData> {
+function buildAvgCostMap(inboundRecords: InboundGroup[]): Record<string, AvgCostData> {
   return inboundRecords.reduce(
     (map, item) => {
       if (!item.product_code) return map;
@@ -84,11 +82,7 @@ function buildAvgCostMap(
 
       if (totalQty > 0) {
         map[item.product_code] = {
-          avg_cost_price: decimalCalc.fromSqlResult(
-            totalPrice / totalQty,
-            0,
-            4
-          ),
+          avg_cost_price: decimalCalc.fromSqlResult(totalPrice / totalQty, 0, 4),
           total_inbound_quantity: decimalCalc.fromSqlResult(totalQty, 0)
         };
       }
@@ -101,10 +95,7 @@ function buildAvgCostMap(
 /**
  * Helper: Calculate cost for a single sales record
  */
-function calculateOutboundCost(
-  record: OutboundRow,
-  avgCostMap: Record<string, AvgCostData>
-) {
+function calculateOutboundCost(record: OutboundRow, avgCostMap: Record<string, AvgCostData>) {
   const productModel = record.product_code || 'unknown';
   const soldQuantity = decimalCalc.decimal(record.quantity || 0);
 
@@ -195,16 +186,10 @@ async function calculateSoldGoodsCost(): Promise<number> {
     .map(calculateSpecialIncome)
     .reduce(sumDecimals, decimalCalc.decimal(0));
 
-  const finalCost = decimalCalc.subtract(
-    totalSoldGoodsCost,
-    totalSpecialIncome
-  );
+  const finalCost = decimalCalc.subtract(totalSoldGoodsCost, totalSpecialIncome);
 
   // Ensure cost is not negative and keep two decimal places
-  return decimalCalc.toDbNumber(
-    decimalCalc.decimal(Math.max(0, finalCost.toNumber())),
-    2
-  );
+  return decimalCalc.toDbNumber(decimalCalc.decimal(Math.max(0, finalCost.toNumber())), 2);
 }
 
 // ========== Route Handlers ==========
@@ -217,9 +202,7 @@ router.get('/stats', (_req: Request, res: Response) => {
     return res.json(JSON.parse(json));
   }
   // Cache doesn't exist or reading failed, return empty or error
-  return res
-    .status(503)
-    .json({ error: 'Statistics data not generated, please refresh first.' });
+  return res.status(503).json({ error: 'Statistics data not generated, please refresh first.' });
 });
 
 // POST Force refresh and write to cache (including top_sales_products and monthly_inventory_changes)
@@ -262,10 +245,7 @@ router.post('/stats', async (_req: Request, res: Response): Promise<void> => {
     _sum: { total_price: true },
     where: { unit_price: { gte: 0 }, inbound_date: { gte: oneYearAgoStr } }
   });
-  const normalPurchase = decimalCalc.fromSqlResult(
-    normalPurchaseAgg._sum.total_price || 0,
-    0
-  );
+  const normalPurchase = decimalCalc.fromSqlResult(normalPurchaseAgg._sum.total_price || 0, 0);
 
   // Purchase Amount: Special Income (Abs(negative))
   // We cannot do SUM(ABS(...)) easily in Prisma without raw query or iterating.
@@ -287,10 +267,7 @@ router.post('/stats', async (_req: Request, res: Response): Promise<void> => {
     _sum: { total_price: true },
     where: { unit_price: { gte: 0 }, outbound_date: { gte: oneYearAgoStr } }
   });
-  const normalSales = decimalCalc.fromSqlResult(
-    normalSalesAgg._sum.total_price || 0,
-    0
-  );
+  const normalSales = decimalCalc.fromSqlResult(normalSalesAgg._sum.total_price || 0, 0);
 
   // Sales Amount: Special Expense (Abs(negative))
   const negativeOutbound = await prisma.outboundRecord.findMany({
@@ -343,15 +320,11 @@ router.post('/stats', async (_req: Request, res: Response): Promise<void> => {
     select: { code: true, product_model: true }
   });
   const pMapOverview = new Map<string, string>();
-  allProductsOverview.forEach((p) =>
-    pMapOverview.set(p.code, p.product_model || 'unknown')
-  );
+  allProductsOverview.forEach((p) => pMapOverview.set(p.code, p.product_model || 'unknown'));
 
   const processedRows = topSalesGroups
     .map((g) => ({
-      product_model:
-        (g.product_code ? pMapOverview.get(g.product_code) : 'unknown') ||
-        'unknown',
+      product_model: (g.product_code ? pMapOverview.get(g.product_code) : 'unknown') || 'unknown',
       total_sales: decimalCalc.fromSqlResult(g._sum.total_price || 0, 0, 2)
     }))
     .sort((a, b) => b.total_sales - a.total_sales); // Descending
@@ -439,11 +412,7 @@ router.post('/stats', async (_req: Request, res: Response): Promise<void> => {
     if (!p.code) continue;
 
     const beforeIn = decimalCalc.fromSqlResult(beforeInMap[p.code] || 0, 0, 0);
-    const beforeOut = decimalCalc.fromSqlResult(
-      beforeOutMap[p.code] || 0,
-      0,
-      0
-    );
+    const beforeOut = decimalCalc.fromSqlResult(beforeOutMap[p.code] || 0, 0, 0);
 
     const curIn = decimalCalc.fromSqlResult(curInMap[p.code] || 0, 0, 0);
     const curOut = decimalCalc.fromSqlResult(curOutMap[p.code] || 0, 0, 0);
@@ -455,10 +424,7 @@ router.post('/stats', async (_req: Request, res: Response): Promise<void> => {
       0
     );
 
-    const monthlyChange = decimalCalc.toDbNumber(
-      decimalCalc.subtract(curIn, curOut),
-      0
-    );
+    const monthlyChange = decimalCalc.toDbNumber(decimalCalc.subtract(curIn, curOut), 0);
     const currentInventory = decimalCalc.toDbNumber(
       decimalCalc.add(monthStartInventory, monthlyChange),
       0
@@ -490,52 +456,44 @@ router.get('/top-sales-products', (_req: Request, res: Response) => {
       return res.json({ success: true, data: stats.top_sales_products });
     }
   }
-  return res
-    .status(503)
-    .json({ error: 'Statistics data not generated, please refresh first.' });
+  return res.status(503).json({ error: 'Statistics data not generated, please refresh first.' });
 });
 
 // Get monthly inventory change for specified product (read from overview-stats.json)
-router.get(
-  '/monthly-inventory-change/:productModel',
-  (req: Request, res: Response) => {
-    const productModel = req.params['productModel'] as string;
+router.get('/monthly-inventory-change/:productModel', (req: Request, res: Response) => {
+  const productModel = req.params['productModel'] as string;
 
-    if (!productModel) {
-      return res.status(400).json({
-        success: false,
-        message: 'Product model cannot be empty'
-      });
-    }
-
-    const statsFile = resolveFilesInCachePath('overview-stats.json');
-    if (fs.existsSync(statsFile)) {
-      const json = fs.readFileSync(statsFile, 'utf-8');
-      const stats: StatsCache = JSON.parse(json);
-
-      // Find monthly inventory change data for specified product from cache
-      if (
-        stats.monthly_inventory_changes &&
-        stats.monthly_inventory_changes[productModel]
-      ) {
-        return res.json({
-          success: true,
-          data: stats.monthly_inventory_changes[productModel]
-        });
-      } else {
-        return res.json({
-          success: false,
-          message:
-            'Monthly inventory change data not found for this product, please refresh statistics first'
-        });
-      }
-    }
-
-    return res.status(503).json({
+  if (!productModel) {
+    return res.status(400).json({
       success: false,
-      error: 'Statistics data not generated, please refresh first.'
+      message: 'Product model cannot be empty'
     });
   }
-);
+
+  const statsFile = resolveFilesInCachePath('overview-stats.json');
+  if (fs.existsSync(statsFile)) {
+    const json = fs.readFileSync(statsFile, 'utf-8');
+    const stats: StatsCache = JSON.parse(json);
+
+    // Find monthly inventory change data for specified product from cache
+    if (stats.monthly_inventory_changes && stats.monthly_inventory_changes[productModel]) {
+      return res.json({
+        success: true,
+        data: stats.monthly_inventory_changes[productModel]
+      });
+    } else {
+      return res.json({
+        success: false,
+        message:
+          'Monthly inventory change data not found for this product, please refresh statistics first'
+      });
+    }
+  }
+
+  return res.status(503).json({
+    success: false,
+    error: 'Statistics data not generated, please refresh first.'
+  });
+});
 
 export default router;

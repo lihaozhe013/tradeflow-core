@@ -80,8 +80,6 @@ try {
 }
 
 const currency_unit_symbol = config.currency_unit_symbol || '$';
-const pagination_limit = config.pagination_limit
-  ? Number(config.pagination_limit)
-  : 20;
+const pagination_limit = config.pagination_limit ? Number(config.pagination_limit) : 20;
 
 export { currency_unit_symbol, pagination_limit, appConfigPath, config };

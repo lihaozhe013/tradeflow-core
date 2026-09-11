@@ -1,9 +1,4 @@
-import React, {
-  createContext,
-  useReducer,
-  useEffect,
-  type ReactNode
-} from 'react';
+import React, { createContext, useReducer, useEffect, type ReactNode } from 'react';
 import { tokenManager, userManager, authAPI } from '@/auth/auth';
 import { useTranslation } from 'react-i18next';
 import type { User } from '@/auth/auth';
@@ -164,10 +159,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   /**
    * Login
    */
-  const login = async (
-    username: string,
-    password: string
-  ): Promise<LoginResult> => {
+  const login = async (username: string, password: string): Promise<LoginResult> => {
     dispatch({ type: 'SET_LOADING', payload: true });
     dispatch({ type: 'CLEAR_ERROR' });
 
@@ -192,8 +184,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         throw new Error(response.message ?? t('auth.loginFailed'));
       }
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : t('auth.loginFailed');
+      const errorMessage = error instanceof Error ? error.message : t('auth.loginFailed');
       dispatch({
         type: 'LOGIN_FAILURE',
         payload: errorMessage
@@ -220,9 +211,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   /**
    * Inspection Authority
    */
-  const hasPermission = (
-    requiredRole: 'reader' | 'editor' | 'superuser'
-  ): boolean => hasRolePermission(state.user?.role, requiredRole);
+  const hasPermission = (requiredRole: 'reader' | 'editor' | 'superuser'): boolean =>
+    hasRolePermission(state.user?.role, requiredRole);
 
   const value: AuthContextValue = {
     ...state,

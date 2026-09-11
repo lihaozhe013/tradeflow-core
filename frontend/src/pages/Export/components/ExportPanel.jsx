@@ -1,16 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  Card,
-  Row,
-  Col,
-  Button,
-  DatePicker,
-  Space,
-  Form,
-  Input,
-  message
-} from 'antd';
+import { Card, Row, Col, Button, DatePicker, Space, Form, Input, message } from 'antd';
 import { DatabaseOutlined, FileExcelOutlined } from '@ant-design/icons';
 
 const { RangePicker } = DatePicker;
@@ -34,9 +24,7 @@ const ExportPanel = ({
         <Col span={24}>
           <Card
             title={
-              <span style={{ fontSize: '16px', fontWeight: 'bold' }}>
-                {t('export.baseInfo')}
-              </span>
+              <span style={{ fontSize: '16px', fontWeight: 'bold' }}>{t('export.baseInfo')}</span>
             }
             size="small"
           >
@@ -101,11 +89,7 @@ const ExportPanel = ({
           >
             <Form layout="inline" style={{ marginBottom: 16 }}>
               <Form.Item label={t('export.dateRange')}>
-                <RangePicker
-                  value={dateRange}
-                  onChange={setDateRange}
-                  format="YYYY-MM-DD"
-                />
+                <RangePicker value={dateRange} onChange={setDateRange} format="YYYY-MM-DD" />
               </Form.Item>
               <Form.Item label={t('export.productCode')}>
                 <Input
@@ -183,19 +167,13 @@ const ExportPanel = ({
         <Col span={24}>
           <Card
             title={
-              <span style={{ fontSize: '16px', fontWeight: 'bold' }}>
-                {t('export.statement')}
-              </span>
+              <span style={{ fontSize: '16px', fontWeight: 'bold' }}>{t('export.statement')}</span>
             }
             size="small"
           >
             <Form layout="inline" style={{ marginBottom: 16 }}>
               <Form.Item label={t('export.dateRange')}>
-                <RangePicker
-                  value={dateRange}
-                  onChange={setDateRange}
-                  format="YYYY-MM-DD"
-                />
+                <RangePicker value={dateRange} onChange={setDateRange} format="YYYY-MM-DD" />
               </Form.Item>
               <Form.Item label={t('export.productCode')}>
                 <Input
@@ -284,21 +262,14 @@ const ExportPanel = ({
           >
             <Form layout="inline" style={{ marginBottom: 16 }}>
               <Form.Item label={t('export.inoutDate')}>
-                <RangePicker
-                  value={dateRange}
-                  onChange={setDateRange}
-                  format="YYYY-MM-DD"
-                />
+                <RangePicker value={dateRange} onChange={setDateRange} format="YYYY-MM-DD" />
               </Form.Item>
               <Form.Item label={t('export.paymentDate')}>
                 <RangePicker
                   value={paymentDateRange}
                   onChange={setPaymentDateRange}
                   format="YYYY-MM-DD"
-                  placeholder={[
-                    t('export.paymentStart'),
-                    t('export.paymentEnd')
-                  ]}
+                  placeholder={[t('export.paymentStart'), t('export.paymentEnd')]}
                 />
               </Form.Item>
             </Form>
@@ -326,9 +297,7 @@ const ExportPanel = ({
         <Col span={24}>
           <Card
             title={
-              <span style={{ fontSize: '16px', fontWeight: 'bold' }}>
-                {t('export.invoice')}
-              </span>
+              <span style={{ fontSize: '16px', fontWeight: 'bold' }}>{t('export.invoice')}</span>
             }
             size="small"
           >
@@ -342,11 +311,7 @@ const ExportPanel = ({
                 />
               </Form.Item>
               <Form.Item label={t('export.dateRange')} required>
-                <RangePicker
-                  value={dateRange}
-                  onChange={setDateRange}
-                  format="YYYY-MM-DD"
-                />
+                <RangePicker value={dateRange} onChange={setDateRange} format="YYYY-MM-DD" />
               </Form.Item>
             </Form>
             <Space wrap>

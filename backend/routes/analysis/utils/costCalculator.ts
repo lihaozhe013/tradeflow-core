@@ -75,12 +75,7 @@ export async function calculateFilteredSoldGoodsCost(
 
   // Initialize state with all inbound
   for (const inRecord of allInbound) {
-    if (
-      !inRecord.product?.product_model ||
-      !inRecord.quantity ||
-      inRecord.quantity <= 0
-    )
-      continue;
+    if (!inRecord.product?.product_model || !inRecord.quantity || inRecord.quantity <= 0) continue;
 
     if (!inventoryState[inRecord.product?.product_model]) {
       inventoryState[inRecord.product?.product_model] = [];
@@ -108,9 +103,7 @@ export async function calculateFilteredSoldGoodsCost(
     const isTargetRecord =
       outRecord.outbound_date! >= startDate &&
       outRecord.outbound_date! <= endDate &&
-      (!customerCode ||
-        customerCode === 'All' ||
-        outRecord.customer_code === customerCode);
+      (!customerCode || customerCode === 'All' || outRecord.customer_code === customerCode);
 
     // FIFO matching loop
     const batches = inventoryState[model] || [];
@@ -125,10 +118,7 @@ export async function calculateFilteredSoldGoodsCost(
       if (batch.quantity_remaining > qtyToFulfill) {
         // Batch has enough
         if (isTargetRecord) {
-          const costChunk = decimalCalc.multiply(
-            qtyToFulfill,
-            batch.unit_price
-          );
+          const costChunk = decimalCalc.multiply(qtyToFulfill, batch.unit_price);
           currentRecordCost = decimalCalc.add(currentRecordCost, costChunk);
         }
         batch.quantity_remaining -= qtyToFulfill;
@@ -136,10 +126,7 @@ export async function calculateFilteredSoldGoodsCost(
       } else {
         // Batch exhausted
         if (isTargetRecord) {
-          const costChunk = decimalCalc.multiply(
-            batch.quantity_remaining,
-            batch.unit_price
-          );
+          const costChunk = decimalCalc.multiply(batch.quantity_remaining, batch.unit_price);
           currentRecordCost = decimalCalc.add(currentRecordCost, costChunk);
         }
         qtyToFulfill -= batch.quantity_remaining;

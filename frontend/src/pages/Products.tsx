@@ -69,15 +69,12 @@ const DEFAULT_PAGINATION: PaginationInfo = {
 
 const Products: FC = () => {
   const [modalVisible, setModalVisible] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<ProductItem | null>(
-    null
-  );
+  const [editingProduct, setEditingProduct] = useState<ProductItem | null>(null);
   const [form] = Form.useForm<ProductFormValues>();
   const [filterForm] = Form.useForm<ProductFilters>();
   const [products, setProducts] = useState<ProductItem[]>([]);
   const [loading, setLoading] = useState(false);
-  const [pagination, setPagination] =
-    useState<PaginationInfo>(DEFAULT_PAGINATION);
+  const [pagination, setPagination] = useState<PaginationInfo>(DEFAULT_PAGINATION);
   const [filters, setFilters] = useState<ProductFilters>({});
   const { t } = useTranslation();
   const { canWrite } = usePermissions();
@@ -90,13 +87,9 @@ const Products: FC = () => {
         setLoading(true);
         const query = new URLSearchParams({ page: String(page) });
         if (nextFilters.code) query.append('code', nextFilters.code);
-        if (nextFilters.product_model)
-          query.append('product_model', nextFilters.product_model);
-        if (nextFilters.category)
-          query.append('category', nextFilters.category);
-        const result = await get<ProductListResponse>(
-          `/products?${query.toString()}`
-        );
+        if (nextFilters.product_model) query.append('product_model', nextFilters.product_model);
+        if (nextFilters.category) query.append('category', nextFilters.category);
+        const result = await get<ProductListResponse>(`/products?${query.toString()}`);
         setProducts(Array.isArray(result?.data) ? result.data : []);
         setPagination((prev) => ({
           current: result?.pagination?.page ?? page,
@@ -216,31 +209,28 @@ const Products: FC = () => {
     });
   }
 
-  const handleProductFieldChange: FormProps<ProductFormValues>['onValuesChange'] =
-    (changedValues) => {
-      if (changedValues?.code) {
-        const match = productOptions.find(
-          (product) => product.code === changedValues.code
-        );
-        if (match) {
-          form.setFieldsValue({ product_model: match.product_model });
-        }
-        return;
-      }
-
-      if (changedValues?.product_model) {
-        const match = productOptions.find(
-          (product) => product.product_model === changedValues.product_model
-        );
-        if (match) {
-          form.setFieldsValue({ code: match.code });
-        }
-      }
-    };
-
-  const handleTableChange: TableProps<ProductItem>['onChange'] = (
-    paginationConfig
+  const handleProductFieldChange: FormProps<ProductFormValues>['onValuesChange'] = (
+    changedValues
   ) => {
+    if (changedValues?.code) {
+      const match = productOptions.find((product) => product.code === changedValues.code);
+      if (match) {
+        form.setFieldsValue({ product_model: match.product_model });
+      }
+      return;
+    }
+
+    if (changedValues?.product_model) {
+      const match = productOptions.find(
+        (product) => product.product_model === changedValues.product_model
+      );
+      if (match) {
+        form.setFieldsValue({ code: match.code });
+      }
+    }
+  };
+
+  const handleTableChange: TableProps<ProductItem>['onChange'] = (paginationConfig) => {
     const nextPage = paginationConfig.current ?? 1;
     fetchProducts(nextPage, filters);
   };
@@ -259,11 +249,7 @@ const Products: FC = () => {
   return (
     <div>
       <Card>
-        <Row
-          justify="space-between"
-          align="middle"
-          style={{ marginBottom: 16 }}
-        >
+        <Row justify="space-between" align="middle" style={{ marginBottom: 16 }}>
           <Col>
             <Title level={2} style={{ margin: 0 }}>
               {t('products.title')}
@@ -271,27 +257,15 @@ const Products: FC = () => {
           </Col>
           {canWrite && (
             <Col>
-              <Button
-                type="primary"
-                icon={<PlusOutlined />}
-                onClick={handleAdd}
-              >
+              <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
                 {t('products.addProduct')}
               </Button>
             </Col>
           )}
         </Row>
 
-        <Form<ProductFilters>
-          form={filterForm}
-          layout="inline"
-          style={{ marginBottom: 12 }}
-        >
-          <Form.Item
-            name="code"
-            label={t('products.code')}
-            style={{ minWidth: 200 }}
-          >
+        <Form<ProductFilters> form={filterForm} layout="inline" style={{ marginBottom: 12 }}>
+          <Form.Item name="code" label={t('products.code')} style={{ minWidth: 200 }}>
             <Input allowClear placeholder={t('products.inputCode')} />
           </Form.Item>
           <Form.Item
@@ -301,11 +275,7 @@ const Products: FC = () => {
           >
             <Input allowClear placeholder={t('products.inputProductModel')} />
           </Form.Item>
-          <Form.Item
-            name="category"
-            label={t('products.category')}
-            style={{ minWidth: 220 }}
-          >
+          <Form.Item name="category" label={t('products.category')} style={{ minWidth: 220 }}>
             <Select
               showSearch
               allowClear
@@ -315,8 +285,7 @@ const Products: FC = () => {
                 label: name
               }))}
               filterOption={(input, option) => {
-                const label =
-                  typeof option?.label === 'string' ? option.label : '';
+                const label = typeof option?.label === 'string' ? option.label : '';
                 return label.toLowerCase().includes(input.toLowerCase());
               }}
             />
@@ -356,11 +325,7 @@ const Products: FC = () => {
 
       {canWrite && (
         <Modal
-          title={
-            editingProduct
-              ? t('products.editProduct')
-              : t('products.addProduct')
-          }
+          title={editingProduct ? t('products.editProduct') : t('products.addProduct')}
           open={modalVisible}
           onCancel={() => setModalVisible(false)}
           footer={null}
@@ -380,10 +345,7 @@ const Products: FC = () => {
                 { max: 50, message: t('products.codeMax') }
               ]}
             >
-              <Input
-                placeholder={t('products.inputCode')}
-                disabled={Boolean(editingProduct)}
-              />
+              <Input placeholder={t('products.inputCode')} disabled={Boolean(editingProduct)} />
             </Form.Item>
 
             <Form.Item
@@ -417,8 +379,7 @@ const Products: FC = () => {
                   label: name
                 }))}
                 filterOption={(input, option) => {
-                  const label =
-                    typeof option?.label === 'string' ? option.label : '';
+                  const label = typeof option?.label === 'string' ? option.label : '';
                   return label.toLowerCase().includes(input.toLowerCase());
                 }}
               />
@@ -429,16 +390,11 @@ const Products: FC = () => {
               name="remark"
               rules={[{ max: 500, message: t('products.remarkMax') }]}
             >
-              <Input.TextArea
-                placeholder={t('products.inputRemark')}
-                rows={4}
-              />
+              <Input.TextArea placeholder={t('products.inputRemark')} rows={4} />
             </Form.Item>
 
             <div className="form-actions">
-              <Button onClick={() => setModalVisible(false)}>
-                {t('common.cancel')}
-              </Button>
+              <Button onClick={() => setModalVisible(false)}>{t('common.cancel')}</Button>
               <Button type="primary" htmlType="submit">
                 {editingProduct ? t('common.save') : t('common.add')}
               </Button>

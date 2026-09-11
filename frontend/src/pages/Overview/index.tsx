@@ -45,10 +45,7 @@ const OverviewMain = () => {
     loading,
     error,
     refetch
-  } = useSimpleApiData<OverviewStatsResponse>(
-    '/overview/stats',
-    DEFAULT_OVERVIEW_STATS
-  );
+  } = useSimpleApiData<OverviewStatsResponse>('/overview/stats', DEFAULT_OVERVIEW_STATS);
 
   // 刷新统计数据
   const refreshStats = useCallback(async () => {
@@ -104,9 +101,7 @@ const OverviewMain = () => {
           }}
         >
           <Spin size="large" />
-          <p style={{ marginTop: '16px', color: '#666' }}>
-            {t('overview.loading')}
-          </p>
+          <p style={{ marginTop: '16px', color: '#666' }}>{t('overview.loading')}</p>
         </Card>
       </div>
     );
@@ -172,9 +167,7 @@ const OverviewMain = () => {
           >
             {t('overview.title')}
           </Title>
-          <Text style={{ color: '#888', fontSize: '16px' }}>
-            {t('overview.subtitle')}
-          </Text>
+          <Text style={{ color: '#888', fontSize: '16px' }}>{t('overview.subtitle')}</Text>
         </div>
         <Space>
           {canWrite && (
@@ -339,11 +332,7 @@ const OverviewMain = () => {
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <Card
-                title={
-                  <span style={{ fontWeight: 600 }}>
-                    {t('overview.inventoryStatus')}
-                  </span>
-                }
+                title={<span style={{ fontWeight: 600 }}>{t('overview.inventoryStatus')}</span>}
                 variant="outlined"
                 style={{
                   borderRadius: '16px',
@@ -366,9 +355,7 @@ const OverviewMain = () => {
                     dataSource={outOfStockProducts.slice(0, 5)}
                     locale={{ emptyText: t('overview.noOutOfStock') }}
                     renderItem={(item) => (
-                      <List.Item
-                        style={{ padding: '4px 0', alignItems: 'center' }}
-                      >
+                      <List.Item style={{ padding: '4px 0', alignItems: 'center' }}>
                         <List.Item.Meta
                           avatar={
                             <Avatar
@@ -399,9 +386,7 @@ const OverviewMain = () => {
                     }}
                   />
                   {outOfStockCount > 5 && (
-                    <div
-                      style={{ color: '#999', fontSize: 12, marginBottom: 8 }}
-                    >
+                    <div style={{ color: '#999', fontSize: 12, marginBottom: 8 }}>
                       {t('overview.partialDisplay')}
                     </div>
                   )}
@@ -413,10 +398,7 @@ const OverviewMain = () => {
                       width: '100%'
                     }}
                   >
-                    <Button
-                      type="primary"
-                      onClick={() => setModalVisible(true)}
-                    >
+                    <Button type="primary" onClick={() => setModalVisible(true)}>
                       {t('overview.viewDetails')}
                     </Button>
                   </div>

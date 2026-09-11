@@ -1,4 +1,4 @@
-FROM node:24-slim
+FROM node:26-slim
 
 RUN apt-get update -y && apt-get install -y openssl ca-certificates && rm -rf /var/lib/apt/lists/*
 

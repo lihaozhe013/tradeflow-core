@@ -9,10 +9,7 @@ import type { RequestOptions } from '@/utils';
 /**
  * API 请求选项接口（扩展基础 RequestOptions）
  */
-export interface ApiRequestOptions extends Omit<
-  RequestOptions,
-  'method' | 'body'
-> {
+export interface ApiRequestOptions extends Omit<RequestOptions, 'method' | 'body'> {
   /** 静默模式，不显示错误消息 */
   readonly silent?: boolean;
 }
@@ -26,15 +23,9 @@ export interface UseApiReturn {
   /** 错误消息 */
   readonly error: string | null;
   /** 通用请求方法 */
-  readonly request: <T = unknown>(
-    url: string,
-    options?: RequestOptions
-  ) => Promise<T>;
+  readonly request: <T = unknown>(url: string, options?: RequestOptions) => Promise<T>;
   /** GET 请求 */
-  readonly get: <T = unknown>(
-    url: string,
-    options?: ApiRequestOptions
-  ) => Promise<T>;
+  readonly get: <T = unknown>(url: string, options?: ApiRequestOptions) => Promise<T>;
   /** POST 请求 */
   readonly post: <T = unknown>(
     url: string,
@@ -48,10 +39,7 @@ export interface UseApiReturn {
     options?: ApiRequestOptions
   ) => Promise<T>;
   /** DELETE 请求 */
-  readonly delete: <T = unknown>(
-    url: string,
-    options?: ApiRequestOptions
-  ) => Promise<T>;
+  readonly delete: <T = unknown>(url: string, options?: ApiRequestOptions) => Promise<T>;
   /** 文件上传 */
   readonly upload: <T = unknown>(
     url: string,
@@ -59,11 +47,7 @@ export interface UseApiReturn {
     options?: ApiRequestOptions
   ) => Promise<T>;
   /** 文件下载 */
-  readonly download: (
-    url: string,
-    filename?: string,
-    options?: ApiRequestOptions
-  ) => Promise<void>;
+  readonly download: (url: string, filename?: string, options?: ApiRequestOptions) => Promise<void>;
   /** 清除错误状态 */
   readonly clearError: () => void;
 }
@@ -123,15 +107,9 @@ export interface UseSimpleApiReturn {
   /** 加载状态 */
   readonly loading: boolean;
   /** 通用请求方法 */
-  readonly request: <T = unknown>(
-    url: string,
-    options?: RequestOptions
-  ) => Promise<T>;
+  readonly request: <T = unknown>(url: string, options?: RequestOptions) => Promise<T>;
   /** GET 请求 */
-  readonly get: <T = unknown>(
-    url: string,
-    options?: ApiRequestOptions
-  ) => Promise<T>;
+  readonly get: <T = unknown>(url: string, options?: ApiRequestOptions) => Promise<T>;
   /** POST 请求 */
   readonly post: <T = unknown>(
     url: string,
@@ -139,11 +117,7 @@ export interface UseSimpleApiReturn {
     options?: ApiRequestOptions
   ) => Promise<T>;
   /** POST 请求（返回 Blob） */
-  readonly postBlob: (
-    url: string,
-    data?: unknown,
-    options?: ApiRequestOptions
-  ) => Promise<Blob>;
+  readonly postBlob: (url: string, data?: unknown, options?: ApiRequestOptions) => Promise<Blob>;
   /** PUT 请求 */
   readonly put: <T = unknown>(
     url: string,
@@ -151,8 +125,5 @@ export interface UseSimpleApiReturn {
     options?: ApiRequestOptions
   ) => Promise<T>;
   /** DELETE 请求 */
-  readonly delete: <T = unknown>(
-    url: string,
-    options?: ApiRequestOptions
-  ) => Promise<T>;
+  readonly delete: <T = unknown>(url: string, options?: ApiRequestOptions) => Promise<T>;
 }

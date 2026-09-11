@@ -116,9 +116,7 @@ export const inventoryService = {
   /**
    * Handle Inbound Create
    */
-  async onInboundCreate(
-    record: Prisma.InboundRecordGetPayload<{ include: { product: true } }>
-  ) {
+  async onInboundCreate(record: Prisma.InboundRecordGetPayload<{ include: { product: true } }>) {
     const product_model = record.product?.product_model;
     if (!product_model || !record.quantity) return;
     await prisma.$transaction(async (tx) => {
@@ -142,9 +140,7 @@ export const inventoryService = {
   /**
    * Handle Outbound Create
    */
-  async onOutboundCreate(
-    record: Prisma.OutboundRecordGetPayload<{ include: { product: true } }>
-  ) {
+  async onOutboundCreate(record: Prisma.OutboundRecordGetPayload<{ include: { product: true } }>) {
     const product_model = record.product?.product_model;
     if (!product_model || !record.quantity) return;
     await prisma.$transaction(async (tx) => {

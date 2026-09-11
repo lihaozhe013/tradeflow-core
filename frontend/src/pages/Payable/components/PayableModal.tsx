@@ -59,21 +59,14 @@ const PayableModal: FC<PayableModalProps> = ({
     onCancel();
   };
 
-  const filterSupplierOption = (
-    input: string,
-    option?: DefaultOptionType
-  ): boolean => {
+  const filterSupplierOption = (input: string, option?: DefaultOptionType): boolean => {
     const label = typeof option?.label === 'string' ? option.label : '';
     return label.toLowerCase().includes(input.toLowerCase());
   };
 
   return (
     <Modal
-      title={
-        editingPayment
-          ? t('payable.modalTitleEdit')
-          : t('payable.modalTitleAdd')
-      }
+      title={editingPayment ? t('payable.modalTitleEdit') : t('payable.modalTitleAdd')}
       open={visible}
       onOk={handleSubmit}
       onCancel={handleCancel}
@@ -116,10 +109,7 @@ const PayableModal: FC<PayableModalProps> = ({
             precision={2}
             formatter={(value) =>
               value !== undefined && value !== null
-                ? `${currency_unit_symbol} ${value}`.replace(
-                    /\B(?=(\d{3})+(?!\d))/g,
-                    ','
-                  )
+                ? `${currency_unit_symbol} ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
                 : ''
             }
             parser={(value) => {

@@ -1,11 +1,6 @@
 import React, { useState } from 'react';
 import { Form, Input, Button, Card, Alert, Spin, Select, Space } from 'antd';
-import {
-  UserOutlined,
-  LockOutlined,
-  LoginOutlined,
-  GlobalOutlined
-} from '@ant-design/icons';
+import { UserOutlined, LockOutlined, LoginOutlined, GlobalOutlined } from '@ant-design/icons';
 import { useAuth } from '@/auth/useAuth';
 import { useNavigate, useLocation } from 'react-router-dom';
 import '@/pages/Login/LoginPage.css';
@@ -39,16 +34,11 @@ const LoginPage: React.FC = () => {
 
   // 获取重定向路径
   const from =
-    (location.state as { from?: { pathname?: string } } | undefined)?.from
-      ?.pathname ?? '/';
+    (location.state as { from?: { pathname?: string } } | undefined)?.from?.pathname ?? '/';
 
   // 语言选项
   type LanguageValue = 'zh' | 'en' | 'ko';
-  const supportedLanguages: readonly LanguageValue[] = [
-    'zh',
-    'en',
-    'ko'
-  ] as const;
+  const supportedLanguages: readonly LanguageValue[] = ['zh', 'en', 'ko'] as const;
 
   const languageOptions = [
     { value: 'zh', label: '🇨🇳 中文', flag: '🇨🇳' },
@@ -56,9 +46,7 @@ const LoginPage: React.FC = () => {
     { value: 'ko', label: '🇰🇷 한국어', flag: '🇰🇷' }
   ];
 
-  const currentLanguage = supportedLanguages.includes(
-    i18n.language as LanguageValue
-  )
+  const currentLanguage = supportedLanguages.includes(i18n.language as LanguageValue)
     ? (i18n.language as LanguageValue)
     : 'zh';
 

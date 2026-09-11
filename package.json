@@ -8,7 +8,7 @@
     "dev": "node scripts/dev.mjs",
     "dev:backend": "cd backend && pnpm dev",
     "dev:frontend": "cd frontend && pnpm dev",
-    "format": "jsonsort $(fd -e json) && prettier --write .",
+    "format": "prettier --write .",
     "install:all": "pnpm install && cd frontend && pnpm install && cd ../backend && pnpm install && pnpm prisma generate",
     "preinstall": "npx only-allow pnpm",
     "start": "cd dist && node backend/server.js"

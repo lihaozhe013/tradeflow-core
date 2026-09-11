@@ -1,22 +1,6 @@
-import {
-  useState,
-  useEffect,
-  useCallback,
-  useMemo,
-  type FC,
-  type Key
-} from 'react';
+import { useState, useEffect, useCallback, useMemo, type FC, type Key } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  Button,
-  Form,
-  message,
-  Card,
-  Typography,
-  Row,
-  Col,
-  Divider
-} from 'antd';
+import { Button, Form, message, Card, Typography, Row, Col, Divider } from 'antd';
 import type { TableProps } from 'antd/es/table';
 import type { SorterResult } from 'antd/es/table/interface';
 import dayjs, { type Dayjs } from 'dayjs';
@@ -59,9 +43,7 @@ const Inbound: FC = () => {
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [batchModalVisible, setBatchModalVisible] = useState(false);
-  const [editingRecord, setEditingRecord] = useState<InboundRecord | null>(
-    null
-  );
+  const [editingRecord, setEditingRecord] = useState<InboundRecord | null>(null);
   const [form] = Form.useForm<InboundFormValues>();
   const [batchForm] = Form.useForm<InboundFormValues>();
   const [selectedRowKeys, setSelectedRowKeys] = useState<Key[]>([]);
@@ -73,23 +55,16 @@ const Inbound: FC = () => {
   const [sorter, setSorter] = useState<SorterState>({});
   const [manualPrice, setManualPrice] = useState(false);
   const [batchManualPrice, setBatchManualPrice] = useState(false);
-  const [pagination, setPagination] =
-    useState<PaginationState>(DEFAULT_PAGINATION);
+  const [pagination, setPagination] = useState<PaginationState>(DEFAULT_PAGINATION);
 
   const { get, post, put, delete: deleteRequest } = useSimpleApi();
 
-  const { data: partnersResponse } = useSimpleApiData<ApiListResponse<Partner>>(
-    '/partners',
-    {
-      data: []
-    }
-  );
-  const { data: productsResponse } = useSimpleApiData<ApiListResponse<Product>>(
-    '/products',
-    {
-      data: []
-    }
-  );
+  const { data: partnersResponse } = useSimpleApiData<ApiListResponse<Partner>>('/partners', {
+    data: []
+  });
+  const { data: productsResponse } = useSimpleApiData<ApiListResponse<Product>>('/products', {
+    data: []
+  });
 
   const partners = useMemo<Partner[]>(() => {
     const data = partnersResponse?.data;
@@ -125,9 +100,7 @@ const Inbound: FC = () => {
           sort_order: params.sort_order ?? sorter.order ?? ''
         });
 
-        const result = await get<InboundListResponse>(
-          `/inbound?${query.toString()}`
-        );
+        const result = await get<InboundListResponse>(`/inbound?${query.toString()}`);
 
         setInboundRecords(Array.isArray(result?.data) ? result.data : []);
         setPagination((prev: PaginationState) => ({
@@ -142,15 +115,7 @@ const Inbound: FC = () => {
         setLoading(false);
       }
     },
-    [
-      endDate,
-      get,
-      productModel,
-      sorter.field,
-      sorter.order,
-      startDate,
-      supplierShortName
-    ]
+    [endDate, get, productModel, sorter.field, sorter.order, startDate, supplierShortName]
   );
 
   useEffect(() => {
@@ -172,12 +137,8 @@ const Inbound: FC = () => {
   const handleEdit = (record: InboundRecord): void => {
     if (!canWrite) return;
     setEditingRecord(record);
-    const supplier = partners.find(
-      (partner) => partner.code === record.supplier_code
-    );
-    const product = products.find(
-      (item) => item.product_model === record.product_model
-    );
+    const supplier = partners.find((partner) => partner.code === record.supplier_code);
+    const product = products.find((item) => item.product_model === record.product_model);
 
     form.setFieldsValue({
       ...record,
@@ -214,14 +175,9 @@ const Inbound: FC = () => {
       const productModelValue = values.product_model;
 
       if (supplierCode && supplierShortNameValue) {
-        const supplier = partners.find(
-          (partner) => partner.code === supplierCode
-        );
+        const supplier = partners.find((partner) => partner.code === supplierCode);
         if (supplier?.short_name !== supplierShortNameValue) {
-          message.error(
-            t('inbound.supplierMismatch') ??
-              '供应商代号与简称不匹配，请重新选择'
-          );
+          message.error(t('inbound.supplierMismatch') ?? '供应商代号与简称不匹配，请重新选择');
           return;
         }
       }
@@ -229,9 +185,7 @@ const Inbound: FC = () => {
       if (productCode && productModelValue) {
         const product = products.find((item) => item.code === productCode);
         if (product?.product_model !== productModelValue) {
-          message.error(
-            t('inbound.productMismatch') ?? '产品代号与型号不匹配，请重新选择'
-          );
+          message.error(t('inbound.productMismatch') ?? '产品代号与型号不匹配，请重新选择');
           return;
         }
       }
@@ -241,12 +195,8 @@ const Inbound: FC = () => {
 
       const payload = {
         ...values,
-        inbound_date: values.inbound_date
-          ? values.inbound_date.format('YYYY-MM-DD')
-          : null,
-        invoice_date: values.invoice_date
-          ? values.invoice_date.format('YYYY-MM-DD')
-          : null,
+        inbound_date: values.inbound_date ? values.inbound_date.format('YYYY-MM-DD') : null,
+        invoice_date: values.invoice_date ? values.invoice_date.format('YYYY-MM-DD') : null,
         total_price: quantity * unitPrice
       };
 
@@ -263,9 +213,7 @@ const Inbound: FC = () => {
     } catch (error) {
       console.error('保存失败:', error);
       const errorMessage =
-        error instanceof Error
-          ? error.message
-          : (t('inbound.saveFailed') ?? '保存失败');
+        error instanceof Error ? error.message : (t('inbound.saveFailed') ?? '保存失败');
       message.error(errorMessage);
     }
   };
@@ -319,12 +267,9 @@ const Inbound: FC = () => {
       return;
     }
 
-    const supplierShortNameValue = form.getFieldValue('supplier_short_name') as
-      string | undefined;
-    const productModelValue = form.getFieldValue('product_model') as
-      string | undefined;
-    const inboundDateValue = form.getFieldValue('inbound_date') as
-      Dayjs | undefined;
+    const supplierShortNameValue = form.getFieldValue('supplier_short_name') as string | undefined;
+    const productModelValue = form.getFieldValue('product_model') as string | undefined;
+    const inboundDateValue = form.getFieldValue('inbound_date') as Dayjs | undefined;
 
     if (supplierShortNameValue && productModelValue && inboundDateValue) {
       try {
@@ -371,23 +316,17 @@ const Inbound: FC = () => {
 
       // Only include fields that are actually filled
       if (values.supplier_code) updates['supplier_code'] = values.supplier_code;
-      if (values.supplier_short_name)
-        updates['supplier_short_name'] = values.supplier_short_name;
-      if (values.supplier_full_name)
-        updates['supplier_full_name'] = values.supplier_full_name;
+      if (values.supplier_short_name) updates['supplier_short_name'] = values.supplier_short_name;
+      if (values.supplier_full_name) updates['supplier_full_name'] = values.supplier_full_name;
       if (values.product_code) updates['product_code'] = values.product_code;
       if (values.product_model) updates['product_model'] = values.product_model;
       if (values.quantity) updates['quantity'] = values.quantity;
       if (values.unit_price !== undefined && values.unit_price !== null)
         updates['unit_price'] = values.unit_price;
-      if (values.inbound_date)
-        updates['inbound_date'] = values.inbound_date.format('YYYY-MM-DD');
-      if (values.invoice_date)
-        updates['invoice_date'] = values.invoice_date.format('YYYY-MM-DD');
-      if (values.invoice_number)
-        updates['invoice_number'] = values.invoice_number;
-      if (values.receipt_number)
-        updates['receipt_number'] = values.receipt_number;
+      if (values.inbound_date) updates['inbound_date'] = values.inbound_date.format('YYYY-MM-DD');
+      if (values.invoice_date) updates['invoice_date'] = values.invoice_date.format('YYYY-MM-DD');
+      if (values.invoice_number) updates['invoice_number'] = values.invoice_number;
+      if (values.receipt_number) updates['receipt_number'] = values.receipt_number;
       if (values.order_number) updates['order_number'] = values.order_number;
       if (values.remark) updates['remark'] = values.remark;
 
@@ -396,14 +335,9 @@ const Inbound: FC = () => {
         updates
       };
 
-      const result = await post<{ updated: number; notFound: number[] }>(
-        '/inbound/batch',
-        payload
-      );
+      const result = await post<{ updated: number; notFound: number[] }>('/inbound/batch', payload);
 
-      message.success(
-        `Batch update completed! ${result.updated} records updated.`
-      );
+      message.success(`Batch update completed! ${result.updated} records updated.`);
       if (result.notFound && result.notFound.length > 0) {
         message.warning(`${result.notFound.length} records not found.`);
       }
@@ -413,8 +347,7 @@ const Inbound: FC = () => {
       fetchInboundRecords({ page: pagination.current });
     } catch (error) {
       console.error('Batch save failed:', error);
-      const errorMessage =
-        error instanceof Error ? error.message : 'Batch update failed';
+      const errorMessage = error instanceof Error ? error.message : 'Batch update failed';
       message.error(errorMessage);
     }
   };
@@ -476,13 +409,10 @@ const Inbound: FC = () => {
       return;
     }
 
-    const supplierShortNameValue = batchForm.getFieldValue(
-      'supplier_short_name'
-    ) as string | undefined;
-    const productModelValue = batchForm.getFieldValue('product_model') as
+    const supplierShortNameValue = batchForm.getFieldValue('supplier_short_name') as
       string | undefined;
-    const inboundDateValue = batchForm.getFieldValue('inbound_date') as
-      Dayjs | undefined;
+    const productModelValue = batchForm.getFieldValue('product_model') as string | undefined;
+    const inboundDateValue = batchForm.getFieldValue('inbound_date') as Dayjs | undefined;
 
     if (supplierShortNameValue && productModelValue && inboundDateValue) {
       try {
@@ -524,8 +454,7 @@ const Inbound: FC = () => {
     const sorterResult = Array.isArray(sorterTable)
       ? sorterTable[0]
       : (sorterTable as SorterResult<InboundRecord> | undefined);
-    const field =
-      typeof sorterResult?.field === 'string' ? sorterResult.field : undefined;
+    const field = typeof sorterResult?.field === 'string' ? sorterResult.field : undefined;
     const order =
       sorterResult?.order === 'ascend'
         ? 'asc'
@@ -553,11 +482,7 @@ const Inbound: FC = () => {
   return (
     <div>
       <Card>
-        <Row
-          justify="space-between"
-          align="middle"
-          style={{ marginBottom: 16 }}
-        >
+        <Row justify="space-between" align="middle" style={{ marginBottom: 16 }}>
           <Col>
             <Title level={2} style={{ margin: 0 }}>
               {t('nav.inbound')}
@@ -565,22 +490,14 @@ const Inbound: FC = () => {
           </Col>
           {canWrite && (
             <Col>
-              <Button
-                type="primary"
-                icon={<PlusOutlined />}
-                onClick={handleAdd}
-              >
+              <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
                 {t('inbound.addInboundRecord')}
               </Button>
             </Col>
           )}
         </Row>
 
-        <Row
-          justify="space-between"
-          align="middle"
-          style={{ marginBottom: 16 }}
-        >
+        <Row justify="space-between" align="middle" style={{ marginBottom: 16 }}>
           <Col flex="auto">
             <InboundFilter
               filters={filters}
@@ -600,9 +517,7 @@ const Inbound: FC = () => {
                 style={{ marginLeft: 8 }}
               >
                 {`${t('inbound.batchEdit')}${
-                  selectedRowKeys.length > 0
-                    ? ` (${selectedRowKeys.length})`
-                    : ''
+                  selectedRowKeys.length > 0 ? ` (${selectedRowKeys.length})` : ''
                 }`}
               </Button>
             </Col>

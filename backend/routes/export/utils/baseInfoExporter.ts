@@ -3,10 +3,7 @@ import ExportUtils from '@/routes/export/utils/exportUtils';
 import { TEMPLATES } from '@/routes/export/utils/exportTemplates';
 import { BaseInfoData, BasicDataFilters } from '@/routes/export/utils/types';
 
-export function generateBaseInfoExcel(
-  data: BaseInfoData,
-  options: BasicDataFilters = {}
-): Buffer {
+export function generateBaseInfoExcel(data: BaseInfoData, options: BasicDataFilters = {}): Buffer {
   const { tables = '123' } = options;
   const workbook = XLSX.utils.book_new();
 

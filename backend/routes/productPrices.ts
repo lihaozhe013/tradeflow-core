@@ -85,8 +85,7 @@ router.get('/current', async (req: Request, res: Response): Promise<void> => {
  * POST /api/product-prices
  */
 router.post('/', async (req: Request, res: Response): Promise<void> => {
-  const { partner_short_name, product_model, effective_date, unit_price } =
-    req.body;
+  const { partner_short_name, product_model, effective_date, unit_price } = req.body;
 
   const result = await prisma.productPrice.create({
     data: {
@@ -104,8 +103,7 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
  */
 router.put('/:id', async (req: Request, res: Response): Promise<void> => {
   const id = Number(req.params['id']);
-  const { partner_short_name, product_model, effective_date, unit_price } =
-    req.body;
+  const { partner_short_name, product_model, effective_date, unit_price } = req.body;
 
   await prisma.productPrice.update({
     where: { id },
@@ -139,8 +137,7 @@ router.get('/auto', async (req: Request, res: Response): Promise<void> => {
 
   if (!partner_short_name || !product_model || !date) {
     res.status(400).json({
-      error:
-        'Missing required argument: partner_short_name, product_model, date'
+      error: 'Missing required argument: partner_short_name, product_model, date'
     });
     return;
   }

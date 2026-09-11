@@ -93,17 +93,14 @@ const DEFAULT_PAGINATION: PaginationInfo = {
 
 const ProductPrices: FC = () => {
   const [modalVisible, setModalVisible] = useState(false);
-  const [editingPrice, setEditingPrice] = useState<ProductPriceItem | null>(
-    null
-  );
+  const [editingPrice, setEditingPrice] = useState<ProductPriceItem | null>(null);
   const [form] = Form.useForm<ProductPriceFormValues>();
   const [filterForm] = Form.useForm<ProductPriceFilters>();
   const { t } = useTranslation();
   const { canWrite } = usePermissions();
 
   const [filters, setFilters] = useState<FilterState>({});
-  const [pagination, setPagination] =
-    useState<PaginationInfo>(DEFAULT_PAGINATION);
+  const [pagination, setPagination] = useState<PaginationInfo>(DEFAULT_PAGINATION);
   const { current } = pagination;
 
   const { post, put, request } = useSimpleApi();
@@ -126,23 +123,16 @@ const ProductPrices: FC = () => {
     data: productPricesResponse,
     loading,
     refetch: refreshProductPrices
-  } = useSimpleApiData<ApiListResponse<ProductPriceItem>>(
-    buildProductPricesUrl(),
-    {
-      data: [],
-      pagination: DEFAULT_PAGINATION
-    }
-  );
+  } = useSimpleApiData<ApiListResponse<ProductPriceItem>>(buildProductPricesUrl(), {
+    data: [],
+    pagination: DEFAULT_PAGINATION
+  });
 
-  const { data: partnersResponse } = useSimpleApiData<
-    ApiListResponse<PartnerItem>
-  >('/partners', {
+  const { data: partnersResponse } = useSimpleApiData<ApiListResponse<PartnerItem>>('/partners', {
     data: []
   });
 
-  const { data: productsResponse } = useSimpleApiData<
-    ApiListResponse<ProductItem>
-  >('/products', {
+  const { data: productsResponse } = useSimpleApiData<ApiListResponse<ProductItem>>('/products', {
     data: []
   });
 
@@ -179,9 +169,7 @@ const ProductPrices: FC = () => {
     setEditingPrice(record);
     form.setFieldsValue({
       ...record,
-      effective_date: record.effective_date
-        ? dayjs(record.effective_date)
-        : null
+      effective_date: record.effective_date ? dayjs(record.effective_date) : null
     });
     setModalVisible(true);
   };
@@ -201,17 +189,13 @@ const ProductPrices: FC = () => {
     if (!canWrite) return;
     try {
       if (!values.partner_short_name || !values.product_model) {
-        message.error(
-          t('common.validationError', { defaultValue: 'Validation error' })
-        );
+        message.error(t('common.validationError', { defaultValue: 'Validation error' }));
         return;
       }
 
       const formattedValues = {
         ...values,
-        effective_date: values.effective_date
-          ? values.effective_date.format('YYYY-MM-DD')
-          : null
+        effective_date: values.effective_date ? values.effective_date.format('YYYY-MM-DD') : null
       };
 
       if (editingPrice) {
@@ -292,33 +276,25 @@ const ProductPrices: FC = () => {
     });
   }
 
-  const partnerCodeOptions: AutoCompleteProps['options'] = partners.map(
-    (partner) => ({
-      value: partner.code,
-      label: `${partner.code} - ${partner.short_name}`
-    })
-  );
+  const partnerCodeOptions: AutoCompleteProps['options'] = partners.map((partner) => ({
+    value: partner.code,
+    label: `${partner.code} - ${partner.short_name}`
+  }));
 
-  const partnerShortNameOptions: SelectProps['options'] = partners.map(
-    (partner) => ({
-      value: partner.short_name,
-      label: `${partner.short_name} - ${partner.full_name}`
-    })
-  );
+  const partnerShortNameOptions: SelectProps['options'] = partners.map((partner) => ({
+    value: partner.short_name,
+    label: `${partner.short_name} - ${partner.full_name}`
+  }));
 
-  const productCodeOptions: AutoCompleteProps['options'] = products.map(
-    (product) => ({
-      value: product.code,
-      label: `${product.code} - ${product.product_model}`
-    })
-  );
+  const productCodeOptions: AutoCompleteProps['options'] = products.map((product) => ({
+    value: product.code,
+    label: `${product.code} - ${product.product_model}`
+  }));
 
-  const productModelOptions: SelectProps['options'] = products.map(
-    (product) => ({
-      value: product.product_model,
-      label: `${product.product_model} - ${product.category ?? ''}`
-    })
-  );
+  const productModelOptions: SelectProps['options'] = products.map((product) => ({
+    value: product.product_model,
+    label: `${product.product_model} - ${product.category ?? ''}`
+  }));
 
   const handlePartnerCodeChange = (code: string): void => {
     const partner = partners.find((item) => item.code === code);
@@ -373,43 +349,36 @@ const ProductPrices: FC = () => {
     setFilters({
       partner_short_name: values.partner_short_name,
       product_model: values.product_model,
-      effective_date: values.effective_date
-        ? values.effective_date.format('YYYY-MM-DD')
-        : undefined
+      effective_date: values.effective_date ? values.effective_date.format('YYYY-MM-DD') : undefined
     });
     setPagination((prev) => ({ ...prev, current: 1 }));
   };
 
-  const handleTableChange: TableProps<ProductPriceItem>['onChange'] = (
-    paginationConfig
-  ) => {
+  const handleTableChange: TableProps<ProductPriceItem>['onChange'] = (paginationConfig) => {
     setPagination((prev) => ({
       ...prev,
       current: paginationConfig.current ?? prev.current
     }));
   };
 
-  const handleFormValuesChange: FormProps<ProductPriceFormValues>['onValuesChange'] =
-    (changedValues) => {
-      if (changedValues?.partner_code) {
-        handlePartnerCodeChange(changedValues.partner_code);
-      } else if (changedValues?.partner_short_name) {
-        handlePartnerShortNameChange(changedValues.partner_short_name);
-      } else if (changedValues?.product_code) {
-        handleProductCodeChange(changedValues.product_code);
-      } else if (changedValues?.product_model) {
-        handleProductModelChange(changedValues.product_model);
-      }
-    };
+  const handleFormValuesChange: FormProps<ProductPriceFormValues>['onValuesChange'] = (
+    changedValues
+  ) => {
+    if (changedValues?.partner_code) {
+      handlePartnerCodeChange(changedValues.partner_code);
+    } else if (changedValues?.partner_short_name) {
+      handlePartnerShortNameChange(changedValues.partner_short_name);
+    } else if (changedValues?.product_code) {
+      handleProductCodeChange(changedValues.product_code);
+    } else if (changedValues?.product_model) {
+      handleProductModelChange(changedValues.product_model);
+    }
+  };
 
   return (
     <div>
       <Card>
-        <Row
-          justify="space-between"
-          align="middle"
-          style={{ marginBottom: 16 }}
-        >
+        <Row justify="space-between" align="middle" style={{ marginBottom: 16 }}>
           <Col>
             <Title level={2} style={{ margin: 0 }}>
               {t('productPrices.title')}
@@ -417,22 +386,14 @@ const ProductPrices: FC = () => {
           </Col>
           {canWrite && (
             <Col>
-              <Button
-                type="primary"
-                icon={<PlusOutlined />}
-                onClick={handleAdd}
-              >
+              <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
                 {t('productPrices.addPrice')}
               </Button>
             </Col>
           )}
         </Row>
 
-        <Form<ProductPriceFilters>
-          form={filterForm}
-          layout="inline"
-          style={{ marginBottom: 12 }}
-        >
+        <Form<ProductPriceFilters> form={filterForm} layout="inline" style={{ marginBottom: 12 }}>
           <Form.Item
             name="partner_short_name"
             label={t('productPrices.partnerShortName')}
@@ -444,8 +405,7 @@ const ProductPrices: FC = () => {
               placeholder={t('productPrices.selectPartner')}
               options={partnerShortNameOptions}
               filterOption={(input, option) => {
-                const label =
-                  typeof option?.label === 'string' ? option.label : '';
+                const label = typeof option?.label === 'string' ? option.label : '';
                 return label.toLowerCase().includes(input.toLowerCase());
               }}
             />
@@ -461,16 +421,12 @@ const ProductPrices: FC = () => {
               placeholder={t('productPrices.selectProductModel')}
               options={productModelOptions}
               filterOption={(input, option) => {
-                const label =
-                  typeof option?.label === 'string' ? option.label : '';
+                const label = typeof option?.label === 'string' ? option.label : '';
                 return label.toLowerCase().includes(input.toLowerCase());
               }}
             />
           </Form.Item>
-          <Form.Item
-            name="effective_date"
-            label={t('productPrices.effectiveDate')}
-          >
+          <Form.Item name="effective_date" label={t('productPrices.effectiveDate')}>
             <DatePicker allowClear format="YYYY-MM-DD" />
           </Form.Item>
           <Form.Item>
@@ -508,11 +464,7 @@ const ProductPrices: FC = () => {
 
       {canWrite && (
         <Modal
-          title={
-            editingPrice
-              ? t('productPrices.editPrice')
-              : t('productPrices.addPrice')
-          }
+          title={editingPrice ? t('productPrices.editPrice') : t('productPrices.addPrice')}
           open={modalVisible}
           onCancel={() => setModalVisible(false)}
           footer={null}
@@ -526,10 +478,7 @@ const ProductPrices: FC = () => {
           >
             <Row gutter={8}>
               <Col span={12}>
-                <Form.Item
-                  label={t('productPrices.partnerCode')}
-                  name="partner_code"
-                >
+                <Form.Item label={t('productPrices.partnerCode')} name="partner_code">
                   <AutoComplete
                     options={partnerCodeOptions}
                     placeholder={t('productPrices.inputPartnerCode')}
@@ -540,9 +489,7 @@ const ProductPrices: FC = () => {
                         typeof optionValue === 'number'
                           ? optionValue.toString()
                           : (optionValue ?? '');
-                      return normalized
-                        .toLowerCase()
-                        .includes(inputValue.toLowerCase());
+                      return normalized.toLowerCase().includes(inputValue.toLowerCase());
                     }}
                   />
                 </Form.Item>
@@ -564,8 +511,7 @@ const ProductPrices: FC = () => {
                     options={partnerShortNameOptions}
                     onChange={handlePartnerShortNameChange}
                     filterOption={(input, option) => {
-                      const value =
-                        typeof option?.value === 'string' ? option.value : '';
+                      const value = typeof option?.value === 'string' ? option.value : '';
                       return value.toLowerCase().includes(input.toLowerCase());
                     }}
                   />
@@ -574,10 +520,7 @@ const ProductPrices: FC = () => {
             </Row>
             <Row gutter={8}>
               <Col span={12}>
-                <Form.Item
-                  label={t('productPrices.productCode')}
-                  name="product_code"
-                >
+                <Form.Item label={t('productPrices.productCode')} name="product_code">
                   <AutoComplete
                     options={productCodeOptions}
                     placeholder={t('productPrices.inputProductCode')}
@@ -588,9 +531,7 @@ const ProductPrices: FC = () => {
                         typeof optionValue === 'number'
                           ? optionValue.toString()
                           : (optionValue ?? '');
-                      return normalized
-                        .toLowerCase()
-                        .includes(inputValue.toLowerCase());
+                      return normalized.toLowerCase().includes(inputValue.toLowerCase());
                     }}
                   />
                 </Form.Item>
@@ -612,8 +553,7 @@ const ProductPrices: FC = () => {
                     options={productModelOptions}
                     onChange={handleProductModelChange}
                     filterOption={(input, option) => {
-                      const value =
-                        typeof option?.value === 'string' ? option.value : '';
+                      const value = typeof option?.value === 'string' ? option.value : '';
                       return value.toLowerCase().includes(input.toLowerCase());
                     }}
                   />
@@ -660,9 +600,7 @@ const ProductPrices: FC = () => {
             </Form.Item>
 
             <div className="form-actions">
-              <Button onClick={() => setModalVisible(false)}>
-                {t('common.cancel')}
-              </Button>
+              <Button onClick={() => setModalVisible(false)}>{t('common.cancel')}</Button>
               <Button type="primary" htmlType="submit">
                 {editingPrice ? t('common.save') : t('common.add')}
               </Button>

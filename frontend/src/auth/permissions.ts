@@ -1,8 +1,7 @@
 import type { Role } from '@/auth/auth.types';
 import { AUTH_CONFIG } from '@/config';
 
-export type Capability =
-  'read' | 'writeData' | 'manageUsers' | 'viewAudit' | 'readerPost';
+export type Capability = 'read' | 'writeData' | 'manageUsers' | 'viewAudit' | 'readerPost';
 
 export type ProtectedWriteMethod = 'POST' | 'PUT' | 'DELETE' | 'PATCH';
 
@@ -12,10 +11,7 @@ const READER_SELF_SERVICE_PATHS = ['/users/me', '/users/me/password'] as const;
 const isKnownRole = (role: Role | null | undefined): role is Role =>
   role === 'reader' || role === 'editor' || role === 'superuser';
 
-export const hasRolePermission = (
-  role: Role | null | undefined,
-  requiredRole: Role
-): boolean => {
+export const hasRolePermission = (role: Role | null | undefined, requiredRole: Role): boolean => {
   if (!isKnownRole(role)) return false;
 
   if (requiredRole === 'reader') {
@@ -29,10 +25,7 @@ export const hasRolePermission = (
   return role === 'superuser';
 };
 
-export const hasCapability = (
-  role: Role | null | undefined,
-  capability: Capability
-): boolean => {
+export const hasCapability = (role: Role | null | undefined, capability: Capability): boolean => {
   if (!isKnownRole(role)) return false;
 
   switch (capability) {
@@ -66,9 +59,7 @@ const isReaderPostPathAllowed = (url: string): boolean => {
   if (AUTH_CONFIG.allowExportsForReader === false) return false;
 
   const path = normalizePath(url);
-  return READER_POST_PREFIXES.some(
-    (prefix) => path === prefix || path.startsWith(`${prefix}/`)
-  );
+  return READER_POST_PREFIXES.some((prefix) => path === prefix || path.startsWith(`${prefix}/`));
 };
 
 const isReaderSelfServicePathAllowed = (url: string): boolean =>
@@ -76,10 +67,7 @@ const isReaderSelfServicePathAllowed = (url: string): boolean =>
     normalizePath(url) as (typeof READER_SELF_SERVICE_PATHS)[number]
   );
 
-export const canReaderUseRequest = (
-  method: string | undefined,
-  url: string
-): boolean => {
+export const canReaderUseRequest = (method: string | undefined, url: string): boolean => {
   const normalizedMethod = (method ?? 'GET').toUpperCase();
 
   if (!['POST', 'PUT', 'DELETE', 'PATCH'].includes(normalizedMethod)) {

@@ -9,9 +9,7 @@ const frontendRoot = process.cwd();
 // Compute the short git commit hash at build-time; fall back to 'unknown' if unavailable
 function getCommitHash(): string {
   try {
-    return execSync('git rev-parse --short HEAD', { stdio: 'pipe' })
-      .toString()
-      .trim();
+    return execSync('git rev-parse --short HEAD', { stdio: 'pipe' }).toString().trim();
   } catch {
     return 'unknown';
   }

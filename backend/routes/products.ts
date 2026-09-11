@@ -120,9 +120,7 @@ router.delete('/:code', async (req: Request, res: Response): Promise<void> => {
 router.post('/bindings', async (req: Request, res: Response): Promise<void> => {
   // Parsing and simple validation
   const rawBody = req.body;
-  const bindings: ProductBinding[] = Array.isArray(rawBody)
-    ? rawBody
-    : [rawBody];
+  const bindings: ProductBinding[] = Array.isArray(rawBody) ? rawBody : [rawBody];
 
   if (!bindings.length) {
     res.status(400).json({ error: 'No data binded' });
@@ -134,9 +132,7 @@ router.post('/bindings', async (req: Request, res: Response): Promise<void> => {
 
   for (const b of bindings) {
     if (!b.code || !b.product_model) {
-      res
-        .status(400)
-        .json({ error: 'The code and model cannot be left blank' });
+      res.status(400).json({ error: 'The code and model cannot be left blank' });
       return;
     }
     if (codes.has(b.code) || models.has(b.product_model)) {

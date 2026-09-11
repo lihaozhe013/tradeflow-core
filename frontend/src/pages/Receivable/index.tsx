@@ -1,15 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, type FC } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  Button,
-  Form,
-  message,
-  Card,
-  Typography,
-  Row,
-  Col,
-  Divider
-} from 'antd';
+import { Button, Form, message, Card, Typography, Row, Col, Divider } from 'antd';
 import type { TableProps } from 'antd/es/table';
 import type { SorterResult } from 'antd/es/table/interface';
 import { ReloadOutlined } from '@ant-design/icons';
@@ -51,18 +42,13 @@ const toApiSortOrder = (order?: TableSortOrder): 'asc' | 'desc' => {
 const Receivable: FC = () => {
   const { t } = useTranslation();
   const { canWrite } = usePermissions();
-  const [receivableRecords, setReceivableRecords] = useState<
-    ReceivableRecord[]
-  >([]);
+  const [receivableRecords, setReceivableRecords] = useState<ReceivableRecord[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
-  const [editingPayment, setEditingPayment] =
-    useState<ReceivablePaymentRecord | null>(null);
-  const [selectedCustomer, setSelectedCustomer] =
-    useState<ReceivableRecord | null>(null);
+  const [editingPayment, setEditingPayment] = useState<ReceivablePaymentRecord | null>(null);
+  const [selectedCustomer, setSelectedCustomer] = useState<ReceivableRecord | null>(null);
   const [form] = Form.useForm<ReceivablePaymentFormValues>();
-  const [pagination, setPagination] =
-    useState<PaginationState>(DEFAULT_PAGINATION);
+  const [pagination, setPagination] = useState<PaginationState>(DEFAULT_PAGINATION);
   const [filters, setFilters] = useState<ReceivableFilters>({});
   const [sorter, setSorter] = useState<ReceivableSorterState>({
     field: 'balance',
@@ -70,11 +56,12 @@ const Receivable: FC = () => {
   });
 
   const apiInstance = useSimpleApi();
-  const { data: customersResponse } = useSimpleApiData<
-    ApiListResponse<Customer>
-  >('/partners?type=1', {
-    data: []
-  });
+  const { data: customersResponse } = useSimpleApiData<ApiListResponse<Customer>>(
+    '/partners?type=1',
+    {
+      data: []
+    }
+  );
 
   const customers = useMemo<Customer[]>(() => {
     const list = customersResponse?.data;
@@ -87,8 +74,7 @@ const Receivable: FC = () => {
         setLoading(true);
         const page = params.page ?? pagination.current;
         const limit = params.limit ?? pagination.pageSize;
-        const customerName =
-          params.customer_short_name ?? filters.customer_short_name ?? '';
+        const customerName = params.customer_short_name ?? filters.customer_short_name ?? '';
         const field = params.sort_field ?? sorter.field ?? 'balance';
         const order = params.sort_order ?? toApiSortOrder(sorter.order);
 
@@ -190,9 +176,7 @@ const Receivable: FC = () => {
     });
   };
 
-  const handleSavePayment = async (
-    values: ReceivablePaymentFormValues
-  ): Promise<void> => {
+  const handleSavePayment = async (values: ReceivablePaymentFormValues): Promise<void> => {
     if (!canWrite) return;
     try {
       const payload = {
@@ -201,10 +185,7 @@ const Receivable: FC = () => {
       };
 
       if (editingPayment) {
-        await apiInstance.put(
-          `/receivable/payments/${editingPayment.id}`,
-          payload
-        );
+        await apiInstance.put(`/receivable/payments/${editingPayment.id}`, payload);
       } else {
         await apiInstance.post('/receivable/payments', payload);
       }
@@ -242,11 +223,7 @@ const Receivable: FC = () => {
   return (
     <div>
       <Card>
-        <Row
-          justify="space-between"
-          align="middle"
-          style={{ marginBottom: 16 }}
-        >
+        <Row justify="space-between" align="middle" style={{ marginBottom: 16 }}>
           <Col>
             <Title level={2} style={{ margin: 0 }}>
               {t('receivable.title')}

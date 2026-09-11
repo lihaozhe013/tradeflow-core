@@ -10,11 +10,7 @@ interface AnalysisStatisticsProps {
   analysisType: AnalysisType;
 }
 
-const AnalysisStatistics: React.FC<AnalysisStatisticsProps> = ({
-  data,
-  loading,
-  analysisType
-}) => {
+const AnalysisStatistics: React.FC<AnalysisStatisticsProps> = ({ data, loading, analysisType }) => {
   const { t } = useTranslation();
 
   if (!data) return null;
@@ -73,11 +69,7 @@ const AnalysisStatistics: React.FC<AnalysisStatisticsProps> = ({
             }}
             prefix={
               <>
-                {(data.profit_amount ?? 0) >= 0 ? (
-                  <ArrowUpOutlined />
-                ) : (
-                  <ArrowDownOutlined />
-                )}
+                {(data.profit_amount ?? 0) >= 0 ? <ArrowUpOutlined /> : <ArrowDownOutlined />}
                 <span style={{ marginLeft: 4 }}>¥</span>
               </>
             }

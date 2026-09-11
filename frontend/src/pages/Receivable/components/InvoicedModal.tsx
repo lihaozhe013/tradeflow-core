@@ -50,8 +50,7 @@ const InvoicedModal: FC<InvoicedModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [data, setData] = useState<InvoicedRecord[]>([]);
-  const [pagination, setPagination] =
-    useState<ModalPaginationState>(DEFAULT_PAGINATION);
+  const [pagination, setPagination] = useState<ModalPaginationState>(DEFAULT_PAGINATION);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
 
   const apiInstanceRef = useRef(apiInstance);
@@ -68,10 +67,9 @@ const InvoicedModal: FC<InvoicedModalProps> = ({
           limit: String(DEFAULT_PAGINATION.pageSize)
         });
 
-        const result =
-          await apiInstanceRef.current.get<InvoicedRecordsResponse>(
-            `/receivable/invoiced/${customerCode}?${query.toString()}`
-          );
+        const result = await apiInstanceRef.current.get<InvoicedRecordsResponse>(
+          `/receivable/invoiced/${customerCode}?${query.toString()}`
+        );
 
         setData(result?.data ?? []);
         setPagination({
@@ -82,9 +80,7 @@ const InvoicedModal: FC<InvoicedModalProps> = ({
         setLastUpdated(result?.last_updated ?? null);
       } catch (error) {
         console.error('获取已开票记录失败:', error);
-        message.error(
-          'Failed to fetch invoiced records. Please refresh the cache first.'
-        );
+        message.error('Failed to fetch invoiced records. Please refresh the cache first.');
       } finally {
         setLoading(false);
       }
@@ -97,10 +93,7 @@ const InvoicedModal: FC<InvoicedModalProps> = ({
 
     try {
       setRefreshing(true);
-      await apiInstance.post(
-        `/receivable/invoices/refresh/${customerCode}`,
-        {}
-      );
+      await apiInstance.post(`/receivable/invoices/refresh/${customerCode}`, {});
       message.success('Invoice cache refreshed successfully');
       await fetchInvoicedRecords(pagination.current);
     } catch (error) {
@@ -172,9 +165,7 @@ const InvoicedModal: FC<InvoicedModalProps> = ({
         }}
       >
         <Text type="secondary">
-          {lastUpdated
-            ? `Last updated: ${new Date(lastUpdated).toLocaleString()}`
-            : ''}
+          {lastUpdated ? `Last updated: ${new Date(lastUpdated).toLocaleString()}` : ''}
         </Text>
         {canWrite && (
           <Button

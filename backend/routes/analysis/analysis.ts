@@ -1,9 +1,4 @@
-import {
-  Router,
-  Request,
-  Response,
-  type Router as ExpressRouter
-} from 'express';
+import { Router, Request, Response, type Router as ExpressRouter } from 'express';
 import decimalCalc from '@/utils/decimalCalculator';
 import {
   calculateFilteredSoldGoodsCost,
@@ -24,18 +19,11 @@ const router: ExpressRouter = Router();
 
 // GET /api/analysis/data
 router.get('/data', (req: Request, res: Response) => {
-  const {
-    start_date,
-    end_date,
-    customer_code,
-    supplier_code,
-    product_model,
-    type
-  } = req.query as Record<string, string | undefined>;
+  const { start_date, end_date, customer_code, supplier_code, product_model, type } =
+    req.query as Record<string, string | undefined>;
 
   const analysisType = (type as AnalysisType) || 'outbound';
-  const partnerCode =
-    analysisType === 'inbound' ? supplier_code : customer_code;
+  const partnerCode = analysisType === 'inbound' ? supplier_code : customer_code;
 
   const validation = validateBasicParams({ start_date, end_date });
   if (!validation.isValid) {
@@ -73,18 +61,11 @@ router.get('/data', (req: Request, res: Response) => {
 
 // GET /api/analysis/detail
 router.get('/detail', (req: Request, res: Response) => {
-  const {
-    start_date,
-    end_date,
-    customer_code,
-    supplier_code,
-    product_model,
-    type
-  } = req.query as Record<string, string | undefined>;
+  const { start_date, end_date, customer_code, supplier_code, product_model, type } =
+    req.query as Record<string, string | undefined>;
 
   const analysisType = (type as AnalysisType) || 'outbound';
-  const partnerCode =
-    analysisType === 'inbound' ? supplier_code : customer_code;
+  const partnerCode = analysisType === 'inbound' ? supplier_code : customer_code;
 
   const validation = validateBasicParams({ start_date, end_date });
   if (!validation.isValid) {
@@ -121,18 +102,11 @@ router.get('/detail', (req: Request, res: Response) => {
 
 // POST /api/analysis/refresh
 router.post('/refresh', async (req: Request, res: Response) => {
-  const {
-    start_date,
-    end_date,
-    customer_code,
-    supplier_code,
-    product_model,
-    type
-  } = req.body as Record<string, string | undefined>;
+  const { start_date, end_date, customer_code, supplier_code, product_model, type } =
+    req.body as Record<string, string | undefined>;
 
   const analysisType = (type as AnalysisType) || 'outbound';
-  const partnerCode =
-    analysisType === 'inbound' ? supplier_code : customer_code;
+  const partnerCode = analysisType === 'inbound' ? supplier_code : customer_code;
 
   const validation = validateAnalysisParams({
     start_date,
@@ -150,10 +124,7 @@ router.post('/refresh', async (req: Request, res: Response) => {
   }
 
   // Helper to save result and respond
-  const saveAndRespond = (
-    data: Record<string, unknown>,
-    detailData: DetailItem[]
-  ) => {
+  const saveAndRespond = (data: Record<string, unknown>, detailData: DetailItem[]) => {
     const cacheKey = generateCacheKey(
       start_date!,
       end_date!,
@@ -222,12 +193,7 @@ router.post('/refresh', async (req: Request, res: Response) => {
   }
 
   // Outbound Logic
-  const salesData = await calculateSalesData(
-    start_date!,
-    end_date!,
-    customer_code,
-    product_model
-  );
+  const salesData = await calculateSalesData(start_date!, end_date!, customer_code, product_model);
 
   const costAmount = await calculateFilteredSoldGoodsCost(
     start_date!,
@@ -238,17 +204,11 @@ router.post('/refresh', async (req: Request, res: Response) => {
 
   const salesAmount = salesData.sales_amount;
   const cost = decimalCalc.toDbNumber(costAmount ?? 0, 2);
-  const profit = decimalCalc.toDbNumber(
-    decimalCalc.subtract(salesAmount, cost),
-    2
-  );
+  const profit = decimalCalc.toDbNumber(decimalCalc.subtract(salesAmount, cost), 2);
 
   let profitRate = 0;
   if (salesAmount > 0) {
-    const rate = decimalCalc.multiply(
-      decimalCalc.divide(profit, salesAmount),
-      100
-    );
+    const rate = decimalCalc.multiply(decimalCalc.divide(profit, salesAmount), 100);
     profitRate = decimalCalc.toDbNumber(rate, 2);
   }
 

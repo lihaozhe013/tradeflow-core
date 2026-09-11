@@ -1,14 +1,5 @@
 import { useState, useCallback } from 'react';
-import {
-  Table,
-  Card,
-  Input,
-  Button,
-  Space,
-  DatePicker,
-  Tag,
-  message
-} from 'antd';
+import { Table, Card, Input, Button, Space, DatePicker, Tag, message } from 'antd';
 import { SearchOutlined, ReloadOutlined } from '@ant-design/icons';
 import type { ColumnsType, TablePaginationConfig } from 'antd/es/table';
 import type { Dayjs } from 'dayjs';
@@ -50,17 +41,13 @@ function Audit(): React.ReactElement {
     pageSize: 20,
     showSizeChanger: true,
     pageSizeOptions: ['10', '20', '50', '100'],
-    showTotal: (t_: number) =>
-      t('audit.total', { count: t_, defaultValue: `共 ${t_} 条` })
+    showTotal: (t_: number) => t('audit.total', { count: t_, defaultValue: `共 ${t_} 条` })
   });
 
   const [usernameFilter, setUsernameFilter] = useState('');
   const [resourceFilter, setResourceFilter] = useState('');
   const [paramsFilter, setParamsFilter] = useState('');
-  const [dateRange, setDateRange] = useState<[Dayjs | null, Dayjs | null]>([
-    null,
-    null
-  ]);
+  const [dateRange, setDateRange] = useState<[Dayjs | null, Dayjs | null]>([null, null]);
 
   const fetchData = useCallback(
     async (page = 1, pageSize = 20) => {
@@ -86,9 +73,7 @@ function Audit(): React.ReactElement {
         params.append('endDate', dateRange[1].toISOString());
       }
 
-      const response = await get<AuditLogsResponse>(
-        `/audit/logs?${params.toString()}`
-      );
+      const response = await get<AuditLogsResponse>(`/audit/logs?${params.toString()}`);
 
       if (response?.success) {
         setData(response.data.items);
@@ -157,8 +142,7 @@ function Audit(): React.ReactElement {
       key: 'created_at',
       width: 180,
       render: (text: string) => new Date(text).toLocaleString(),
-      onCell: (record) =>
-        getCellProps(new Date(record.created_at).toLocaleString())
+      onCell: (record) => getCellProps(new Date(record.created_at).toLocaleString())
     },
     {
       title: t('audit.username', { defaultValue: '用户名' }),
@@ -236,16 +220,9 @@ function Audit(): React.ReactElement {
         />
         <RangePicker
           value={dateRange as [Dayjs | null, Dayjs | null]}
-          onChange={(dates) =>
-            setDateRange(dates as [Dayjs | null, Dayjs | null])
-          }
+          onChange={(dates) => setDateRange(dates as [Dayjs | null, Dayjs | null])}
         />
-        <Button
-          type="primary"
-          icon={<SearchOutlined />}
-          onClick={handleSearch}
-          loading={loading}
-        >
+        <Button type="primary" icon={<SearchOutlined />} onClick={handleSearch} loading={loading}>
           {t('audit.search', { defaultValue: '查询' })}
         </Button>
         <Button icon={<ReloadOutlined />} onClick={handleReset}>

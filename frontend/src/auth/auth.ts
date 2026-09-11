@@ -1,8 +1,4 @@
-import type {
-  User,
-  LoginResponse,
-  GetCurrentUserResponse
-} from '@/auth/auth.types';
+import type { User, LoginResponse, GetCurrentUserResponse } from '@/auth/auth.types';
 import { hasRolePermission } from '@/auth/permissions';
 export type {
   User,
@@ -68,9 +64,7 @@ export const isAuthenticated = () => {
 };
 
 // 检查用户角色
-export const hasRole = (
-  requiredRole: 'reader' | 'editor' | 'superuser'
-): boolean => {
+export const hasRole = (requiredRole: 'reader' | 'editor' | 'superuser'): boolean => {
   const user = userManager.getUser();
   return hasRolePermission(user?.role, requiredRole);
 };

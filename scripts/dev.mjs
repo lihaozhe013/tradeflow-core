@@ -94,13 +94,9 @@ function terminateChild(child, signal = 'SIGTERM') {
     if (isWindows) {
       // The shell only wraps a cmd.exe shim around pnpm, so terminate the
       // whole process tree to avoid orphaning the dev servers it started.
-      const killer = spawn(
-        'taskkill',
-        ['/pid', String(child.pid), '/T', '/F'],
-        {
-          stdio: 'ignore'
-        }
-      );
+      const killer = spawn('taskkill', ['/pid', String(child.pid), '/T', '/F'], {
+        stdio: 'ignore'
+      });
       killer.on('error', (error) => {
         writeSystemLine(
           `Failed to stop child process ${child.pid}: ${error.message}`,
@@ -112,10 +108,7 @@ function terminateChild(child, signal = 'SIGTERM') {
 
     child.kill(signal);
   } catch (error) {
-    writeSystemLine(
-      `Failed to stop child process ${child.pid}: ${error.message}`,
-      process.stderr
-    );
+    writeSystemLine(`Failed to stop child process ${child.pid}: ${error.message}`, process.stderr);
   }
 }
 
@@ -195,10 +188,7 @@ function startService(service) {
 
   child.on('error', (error) => {
     exitCode = 1;
-    writeSystemLine(
-      `${service.name} failed to start: ${error.message}`,
-      process.stderr
-    );
+    writeSystemLine(`${service.name} failed to start: ${error.message}`, process.stderr);
     void shutdown(exitCode);
   });
 

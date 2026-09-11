@@ -20,14 +20,10 @@ export async function getPayableSummary(
     conditions.push(Prisma.sql`i.inbound_date <= ${filters.outboundTo}`);
   }
   if (filters.paymentFrom) {
-    conditions.push(
-      Prisma.sql`(p.pay_date IS NULL OR p.pay_date >= ${filters.paymentFrom})`
-    );
+    conditions.push(Prisma.sql`(p.pay_date IS NULL OR p.pay_date >= ${filters.paymentFrom})`);
   }
   if (filters.paymentTo) {
-    conditions.push(
-      Prisma.sql`(p.pay_date IS NULL OR p.pay_date <= ${filters.paymentTo})`
-    );
+    conditions.push(Prisma.sql`(p.pay_date IS NULL OR p.pay_date <= ${filters.paymentTo})`);
   }
 
   const sql = Prisma.sql`

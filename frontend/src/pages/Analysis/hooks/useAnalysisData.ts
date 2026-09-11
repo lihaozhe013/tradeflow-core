@@ -27,9 +27,7 @@ export const useAnalysisData = () => {
   const fetchFilterOptions = useCallback(async () => {
     try {
       setLoading(true);
-      const result = (await get(
-        '/analysis/filter-options'
-      )) as AnalysisApiResult<any>;
+      const result = (await get('/analysis/filter-options')) as AnalysisApiResult<any>;
 
       if (result.success) {
         setCustomers(result.customers || []);
@@ -150,8 +148,7 @@ export const useAnalysisData = () => {
         const payload: any = {
           start_date: dateRange[0].format('YYYY-MM-DD'),
           end_date: dateRange[1].format('YYYY-MM-DD'),
-          product_model:
-            selectedProduct === 'All' ? undefined : selectedProduct,
+          product_model: selectedProduct === 'All' ? undefined : selectedProduct,
           type: analysisType
         };
 
@@ -177,12 +174,9 @@ export const useAnalysisData = () => {
             end_date: payload.end_date,
             type: analysisType
           });
-          if (payload.supplier_code)
-            params.append('supplier_code', payload.supplier_code);
-          if (payload.customer_code)
-            params.append('customer_code', payload.customer_code);
-          if (payload.product_model)
-            params.append('product_model', payload.product_model);
+          if (payload.supplier_code) params.append('supplier_code', payload.supplier_code);
+          if (payload.customer_code) params.append('customer_code', payload.customer_code);
+          if (payload.product_model) params.append('product_model', payload.product_model);
 
           const detailResult = (await get(
             `/analysis/detail?${params.toString()}`

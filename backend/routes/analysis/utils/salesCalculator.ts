@@ -38,15 +38,8 @@ export async function calculateSalesData(
   const salesRow = result[0];
 
   const normalSales = decimalCalc.fromSqlResult(salesRow?.normal_sales, 0, 2);
-  const specialExpense = decimalCalc.fromSqlResult(
-    salesRow?.special_expense,
-    0,
-    2
-  );
-  const salesAmount = decimalCalc.toDbNumber(
-    decimalCalc.subtract(normalSales, specialExpense),
-    2
-  );
+  const specialExpense = decimalCalc.fromSqlResult(salesRow?.special_expense, 0, 2);
+  const salesAmount = decimalCalc.toDbNumber(decimalCalc.subtract(normalSales, specialExpense), 2);
 
   return {
     normal_sales: normalSales,

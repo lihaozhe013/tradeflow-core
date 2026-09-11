@@ -6,11 +6,7 @@ import type { CustomError } from '@/types/index';
 import { config, getConfigDir, getCacheDir } from '@/utils/paths';
 import { logger } from '@/utils/logger';
 import { requestLogger, errorLogger } from '@/utils/loggerMiddleware';
-import {
-  authenticateToken,
-  authorize,
-  checkWritePermission
-} from '@/utils/auth';
+import { authenticateToken, authorize, checkWritePermission } from '@/utils/auth';
 import { initCacheFiles } from '@/utils/initCache';
 import overviewRoutes from '@/routes/overview';
 import inboundRoutes from '@/routes/inbound';
@@ -99,24 +95,19 @@ app.use('/api/audit', auditRoutes);
 
 app.use(errorLogger);
 
-app.use(
-  (err: CustomError, req: Request, res: Response, _next: NextFunction) => {
-    logger.error('Unhandled Error', {
-      error: err.message,
-      stack: err.stack,
-      url: req.originalUrl,
-      method: req.method
-    });
+app.use((err: CustomError, req: Request, res: Response, _next: NextFunction) => {
+  logger.error('Unhandled Error', {
+    error: err.message,
+    stack: err.stack,
+    url: req.originalUrl,
+    method: req.method
+  });
 
-    res.status(500).json({
-      success: false,
-      message:
-        process.env['NODE_ENV'] === 'production'
-          ? 'Internal Server Error'
-          : err.message
-    });
-  }
-);
+  res.status(500).json({
+    success: false,
+    message: process.env['NODE_ENV'] === 'production' ? 'Internal Server Error' : err.message
+  });
+});
 
 // =============================================================================
 // Frontend Static File Hosting (Based on Config File)
@@ -124,8 +115,7 @@ app.use(
 
 const shouldHostFrontend: boolean = !!(
   config.frontend?.hostByBackend &&
-  (process.env['NODE_ENV'] === 'production' ||
-    process.env['FORCE_FRONTEND_HOSTING'] === 'true')
+  (process.env['NODE_ENV'] === 'production' || process.env['FORCE_FRONTEND_HOSTING'] === 'true')
 );
 
 if (shouldHostFrontend && config.frontend) {
@@ -147,9 +137,7 @@ if (shouldHostFrontend && config.frontend) {
     logger.warn(`The frontend build directory does not exist!`);
   }
 } else {
-  logger.info(
-    'Frontend hosting has been disabled. Use a standalone frontend CDN server!'
-  );
+  logger.info('Frontend hosting has been disabled. Use a standalone frontend CDN server!');
 }
 
 // =============================================================================

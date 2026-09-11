@@ -9,16 +9,15 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
-
       - name: Install pnpm
         uses: pnpm/action-setup@v4.4.0
         with:
           version: 10
 
-      - name: Use Node.js 24.x
+      - name: Use Node.js 26.x
         uses: actions/setup-node@v5
         with:
-          node-version: 24.x
+          node-version: 26.x
           cache: 'pnpm'
 
       - name: Install dependencies and build project
