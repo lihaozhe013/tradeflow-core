@@ -10,6 +10,8 @@
     "dev:debug": "tsx watch --inspect server.ts",
     "lint": "eslint .",
     "test": "vitest run",
+    "typecheck": "tsc --noEmit -p tsconfig.check.json",
+    "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
     "test:seed": "tsx test/seedRunner.ts",
     "preinstall": "npx only-allow pnpm"
@@ -42,6 +44,7 @@
     "@types/superagent": "^8.1.11",
     "@types/supertest": "^7.2.1",
     "@typescript/native": "npm:typescript@^7.0.2",
+    "@vitest/coverage-v8": "^5.0.0",
     "esbuild": "^0.28.2",
     "esbuild-plugin-tsconfig-paths": "^1.0.2",
     "eslint": "^10.10.0",

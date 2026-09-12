@@ -19,6 +19,21 @@ export default defineConfig({
     hookTimeout: 180000,
     env: {
       NODE_ENV: 'test'
+    },
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'html', 'lcov'],
+      reportsDirectory: './coverage',
+      exclude: [
+        'prisma/client/**',
+        'dist/**',
+        'coverage/**',
+        'test/**',
+        'scripts/**',
+        'types/**',
+        '**/*.config.*',
+        '**/*.d.ts'
+      ]
     }
   }
 });

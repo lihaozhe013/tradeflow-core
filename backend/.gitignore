@@ -6,6 +6,9 @@ dist_output/
 # Node
 node_modules/
 
+# Test coverage
+coverage/
+
 # Logs
 *.log
 logs/
