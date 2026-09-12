@@ -41,10 +41,10 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     };
   }
   if (isProvided(req.query['start_date'])) {
-    where.inbound_date = { gte: req.query['start_date'] as string };
+    where.inbound_date = { ...where.inbound_date, gte: req.query['start_date'] as string };
   }
   if (isProvided(req.query['end_date'])) {
-    where.inbound_date = { lte: req.query['end_date'] as string };
+    where.inbound_date = { ...where.inbound_date, lte: req.query['end_date'] as string };
   }
 
   const sortField = req.query['sort_field'] as string;

@@ -9,6 +9,9 @@
     "dev": "tsx watch server.ts",
     "dev:debug": "tsx watch --inspect server.ts",
     "lint": "eslint .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:seed": "tsx test/seedRunner.ts",
     "preinstall": "npx only-allow pnpm"
   },
   "dependencies": {
@@ -36,6 +39,8 @@
     "@types/multer": "^2.2.0",
     "@types/node": "^26.5.1",
     "@types/pg": "^8.23.1",
+    "@types/superagent": "^8.1.11",
+    "@types/supertest": "^7.2.1",
     "@typescript/native": "npm:typescript@^7.0.2",
     "esbuild": "^0.28.2",
     "esbuild-plugin-tsconfig-paths": "^1.0.2",
@@ -43,11 +48,13 @@
     "globals": "^17.12.0",
     "nodemon": "^3.1.14",
     "prisma": "^7.10.0",
+    "supertest": "^7.2.2",
     "ts-node": "^10.9.2",
     "tsc-alias": "^1.9.4",
     "tsconfig-paths": "^4.2.0",
     "tsx": "^4.23.13",
     "typescript": "npm:@typescript/typescript6@^6.0.2",
-    "typescript-eslint": "^8.70.0"
+    "typescript-eslint": "^8.70.0",
+    "vitest": "^5.0.0"
   }
 }

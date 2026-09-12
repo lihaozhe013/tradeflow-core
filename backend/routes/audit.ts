@@ -23,7 +23,7 @@ router.get('/logs', async (req: Request, res: Response): Promise<void> => {
 
   if (isSuperuser && typeof username === 'string' && username.trim()) {
     where['username'] = username.trim();
-  } else if (currentUser?.username) {
+  } else if (!isSuperuser && currentUser?.username) {
     where['username'] = currentUser.username;
   }
 
