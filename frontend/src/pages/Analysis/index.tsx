@@ -23,15 +23,13 @@ const Analysis: React.FC = () => {
   // Custom Hooks
   const {
     loading,
-    refreshing,
     customers,
     suppliers,
     products,
     analysisData,
     detailData,
     fetchFilterOptions,
-    fetchAnalysisData,
-    refreshAnalysisData
+    fetchAnalysisData
   } = useAnalysisData();
 
   const { exporting, performNormalExport, performAdvancedExport } = useAnalysisExport();
@@ -53,7 +51,7 @@ const Analysis: React.FC = () => {
     fetchFilterOptions();
   }, [fetchFilterOptions]);
 
-  // Auto-fetch cached data
+  // Auto-fetch analysis data
   useEffect(() => {
     if (dateRange?.[0] && dateRange?.[1]) {
       fetchAnalysisData(dateRange, selectedPartner, selectedProduct, analysisType);
@@ -100,21 +98,6 @@ const Analysis: React.FC = () => {
     );
   };
 
-  const handleRefreshData = async () => {
-    if (!canUseReaderPost) return;
-    if (!dateRange?.[0] || !dateRange?.[1]) {
-      message.warning(t('analysis.selectTimeRange'));
-      return;
-    }
-
-    if (!selectedPartner && !selectedProduct) {
-      message.warning(t('analysis.selectFilterCondition'));
-      return;
-    }
-
-    await refreshAnalysisData(dateRange, selectedPartner, selectedProduct, analysisType);
-  };
-
   const handleAdvancedExport = async (exportType: string) => {
     setAdvancedExportModalVisible(false);
     await performAdvancedExport(exportType, dateRange, analysisType);
@@ -134,9 +117,7 @@ const Analysis: React.FC = () => {
           onProductChange={setSelectedProduct}
           partners={activePartners}
           products={products}
-          onRefresh={handleRefreshData}
           onExport={handleExportAnalysis}
-          refreshing={refreshing}
           exporting={exporting}
           hasData={!!analysisData}
           canUseReaderPost={canUseReaderPost}

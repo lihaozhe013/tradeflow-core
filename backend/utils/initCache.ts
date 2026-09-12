@@ -3,7 +3,6 @@ import { resolveFilesInCachePath } from './paths';
 
 export function initCacheFiles() {
   const cacheFiles = [
-    { name: 'analysis-cache.json', defaultContent: '{}' },
     { name: 'invoice-cache.json', defaultContent: '{}' },
     { name: 'overview-stats.json', defaultContent: '{}' }
   ];

@@ -137,9 +137,7 @@ Base URL: `/api` Auth: JWT via `POST /api/auth/login` → `Authorization: Bearer
 | ------ | ------------------------------ | --------------------- | --------------------------- |
 | GET    | `/api/analysis/data`           | editor/superuser only | routes/analysis/analysis.ts |
 | GET    | `/api/analysis/detail`         | editor/superuser only | routes/analysis/analysis.ts |
-| POST   | `/api/analysis/refresh`        | editor/superuser only | routes/analysis/analysis.ts |
 | GET    | `/api/analysis/filter-options` | editor/superuser only | routes/analysis/analysis.ts |
-| POST   | `/api/analysis/clean-cache`    | editor/superuser only | routes/analysis/analysis.ts |
 
 ## Export
 

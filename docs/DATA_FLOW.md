@@ -26,8 +26,7 @@ services, and API routes interact when a user action triggers data changes.
 Auxiliary state lives in:
 
 - `config/` — YAML/JSON config (config dir discovered by `backend/utils/paths.ts`)
-- `cache/` — JSON snapshots (`overview-stats.json`, `analysis-cache.json`, `invoice-cache.json`,
-  `jwt-secret.txt`)
+- `cache/` — JSON snapshots (`overview-stats.json`, `invoice-cache.json`, `jwt-secret.txt`)
 
 ---
 
@@ -234,28 +233,20 @@ the GET — see `frontend/src/hooks/useApi.ts` (`fetchData` with `autoCreate`).
 
 ## 9. Analysis flow
 
-The analysis module recomputes on demand and writes results to `cache/analysis-cache.json` keyed by
-`(start_date, end_date, partner_code, product_model, type)`.
+The analysis module computes results on demand from the database on every request; it does not use a
+file cache. Consumers call `GET /api/analysis/data` (summary) and `GET /api/analysis/detail`
+(per-group breakdown) directly.
 
 ```mermaid
 flowchart TB
-  A[Client] -->|POST /api/analysis/refresh| B[validate params]
+  A[Client] -->|GET /api/analysis/data| B[validate params]
   B --> C{type}
   C -->|inbound| D[calculatePurchaseData]
   C -->|outbound| E[calculateSalesData + calculateFilteredSoldGoodsCost]
-  D --> F[calculateDetailAnalysis]
-  E --> F
-  F --> G[saveAndRespond]
-  G --> H[write cache/analysis-cache.json]
-  G --> I[return result]
+  E --> F[profit + profit_rate]
 
-  A -->|GET /api/analysis/data| J[read cache by key]
-  J -->|hit| K[return data]
-  J -->|miss| L[503]
+  A -->|GET /api/analysis/detail| G[calculateDetailAnalysis]
 ```
-
-Source: `backend/routes/analysis/analysis.ts`. Cache file path resolved via
-`backend/utils/paths.ts:resolveFilesInCachePath`.
 
 ---
 
@@ -365,8 +356,8 @@ sequenceDiagram
 - Auth token lives in `localStorage` under key `auth_token`
   (`frontend/src/auth/auth.ts:tokenManager`).
 - `apiRequest` auto-redirects to `/login` on `401` and throws `AuthorizationError` on `403`.
-- Routes that need caching (overview, analysis) use `useApiData` which retries on `503` by hitting
-  the matching POST refresh endpoint.
+- Routes that need caching (overview) use `useApiData` which retries on `503` by hitting the
+  matching POST refresh endpoint.
 
 ---
 
@@ -376,7 +367,6 @@ sequenceDiagram
 | ------------------------------ | ------------------------------- | ----------------------------------------------------- |
 | `cache/jwt-secret.txt`         | `utils/auth.ts:ensureJwtSecret` | First startup (created if missing)                    |
 | `cache/overview-stats.json`    | `routes/overview.ts`            | `POST /api/overview/stats`                            |
-| `cache/analysis-cache.json`    | `routes/analysis/analysis.ts`   | `POST /api/analysis/refresh`                          |
 | `cache/invoice-cache.json`     | `utils/invoiceCacheService.ts`  | `POST /api/{receivable,payable}/invoices/refresh/...` |
 | `config/config.yaml` + friends | `utils/paths.ts:getConfigDir`   | Read at boot (`auth.*`, `server.*`, `frontend.*`)     |
 

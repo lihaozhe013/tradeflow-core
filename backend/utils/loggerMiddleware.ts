@@ -6,7 +6,6 @@ import { prisma } from '@/prismaClient';
  */
 const IGNORED_PATHS = [
   '/api/overview/stats',
-  '/api/analysis/refresh',
   '/api/inventory/refresh',
   '/api/payable/invoices/refresh',
   '/api/receivable/invoices/refresh'

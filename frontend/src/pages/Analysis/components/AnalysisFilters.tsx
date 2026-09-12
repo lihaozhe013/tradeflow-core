@@ -1,6 +1,6 @@
 import React from 'react';
 import { Row, Col, DatePicker, AutoComplete, Button, Space, Segmented } from 'antd';
-import { ReloadOutlined, DownloadOutlined } from '@ant-design/icons';
+import { DownloadOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import type { Dayjs } from 'dayjs';
 import type { PartnerOption, ProductOption, AnalysisType } from '@/types/analysis';
@@ -19,9 +19,7 @@ interface AnalysisFiltersProps {
   onProductChange: (value: string | null) => void;
   partners: PartnerOption[];
   products: ProductOption[];
-  onRefresh: () => void;
   onExport: () => void;
-  refreshing: boolean;
   exporting: boolean;
   hasData: boolean;
   canUseReaderPost: boolean;
@@ -38,9 +36,7 @@ const AnalysisFilters: React.FC<AnalysisFiltersProps> = ({
   onProductChange,
   partners,
   products,
-  onRefresh,
   onExport,
-  refreshing,
   exporting,
   hasData,
   canUseReaderPost,
@@ -141,24 +137,14 @@ const AnalysisFilters: React.FC<AnalysisFiltersProps> = ({
       {canUseReaderPost && (
         <Row style={{ marginBottom: 24 }}>
           <Col>
-            <Space>
-              <Button
-                type="primary"
-                icon={<ReloadOutlined />}
-                onClick={onRefresh}
-                loading={refreshing}
-              >
-                {t('analysis.refreshData')}
-              </Button>
-              <Button
-                icon={<DownloadOutlined />}
-                onClick={onExport}
-                loading={exporting}
-                disabled={!hasData}
-              >
-                {t('analysis.exportData')}
-              </Button>
-            </Space>
+            <Button
+              icon={<DownloadOutlined />}
+              onClick={onExport}
+              loading={exporting}
+              disabled={!hasData}
+            >
+              {t('analysis.exportData')}
+            </Button>
           </Col>
         </Row>
       )}
