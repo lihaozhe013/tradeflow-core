@@ -1,6 +1,6 @@
 import express, { type Router, type Request, type Response } from 'express';
 import { prisma } from '@/prismaClient';
-import { Prisma } from '@/prisma/client';
+import type { Prisma } from '@/prisma/client';
 import decimalCalc from '@/utils/decimalCalculator';
 import { pagination_limit } from '@/utils/paths';
 import { inventoryService } from '@/utils/inventoryService';
@@ -40,11 +40,15 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       product_model: { contains: req.query['product_model'] as string }
     };
   }
+  const inboundDateFilter: Prisma.StringNullableFilter<'InboundRecord'> = {};
   if (isProvided(req.query['start_date'])) {
-    where.inbound_date = { ...where.inbound_date, gte: req.query['start_date'] as string };
+    inboundDateFilter.gte = req.query['start_date'] as string;
   }
   if (isProvided(req.query['end_date'])) {
-    where.inbound_date = { ...where.inbound_date, lte: req.query['end_date'] as string };
+    inboundDateFilter.lte = req.query['end_date'] as string;
+  }
+  if (inboundDateFilter.gte || inboundDateFilter.lte) {
+    where.inbound_date = inboundDateFilter;
   }
 
   const sortField = req.query['sort_field'] as string;

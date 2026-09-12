@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import * as yaml from 'js-yaml';
-import { AppConfig } from '@/types/config';
+import type { AppConfig } from '@/types/config';
 import { logger } from '@/utils/logger';
 
 function getAppRoot(): string {

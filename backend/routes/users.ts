@@ -29,7 +29,6 @@ router.put('/me', async (req: Request, res: Response): Promise<void> => {
     data: { display_name }
   });
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { password_hash: _, ...safeUser } = updated;
   res.json({ success: true, data: safeUser });
 });
@@ -144,7 +143,6 @@ router.post('/', authorize(['superuser']), async (req: Request, res: Response): 
       }
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password_hash: _, ...safeUser } = created;
     res.status(201).json({ success: true, data: safeUser });
   } catch (error: unknown) {
@@ -227,7 +225,6 @@ router.put(
       data
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password_hash: _, ...safeUser } = updated;
     res.json({ success: true, data: safeUser });
   }

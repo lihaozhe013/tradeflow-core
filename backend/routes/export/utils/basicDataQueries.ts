@@ -1,5 +1,5 @@
 import { prisma } from '@/prismaClient';
-import { BaseInfoData, PartnerDto, PriceDto, ProductDto } from '@/routes/export/utils/types';
+import type { BaseInfoData, PartnerDto, PriceDto, ProductDto } from '@/routes/export/utils/types';
 
 export async function getBaseInfoData(tables: string = '123'): Promise<BaseInfoData> {
   const result: BaseInfoData = {};

@@ -1,6 +1,6 @@
 import { Prisma } from '@/prisma/client';
 import { prisma } from '@/prismaClient';
-import { InvoiceFilters, InvoiceItemDto } from '@/routes/export/utils/types';
+import type { InvoiceFilters, InvoiceItemDto } from '@/routes/export/utils/types';
 
 export async function getInvoiceData(filters: InvoiceFilters): Promise<InvoiceItemDto[]> {
   const { partnerCode, dateFrom, dateTo } = filters;

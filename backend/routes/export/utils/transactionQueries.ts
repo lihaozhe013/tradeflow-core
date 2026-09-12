@@ -1,6 +1,6 @@
 import { prisma } from '@/prismaClient';
-import { Prisma } from '@/prisma/client';
-import {
+import type { Prisma } from '@/prisma/client';
+import type {
   InboundOutboundData,
   InboundRecordDto,
   OutboundRecordDto,

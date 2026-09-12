@@ -1,5 +1,6 @@
 // Using proper Prisma types and client
-import express, { Request, Response, Router } from 'express';
+import type { Request, Response, Router } from 'express';
+import express from 'express';
 import fs from 'fs';
 import path from 'path';
 import { prisma } from '@/prismaClient';

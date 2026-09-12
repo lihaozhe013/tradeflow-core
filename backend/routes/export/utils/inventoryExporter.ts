@@ -1,11 +1,11 @@
 import * as XLSX from 'xlsx';
 import ExportUtils from '@/routes/export/utils/exportUtils';
 import { TEMPLATES } from '@/routes/export/utils/exportTemplates';
-import { InventoryExportRow } from '@/routes/export/utils/inventoryQueries';
+import type { InventoryExportRow } from '@/routes/export/utils/inventoryQueries';
 
 export function generateInventoryExcel(data: InventoryExportRow[]): Buffer {
   const workbook = XLSX.utils.book_new();
-  const template = (TEMPLATES as any).inventory;
+  const template = TEMPLATES.inventory;
 
   if (!template) {
     throw new Error('Inventory export template not found');

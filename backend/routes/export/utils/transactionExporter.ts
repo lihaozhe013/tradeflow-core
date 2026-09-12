@@ -1,7 +1,7 @@
 import * as XLSX from 'xlsx';
 import ExportUtils from '@/routes/export/utils/exportUtils';
 import { TEMPLATES } from '@/routes/export/utils/exportTemplates';
-import { InboundOutboundData, TransactionFilters } from '@/routes/export/utils/types';
+import type { InboundOutboundData, TransactionFilters } from '@/routes/export/utils/types';
 
 export function generateTransactionExcel(
   data: InboundOutboundData,

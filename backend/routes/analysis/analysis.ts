@@ -1,4 +1,5 @@
-import { Router, Request, Response, type Router as ExpressRouter } from 'express';
+import type { Request, Response } from 'express';
+import { Router, type Router as ExpressRouter } from 'express';
 import decimalCalc from '@/utils/decimalCalculator';
 import {
   calculateFilteredSoldGoodsCost,

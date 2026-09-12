@@ -3,7 +3,7 @@ import path from 'path';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import argon2 from 'argon2';
-import { Request, Response, NextFunction } from 'express';
+import type { Request, Response, NextFunction } from 'express';
 import { logger } from '@/utils/logger';
 import { resolveFilesInCachePath, config } from '@/utils/paths';
 import { prisma } from '../prismaClient';
@@ -283,7 +283,7 @@ export function checkWritePermission(req: Request, res: Response, next: NextFunc
   }
 
   if (req.user.role === 'reader') {
-    const requestPath = req.originalUrl.split('?')[0];
+    const requestPath = req.originalUrl.split('?')[0] ?? '';
 
     if (method === 'PUT' && READER_SELF_SERVICE_PATHS.has(requestPath)) {
       next();

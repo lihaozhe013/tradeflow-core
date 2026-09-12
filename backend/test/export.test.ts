@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import request from 'supertest';
+import type request from 'supertest';
 import type { Response } from 'superagent';
 import { authAgent, publicAgent } from '@/test/helpers/request';
 import { assertXlsxExport } from '@/test/helpers/assertXlsx';

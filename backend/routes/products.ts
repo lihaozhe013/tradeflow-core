@@ -1,6 +1,6 @@
 import express, { type Router, type Request, type Response } from 'express';
 import { prisma } from '@/prismaClient';
-import { Prisma } from '@/prisma/client';
+import type { Prisma } from '@/prisma/client';
 import { pagination_limit } from '@/utils/paths';
 
 const router: Router = express.Router();

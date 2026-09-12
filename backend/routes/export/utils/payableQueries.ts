@@ -1,7 +1,7 @@
 import { Prisma } from '@/prisma/client';
 import { prisma } from '@/prismaClient';
 import decimalCalc from '@/utils/decimalCalculator';
-import {
+import type {
   ReceivablePayableFilters as PayableFilters,
   PayablePaymentDto,
   PayableSummaryDto,

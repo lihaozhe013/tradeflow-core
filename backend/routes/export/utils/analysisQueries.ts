@@ -1,6 +1,6 @@
 import { prisma } from '@/prismaClient';
 import decimalCalc from '@/utils/decimalCalculator';
-import {
+import type {
   AnalysisCustomerData,
   AnalysisProductData,
   AnalysisRecord

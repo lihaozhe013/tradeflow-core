@@ -1,7 +1,8 @@
 import * as XLSX from 'xlsx';
-import ExportUtils, { ExportTemplate } from '@/routes/export/utils/exportUtils';
+import type { ExportTemplate } from '@/routes/export/utils/exportUtils';
+import ExportUtils from '@/routes/export/utils/exportUtils';
 import { TEMPLATES } from '@/routes/export/utils/exportTemplates';
-import { AnalysisExportOptions } from '@/routes/export/utils/types';
+import type { AnalysisExportOptions } from '@/routes/export/utils/types';
 
 /**
  * Format currency value for display

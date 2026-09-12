@@ -41,11 +41,15 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       product_model: { contains: req.query['product_model'] as string }
     };
   }
+  const outboundDateFilter: Prisma.StringNullableFilter<'OutboundRecord'> = {};
   if (isProvided(req.query['start_date'])) {
-    where.outbound_date = { ...where.outbound_date, gte: req.query['start_date'] as string };
+    outboundDateFilter.gte = req.query['start_date'] as string;
   }
   if (isProvided(req.query['end_date'])) {
-    where.outbound_date = { ...where.outbound_date, lte: req.query['end_date'] as string };
+    outboundDateFilter.lte = req.query['end_date'] as string;
+  }
+  if (outboundDateFilter.gte || outboundDateFilter.lte) {
+    where.outbound_date = outboundDateFilter;
   }
 
   const sortField = req.query['sort_field'] as string;
@@ -302,7 +306,7 @@ router.post('/batch', async (req: Request, res: Response): Promise<void> => {
         completed++;
       }
     } catch (e: unknown) {
-      if (e instanceof Prisma.PrismaClientKnownRequestError && (e as any).code === 'P2025')
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2025')
         notFound.push(recordId);
       else errors++;
     }

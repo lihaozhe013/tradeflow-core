@@ -44,7 +44,7 @@ async function main() {
         name: 'alias-atslash',
         setup(build) {
           build.onResolve({ filter: /^@\// }, (args) => {
-            let sub = args.path.replace(/^@\//, '');
+            const sub = args.path.replace(/^@\//, '');
             const base = path.resolve(projectRoot, sub);
 
             const candidates = [];
