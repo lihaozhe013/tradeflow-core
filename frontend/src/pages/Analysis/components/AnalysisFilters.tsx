@@ -138,6 +138,7 @@ const AnalysisFilters: React.FC<AnalysisFiltersProps> = ({
         <Row style={{ marginBottom: 24 }}>
           <Col>
             <Button
+              type="primary"
               icon={<DownloadOutlined />}
               onClick={onExport}
               loading={exporting}
