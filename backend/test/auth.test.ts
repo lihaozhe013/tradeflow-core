@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { prisma } from '@/prismaClient';
 import { publicAgent, authAgent } from '@/test/helpers/request';
+import { MANUAL_USERNAME, MANUAL_PASSWORD } from '@/test/seed';
 
 const DISABLED_USER = 'auth_disabled_test_user';
 
@@ -67,6 +68,20 @@ describe('POST /api/auth/login', () => {
       password: 'testpass123'
     });
     expect(missingUsername.status).toBe(400);
+  });
+
+  it('logs in with the fixed manual admin account', async () => {
+    const res = await publicAgent().post('/api/auth/login').send({
+      username: MANUAL_USERNAME,
+      password: MANUAL_PASSWORD
+    });
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.user).toMatchObject({
+      username: MANUAL_USERNAME,
+      role: 'superuser'
+    });
   });
 });
 

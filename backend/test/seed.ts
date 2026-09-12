@@ -37,6 +37,10 @@ export const SPECIAL_USERS = ['test_editor', 'test_reader', 'test_superuser'] as
 
 export type SpecialRole = 'reader' | 'editor' | 'superuser';
 
+/** Fixed superuser credentials for manual testing after seeding. */
+export const MANUAL_USERNAME = 'admin';
+export const MANUAL_PASSWORD = 'admin123';
+
 const CATEGORIES = [
   'Electronic Components',
   'Fasteners',
@@ -73,7 +77,7 @@ export function truncateAll(): Promise<number> {
   `);
 }
 
-async function seedUsers(passwordHash: string): Promise<string[]> {
+async function seedUsers(passwordHash: string, manualPasswordHash: string): Promise<string[]> {
   const users: Prisma.UserCreateManyInput[] = [];
 
   for (const username of SPECIAL_USERS) {
@@ -86,6 +90,15 @@ async function seedUsers(passwordHash: string): Promise<string[]> {
       last_password_change: new Date().toISOString()
     });
   }
+
+  users.push({
+    username: MANUAL_USERNAME,
+    password_hash: manualPasswordHash,
+    role: 'superuser',
+    display_name: 'Administrator',
+    enabled: true,
+    last_password_change: new Date().toISOString()
+  });
 
   for (let i = 0; i < COUNTS.randomUsers; i += 1) {
     users.push({
@@ -321,8 +334,9 @@ export async function seedDatabase(): Promise<SeedResult> {
   await truncateAll();
 
   const passwordHash = await hashPassword(SEEDED_PASSWORD);
+  const manualPasswordHash = await hashPassword(MANUAL_PASSWORD);
 
-  const usernames = await seedUsers(passwordHash);
+  const usernames = await seedUsers(passwordHash, manualPasswordHash);
 
   const { supplierCodes, customerCodes } = await seedPartners();
 

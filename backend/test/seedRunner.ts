@@ -1,5 +1,5 @@
 import { prisma } from '@/prismaClient';
-import { seedDatabase } from './seed';
+import { seedDatabase, MANUAL_USERNAME, MANUAL_PASSWORD } from './seed';
 
 async function main(): Promise<void> {
   const t0 = Date.now();
@@ -9,6 +9,7 @@ async function main(): Promise<void> {
       `${result.supplierCodes.length} suppliers, ${result.customerCodes.length} customers, ` +
       `${result.productCodes.length} products, ${result.usernames.length} users.`
   );
+  console.info(`Manual login: ${MANUAL_USERNAME} / ${MANUAL_PASSWORD} (superuser)`);
   await prisma.$disconnect();
 }
 
