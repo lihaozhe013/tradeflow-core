@@ -42,8 +42,8 @@ const Analysis: React.FC = () => {
     dayjs().subtract(1, 'month').startOf('month'),
     dayjs().subtract(1, 'month').endOf('month')
   ]);
-  const [selectedPartner, setSelectedPartner] = useState<string | null>(null);
-  const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
+  const [selectedPartner, setSelectedPartner] = useState<string | null>('All');
+  const [selectedProduct, setSelectedProduct] = useState<string | null>('All');
   const [analysisType, setAnalysisType] = useState<AnalysisType>('outbound');
 
   // init
@@ -60,8 +60,8 @@ const Analysis: React.FC = () => {
 
   const handleAnalysisTypeChange = (type: AnalysisType) => {
     setAnalysisType(type);
-    setSelectedPartner(null);
-    setSelectedProduct(null);
+    setSelectedPartner('All');
+    setSelectedProduct('All');
   };
 
   const activePartners = analysisType === 'outbound' ? customers : suppliers;
