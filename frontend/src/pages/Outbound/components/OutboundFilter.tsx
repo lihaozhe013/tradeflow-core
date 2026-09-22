@@ -113,7 +113,8 @@ const OutboundFilter: FC<OutboundFilterProps> = ({
         ...prev,
         order_number: undefined,
         invoice_number: undefined,
-        receipt_number: undefined
+        receipt_number: undefined,
+        dateRange: [null, null]
       }));
     }
     setAdvancedOpen((open) => !open);
@@ -122,7 +123,7 @@ const OutboundFilter: FC<OutboundFilterProps> = ({
   return (
     <div style={{ marginBottom: 16 }}>
       <Row gutter={16}>
-        <Col span={5}>
+        <Col span={8}>
           <Input
             allowClear
             prefix={<SearchOutlined />}
@@ -132,7 +133,7 @@ const OutboundFilter: FC<OutboundFilterProps> = ({
             onPressEnter={() => handleNumberPressEnter('keyword', keywordInput)}
           />
         </Col>
-        <Col span={4}>
+        <Col span={5}>
           <Select
             allowClear
             showSearch
@@ -152,7 +153,7 @@ const OutboundFilter: FC<OutboundFilterProps> = ({
             filterOption={filterByLabel}
           />
         </Col>
-        <Col span={4}>
+        <Col span={5}>
           <Select
             allowClear
             showSearch
@@ -172,21 +173,12 @@ const OutboundFilter: FC<OutboundFilterProps> = ({
             filterOption={filterByLabel}
           />
         </Col>
-        <Col span={6}>
-          <DatePicker.RangePicker
-            style={{ width: '100%' }}
-            value={rangeValue}
-            onChange={handleDateChange}
-            format="YYYY-MM-DD"
-            placeholder={[t('outbound.startDate') ?? '', t('outbound.endDate') ?? '']}
-          />
-        </Col>
         <Col span={2}>
           <Button type="primary" icon={<SearchOutlined />} onClick={onFilter}>
             {t('outbound.filter')}
           </Button>
         </Col>
-        <Col span={3} style={{ textAlign: 'right' }}>
+        <Col span={4} style={{ textAlign: 'right' }}>
           <Button
             type="link"
             icon={advancedOpen ? <UpOutlined /> : <DownOutlined />}
@@ -197,41 +189,54 @@ const OutboundFilter: FC<OutboundFilterProps> = ({
         </Col>
       </Row>
       {advancedOpen && (
-        <Row gutter={16} style={{ marginTop: 12 }}>
-          <Col span={6}>
-            <Input
-              allowClear
-              placeholder={t('outbound.inputOrderNumber')}
-              value={orderInput}
-              onChange={(event) =>
-                handleNumberChange('order_number', event.target.value, setOrderInput)
-              }
-              onPressEnter={() => handleNumberPressEnter('order_number', orderInput)}
-            />
-          </Col>
-          <Col span={6}>
-            <Input
-              allowClear
-              placeholder={t('outbound.inputInvoiceNumber')}
-              value={invoiceInput}
-              onChange={(event) =>
-                handleNumberChange('invoice_number', event.target.value, setInvoiceInput)
-              }
-              onPressEnter={() => handleNumberPressEnter('invoice_number', invoiceInput)}
-            />
-          </Col>
-          <Col span={6}>
-            <Input
-              allowClear
-              placeholder={t('outbound.inputReceiptNumber')}
-              value={receiptInput}
-              onChange={(event) =>
-                handleNumberChange('receipt_number', event.target.value, setReceiptInput)
-              }
-              onPressEnter={() => handleNumberPressEnter('receipt_number', receiptInput)}
-            />
-          </Col>
-        </Row>
+        <>
+          <Row gutter={16} style={{ marginTop: 12 }}>
+            <Col span={6}>
+              <DatePicker.RangePicker
+                style={{ width: '100%' }}
+                value={rangeValue}
+                onChange={handleDateChange}
+                format="YYYY-MM-DD"
+                placeholder={[t('outbound.startDate') ?? '', t('outbound.endDate') ?? '']}
+              />
+            </Col>
+          </Row>
+          <Row gutter={16} style={{ marginTop: 12 }}>
+            <Col span={6}>
+              <Input
+                allowClear
+                placeholder={t('outbound.inputOrderNumber')}
+                value={orderInput}
+                onChange={(event) =>
+                  handleNumberChange('order_number', event.target.value, setOrderInput)
+                }
+                onPressEnter={() => handleNumberPressEnter('order_number', orderInput)}
+              />
+            </Col>
+            <Col span={6}>
+              <Input
+                allowClear
+                placeholder={t('outbound.inputInvoiceNumber')}
+                value={invoiceInput}
+                onChange={(event) =>
+                  handleNumberChange('invoice_number', event.target.value, setInvoiceInput)
+                }
+                onPressEnter={() => handleNumberPressEnter('invoice_number', invoiceInput)}
+              />
+            </Col>
+            <Col span={6}>
+              <Input
+                allowClear
+                placeholder={t('outbound.inputReceiptNumber')}
+                value={receiptInput}
+                onChange={(event) =>
+                  handleNumberChange('receipt_number', event.target.value, setReceiptInput)
+                }
+                onPressEnter={() => handleNumberPressEnter('receipt_number', receiptInput)}
+              />
+            </Col>
+          </Row>
+        </>
       )}
     </div>
   );
