@@ -7,6 +7,10 @@ let customerCode = '';
 let freshProductCode = '';
 let freshProductModel = '';
 let createdOutboundId = -1;
+let keywordTag = '';
+let keywordProductCode = '';
+let keywordProductModel = '';
+let keywordFixtureId = -1;
 
 beforeAll(async () => {
   const customer = await prisma.partner.findFirst({
@@ -22,11 +26,35 @@ beforeAll(async () => {
   await prisma.product.create({
     data: { code: freshProductCode, product_model: freshProductModel }
   });
+
+  keywordTag = `KW${uniqueSuffix().slice(-6)}`;
+  keywordProductCode = `PRD-KW-${keywordTag}`;
+  keywordProductModel = `MOD-KW-${keywordTag}`;
+  await prisma.product.create({
+    data: { code: keywordProductCode, product_model: keywordProductModel }
+  });
+  const keywordFixture = await prisma.outboundRecord.create({
+    data: {
+      customer_code: customerCode,
+      product_code: keywordProductCode,
+      quantity: 1,
+      unit_price: 1,
+      total_price: 1,
+      outbound_date: '2026-09-10',
+      order_number: `${keywordTag}-ORD`,
+      invoice_number: `${keywordTag}-INV`,
+      receipt_number: `${keywordTag}-RCPT`
+    }
+  });
+  keywordFixtureId = keywordFixture.id;
 });
 
 afterAll(async () => {
   if (createdOutboundId >= 0) {
     await prisma.outboundRecord.delete({ where: { id: createdOutboundId } }).catch(() => undefined);
+  }
+  if (keywordFixtureId >= 0) {
+    await prisma.outboundRecord.delete({ where: { id: keywordFixtureId } }).catch(() => undefined);
   }
   await prisma.inventory
     .delete({ where: { product_model: freshProductModel } })
@@ -35,6 +63,13 @@ afterAll(async () => {
     .deleteMany({ where: { product_model: freshProductModel } })
     .catch(() => undefined);
   await prisma.product.delete({ where: { code: freshProductCode } }).catch(() => undefined);
+  await prisma.inventory
+    .delete({ where: { product_model: keywordProductModel } })
+    .catch(() => undefined);
+  await prisma.inventoryLedger
+    .deleteMany({ where: { product_model: keywordProductModel } })
+    .catch(() => undefined);
+  await prisma.product.delete({ where: { code: keywordProductCode } }).catch(() => undefined);
 });
 
 describe('GET /api/outbound', () => {
@@ -82,6 +117,78 @@ describe('GET /api/outbound', () => {
     );
     const sorted = [...prices].sort((a, b) => b - a);
     expect(prices).toEqual(sorted);
+  });
+
+  it('matches keyword across order, invoice, and receipt numbers case-insensitively', async () => {
+    const agent = await authAgent('reader');
+    const res = await agent.get(
+      `/api/outbound?keyword=${keywordTag.toLowerCase()}&page=1&limit=20`
+    );
+    expect(res.status).toBe(200);
+    const rows = res.body.data as { id: number }[];
+    expect(rows.some((row) => row.id === keywordFixtureId)).toBe(true);
+  });
+
+  it('matches keyword inside invoice_number and order_number separately', async () => {
+    const agent = await authAgent('reader');
+    const byInvoice = await agent.get(`/api/outbound?keyword=${keywordTag}-INV&page=1&limit=20`);
+    expect(byInvoice.status).toBe(200);
+    expect((byInvoice.body.data as { id: number }[]).map((row) => row.id)).toEqual([
+      keywordFixtureId
+    ]);
+
+    const byOrder = await agent.get(`/api/outbound?keyword=${keywordTag}-ORD&page=1&limit=20`);
+    expect(byOrder.status).toBe(200);
+    expect((byOrder.body.data as { id: number }[]).map((row) => row.id)).toEqual([
+      keywordFixtureId
+    ]);
+
+    const byReceipt = await agent.get(`/api/outbound?keyword=${keywordTag}-RCPT&page=1&limit=20`);
+    expect(byReceipt.status).toBe(200);
+    expect((byReceipt.body.data as { id: number }[]).map((row) => row.id)).toEqual([
+      keywordFixtureId
+    ]);
+  });
+
+  it('ignores whitespace-only keyword', async () => {
+    const agent = await authAgent('reader');
+    const res = await agent.get('/api/outbound?keyword=%20%20&page=1');
+    expect(res.status).toBe(200);
+    expect(res.body.pagination.total).toBeGreaterThan(0);
+  });
+
+  it('filters by exact number fields with AND semantics', async () => {
+    const agent = await authAgent('reader');
+    const matching = await agent.get(
+      `/api/outbound?order_number=${keywordTag}-ORD&page=1&limit=20`
+    );
+    expect(matching.status).toBe(200);
+    expect((matching.body.data as { id: number }[]).map((row) => row.id)).toEqual([
+      keywordFixtureId
+    ]);
+
+    const conflicting = await agent.get(
+      `/api/outbound?order_number=${keywordTag}-ORD&invoice_number=${keywordTag}-NOMATCH&page=1&limit=20`
+    );
+    expect(conflicting.status).toBe(200);
+    expect(conflicting.body.data).toHaveLength(0);
+  });
+
+  it('combines keyword with date range', async () => {
+    const agent = await authAgent('reader');
+    const inRange = await agent.get(
+      `/api/outbound?keyword=${keywordTag}&start_date=2026-01-01&end_date=2026-12-31&page=1&limit=20`
+    );
+    expect(inRange.status).toBe(200);
+    expect((inRange.body.data as { id: number }[]).map((row) => row.id)).toEqual([
+      keywordFixtureId
+    ]);
+
+    const outOfRange = await agent.get(
+      `/api/outbound?keyword=${keywordTag}&start_date=2020-01-01&end_date=2020-12-31&page=1&limit=20`
+    );
+    expect(outOfRange.status).toBe(200);
+    expect(outOfRange.body.data).toHaveLength(0);
   });
 });
 

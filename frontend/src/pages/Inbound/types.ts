@@ -34,8 +34,12 @@ export type InboundRecord = {
 export type DateRangeValue = readonly [string | null, string | null];
 
 export interface InboundFilters {
+  readonly keyword?: string | undefined;
   readonly supplier_short_name?: string | undefined;
   readonly product_model?: string | undefined;
+  readonly order_number?: string | undefined;
+  readonly invoice_number?: string | undefined;
+  readonly receipt_number?: string | undefined;
   readonly dateRange: DateRangeValue;
 }
 
@@ -78,8 +82,12 @@ export interface ApiListResponse<T> {
 
 export interface FetchParams {
   readonly page?: number;
+  readonly keyword?: string | undefined;
   readonly supplier_short_name?: string | undefined;
   readonly product_model?: string | undefined;
+  readonly order_number?: string | undefined;
+  readonly invoice_number?: string | undefined;
+  readonly receipt_number?: string | undefined;
   readonly start_date?: string | null | undefined;
   readonly end_date?: string | null | undefined;
   readonly sort_field?: string | undefined;

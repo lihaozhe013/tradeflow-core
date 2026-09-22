@@ -17,6 +17,14 @@ function isProvided(val: unknown): boolean {
   );
 }
 
+const NUMBER_FILTER_MAX_LENGTH = 100;
+
+// Query params are untrusted: only accept single string values, trimmed and length-capped.
+function numberFilterValue(val: unknown): string {
+  if (!isProvided(val) || typeof val !== 'string') return '';
+  return val.trim().slice(0, NUMBER_FILTER_MAX_LENGTH);
+}
+
 /**
  * GET /api/inbound
  */
@@ -49,6 +57,27 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
   }
   if (inboundDateFilter.gte || inboundDateFilter.lte) {
     where.inbound_date = inboundDateFilter;
+  }
+
+  const keyword = numberFilterValue(req.query['keyword']);
+  if (keyword) {
+    where.OR = [
+      { order_number: { contains: keyword, mode: 'insensitive' } },
+      { invoice_number: { contains: keyword, mode: 'insensitive' } },
+      { receipt_number: { contains: keyword, mode: 'insensitive' } }
+    ];
+  }
+  const orderNumber = numberFilterValue(req.query['order_number']);
+  if (orderNumber) {
+    where.order_number = { contains: orderNumber, mode: 'insensitive' };
+  }
+  const invoiceNumber = numberFilterValue(req.query['invoice_number']);
+  if (invoiceNumber) {
+    where.invoice_number = { contains: invoiceNumber, mode: 'insensitive' };
+  }
+  const receiptNumber = numberFilterValue(req.query['receipt_number']);
+  if (receiptNumber) {
+    where.receipt_number = { contains: receiptNumber, mode: 'insensitive' };
   }
 
   const sortField = req.query['sort_field'] as string;

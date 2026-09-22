@@ -48,8 +48,12 @@ const Inbound: FC = () => {
   const [batchForm] = Form.useForm<InboundFormValues>();
   const [selectedRowKeys, setSelectedRowKeys] = useState<Key[]>([]);
   const [filters, setFilters] = useState<InboundFilters>({
+    keyword: undefined,
     supplier_short_name: undefined,
     product_model: undefined,
+    order_number: undefined,
+    invoice_number: undefined,
+    receipt_number: undefined,
     dateRange: [null, null]
   });
   const [sorter, setSorter] = useState<SorterState>({});
@@ -79,8 +83,12 @@ const Inbound: FC = () => {
     return Array.isArray(data) ? data : [];
   }, [productsResponse]);
 
+  const keyword = filters.keyword ?? '';
   const supplierShortName = filters.supplier_short_name ?? '';
   const productModel = filters.product_model ?? '';
+  const orderNumber = filters.order_number ?? '';
+  const invoiceNumber = filters.invoice_number ?? '';
+  const receiptNumber = filters.receipt_number ?? '';
   const [startDateRaw, endDateRaw] = filters.dateRange;
   const startDate = startDateRaw ?? '';
   const endDate = endDateRaw ?? '';
@@ -92,8 +100,12 @@ const Inbound: FC = () => {
         const page = params.page ?? 1;
         const query = new URLSearchParams({
           page: String(page),
+          keyword: params.keyword ?? keyword,
           supplier_short_name: params.supplier_short_name ?? supplierShortName,
           product_model: params.product_model ?? productModel,
+          order_number: params.order_number ?? orderNumber,
+          invoice_number: params.invoice_number ?? invoiceNumber,
+          receipt_number: params.receipt_number ?? receiptNumber,
           start_date: params.start_date ?? startDate,
           end_date: params.end_date ?? endDate,
           sort_field: params.sort_field ?? sorter.field ?? '',
@@ -115,7 +127,19 @@ const Inbound: FC = () => {
         setLoading(false);
       }
     },
-    [endDate, get, productModel, sorter.field, sorter.order, startDate, supplierShortName]
+    [
+      endDate,
+      get,
+      invoiceNumber,
+      keyword,
+      orderNumber,
+      productModel,
+      sorter.field,
+      sorter.order,
+      startDate,
+      supplierShortName,
+      receiptNumber
+    ]
   );
 
   useEffect(() => {
