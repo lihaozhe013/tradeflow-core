@@ -3,9 +3,9 @@ import { HashRouter as Router, Routes, Route, Link, Navigate, useLocation } from
 import type { Location } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
-import { Menu, Layout, Alert, Select, Space, Dropdown, Button, Tag } from 'antd';
-import type { MenuProps, SelectProps } from 'antd';
-import { GlobalOutlined, UserOutlined, LogoutOutlined, SettingOutlined } from '@ant-design/icons';
+import { Menu, Layout, Alert, Space, Dropdown, Button, Tag } from 'antd';
+import type { MenuProps } from 'antd';
+import { UserOutlined, LogoutOutlined, SettingOutlined } from '@ant-design/icons';
 import Inbound from '@/pages/Inbound';
 import Outbound from '@/pages/Outbound';
 import Inventory from '@/pages/Inventory';
@@ -25,6 +25,7 @@ import { useAuth } from '@/auth/useAuth';
 import { usePermissions } from '@/auth/usePermissions';
 import ProtectedRoute from '@/auth/ProtectedRoute';
 import LoginPage from '@/pages/Login/LoginPage';
+import LanguageSelector from '@/components/LanguageSelector';
 import type { User } from '@/auth/auth';
 import '@/App.css';
 
@@ -164,57 +165,6 @@ function UserMenu(): React.ReactElement {
           </Space>
         </Button>
       </Dropdown>
-    </Space>
-  );
-}
-
-type LanguageValue = 'zh' | 'en' | 'ko';
-
-interface LanguageOption {
-  readonly value: LanguageValue;
-  readonly label: string;
-  readonly flag: string;
-}
-
-const supportedLanguages: readonly LanguageValue[] = ['zh', 'en', 'ko'] as const;
-
-function LanguageSelector(): React.ReactElement {
-  const { i18n, t } = useTranslation();
-
-  const languageOptions: LanguageOption[] = [
-    { value: 'zh', label: t('common.chinese'), flag: '🇨🇳' },
-    { value: 'en', label: t('common.english'), flag: '🇺🇸' },
-    { value: 'ko', label: t('common.korean'), flag: '🇰🇷' }
-  ];
-
-  const selectOptions: SelectProps<LanguageValue>['options'] = languageOptions.map((option) => ({
-    value: option.value,
-    label: (
-      <Space>
-        <span>{option.flag}</span>
-        <span>{option.label}</span>
-      </Space>
-    )
-  }));
-
-  const currentLanguage = supportedLanguages.includes(i18n.language as LanguageValue)
-    ? (i18n.language as LanguageValue)
-    : 'zh';
-
-  const handleLanguageChange = (value: LanguageValue) => {
-    void i18n.changeLanguage(value);
-  };
-
-  return (
-    <Space>
-      <GlobalOutlined style={{ color: '#666' }} />
-      <Select
-        value={currentLanguage}
-        onChange={handleLanguageChange}
-        style={{ minWidth: 120 }}
-        size="small"
-        options={selectOptions}
-      />
     </Space>
   );
 }

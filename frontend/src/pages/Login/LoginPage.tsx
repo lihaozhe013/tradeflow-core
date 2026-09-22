@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { Form, Input, Button, Card, Alert, Spin, Select, Space } from 'antd';
-import { UserOutlined, LockOutlined, LoginOutlined, GlobalOutlined } from '@ant-design/icons';
+import { Form, Input, Button, Card, Alert, Spin } from 'antd';
+import { UserOutlined, LockOutlined, LoginOutlined } from '@ant-design/icons';
 import { useAuth } from '@/auth/useAuth';
 import { useNavigate, useLocation } from 'react-router-dom';
 import '@/pages/Login/LoginPage.css';
 import { useTranslation } from 'react-i18next';
+import LanguageSelector from '@/components/LanguageSelector';
 
 /**
  * 登录表单值接口
@@ -30,29 +31,11 @@ const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [loginLoading, setLoginLoading] = useState(false);
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
 
   // 获取重定向路径
   const from =
     (location.state as { from?: { pathname?: string } } | undefined)?.from?.pathname ?? '/';
-
-  // 语言选项
-  type LanguageValue = 'zh' | 'en' | 'ko';
-  const supportedLanguages: readonly LanguageValue[] = ['zh', 'en', 'ko'] as const;
-
-  const languageOptions = [
-    { value: 'zh', label: '🇨🇳 中文', flag: '🇨🇳' },
-    { value: 'en', label: '🇺🇸 English', flag: '🇺🇸' },
-    { value: 'ko', label: '🇰🇷 한국어', flag: '🇰🇷' }
-  ];
-
-  const currentLanguage = supportedLanguages.includes(i18n.language as LanguageValue)
-    ? (i18n.language as LanguageValue)
-    : 'zh';
-
-  const handleLanguageChange = (value: LanguageValue) => {
-    void i18n.changeLanguage(value);
-  };
 
   /**
    * 处理表单提交
@@ -173,16 +156,7 @@ const LoginPage: React.FC = () => {
         </Card>
       </div>
       <div style={{ position: 'absolute', top: 16, right: 16 }}>
-        <Space>
-          <GlobalOutlined style={{ color: '#666' }} />
-          <Select
-            value={currentLanguage}
-            onChange={handleLanguageChange}
-            style={{ minWidth: 140 }}
-            size="small"
-            options={languageOptions}
-          />
-        </Space>
+        <LanguageSelector minWidth={140} />
       </div>
     </div>
   );
