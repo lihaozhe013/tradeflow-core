@@ -1,7 +1,9 @@
 import { prisma } from '@/prismaClient';
-import { seedDatabase, MANUAL_USERNAME, MANUAL_PASSWORD } from './seed';
+import { seedDatabase } from './seed';
+import { assertTestDatabaseConfig } from './testDatabaseSafety';
 
 async function main(): Promise<void> {
+  assertTestDatabaseConfig();
   const t0 = Date.now();
   const result = await seedDatabase();
   console.info(
@@ -9,7 +11,6 @@ async function main(): Promise<void> {
       `${result.supplierCodes.length} suppliers, ${result.customerCodes.length} customers, ` +
       `${result.productCodes.length} products, ${result.usernames.length} users.`
   );
-  console.info(`Manual login: ${MANUAL_USERNAME} / ${MANUAL_PASSWORD} (superuser)`);
   await prisma.$disconnect();
 }
 

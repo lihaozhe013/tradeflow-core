@@ -14,6 +14,7 @@
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
     "test:seed": "tsx test/seedRunner.ts",
+    "test:db:setup": "tsx test/setupE2eDatabase.ts",
     "preinstall": "npx only-allow pnpm"
   },
   "dependencies": {

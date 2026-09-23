@@ -28,8 +28,11 @@ node_modules
 /config/
 /backend/cache/
 /backend/config/
+/backend/test-config/
 /build-config/
 /frontend/public/logo.svg
+/frontend/playwright-report/
+/frontend/test-results/
 
 # Dist
 dist/

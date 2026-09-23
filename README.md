@@ -85,3 +85,39 @@ python3 build.py
 # Start the dev server()
 pnpm dev
 ```
+
+### Testing
+
+The project test command runs the complete backend Vitest suite first, reseeds the isolated E2E
+database, and then runs the frontend in Chromium through Playwright. If any stage fails, later
+stages do not run.
+
+1. Create the local test configuration and set its PostgreSQL credentials:
+
+```bash
+mkdir -p backend/test-config
+cp config-example/config/config.e2e.yaml backend/test-config/config.yaml
+```
+
+The test configuration must keep `dbName` set to `tradeflow_e2e` and `server.httpPort` set to
+`18080`. The setup command creates only that database when it is missing and applies the Prisma
+schema without dropping data. The PostgreSQL user needs `CREATEDB`; otherwise create an empty
+`tradeflow_e2e` database manually and rerun the command. The regular `scripts/init_postgres.sql`
+script drops the default `tradeflow` database and must not be used for E2E setup.
+
+2. Prepare the test database and install the Playwright Chromium browser once:
+
+```bash
+pnpm test:setup
+pnpm --dir frontend exec playwright install chromium
+```
+
+3. Run all backend and frontend tests:
+
+```bash
+pnpm test
+```
+
+To run only browser E2E tests, use `pnpm test:e2e`. Playwright reports are written to
+`frontend/playwright-report/`; failure traces and screenshots are written to
+`frontend/test-results/`.

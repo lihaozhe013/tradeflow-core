@@ -1,7 +1,9 @@
 import { prisma } from '@/prismaClient';
-import { seedDatabase, MANUAL_USERNAME, MANUAL_PASSWORD } from './seed';
+import { seedDatabase } from './seed';
+import { assertTestDatabaseConfig } from './testDatabaseSafety';
 
 export default async function globalSetup(): Promise<void> {
+  assertTestDatabaseConfig();
   console.info('[global-setup] Wiping and seeding test database...');
   const t0 = Date.now();
   const result = await seedDatabase();
@@ -10,6 +12,5 @@ export default async function globalSetup(): Promise<void> {
       `(${result.supplierCodes.length} suppliers, ${result.customerCodes.length} customers, ` +
       `${result.productCodes.length} products)`
   );
-  console.info(`[global-setup] Manual login: ${MANUAL_USERNAME} / ${MANUAL_PASSWORD} (superuser)`);
   await prisma.$disconnect();
 }

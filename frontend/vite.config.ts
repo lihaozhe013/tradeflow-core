@@ -5,6 +5,7 @@ import path from 'path';
 import frontendConfig from '../build-config/frontendConfig.json' with { type: 'json' };
 
 const frontendRoot = process.cwd();
+const apiTarget = process.env['TRADEFLOW_API_URL'] ?? frontendConfig.server.url;
 
 // Compute the short git commit hash at build-time; fall back to 'unknown' if unavailable
 function getCommitHash(): string {
@@ -44,12 +45,12 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        target: frontendConfig.server.url,
+        target: apiTarget,
         changeOrigin: true,
         secure: false
       },
       '/exported-files': {
-        target: frontendConfig.server.url,
+        target: apiTarget,
         changeOrigin: true,
         secure: false
       }
@@ -83,7 +84,7 @@ export default defineConfig({
     port: 4173,
     proxy: {
       '/api': {
-        target: frontendConfig.server.url,
+        target: apiTarget,
         changeOrigin: true,
         secure: false
       }

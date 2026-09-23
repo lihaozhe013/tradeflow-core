@@ -10,6 +10,15 @@ function getAppRoot(): string {
 
 export function getConfigDir(): string {
   const appRoot = getAppRoot();
+  const configuredDir = process.env['TRADEFLOW_CONFIG_DIR'];
+  if (configuredDir) {
+    const resolvedDir = path.resolve(configuredDir);
+    if (!fs.existsSync(resolvedDir) || !fs.statSync(resolvedDir).isDirectory()) {
+      throw new Error(`Configured TradeFlow config directory does not exist: ${resolvedDir}`);
+    }
+    return resolvedDir;
+  }
+
   const candidatePaths = ['config', '../config', '../../config'];
   const resolvedCandidatePaths = candidatePaths.map((relativePath) =>
     path.resolve(appRoot, relativePath)
