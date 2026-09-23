@@ -89,8 +89,8 @@ pnpm dev
 ### Testing
 
 The project test command runs the complete backend Vitest suite first, reseeds the isolated E2E
-database, and then runs the frontend in Chromium through Playwright. If any stage fails, later
-stages do not run.
+database, and then runs the frontend in a visible Chromium window through Playwright. If any stage
+fails, later stages do not run.
 
 1. Create the local test configuration and set its PostgreSQL credentials:
 

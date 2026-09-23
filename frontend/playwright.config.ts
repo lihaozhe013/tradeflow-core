@@ -22,6 +22,7 @@ export default defineConfig({
   outputDir: 'test-results',
   use: {
     baseURL: frontendUrl,
+    headless: false,
     screenshot: 'only-on-failure',
     trace: 'retain-on-failure'
   },
