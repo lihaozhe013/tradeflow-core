@@ -10,6 +10,7 @@ const configDir = path.resolve(
 );
 const backendUrl = 'http://127.0.0.1:18080';
 const frontendUrl = 'http://127.0.0.1:15173';
+const headless = ['1', 'true'].includes(process.env['TRADEFLOW_E2E_HEADLESS']?.toLowerCase() ?? '');
 
 export default defineConfig({
   testDir: './e2e',
@@ -22,7 +23,7 @@ export default defineConfig({
   outputDir: 'test-results',
   use: {
     baseURL: frontendUrl,
-    headless: false,
+    headless,
     screenshot: 'only-on-failure',
     trace: 'retain-on-failure'
   },

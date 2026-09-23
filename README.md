@@ -112,12 +112,15 @@ pnpm test:setup
 pnpm --dir frontend exec playwright install chromium
 ```
 
-3. Run all backend and frontend tests:
+3. Run all backend and frontend tests. The browser suite exercises every application page and its
+   main UI actions in English, including CRUD, filters, batch operations, payments, reports,
+   exports, permissions, and narrow-screen layouts:
 
 ```bash
 pnpm test
 ```
 
-To run only browser E2E tests, use `pnpm test:e2e`. Playwright reports are written to
-`frontend/playwright-report/`; failure traces and screenshots are written to
+To run only browser E2E tests, use `pnpm test:e2e`. Playwright opens a visible Chromium window by
+default. Set `TRADEFLOW_E2E_HEADLESS=true` to run it without a visible window. Playwright reports
+are written to `frontend/playwright-report/`; failure traces and screenshots are written to
 `frontend/test-results/`.
