@@ -1,13 +1,13 @@
-import { expect, test } from '@playwright/test';
-import { E2eRecords, logInAs, uniqueId, useEnglish } from './support';
+import { expect, test } from './fixtures';
+import { logInAs, paginationButton, uniqueId, useEnglish } from './support';
 
 test.beforeEach(async ({ page }) => useEnglish(page));
 
 test('user administration creates, edits, disables, resets, authenticates, and deletes users', async ({
-  page
+  page,
+  records
 }) => {
   await logInAs(page, 'superuser');
-  const records = new E2eRecords(page);
   const username = uniqueId('e2e_user')
     .toLowerCase()
     .replace(/[^a-z0-9_]/g, '_');
@@ -36,7 +36,7 @@ test('user administration creates, edits, disables, resets, authenticates, and d
     records.track(`/users/${encodeURIComponent(username)}`);
 
     let row = page.getByRole('row').filter({ hasText: username });
-    await expect(row).toContainText('Reader');
+    await expect(row).toContainText('reader');
     await row.getByRole('button', { name: 'Edit' }).click();
     dialog = page.getByRole('dialog');
     await dialog.getByRole('combobox').click();
@@ -49,7 +49,7 @@ test('user administration creates, edits, disables, resets, authenticates, and d
     await dialog.getByRole('button', { name: 'Confirm', exact: true }).click();
     expect((await updateResponse).ok()).toBeTruthy();
     row = page.getByRole('row').filter({ hasText: username });
-    await expect(row).toContainText('Editor');
+    await expect(row).toContainText('editor');
     await expect(row).toContainText('No');
 
     await row.getByRole('button', { name: 'Edit' }).click();
@@ -82,16 +82,19 @@ test('user administration creates, edits, disables, resets, authenticates, and d
     await page.goto('/#/users');
     row = page.getByRole('row').filter({ hasText: username });
     await row.getByRole('button', { name: 'Delete' }).click();
-    await page.getByRole('button', { name: 'Yes', exact: true }).click();
+    await page.getByRole('button', { name: 'Yes' }).click();
+    records.forget(`/users/${encodeURIComponent(username)}`);
     await expect(page.getByRole('row').filter({ hasText: username })).toHaveCount(0);
   } finally {
-    await logInAs(page, 'superuser');
     await records.cleanup();
   }
 });
 
-test('profile and password self-service validate inputs and persist changes', async ({ page }) => {
-  const records = new E2eRecords(page);
+test('profile and password self-service validate inputs and persist changes', async ({
+  page,
+  records
+}) => {
+  await logInAs(page, 'superuser');
   const username = uniqueId('e2e_profile')
     .toLowerCase()
     .replace(/[^a-z0-9_]/g, '_');
@@ -152,24 +155,22 @@ test('profile and password self-service validate inputs and persist changes', as
     await page.getByRole('button', { name: 'Change Password', exact: true }).click();
     expect((await passwordResponse).ok()).toBeTruthy();
 
-    await page.getByRole('button', { name: new RegExp(username, 'i') }).click();
+    await page.getByRole('button', { name: new RegExp(updatedName, 'i') }).click();
     await page.getByText('Log Out', { exact: true }).click();
     await expect(page).toHaveURL(/#\/login$/);
     await page.getByPlaceholder('Username').fill(username);
     await page.getByPlaceholder('Password').fill(updatedPassword);
     await page.getByRole('button', { name: 'Log In' }).click();
-    await expect(page.getByRole('button', { name: new RegExp(username, 'i') })).toBeVisible();
+    await expect(page.getByRole('button', { name: new RegExp(updatedName, 'i') })).toBeVisible();
     await page.goto('/#/users');
     await expect(page.getByLabel('Display Name')).toHaveValue(updatedName);
   } finally {
-    await logInAs(page, 'superuser');
     await records.cleanup();
   }
 });
 
-test('user list pagination changes pages and page sizes', async ({ page }) => {
+test('user list pagination changes pages and page sizes', async ({ page, records }) => {
   await logInAs(page, 'superuser');
-  const records = new E2eRecords(page);
   const prefix = uniqueId('e2e_page_user')
     .toLowerCase()
     .replace(/[^a-z0-9_]/g, '_');
@@ -192,9 +193,9 @@ test('user list pagination changes pages and page sizes', async ({ page }) => {
 
     await page.goto('/#/users');
     await expect(page.getByText(prefix, { exact: false }).first()).toBeVisible();
-    await page.getByRole('button', { name: 'Next Page' }).click();
-    await expect(page.getByRole('button', { name: 'Previous Page' })).toBeEnabled();
-    await page.getByRole('combobox').last().click();
+    await paginationButton(page, 'Next').click();
+    await expect(paginationButton(page, 'Previous')).toBeEnabled();
+    await page.getByLabel('Page Size').click();
     await page.getByText('50 / page', { exact: true }).click();
     await expect(page.getByRole('row').filter({ hasText: prefix })).toHaveCount(7);
   } finally {

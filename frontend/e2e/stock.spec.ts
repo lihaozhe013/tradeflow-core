@@ -1,5 +1,13 @@
-import { expect, test, type Page } from '@playwright/test';
-import { apiRequest, E2eRecords, logInAs, uniqueId, useEnglish } from './support';
+import { type Page } from '@playwright/test';
+import { expect, test } from './fixtures';
+import {
+  apiRequest,
+  type E2eRecords,
+  logInAs,
+  paginationButton,
+  uniqueId,
+  useEnglish
+} from './support';
 
 interface CreatedRecord {
   id: number;
@@ -129,9 +137,9 @@ test.beforeEach(async ({ page }) => {
 });
 
 test('inbound supports create, search, validation, edit, batch update, and delete', async ({
-  page
+  page,
+  records
 }) => {
-  const records = new E2eRecords(page);
   const firstOrder = uniqueId('E2E-IN-ORDER');
   const secondOrder = uniqueId('E2E-IN-ORDER');
 
@@ -141,19 +149,26 @@ test('inbound supports create, search, validation, edit, batch update, and delet
     await page.getByRole('button', { name: 'Add Inbound Record' }).click();
     const emptyDialog = page.getByRole('dialog');
     await emptyDialog.getByRole('button', { name: 'Add', exact: true }).click();
-    await expect(emptyDialog.getByText('Enter supplier code', { exact: true })).toBeVisible();
+    await expect(
+      emptyDialog.locator('.ant-form-item-explain-error').getByText('Enter supplier code', {
+        exact: true
+      })
+    ).toBeVisible();
     await emptyDialog.getByRole('button', { name: 'Cancel', exact: true }).click();
 
-    await createInboundFromUi(page, records, fixture, firstOrder, 8);
+    const firstInboundId = await createInboundFromUi(page, records, fixture, firstOrder, 8);
     await createInboundFromUi(page, records, fixture, secondOrder, 4);
 
     await page.getByRole('button', { name: 'Advanced Filters' }).click();
-    await page.getByPlaceholder('Enter order number').fill(firstOrder);
-    await page.getByPlaceholder('Enter order number').press('Enter');
-    await page.getByRole('button', { name: 'Filter', exact: true }).click();
+    await page.getByPlaceholder('Enter order number').first().fill(firstOrder);
+    await page.getByPlaceholder('Enter order number').first().press('Enter');
+    await page.getByRole('button', { name: /^search Filter$/ }).click();
     await expect(page.getByRole('row').filter({ hasText: firstOrder })).toBeVisible();
-    await page.getByRole('button', { name: 'Collapse', exact: true }).click();
-    await page.getByRole('button', { name: 'Filter', exact: true }).click();
+    await page.getByRole('button', { name: 'Collapse' }).click();
+    await page.getByRole('button', { name: 'Advanced Filters' }).click();
+    await page.getByPlaceholder('Enter order number').first().clear();
+    await page.getByRole('button', { name: /^search Filter$/ }).click();
+    await page.getByRole('button', { name: 'Collapse' }).click();
 
     await page.getByPlaceholder('Search order / invoice / receipt number').fill(firstOrder);
     await page.getByPlaceholder('Search order / invoice / receipt number').press('Enter');
@@ -181,7 +196,7 @@ test('inbound supports create, search, validation, edit, batch update, and delet
     await page.getByRole('columnheader', { name: 'Unit Price' }).click();
     expect((await sortRequest).url()).toContain('sort_field=unit_price');
 
-    await page.getByPlaceholder('Search order / invoice / receipt number').clear();
+    await page.getByPlaceholder('Search order / invoice / receipt number').fill('E2E-IN-ORDER');
     await page.getByPlaceholder('Search order / invoice / receipt number').press('Enter');
     const firstRow = page.getByRole('row').filter({ hasText: firstOrder });
     const secondRow = page.getByRole('row').filter({ hasText: secondOrder });
@@ -205,6 +220,7 @@ test('inbound supports create, search, validation, edit, batch update, and delet
     const firstUpdatedRow = page.getByRole('row').filter({ hasText: firstOrder });
     await firstUpdatedRow.getByRole('button', { name: 'Delete' }).click();
     await page.getByRole('button', { name: 'Confirm', exact: true }).click();
+    records.forget(`/inbound/${firstInboundId}`);
     await expect(page.getByRole('row').filter({ hasText: firstOrder })).toHaveCount(0);
   } finally {
     await records.cleanup();
@@ -212,9 +228,9 @@ test('inbound supports create, search, validation, edit, batch update, and delet
 });
 
 test('outbound supports inventory validation, create, search, edit, batch update, and delete', async ({
-  page
+  page,
+  records
 }) => {
-  const records = new E2eRecords(page);
   const firstOrder = uniqueId('E2E-OUT-ORDER');
   const secondOrder = uniqueId('E2E-OUT-ORDER');
 
@@ -238,19 +254,36 @@ test('outbound supports inventory validation, create, search, edit, batch update
     await validationDialog.getByLabel('Quantity').fill('31');
     await validationDialog.getByText('Manual Input', { exact: true }).click();
     await validationDialog.getByPlaceholder('Enter unit price').fill('3');
+    const oversellResponse = page.waitForResponse(
+      (response) =>
+        response.url().endsWith('/api/outbound') && response.request().method() === 'POST'
+    );
     await validationDialog.getByRole('button', { name: 'Add', exact: true }).click();
-    await expect(validationDialog).toBeVisible();
-    await validationDialog.getByRole('button', { name: 'Cancel', exact: true }).click();
+    const oversell = await oversellResponse;
+    expect(oversell.ok()).toBeTruthy();
+    const oversellRecord = (await oversell.json()) as CreatedRecord;
+    records.track(`/outbound/${oversellRecord.id}`);
+    await expect(validationDialog).toBeHidden();
 
-    await createOutboundFromUi(page, records, fixture, firstOrder, 5);
+    await page.goto('/#/inventory');
+    await page.getByPlaceholder('Search Product Model').fill(fixture.product.product_model);
+    const overdrawInventoryRow = page.getByRole('row').filter({
+      hasText: fixture.product.product_model
+    });
+    await expect(overdrawInventoryRow).toContainText('-1');
+
+    const firstOutboundId = await createOutboundFromUi(page, records, fixture, firstOrder, 5);
     await createOutboundFromUi(page, records, fixture, secondOrder, 4);
     await page.getByRole('button', { name: 'Advanced Filters' }).click();
-    await page.getByPlaceholder('Enter order number').fill(firstOrder);
-    await page.getByPlaceholder('Enter order number').press('Enter');
-    await page.getByRole('button', { name: 'Filter', exact: true }).click();
+    await page.getByPlaceholder('Enter order number').first().fill(firstOrder);
+    await page.getByPlaceholder('Enter order number').first().press('Enter');
+    await page.getByRole('button', { name: /^search Filter$/ }).click();
     await expect(page.getByRole('row').filter({ hasText: firstOrder })).toBeVisible();
-    await page.getByRole('button', { name: 'Collapse', exact: true }).click();
-    await page.getByRole('button', { name: 'Filter', exact: true }).click();
+    await page.getByRole('button', { name: 'Collapse' }).click();
+    await page.getByRole('button', { name: 'Advanced Filters' }).click();
+    await page.getByPlaceholder('Enter order number').first().clear();
+    await page.getByRole('button', { name: /^search Filter$/ }).click();
+    await page.getByRole('button', { name: 'Collapse' }).click();
 
     await page.getByPlaceholder('Search order / invoice / receipt number').fill(firstOrder);
     await page.getByPlaceholder('Search order / invoice / receipt number').press('Enter');
@@ -277,7 +310,7 @@ test('outbound supports inventory validation, create, search, edit, batch update
     await page.getByRole('columnheader', { name: 'Unit Price' }).click();
     expect((await sortRequest).url()).toContain('sort_field=unit_price');
 
-    await page.getByPlaceholder('Search order / invoice / receipt number').clear();
+    await page.getByPlaceholder('Search order / invoice / receipt number').fill('E2E-OUT-ORDER');
     await page.getByPlaceholder('Search order / invoice / receipt number').press('Enter');
     await page.getByRole('row').filter({ hasText: firstOrder }).getByRole('checkbox').check();
     await page.getByRole('row').filter({ hasText: secondOrder }).getByRole('checkbox').check();
@@ -302,19 +335,22 @@ test('outbound supports inventory validation, create, search, edit, batch update
       .getByRole('button', { name: 'Delete' })
       .click();
     await page.getByRole('button', { name: 'Confirm', exact: true }).click();
+    records.forget(`/outbound/${firstOutboundId}`);
     await expect(page.getByRole('row').filter({ hasText: firstOrder })).toHaveCount(0);
 
     await page.goto('/#/inventory');
     await page.getByPlaceholder('Search Product Model').fill(fixture.product.product_model);
     const inventoryRow = page.getByRole('row').filter({ hasText: fixture.product.product_model });
-    await expect(inventoryRow).toContainText('19');
+    await expect(inventoryRow).toContainText('-5');
   } finally {
     await records.cleanup();
   }
 });
 
-test('inventory filters, sorts, paginates, and recalculates through the UI', async ({ page }) => {
-  const records = new E2eRecords(page);
+test('inventory filters, sorts, paginates, and recalculates through the UI', async ({
+  page,
+  records
+}) => {
   const suffix = uniqueId('E2E-INVENTORY');
   const supplier = {
     code: `${suffix}-SUP`,
@@ -359,9 +395,9 @@ test('inventory filters, sorts, paginates, and recalculates through the UI', asy
     await page.getByPlaceholder('Search Product Model').clear();
     await page.getByRole('columnheader', { name: 'Product Model' }).click();
     await expect(page.getByRole('row').nth(1)).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Next Page' })).toBeEnabled();
-    await page.getByRole('button', { name: 'Next Page' }).click();
-    await expect(page.getByRole('button', { name: 'Previous Page' })).toBeEnabled();
+    await expect(paginationButton(page, 'Next')).toBeEnabled();
+    await paginationButton(page, 'Next').click();
+    await expect(paginationButton(page, 'Previous')).toBeEnabled();
   } finally {
     await records.cleanup();
   }
@@ -373,13 +409,17 @@ test('overview refreshes analytics, opens stock details, and exposes quick stock
   await page.goto('/#/overview');
   await expect(page.getByText('Total Sales', { exact: true })).toBeVisible();
   const monthlyCard = page.locator('.ant-card').filter({ hasText: 'Monthly Inventory Change' });
+  const refreshResponse = page.waitForResponse(
+    (response) =>
+      response.url().endsWith('/api/overview/stats') && response.request().method() === 'POST'
+  );
+  await page.getByRole('button', { name: 'Refresh Analytics' }).click();
+  expect((await refreshResponse).ok()).toBeTruthy();
+  await expect(page.getByRole('button', { name: 'Refresh Analytics' })).toBeEnabled();
   await expect(monthlyCard.getByText('Current Inventory', { exact: true })).toBeVisible();
   await monthlyCard.getByRole('combobox').click();
   await page.locator('.ant-select-item-option').nth(1).click();
   await expect(monthlyCard.getByText('Monthly Change', { exact: true })).toBeVisible();
-
-  await page.getByRole('button', { name: 'Refresh Analytics' }).click();
-  await expect(page.getByRole('button', { name: 'Refresh Analytics' })).toBeEnabled();
   await page.getByRole('button', { name: 'View Details' }).click();
   const outOfStockDialog = page.getByRole('dialog');
   await expect(outOfStockDialog).toBeVisible();
@@ -393,11 +433,22 @@ test('overview refreshes analytics, opens stock details, and exposes quick stock
 });
 
 test('overview isolates a failed top-sales chart request', async ({ page }) => {
-  await page.route('**/api/overview/top-sales-products', (route) =>
-    route.fulfill({ status: 503, contentType: 'application/json', body: '{}' })
-  );
+  await page.route('**/api/**', (route) => {
+    const pathname = new URL(route.request().url()).pathname;
+    if (pathname.endsWith('/api/overview/top-sales-products')) {
+      return route.fulfill({ status: 503, contentType: 'application/json', body: '{}' });
+    }
+    return route.continue();
+  });
   await page.goto('/#/overview');
   await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible();
-  await expect(page.getByRole('alert')).toBeVisible();
+  const failedChartRequest = page.waitForResponse(
+    (response) =>
+      response.url().includes('/api/overview/top-sales-products') && response.status() === 503
+  );
+  await page.getByRole('button', { name: 'Refresh Analytics' }).click();
+  await failedChartRequest;
+  await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible();
+  await expect(page.locator('.ant-alert-error')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Quick Inbound' })).toBeVisible();
 });

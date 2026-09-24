@@ -1,6 +1,13 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 import type { Page } from '@playwright/test';
-import { apiRequest, E2eRecords, logInAs, uniqueId, useEnglish } from './support';
+import {
+  apiRequest,
+  type E2eRecords,
+  logInAs,
+  paginationButton,
+  uniqueId,
+  useEnglish
+} from './support';
 
 interface PartnerFixture {
   code: string;
@@ -92,9 +99,9 @@ async function fillPayment(page: Page, remark: string): Promise<void> {
   const dialog = page.getByRole('dialog');
   await dialog.getByPlaceholder('Enter payment amount').fill('12.5');
   await dialog.getByPlaceholder('Select payment date').click();
-  await page.locator('.ant-picker-cell-today button').click();
-  await dialog.getByPlaceholder('Select payment method').click();
-  await page.getByText('cash', { exact: true }).last().click();
+  await page.locator('.ant-picker-cell-today').click();
+  await dialog.getByRole('combobox', { name: /Payment Method/ }).click();
+  await page.getByText('Cash', { exact: true }).last().click();
   await dialog.getByPlaceholder('Enter remark (optional)').fill(remark);
 }
 
@@ -104,18 +111,18 @@ test.beforeEach(async ({ page }) => {
 });
 
 test('receivables support filtering, payment create/edit/delete, details, and invoice view', async ({
-  page
+  page,
+  records
 }) => {
-  const records = new E2eRecords(page);
   const remark = uniqueId('E2E-RECEIPT');
 
   try {
     const fixture = await paymentFixtures(page, records, 'receivable');
     await page.goto('/#/receivable');
-    await expect(page.getByRole('button', { name: 'Next Page' })).toBeEnabled();
-    await page.getByRole('button', { name: 'Next Page' }).click();
-    await expect(page.getByRole('button', { name: 'Previous Page' })).toBeEnabled();
-    await page.getByRole('button', { name: 'Previous Page' }).click();
+    await expect(paginationButton(page, 'Next')).toBeEnabled();
+    await paginationButton(page, 'Next').click();
+    await expect(paginationButton(page, 'Previous')).toBeEnabled();
+    await paginationButton(page, 'Previous').click();
     const sortRequest = page.waitForRequest(
       (request) =>
         request.url().includes('/api/receivable?') &&
@@ -179,14 +186,12 @@ test('receivables support filtering, payment create/edit/delete, details, and in
       .filter({ has: page.locator('[aria-label="delete"]') })
       .click();
     await page.getByRole('button', { name: 'OK', exact: true }).last().click();
+    records.forget(`/receivable/payments/${payment.id}`);
     await expect(dialog.getByRole('row').filter({ hasText: remark })).toHaveCount(0);
 
     await dialog.getByRole('button', { name: 'View Invoiced Details' }).click();
     const invoiceDialog = page.getByRole('dialog').last();
     await expect(invoiceDialog.getByText('Invoiced Details', { exact: false })).toBeVisible();
-    await expect(
-      invoiceDialog.getByRole('row').filter({ hasText: fixture.invoiceNumber })
-    ).toBeVisible();
     const refreshInvoiceResponse = page.waitForResponse(
       (candidate) =>
         candidate.url().includes(`/api/receivable/invoices/refresh/${fixture.customer.code}`) &&
@@ -194,8 +199,11 @@ test('receivables support filtering, payment create/edit/delete, details, and in
     );
     await invoiceDialog.getByRole('button', { name: 'Refresh Cache' }).click();
     expect((await refreshInvoiceResponse).ok()).toBeTruthy();
+    await expect(
+      invoiceDialog.getByRole('row').filter({ hasText: fixture.invoiceNumber })
+    ).toBeVisible();
     await invoiceDialog.getByRole('button', { name: 'Close' }).click();
-    await dialog.getByRole('button', { name: 'Close' }).click();
+    await dialog.first().getByRole('button', { name: 'Close' }).click();
 
     await page.getByRole('button', { name: 'Refresh' }).click();
     await expect(page.getByText('Data refreshed', { exact: true })).toBeVisible();
@@ -205,18 +213,18 @@ test('receivables support filtering, payment create/edit/delete, details, and in
 });
 
 test('payables support payment, supplier details, invoice listing, refresh, and search', async ({
-  page
+  page,
+  records
 }) => {
-  const records = new E2eRecords(page);
   const remark = uniqueId('E2E-PAYMENT');
 
   try {
     const fixture = await paymentFixtures(page, records, 'payable');
     await page.goto('/#/payable');
-    await expect(page.getByRole('button', { name: 'Next Page' })).toBeEnabled();
-    await page.getByRole('button', { name: 'Next Page' }).click();
-    await expect(page.getByRole('button', { name: 'Previous Page' })).toBeEnabled();
-    await page.getByRole('button', { name: 'Previous Page' }).click();
+    await expect(paginationButton(page, 'Next')).toBeEnabled();
+    await paginationButton(page, 'Next').click();
+    await expect(paginationButton(page, 'Previous')).toBeEnabled();
+    await paginationButton(page, 'Previous').click();
     const sortRequest = page.waitForRequest(
       (request) =>
         request.url().includes('/api/payable?') &&
@@ -237,9 +245,6 @@ test('payables support payment, supplier details, invoice listing, refresh, and 
     await details.getByRole('button', { name: 'View Invoiced Details' }).click();
     const invoiceDialog = page.getByRole('dialog').last();
     await expect(invoiceDialog.getByRole('columnheader', { name: 'Invoice Number' })).toBeVisible();
-    await expect(
-      invoiceDialog.getByRole('row').filter({ hasText: fixture.invoiceNumber })
-    ).toBeVisible();
     const refreshInvoiceResponse = page.waitForResponse(
       (candidate) =>
         candidate.url().includes(`/api/payable/invoices/refresh/${fixture.supplier.code}`) &&
@@ -247,6 +252,9 @@ test('payables support payment, supplier details, invoice listing, refresh, and 
     );
     await invoiceDialog.getByRole('button', { name: 'Refresh Cache' }).click();
     expect((await refreshInvoiceResponse).ok()).toBeTruthy();
+    await expect(
+      invoiceDialog.getByRole('row').filter({ hasText: fixture.invoiceNumber })
+    ).toBeVisible();
     await invoiceDialog.getByRole('button', { name: 'Close' }).click();
     await details.getByRole('button', { name: 'Add Payment' }).click();
     await fillPayment(page, remark);
@@ -291,6 +299,7 @@ test('payables support payment, supplier details, invoice listing, refresh, and 
       .filter({ has: page.locator('[aria-label="delete"]') })
       .click();
     await page.getByRole('button', { name: 'OK', exact: true }).last().click();
+    records.forget(`/payable/payments/${payment.id}`);
     await expect(finalDetails.getByRole('row').filter({ hasText: remark })).toHaveCount(0);
     await finalDetails.getByRole('button', { name: 'Close' }).click();
 

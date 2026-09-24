@@ -1,5 +1,6 @@
-import { expect, test, type Page } from '@playwright/test';
-import { apiRequest, E2eRecords, logInAs, uniqueId, useEnglish } from './support';
+import { type Page } from '@playwright/test';
+import { expect, test } from './fixtures';
+import { apiRequest, type E2eRecords, logInAs, uniqueId, useEnglish } from './support';
 
 interface CreatedRecord {
   id: number;
@@ -94,7 +95,7 @@ async function createAnalysisFixtures(
 async function expectExcelDownload(page: Page, buttonName: string): Promise<void> {
   const [download] = await Promise.all([
     page.waitForEvent('download'),
-    page.getByRole('button', { name: buttonName, exact: true }).click()
+    page.getByRole('button', { name: buttonName }).click()
   ]);
   expect(download.suggestedFilename()).toMatch(/\.xlsx$/i);
 }
@@ -105,64 +106,85 @@ test.beforeEach(async ({ page }) => {
 });
 
 test('analysis filters sales and purchases and supports normal and grouped exports', async ({
-  page
+  page,
+  records
 }) => {
-  const records = new E2eRecords(page);
-
   try {
     const fixture = await createAnalysisFixtures(page, records);
     await page.goto('/#/analysis');
     await expect(page.getByRole('heading', { name: 'Data Analysis' })).toBeVisible();
-    await page.getByPlaceholder('Select customer').fill(fixture.customer.code);
+    const partnerFilter = page.getByRole('combobox').nth(0);
+    const productFilter = page.getByRole('combobox').nth(1);
+    await partnerFilter.fill(fixture.customer.code);
     await page.getByText(new RegExp(fixture.customer.code)).last().click();
-    await page.getByPlaceholder('Select product').fill(fixture.product.product_model);
+    await productFilter.fill(fixture.product.product_model);
     await page.getByText(new RegExp(fixture.product.product_model)).last().click();
     await expect(page.getByText('Analysis Conditions', { exact: false })).toBeVisible();
-    await expect(page.getByText(fixture.customer.short_name, { exact: true })).toBeVisible();
-    await expect(page.getByText(fixture.product.product_model, { exact: true })).toBeVisible();
+    const conditions = page.getByRole('alert').filter({ hasText: 'Analysis Conditions:' });
+    await expect(conditions).toContainText(fixture.customer.short_name);
+    await expect(conditions).toContainText(fixture.product.product_model);
     await expect(
       page.getByRole('row').filter({ hasText: fixture.product.product_model })
     ).toBeVisible();
 
     const normalDownload = page.waitForEvent('download');
-    await page.getByRole('button', { name: 'Export Data', exact: true }).click();
+    await page.getByRole('button', { name: 'Export Data' }).click();
     expect((await normalDownload).suggestedFilename()).toMatch(/\.xlsx$/i);
 
-    await page.getByPlaceholder('Select customer').clear();
-    await page.getByPlaceholder('Select product').clear();
-    await page.getByRole('button', { name: 'Export Data', exact: true }).click();
+    await partnerFilter.fill('All');
+    await productFilter.fill('All');
+    await expect(page.getByRole('button', { name: 'Export Data' })).toBeEnabled();
+    await page.getByRole('button', { name: 'Export Data' }).click();
     const advancedDialog = page.getByRole('dialog');
     await expect(
       advancedDialog.getByText('Advanced Export Options', { exact: true })
     ).toBeVisible();
-    const groupedDownload = page.waitForEvent('download');
-    await advancedDialog.getByRole('button', { name: 'Export by Customer', exact: true }).click();
-    expect((await groupedDownload).suggestedFilename()).toMatch(/\.xlsx$/i);
+    const groupedResponse = page.waitForResponse(
+      (response) =>
+        response.url().endsWith('/api/export/advanced-analysis') &&
+        response.request().method() === 'POST'
+    );
+    await advancedDialog.getByRole('button', { name: 'Export by Customer' }).click();
+    const groupedExport = await groupedResponse;
+    expect(groupedExport.ok()).toBeTruthy();
+    expect(groupedExport.headers()['content-type']).toContain('spreadsheetml.sheet');
+    expect(groupedExport.headers()['content-disposition']).toContain('attachment');
 
-    await page.getByRole('radio', { name: 'Purchase' }).click();
-    await page.getByPlaceholder('Select Supplier').fill(fixture.supplier.code);
+    await page.getByText('Purchase', { exact: true }).click();
+    await partnerFilter.fill(fixture.supplier.code);
     await page.getByText(new RegExp(fixture.supplier.code)).last().click();
-    await expect(page.getByText(fixture.supplier.short_name, { exact: true })).toBeVisible();
+    await productFilter.fill(fixture.product.product_model);
+    await page.getByText(new RegExp(fixture.product.product_model)).last().click();
+    await expect(page.getByRole('alert').filter({ hasText: 'Analysis Conditions:' })).toContainText(
+      fixture.supplier.short_name
+    );
     await expect(
       page.getByRole('row').filter({ hasText: fixture.product.product_model })
     ).toBeVisible();
 
-    await page.getByPlaceholder('Select Supplier').clear();
-    await page.getByRole('button', { name: 'Export Data', exact: true }).click();
+    await partnerFilter.fill('All');
+    await productFilter.fill('All');
+    await page.getByRole('button', { name: 'Export Data' }).click();
     const supplierExport = page.getByRole('dialog');
-    const purchaseDownload = page.waitForEvent('download');
-    await supplierExport.getByRole('button', { name: 'Export by Supplier', exact: true }).click();
-    expect((await purchaseDownload).suggestedFilename()).toMatch(/\.xlsx$/i);
+    const supplierResponse = page.waitForResponse(
+      (response) =>
+        response.url().endsWith('/api/export/advanced-analysis') &&
+        response.request().method() === 'POST'
+    );
+    await supplierExport.getByRole('button', { name: 'Export by Supplier' }).click();
+    const supplierExportResponse = await supplierResponse;
+    expect(supplierExportResponse.ok()).toBeTruthy();
+    expect(supplierExportResponse.headers()['content-type']).toContain('spreadsheetml.sheet');
+    expect(supplierExportResponse.headers()['content-disposition']).toContain('attachment');
   } finally {
     await records.cleanup();
   }
 });
 
 test('export page downloads every report category and handles empty or failed responses', async ({
-  page
+  page,
+  records
 }) => {
-  const records = new E2eRecords(page);
-
   try {
     const fixture = await createAnalysisFixtures(
       page,

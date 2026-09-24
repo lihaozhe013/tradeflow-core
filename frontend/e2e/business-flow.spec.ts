@@ -1,23 +1,8 @@
-import { expect, test, type Page } from '@playwright/test';
-
-interface CreatedRecords {
-  supplierCode?: string;
-  supplierName?: string;
-  customerCode?: string;
-  customerName?: string;
-  productCode?: string;
-  productModel?: string;
-  inboundId?: number;
-  outboundId?: number;
-}
-
-const records: CreatedRecords = {};
+import { type Page } from '@playwright/test';
+import { expect, test } from './fixtures';
+import type { E2eRecords } from './support';
 
 test.beforeEach(async ({ page }) => {
-  for (const key of Object.keys(records) as Array<keyof CreatedRecords>) {
-    delete records[key];
-  }
-
   await page.addInitScript(() => {
     window.localStorage.setItem('tradeflow.language', 'en');
   });
@@ -45,6 +30,7 @@ async function createdResponse(page: Page, endpoint: string): Promise<Record<str
 
 async function createPartner(
   page: Page,
+  records: E2eRecords,
   values: { code: string; shortName: string; fullName: string; type: 'Supplier' | 'Customer' }
 ): Promise<void> {
   await page.goto('/#/partners');
@@ -64,51 +50,13 @@ async function createPartner(
   await dialog.getByRole('button', { name: 'Add', exact: true }).click();
   const response = await responsePromise;
   expect(response.ok()).toBeTruthy();
-  if (values.type === 'Supplier') records.supplierName = values.shortName;
-  else records.customerName = values.shortName;
+  records.track(`/partners/${encodeURIComponent(values.shortName)}`);
   await expect(dialog).toBeHidden();
 }
 
-async function cleanup(page: Page): Promise<void> {
-  const token = await page.evaluate(() => window.localStorage.getItem('auth_token'));
-  if (!token) return;
-
-  const apiUrl = 'http://127.0.0.1:18080/api';
-  const headers = { Authorization: `Bearer ${token}` };
-  const transactions = [
-    ['outbound', records.outboundId],
-    ['inbound', records.inboundId]
-  ] as const;
-
-  for (const [resource, id] of transactions) {
-    if (id !== undefined) {
-      await page.request.delete(`${apiUrl}/${resource}/${id}`, { headers });
-    }
-  }
-
-  if (records.productCode) {
-    await page.request.delete(`${apiUrl}/products/${encodeURIComponent(records.productCode)}`, {
-      headers
-    });
-  }
-  if (records.customerName) {
-    await page.request.delete(`${apiUrl}/partners/${encodeURIComponent(records.customerName)}`, {
-      headers
-    });
-  }
-  if (records.supplierName) {
-    await page.request.delete(`${apiUrl}/partners/${encodeURIComponent(records.supplierName)}`, {
-      headers
-    });
-  }
-}
-
-test.afterEach(async ({ page }) => {
-  await cleanup(page);
-});
-
 test('creates partners and a product, records inbound and outbound stock, and verifies inventory', async ({
-  page
+  page,
+  records
 }) => {
   const suffix = `${Date.now()}-${Math.floor(Math.random() * 10_000)}`;
   const supplierCode = `E2E-SUP-${suffix}`;
@@ -119,13 +67,13 @@ test('creates partners and a product, records inbound and outbound stock, and ve
   const productModel = `E2E-MODEL-${suffix}`;
 
   await logIn(page);
-  await createPartner(page, {
+  await createPartner(page, records, {
     code: supplierCode,
     shortName: supplierName,
     fullName: `${supplierName} Ltd.`,
     type: 'Supplier'
   });
-  await createPartner(page, {
+  await createPartner(page, records, {
     code: customerCode,
     shortName: customerName,
     fullName: `${customerName} Ltd.`,
@@ -164,9 +112,9 @@ test('creates partners and a product, records inbound and outbound stock, and ve
     return url.pathname === '/api/products' && response.request().method() === 'POST';
   });
   await productDialog.getByRole('button', { name: 'Add', exact: true }).click();
-  expect((await productResponse).ok()).toBeTruthy();
-  records.productCode = productCode;
-  records.productModel = productModel;
+  const productResponseResult = await productResponse;
+  expect(productResponseResult.ok()).toBeTruthy();
+  records.track(`/products/${encodeURIComponent(productCode)}`);
   await expect(productDialog).toBeHidden();
 
   await page.goto('/#/inbound');
@@ -180,7 +128,8 @@ test('creates partners and a product, records inbound and outbound stock, and ve
   await inboundDialog.getByPlaceholder('Enter unit price').fill('2');
   const inboundResponse = createdResponse(page, 'inbound');
   await inboundDialog.getByRole('button', { name: 'Add', exact: true }).click();
-  records.inboundId = Number((await inboundResponse).id);
+  const inbound = await inboundResponse;
+  records.track(`/inbound/${Number(inbound.id)}`);
   await expect(inboundDialog).toBeHidden();
 
   await page.goto('/#/outbound');
@@ -194,7 +143,8 @@ test('creates partners and a product, records inbound and outbound stock, and ve
   await outboundDialog.getByPlaceholder('Enter unit price').fill('3');
   const outboundResponse = createdResponse(page, 'outbound');
   await outboundDialog.getByRole('button', { name: 'Add', exact: true }).click();
-  records.outboundId = Number((await outboundResponse).id);
+  const outbound = await outboundResponse;
+  records.track(`/outbound/${Number(outbound.id)}`);
   await expect(outboundDialog).toBeHidden();
 
   await page.goto('/#/inventory');

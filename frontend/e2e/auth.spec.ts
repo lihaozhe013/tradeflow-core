@@ -65,6 +65,7 @@ test('enforces reader, editor, and superuser page and action access', async ({ p
   await page.goto('/#/login');
   await logInAs(page, 'editor');
   await expect(page.getByRole('menuitem', { name: 'Overview' })).toBeVisible();
+  await page.goto('/#/partners');
   await expect(page.getByRole('button', { name: 'Add Partner' })).toBeVisible();
   await expect(page.getByText('User List', { exact: true })).toHaveCount(0);
 
@@ -74,7 +75,7 @@ test('enforces reader, editor, and superuser page and action access', async ({ p
   await page.goto('/#/users');
   await expect(page.getByText('User List', { exact: true })).toBeVisible();
   await page.goto('/#/audit');
-  await expect(page.getByPlaceholder('Search username')).toBeVisible();
+  await expect(page.getByPlaceholder('Search by username')).toBeVisible();
 });
 
 test.describe('narrow viewport', () => {

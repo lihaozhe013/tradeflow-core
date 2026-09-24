@@ -1,5 +1,5 @@
-import { expect, test } from '@playwright/test';
-import { apiRequest, E2eRecords, logInAs, uniqueId, useEnglish } from './support';
+import { expect, test } from './fixtures';
+import { apiRequest, logInAs, paginationButton, uniqueId, useEnglish } from './support';
 
 interface CreatedRecord {
   id: number;
@@ -11,19 +11,19 @@ test.beforeEach(async ({ page }) => {
 });
 
 test('partners support validation, creation, filtering, editing, and deletion', async ({
-  page
+  page,
+  records
 }) => {
-  const records = new E2eRecords(page);
   const suffix = uniqueId('E2E-PARTNER');
   const shortName = `${suffix} Supplier`;
   const fullName = `${shortName} Ltd.`;
 
   try {
     await page.goto('/#/partners');
-    await expect(page.getByRole('button', { name: 'Next Page' })).toBeEnabled();
-    await page.getByRole('button', { name: 'Next Page' }).click();
-    await expect(page.getByRole('button', { name: 'Previous Page' })).toBeEnabled();
-    await page.getByRole('button', { name: 'Previous Page' }).click();
+    await expect(paginationButton(page, 'Next')).toBeEnabled();
+    await paginationButton(page, 'Next').click();
+    await expect(paginationButton(page, 'Previous')).toBeEnabled();
+    await paginationButton(page, 'Previous').click();
     await page.getByRole('button', { name: 'Add Partner' }).click();
     let dialog = page.getByRole('dialog');
     await dialog.getByRole('button', { name: 'Add', exact: true }).click();
@@ -32,8 +32,9 @@ test('partners support validation, creation, filtering, editing, and deletion', 
     await dialog.getByPlaceholder('Enter code').fill(suffix);
     await dialog.getByPlaceholder('Enter short name').fill(shortName);
     await dialog.getByPlaceholder('Enter full name').fill(fullName);
-    await dialog.getByRole('combobox').click();
-    await page.getByText('Supplier', { exact: true }).last().click();
+    await dialog.locator('#type').click();
+    await dialog.locator('#type').press('ArrowDown');
+    await dialog.locator('#type').press('Enter');
     const createResponse = page.waitForResponse(
       (response) =>
         response.url().endsWith('/api/partners') && response.request().method() === 'POST'
@@ -42,15 +43,17 @@ test('partners support validation, creation, filtering, editing, and deletion', 
     expect((await createResponse).ok()).toBeTruthy();
     records.track(`/partners/${encodeURIComponent(shortName)}`);
 
-    await page.getByPlaceholder('Enter code').fill(suffix);
+    await page.getByPlaceholder('Enter code').first().fill(suffix);
     await page.getByRole('button', { name: 'Search', exact: true }).click();
     let row = page.getByRole('row').filter({ hasText: shortName });
     await expect(row).toContainText(fullName);
 
-    await page.getByPlaceholder('Enter code').clear();
-    await page.getByPlaceholder('Enter short name').fill(shortName);
-    await page.getByRole('combobox').click();
-    await page.getByRole('option', { name: 'Supplier', exact: true }).click();
+    await page.getByPlaceholder('Enter code').first().clear();
+    await page.getByPlaceholder('Enter short name').first().fill(shortName);
+    const typeFilter = page.getByRole('combobox').first();
+    await typeFilter.click();
+    await typeFilter.press('ArrowDown');
+    await typeFilter.press('Enter');
     await page.getByRole('button', { name: 'Search', exact: true }).click();
     row = page.getByRole('row').filter({ hasText: shortName });
     await expect(row).toContainText('Supplier');
@@ -70,6 +73,7 @@ test('partners support validation, creation, filtering, editing, and deletion', 
 
     await row.getByRole('button', { name: 'Delete' }).click();
     await page.getByRole('button', { name: 'Confirm', exact: true }).click();
+    records.forget(`/partners/${encodeURIComponent(shortName)}`);
     await expect(page.getByRole('row').filter({ hasText: shortName })).toHaveCount(0);
   } finally {
     await records.cleanup();
@@ -77,18 +81,18 @@ test('partners support validation, creation, filtering, editing, and deletion', 
 });
 
 test('products support creation, category and code filtering, editing, and deletion', async ({
-  page
+  page,
+  records
 }) => {
-  const records = new E2eRecords(page);
   const code = uniqueId('E2E-PROD');
   const model = `${code}-MODEL`;
 
   try {
     await page.goto('/#/products');
-    await expect(page.getByRole('button', { name: 'Next Page' })).toBeEnabled();
-    await page.getByRole('button', { name: 'Next Page' }).click();
-    await expect(page.getByRole('button', { name: 'Previous Page' })).toBeEnabled();
-    await page.getByRole('button', { name: 'Previous Page' }).click();
+    await expect(paginationButton(page, 'Next')).toBeEnabled();
+    await paginationButton(page, 'Next').click();
+    await expect(paginationButton(page, 'Previous')).toBeEnabled();
+    await paginationButton(page, 'Previous').click();
     await page.getByRole('button', { name: 'Add Product' }).click();
     let dialog = page.getByRole('dialog');
     await dialog.getByRole('button', { name: 'Add', exact: true }).click();
@@ -100,7 +104,7 @@ test('products support creation, category and code filtering, editing, and delet
     await dialog.getByPlaceholder('Enter code').fill(code);
     await dialog.getByPlaceholder('Enter product model').fill(model);
     await dialog.getByRole('combobox').click();
-    await page.getByRole('option', { name: 'Other', exact: true }).click();
+    await page.getByText('Other', { exact: true }).last().click();
     const createResponse = page.waitForResponse(
       (response) =>
         response.url().endsWith('/api/products') && response.request().method() === 'POST'
@@ -109,40 +113,44 @@ test('products support creation, category and code filtering, editing, and delet
     expect((await createResponse).ok()).toBeTruthy();
     records.track(`/products/${encodeURIComponent(code)}`);
 
-    await page.getByPlaceholder('Enter code').fill(code);
+    await page.getByPlaceholder('Enter code').first().fill(code);
     await page.getByRole('button', { name: 'Search', exact: true }).click();
     let row = page.getByRole('row').filter({ hasText: model });
     await expect(row).toContainText('Other');
 
     await row.getByRole('button', { name: 'Edit' }).click();
     dialog = page.getByRole('dialog');
-    const updatedModel = `${model}-UPDATED`;
-    await dialog.getByPlaceholder('Enter product model').fill(updatedModel);
+    const updatedCategory = 'category 1';
+    await dialog.getByRole('combobox').click();
+    await page.getByText(updatedCategory, { exact: true }).last().click();
     const updateResponse = page.waitForResponse(
       (response) =>
         response.url().includes('/api/products/') && response.request().method() === 'PUT'
     );
     await dialog.getByRole('button', { name: 'Save', exact: true }).click();
     expect((await updateResponse).ok()).toBeTruthy();
-    row = page.getByRole('row').filter({ hasText: updatedModel });
-    await expect(row).toBeVisible();
+    row = page.getByRole('row').filter({ hasText: model });
+    await expect(row).toContainText(updatedCategory);
 
-    await page.getByPlaceholder('Enter code').clear();
+    await page.getByPlaceholder('Enter code').first().clear();
     await page.getByRole('combobox').first().click();
-    await page.getByRole('option', { name: 'Other', exact: true }).click();
+    await page.getByText(updatedCategory, { exact: true }).last().click();
     await page.getByRole('button', { name: 'Search', exact: true }).click();
-    await expect(page.getByRole('row').filter({ hasText: updatedModel })).toBeVisible();
+    await expect(page.getByRole('row').filter({ hasText: model })).toBeVisible();
 
     await row.getByRole('button', { name: 'Delete' }).click();
     await page.getByRole('button', { name: 'Confirm', exact: true }).click();
-    await expect(page.getByRole('row').filter({ hasText: updatedModel })).toHaveCount(0);
+    records.forget(`/products/${encodeURIComponent(code)}`);
+    await expect(page.getByRole('row').filter({ hasText: model })).toHaveCount(0);
   } finally {
     await records.cleanup();
   }
 });
 
-test('product prices support creation, filtering, editing, and deletion', async ({ page }) => {
-  const records = new E2eRecords(page);
+test('product prices support creation, filtering, editing, and deletion', async ({
+  page,
+  records
+}) => {
   const suffix = uniqueId('E2E-PRICE');
   const partner = {
     code: `${suffix}-SUP`,
@@ -164,29 +172,28 @@ test('product prices support creation, filtering, editing, and deletion', async 
     );
     await records.create('/products', product, `/products/${encodeURIComponent(product.code)}`);
     await page.goto('/#/product-prices');
-    await expect(page.getByRole('button', { name: 'Next Page' })).toBeEnabled();
-    await page.getByRole('button', { name: 'Next Page' }).click();
-    await expect(page.getByRole('button', { name: 'Previous Page' })).toBeEnabled();
-    await page.getByRole('button', { name: 'Previous Page' }).click();
+    await expect(paginationButton(page, 'Next')).toBeEnabled();
+    await paginationButton(page, 'Next').click();
+    await expect(paginationButton(page, 'Previous')).toBeEnabled();
+    await paginationButton(page, 'Previous').click();
     await page.getByRole('button', { name: 'Add Price' }).click();
     let dialog = page.getByRole('dialog');
     await dialog.getByRole('button', { name: 'Add', exact: true }).click();
-    await expect(dialog.getByText('Select partner', { exact: true })).toBeVisible();
-    await expect(dialog.getByText('Select product model', { exact: true })).toBeVisible();
-    await expect(dialog.getByText('Enter unit price', { exact: true })).toBeVisible();
-    await dialog.getByRole('button', { name: 'Cancel', exact: true }).click();
-    await page.getByRole('button', { name: 'Add Price' }).click();
-    dialog = page.getByRole('dialog');
+    await expect(dialog.locator('#partner_short_name_help')).toHaveText('Select partner');
+    await expect(dialog.locator('#product_model_help')).toHaveText('Select product model');
+    await expect(dialog.getByText('Enter unit price', { exact: true }).last()).toBeVisible();
 
-    const partnerCode = dialog.getByPlaceholder('Enter partner code');
+    const partnerCode = dialog.getByRole('combobox', { name: 'Partner Code' });
     await partnerCode.fill(partner.code);
-    await page.getByText(new RegExp(partner.code)).last().click();
-    const productCode = dialog.getByPlaceholder('Enter product code');
+    await partnerCode.press('ArrowDown');
+    await partnerCode.press('Enter');
+    const productCode = dialog.getByRole('combobox', { name: 'Product Code' });
     await productCode.fill(product.code);
-    await page.getByText(new RegExp(product.code)).last().click();
+    await productCode.press('ArrowDown');
+    await productCode.press('Enter');
     await dialog.getByPlaceholder('Enter unit price').fill('12.5');
     await dialog.getByPlaceholder('Select effective date').click();
-    await page.locator('.ant-picker-cell-today button').click();
+    await page.locator('.ant-picker-cell-today').click();
     const createResponse = page.waitForResponse(
       (response) =>
         response.url().endsWith('/api/product-prices') && response.request().method() === 'POST'
@@ -197,8 +204,11 @@ test('product prices support creation, filtering, editing, and deletion', async 
     const created = (await response.json()) as { id?: number };
     if (created.id !== undefined) records.track(`/product-prices/${created.id}`);
 
-    await page.getByPlaceholder('Select product model').click();
-    await page.getByText(product.product_model, { exact: true }).last().click();
+    const productModelFilter = page.getByRole('combobox', { name: /Product Model/ });
+    await productModelFilter.click();
+    await productModelFilter.pressSequentially(product.product_model);
+    await productModelFilter.press('ArrowDown');
+    await productModelFilter.press('Enter');
     await page.getByRole('button', { name: 'Search', exact: true }).click();
     let row = page.getByRole('row').filter({ hasText: product.product_model });
     await expect(row).toContainText('12.5');
@@ -215,16 +225,22 @@ test('product prices support creation, filtering, editing, and deletion', async 
     row = page.getByRole('row').filter({ hasText: product.product_model });
     await expect(row).toContainText('14.75');
 
-    await page.getByPlaceholder('Select partner').click();
-    await page.getByText(partner.short_name, { exact: true }).last().click();
-    await page.getByPlaceholder('Select product model').click();
-    await page.getByText(product.product_model, { exact: true }).last().click();
+    const partnerFilter = page.getByRole('combobox', { name: /Partner Short Name/ });
+    await partnerFilter.click();
+    await partnerFilter.pressSequentially(partner.short_name);
+    await partnerFilter.press('ArrowDown');
+    await partnerFilter.press('Enter');
+    await productModelFilter.click();
+    await productModelFilter.pressSequentially(product.product_model);
+    await productModelFilter.press('ArrowDown');
+    await productModelFilter.press('Enter');
     await page.getByRole('button', { name: 'Search', exact: true }).click();
     row = page.getByRole('row').filter({ hasText: product.product_model });
     await expect(row).toContainText('14.75');
 
     await row.getByRole('button', { name: 'Delete' }).click();
     await page.getByRole('button', { name: 'Confirm', exact: true }).click();
+    if (created.id !== undefined) records.forget(`/product-prices/${created.id}`);
     await expect(page.getByRole('row').filter({ hasText: product.product_model })).toHaveCount(0);
   } finally {
     await records.cleanup();
@@ -261,9 +277,9 @@ test('reader can search master data but cannot create, edit, or delete it', asyn
 });
 
 test('partner and product deletion stays blocked while stock records reference them', async ({
-  page
+  page,
+  records
 }) => {
-  const records = new E2eRecords(page);
   const suffix = uniqueId('E2E-REFERENCED');
   const supplier = {
     code: `${suffix}-SUP`,

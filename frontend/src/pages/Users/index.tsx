@@ -198,6 +198,7 @@ function Users(): React.ReactElement {
 
   const handleDelete = async (username: string) => {
     await del(`/users/${username}`);
+    await fetchUsers(pagination.current || 1, pagination.pageSize || 20);
   };
 
   const handleOpenCreate = () => {
@@ -321,8 +322,9 @@ function Users(): React.ReactElement {
     <Space direction="vertical" style={{ width: '100%' }} size="middle">
       <Card title={t('users.myProfile')}>
         <Form layout="inline">
-          <Form.Item label={t('users.displayName')}>
+          <Form.Item label={t('users.displayName')} htmlFor="profile-display-name">
             <Input
+              id="profile-display-name"
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
               style={{ width: 200 }}
@@ -338,22 +340,25 @@ function Users(): React.ReactElement {
 
       <Card title={t('users.changePassword')}>
         <Form layout="inline">
-          <Form.Item label={t('users.oldPassword')}>
+          <Form.Item label={t('users.oldPassword')} htmlFor="profile-old-password">
             <Input.Password
+              id="profile-old-password"
               value={oldPassword}
               onChange={(e) => setOldPassword(e.target.value)}
               style={{ width: 200 }}
             />
           </Form.Item>
-          <Form.Item label={t('users.newPassword')}>
+          <Form.Item label={t('users.newPassword')} htmlFor="profile-new-password">
             <Input.Password
+              id="profile-new-password"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               style={{ width: 200 }}
             />
           </Form.Item>
-          <Form.Item label={t('users.confirmPassword')}>
+          <Form.Item label={t('users.confirmPassword')} htmlFor="profile-confirm-password">
             <Input.Password
+              id="profile-confirm-password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               style={{ width: 200 }}
@@ -398,28 +403,32 @@ function Users(): React.ReactElement {
         confirmLoading={loading}
       >
         <Form layout="vertical">
-          <Form.Item label={t('users.username')}>
+          <Form.Item label={t('users.username')} htmlFor="create-username">
             <Input
+              id="create-username"
               value={createUsername}
               onChange={(e) => setCreateUsername(e.target.value)}
               autoComplete="off"
             />
           </Form.Item>
-          <Form.Item label={t('users.displayName')}>
+          <Form.Item label={t('users.displayName')} htmlFor="create-display-name">
             <Input
+              id="create-display-name"
               value={createDisplayName}
               onChange={(e) => setCreateDisplayName(e.target.value)}
             />
           </Form.Item>
-          <Form.Item label={t('users.newPassword')}>
+          <Form.Item label={t('users.newPassword')} htmlFor="create-new-password">
             <Input.Password
+              id="create-new-password"
               value={createPassword}
               onChange={(e) => setCreatePassword(e.target.value)}
               autoComplete="new-password"
             />
           </Form.Item>
-          <Form.Item label={t('users.confirmPassword')}>
+          <Form.Item label={t('users.confirmPassword')} htmlFor="create-confirm-password">
             <Input.Password
+              id="create-confirm-password"
               value={createConfirmPassword}
               onChange={(e) => setCreateConfirmPassword(e.target.value)}
               autoComplete="new-password"

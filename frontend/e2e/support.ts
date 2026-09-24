@@ -1,4 +1,4 @@
-import { expect, type Page } from '@playwright/test';
+import { expect, type APIRequestContext, type Locator, type Page } from '@playwright/test';
 
 export const API_BASE_URL = 'http://127.0.0.1:18080/api';
 export const TEST_PASSWORD = 'testpass123';
@@ -51,7 +51,11 @@ export async function apiRequest<T>(
 export class E2eRecords {
   private readonly deletePaths: string[] = [];
 
-  constructor(private readonly page: Page) {}
+  constructor(
+    private readonly page: Page,
+    private readonly request: APIRequestContext,
+    private readonly cleanupHeaders: Record<string, string>
+  ) {}
 
   async create<T>(endpoint: string, data: unknown, cleanupPath: string): Promise<T> {
     const result = await apiRequest<T>(this.page, 'POST', endpoint, data);
@@ -63,18 +67,26 @@ export class E2eRecords {
     this.deletePaths.push(cleanupPath);
   }
 
-  async cleanup(): Promise<void> {
-    const headers = await authHeaders(this.page).catch(() => null);
-    if (!headers) return;
+  forget(cleanupPath: string): void {
+    const index = this.deletePaths.lastIndexOf(cleanupPath);
+    if (index >= 0) this.deletePaths.splice(index, 1);
+  }
 
-    for (const path of this.deletePaths.reverse()) {
-      const response = await this.page.request.delete(`${API_BASE_URL}${path}`, { headers });
+  async cleanup(): Promise<void> {
+    for (const path of this.deletePaths.splice(0).reverse()) {
+      const response = await this.request.delete(`${API_BASE_URL}${path}`, {
+        headers: this.cleanupHeaders
+      });
       expect(
         response.ok() || response.status() === 404,
         `DELETE ${path} should succeed or already be absent`
       ).toBeTruthy();
     }
   }
+}
+
+export function paginationButton(page: Page, direction: 'Next' | 'Previous'): Locator {
+  return page.getByRole('listitem', { name: `${direction} Page` }).getByRole('button');
 }
 
 export function uniqueId(prefix: string): string {
