@@ -92,11 +92,18 @@ The project test command runs the complete backend Vitest suite first, reseeds t
 database, and then runs the frontend in a visible Chromium window through Playwright. If any stage
 fails, later stages do not run.
 
-1. Create the local test configuration and set its PostgreSQL credentials:
+1. Run a test command once to create the local test configuration automatically from the example:
 
 ```bash
-mkdir -p backend/test-config
-cp config-example/config/config.e2e.yaml backend/test-config/config.yaml
+pnpm test
+```
+
+If the configuration was created during this run, set its PostgreSQL credentials and rerun the
+command:
+
+```bash
+nvim backend/test-config/config.yaml
+pnpm test
 ```
 
 The test configuration must keep `dbName` set to `tradeflow_e2e` and `server.httpPort` set to
