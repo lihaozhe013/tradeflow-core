@@ -35,7 +35,7 @@ class DirectoryManager:
             command (str): The shell command to run.
 
         Example:
-            builder.run(Path("/project"), "npm install")
+            builder.run(Path("/project"), "bun install")
         """
         print(f"\n>>> Task: Running Command -> '{command}' in {work_dir}")
         cwd_path = work_dir

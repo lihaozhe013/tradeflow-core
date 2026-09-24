@@ -2,18 +2,31 @@
   "name": "tradeflow-core",
   "version": "1.0.0",
   "private": true,
+  "packageManager": "bun@1.4.2",
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "trustedDependencies": [
+    "@prisma/engines",
+    "argon2",
+    "esbuild",
+    "prisma"
+  ],
   "description": "a lightweight tradeflow system core",
   "scripts": {
     "build": "uv run build.py",
     "dev": "node scripts/dev.mjs",
-    "dev:backend": "cd backend && pnpm dev",
-    "dev:frontend": "cd frontend && pnpm dev",
+    "dev:backend": "bun run --cwd backend dev",
+    "dev:frontend": "bun run --cwd frontend dev",
     "format": "prettier --write .",
-    "install:all": "pnpm install && cd frontend && pnpm install && cd ../backend && pnpm install && pnpm prisma generate",
-    "preinstall": "npx only-allow pnpm",
-    "start": "cd dist && node backend/server.js",
+    "install:all": "bun install && bun run --cwd backend prisma:generate",
+    "start": "cd dist && NODE_ENV=production bun --no-install ../backend/server.ts",
     "test": "node scripts/test.mjs",
     "test:e2e": "node scripts/test-e2e.mjs",
-    "test:setup": "node scripts/test-setup.mjs"
+    "test:setup": "node scripts/test-setup.mjs",
+    "lint:backend": "bun run --cwd backend lint",
+    "type-check:backend": "bun run --cwd backend typecheck",
+    "type-check:frontend": "bun run --cwd frontend type-check"
   }
 }

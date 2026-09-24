@@ -6,12 +6,13 @@ import { config } from '@/utils/paths';
 import { assertTestDatabaseConfig, E2E_DATABASE_NAME } from './testDatabaseSafety';
 
 function runPrismaSchemaPush(): void {
-  const isWindows = process.platform === 'win32';
   const backendDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
   const result = spawnSync(
-    isWindows ? 'pnpm.cmd' : 'pnpm',
+    'bun',
     [
-      'exec',
+      'run',
+      '--cwd',
+      backendDir,
       'prisma',
       'db',
       'push',
@@ -20,7 +21,7 @@ function runPrismaSchemaPush(): void {
       '--config',
       'prisma.e2e.config.ts'
     ],
-    { cwd: backendDir, env: process.env, stdio: 'inherit', shell: isWindows }
+    { cwd: backendDir, env: process.env, stdio: 'inherit' }
   );
 
   if (result.error) {

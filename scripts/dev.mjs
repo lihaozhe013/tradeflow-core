@@ -7,7 +7,7 @@ import { dirname, resolve } from 'node:path';
 const rootDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const debugLogPath = resolve(rootDir, 'debug.log');
 const isWindows = process.platform === 'win32';
-const packageManager = isWindows ? 'pnpm.cmd' : 'pnpm';
+const bun = 'bun';
 const services = [
   { name: 'backend', directory: 'backend' },
   { name: 'frontend', directory: 'frontend' }
@@ -92,7 +92,7 @@ function terminateChild(child, signal = 'SIGTERM') {
 
   try {
     if (isWindows) {
-      // The shell only wraps a cmd.exe shim around pnpm, so terminate the
+      // Bun may start child processes for package scripts, so terminate the
       // whole process tree to avoid orphaning the dev servers it started.
       const killer = spawn('taskkill', ['/pid', String(child.pid), '/T', '/F'], {
         stdio: 'ignore'
@@ -171,16 +171,10 @@ function shutdown(requestedExitCode = 0, terminationSignal = 'SIGTERM') {
 
 function startService(service) {
   const options = {
-    cwd: resolve(rootDir, service.directory),
     stdio: ['inherit', 'pipe', 'pipe']
   };
 
-  // Node refuses to spawn .cmd/.bat shims without a shell on Windows, and
-  // warns (DEP0190) when args are passed alongside a shell, so hand cmd.exe
-  // a single fixed command string there; 'dev' is a literal, not input.
-  const child = isWindows
-    ? spawn(`${packageManager} dev`, { ...options, shell: true })
-    : spawn(packageManager, ['dev'], options);
+  const child = spawn(bun, ['--cwd', resolve(rootDir, service.directory), 'run', 'dev'], options);
 
   children.set(service.name, child);
   attachOutput(service.name, 'stdout', child.stdout, process.stdout);

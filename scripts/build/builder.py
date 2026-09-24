@@ -18,13 +18,12 @@ def build(base_dir):
     builder.copy(build_config_dir / 'logo.svg', frontend_dir / 'public' / 'logo.svg')
 
     # build frontend
-    builder.run(frontend_dir, 'pnpm vite build')
+    builder.run(frontend_dir, 'bun run build')
     builder.move(frontend_dir / 'dist', dist_dir / 'frontend')
 
     # build backend
-    builder.run(backend_dir, 'pnpm prisma generate')
+    builder.delete(backend_dir / 'prisma' / 'client')
+    builder.run(backend_dir, 'bun run prisma:generate')
     builder.run(backend_dir, 'node ./scripts/bundle.mjs')
     builder.move(backend_dir / 'dist', dist_dir / 'backend')
-    builder.copy(backend_dir / 'prisma', dist_dir / 'prisma')
-    builder.copy(backend_dir / 'scripts' / 'package.json', dist_dir / 'package.json')
-    builder.copy(backend_dir / 'scripts' / 'pnpm-workspace.yaml', dist_dir / 'pnpm-workspace.yaml')
+    builder.copy(backend_dir / 'prisma', dist_dir / 'backend' / 'prisma')

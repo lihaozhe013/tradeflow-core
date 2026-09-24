@@ -6,7 +6,8 @@
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "isolatedModules": true,
-    "lib": ["ES2024"],
+    "allowImportingTsExtensions": true,
+    "lib": ["ESNext"],
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "noFallthroughCasesInSwitch": true,
@@ -21,7 +22,7 @@
     "outDir": "./dist",
     "paths": {
       "@/*": ["./*"],
-      "@/prisma/client/*": ["./prisma/client/*"],
+      "@/prisma/client/*": ["./prisma/client/generated/*"],
       "@/routes/*": ["./routes/*"],
       "@/types/*": ["./types/*"],
       "@/utils/*": ["./utils/*"]
@@ -36,7 +37,7 @@
     "strictFunctionTypes": true,
     "strictNullChecks": true,
     "strictPropertyInitialization": true,
-    "target": "ES2024",
+    "target": "ESNext",
     "types": ["node"]
   },
   "exclude": ["node_modules", "dist", "**/*.spec.ts", "**/*.test.ts"],

@@ -2,11 +2,10 @@
 
 ## Project structure
 
-TradeFlow Core is a pnpm-managed monorepo: the root scripts orchestrate the React/Vite browser
-application in `frontend/`, the Express/TypeScript/Prisma API in `backend/`, and the Python build
-helpers in `scripts/` and `build.py`. Each package owns its manifest, lockfile, dependencies, and
-tooling; keep those boundaries intact and never install or edit one package's dependencies from
-another package's directory.
+TradeFlow Core is a Bun workspace monorepo: root scripts orchestrate the React/Vite browser
+application in `frontend/`, the Express/TypeScript/Prisma API in `backend/`, and Python build
+helpers in `scripts/` and `build.py`. The root `bun.lock` resolves dependencies for all workspace
+manifests. Production runs on Bun; Node.js remains required for development and build tooling.
 
 ## 1. Language and repository policy
 
@@ -22,36 +21,38 @@ another package's directory.
 
 ## 2. Toolchain and dependency policy
 
-- Use **pnpm exclusively** for JavaScript and TypeScript package management and repository scripts.
-  Do not use `npm`, `yarn`, or Bun to install, remove, update, or execute repository dependencies.
-- The root `package.json` MUST contain a pinned `packageManager` field for the repository's pnpm
-  baseline. Keep it synchronized with the current lockfile and toolchain when the package-manager
-  baseline changes.
-- The root `package.json`, `pnpm-lock.yaml`, `frontend/package.json`, `frontend/pnpm-lock.yaml`,
-  `backend/package.json`, and `backend/pnpm-lock.yaml` are separate package boundaries. A dependency
-  change MUST update the manifest and the matching lockfile in the same package.
-- Run commands from the package they belong to. Use root scripts for cross-package workflows; do not
-  install frontend dependencies in `backend/`, or backend dependencies in `frontend/`.
-- Respect the Node.js engine declarations in the relevant package. Root workflows require Node.js 24
-  or newer; package-local workflows must also satisfy their package's declared engine.
-- Use the TypeScript, Vite, React, Express, Prisma, and pnpm versions already pinned by the package
-  manifests and lockfiles. Do not introduce prerelease dependencies or downgrade baseline
-  dependencies to work around an implementation problem without explicit approval.
+- Use **Bun 1.4.2** for JavaScript and TypeScript package management and repository scripts. Do not
+  use npm, pnpm, or Yarn to install, remove, update, or execute repository dependencies.
+- The root `package.json` MUST pin `packageManager` to `bun@1.4.2`. The root `bun.lock` is the
+  single lockfile for root, frontend, and backend workspace manifests; dependency changes MUST
+  update the relevant manifest and this lockfile together.
+- Run package-local commands with Bun in the owning workspace, such as `bun run lint` from
+  `backend/`. Use root scripts for cross-workspace workflows and `bun install` at the repository
+  root.
+- Development and build workflows require Node.js 26 or newer for Node-based tools such as Vite,
+  Vitest, Playwright, and build scripts. The production image MUST use Bun and MUST NOT depend on
+  Node.js.
+- Keep direct dependencies on current stable releases. Do not introduce prerelease dependencies or
+  downgrade baselines to work around an implementation problem without explicit approval. Use
+  `bun outdated -r` to review every workspace and `bun update -r` to update within declared ranges.
+  Confirm a major release is stable before changing its manifest range. Review the resulting
+  `bun.lock` and run the package checks.
 - Add a dependency only when it provides clear value over a small, maintainable local
   implementation. Consider bundle size, maintenance, security history, and whether the dependency
   belongs in the root tooling, backend runtime, backend tooling, or frontend bundle.
 - Keep backend/Node-only dependencies out of browser-rendered frontend code. Do not manually edit
   generated contents under `node_modules/`.
-- Use `uv run build.py` for the repository build helper. Do not modify `build.py` or
-  `scripts/build/` unless the task specifically concerns the build pipeline.
+- Use `uv run build.py` for the repository build helper. Changes to `scripts/build/` are in scope
+  when the task concerns the build pipeline.
 - Runtime configuration and private data belong in the existing ignored configuration/data
   locations. Use `config-example/` as the public template; never commit local credentials or
   generated runtime data.
 
 ## 3. TypeScript requirements
 
-- Use the TypeScript version declared by the package being changed. Do not mix TypeScript major
-  versions across a package or change a package's TypeScript baseline without explicit approval.
+- Use the TypeScript versions and aliases declared by the package being changed. The backend may
+  keep a separate aliased TypeScript version for ESLint compatibility when its parser does not yet
+  support the compiler version.
 - New application code SHOULD be TypeScript (`.ts`/`.tsx`). Existing JavaScript/JSX files and build
   scripts may remain JavaScript when conversion is not part of the task; do not silently expand a
   conversion's scope.
@@ -83,7 +84,7 @@ another package's directory.
   Keep audit records (database-backed user actions) distinct from operational diagnostics.
 - Database schema and migration changes belong under `backend/prisma/` and must be reviewed for data
   compatibility. Do not hand-edit generated Prisma client output.
-- From `backend/`, `pnpm lint` MUST finish with zero ESLint errors. Warnings should be addressed
+- From `backend/`, `bun run lint` MUST finish with zero ESLint errors. Warnings should be addressed
   when practical, especially for new code.
 
 ## 5. Frontend policy
@@ -93,14 +94,14 @@ another package's directory.
   individual pages.
 - User-facing text MUST use the existing localization approach when the feature is localized. Do not
   put new user-facing copy directly into reusable logic when a locale resource is appropriate.
-- From `frontend/`, `pnpm type-check` MUST pass with zero TypeScript errors. Run `pnpm build` when
-  the change affects Vite bundling, assets, or runtime integration.
+- From `frontend/`, `bun run type-check` MUST pass with zero TypeScript errors. Run `bun run build`
+  when the change affects Vite bundling, assets, or runtime integration.
 
 ## 6. Formatting and source style
 
 - Follow the repository's existing Prettier and ESLint configuration. Do not introduce a second
   formatter or package-local style that conflicts with the root configuration.
-- `pnpm format` is the repository formatting command. Run it when the change touches
+- `bun run format` is the repository formatting command. Run it when the change touches
   formatting-sensitive files or before a requested commit, and review unrelated formatting changes
   before keeping them.
 - Prefer `rg` for text/code search and `fd` for file discovery. Use `uv run` instead of invoking a
@@ -120,10 +121,10 @@ another package's directory.
 
 ## 8. Validation and handoff
 
-- Before handing off a backend change, run `pnpm lint` in `backend/`.
-- Before handing off a frontend change, run `pnpm type-check` in `frontend/`.
+- Before handing off a backend change, run `bun run lint` in `backend/`.
+- Before handing off a frontend change, run `bun run type-check` in `frontend/`.
 - For cross-package or build-related changes, also run the narrowest relevant root build/check, such
-  as `pnpm build`, and report any unavailable or environment-dependent check explicitly.
+  as `bun run build`, and report any unavailable or environment-dependent check explicitly.
 - When debugging a feature, provide a ready-to-run command that exercises the relevant flow and
   writes focused output to a dedicated ignored log file. Use an `rg` filter for the feature prefix
   where useful.
@@ -151,11 +152,11 @@ another package's directory.
   credentials, or private trade/customer/invoice content unnecessarily.
 - Verbose debug logging MUST NOT be enabled by default in production builds.
 - Generated `*.log` files, including the root `debug.log`, MUST remain untracked. The root
-  `pnpm dev` command MUST create a fresh `debug.log` at session start and capture the
+  `bun run dev` command MUST create a fresh `debug.log` at session start and capture the
   backend/frontend output and application diagnostics there while also showing them in the terminal:
 
   ```sh
-  pnpm dev
+  bun run dev
   ```
 
 ## 11. Code organization and file size

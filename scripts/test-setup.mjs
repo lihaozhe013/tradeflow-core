@@ -1,4 +1,4 @@
-import { getTestEnvironment, runPnpm } from './test-support.mjs';
+import { getTestEnvironment, runBunScript } from './test-support.mjs';
 
 let env;
 try {
@@ -8,4 +8,4 @@ try {
   process.exit(1);
 }
 
-process.exitCode = runPnpm(['--dir', 'backend', 'test:db:setup'], env);
+process.exitCode = runBunScript('backend', 'test:db:setup', env);

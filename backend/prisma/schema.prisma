@@ -2,8 +2,11 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider = "prisma-client-js"
-  output   = "./client"
+  provider            = "prisma-client"
+  output              = "./client/generated"
+  runtime             = "bun"
+  moduleFormat        = "esm"
+  importFileExtension = "ts"
 }
 
 datasource db {
@@ -15,7 +18,7 @@ datasource db {
 // ----------------------------------------------------
 
 model InboundRecord {
-  id             Int     @id @default(autoincrement())
+  id             Int      @id @default(autoincrement())
   supplier_code  String
   partner        Partner  @relation(fields: [supplier_code], references: [code], onUpdate: Cascade, onDelete: Restrict)
   product_code   String?
@@ -34,7 +37,7 @@ model InboundRecord {
 }
 
 model OutboundRecord {
-  id             Int     @id @default(autoincrement())
+  id             Int      @id @default(autoincrement())
   customer_code  String
   partner        Partner  @relation(fields: [customer_code], references: [code], onUpdate: Cascade, onDelete: Restrict)
   product_code   String?
@@ -86,7 +89,7 @@ model Partner {
 }
 
 model Product {
-  code            String  @unique
+  code            String           @unique
   category        String?
   product_model   String?
   remark          String?
@@ -139,14 +142,15 @@ model PayablePayment {
 
   @@map("payable_payments")
 }
+
 model SystemLog {
-  id          Int      @id @default(autoincrement())
-  username    String?
-  action      String
-  resource    String
-  user_agent  String?
-  params      String?
-  created_at  DateTime @default(now())
+  id         Int      @id @default(autoincrement())
+  username   String?
+  action     String
+  resource   String
+  user_agent String?
+  params     String?
+  created_at DateTime @default(now())
 
   @@map("system_logs")
 }

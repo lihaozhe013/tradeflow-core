@@ -1,14 +1,14 @@
 # Tradeflow Core
 
-A lightweight tradeflow system designed for small businesses, built with React.js based frontend and
-Node.js + PostgreSQL based backend.
+A lightweight tradeflow system designed for small businesses, built with a React frontend and a Bun
+backend backed by PostgreSQL.
 
 ## Quick Start
 
 ### Prerequisites
 
-- Node.js 24+ (Always based on latest LTS version)
-- pnpm
+- Bun 1.4.2
+- Node.js 26+ for development and build tooling
 - Python/uv (for build script)
 - PostgreSQL
 - Docker (Optional)
@@ -44,7 +44,7 @@ cd tradeflow-core
 2.  **Install dependencies**:
 
 ```bash
-pnpm install:all
+bun run install:all
 ```
 
 3.  **Set up configuration**:
@@ -64,11 +64,11 @@ cp -r config-example/* .
 4.  **Build**:
 
 > Note: I use `uv run` instead of `python` because the `python` command is incompatible across
-> different systems. It is strongly recommended to use `uv`. If you prefer not to use `uv`, you can
-> modify the `pnpm build` command yourself to `python build.py` or `python3 build.py`.
+> different systems. It is strongly recommended to use `uv`. If you prefer not to use `uv`, run
+> `python build.py` or `python3 build.py` directly.
 
 ```bash
-pnpm build
+bun run build
 ```
 
 or
@@ -83,8 +83,15 @@ python3 build.py
 
 ```bash
 # Start the dev server()
-pnpm dev
+bun run dev
 ```
+
+### Dependency Updates
+
+Run `bun outdated -r` from the repository root to review all workspaces. Run `bun update -r` to
+refresh dependencies within their declared ranges and update `bun.lock`. For a new major version,
+change the relevant manifest range only after its stable release is available; keep prereleases out.
+Verify the result with `bun install --frozen-lockfile`, the checks below, and `bun run build`.
 
 ### Testing
 
@@ -95,7 +102,7 @@ fails, later stages do not run.
 1. Run a test command once to create the local test configuration automatically from the example:
 
 ```bash
-pnpm test
+bun run test
 ```
 
 If the configuration was created during this run, set its PostgreSQL credentials and rerun the
@@ -103,7 +110,7 @@ command:
 
 ```bash
 nvim backend/test-config/config.yaml
-pnpm test
+bun run test
 ```
 
 The test configuration must keep `dbName` set to `tradeflow_e2e` and `server.httpPort` set to
@@ -115,8 +122,8 @@ script drops the default `tradeflow` database and must not be used for E2E setup
 2. Prepare the test database and install the Playwright Chromium browser once:
 
 ```bash
-pnpm test:setup
-pnpm --dir frontend exec playwright install chromium
+bun run test:setup
+cd frontend && bunx playwright install chromium
 ```
 
 3. Run all backend and frontend tests. The browser suite exercises every application page and its
@@ -124,10 +131,10 @@ pnpm --dir frontend exec playwright install chromium
    exports, permissions, and narrow-screen layouts:
 
 ```bash
-pnpm test
+bun run test
 ```
 
-To run only browser E2E tests, use `pnpm test:e2e`. Playwright opens a visible Chromium window by
+To run only browser E2E tests, use `bun run test:e2e`. Playwright opens a visible Chromium window by
 default. Set `TRADEFLOW_E2E_HEADLESS=true` to run it without a visible window. Playwright reports
 are written to `frontend/playwright-report/`; failure traces and screenshots are written to
 `frontend/test-results/`.

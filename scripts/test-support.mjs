@@ -51,17 +51,16 @@ export function getTestEnvironment() {
   };
 }
 
-export function runPnpm(args, env, cwd = rootDir) {
-  const isWindows = process.platform === 'win32';
-  const result = spawnSync(isWindows ? 'pnpm.cmd' : 'pnpm', args, {
-    cwd,
+export function runBunScript(workspace, script, env, args = []) {
+  const workspaceDir = path.join(rootDir, workspace);
+  const result = spawnSync('bun', ['run', '--cwd', workspaceDir, script, ...args], {
+    cwd: rootDir,
     env,
-    stdio: 'inherit',
-    shell: isWindows
+    stdio: 'inherit'
   });
 
   if (result.error) {
-    console.error(`[test] Failed to start pnpm: ${result.error.message}`);
+    console.error(`[test] Failed to start Bun: ${result.error.message}`);
     return 1;
   }
 

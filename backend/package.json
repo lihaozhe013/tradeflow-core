@@ -6,6 +6,7 @@
   "main": "dist/server.js",
   "scripts": {
     "build": "node ./scripts/bundle.mjs",
+    "prisma:generate": "prisma generate",
     "dev": "tsx watch server.ts",
     "dev:debug": "tsx watch --inspect server.ts",
     "lint": "eslint .",
@@ -14,8 +15,7 @@
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
     "test:seed": "tsx test/seedRunner.ts",
-    "test:db:setup": "tsx test/setupE2eDatabase.ts",
-    "preinstall": "npx only-allow pnpm"
+    "test:db:setup": "tsx test/setupE2eDatabase.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.10.0",
@@ -26,12 +26,12 @@
     "cors": "^2.8.6",
     "decimal.js": "^10.6.0",
     "express": "^5.2.1",
-    "fs-extra": "^11.4.0",
-    "js-yaml": "^5.4.1",
+    "fs-extra": "^11.4.1",
+    "js-yaml": "^5.4.2",
     "jsonwebtoken": "^9.0.3",
-    "multer": "^2.3.0",
+    "multer": "^2.4.0",
     "pg": "^8.23.0",
-    "xlsx": "https://cdn.sheetjs.com/xlsx-latest/xlsx-latest.tgz"
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -40,25 +40,26 @@
     "@types/fs-extra": "^11.0.4",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/multer": "^2.2.0",
-    "@types/node": "^26.5.1",
+    "@types/node": "^26.6.2",
     "@types/pg": "^8.23.1",
     "@types/superagent": "^8.1.11",
     "@types/supertest": "^7.2.1",
     "@typescript/native": "npm:typescript@^7.0.2",
-    "@vitest/coverage-v8": "^5.0.0",
+    "@vitest/coverage-v8": "^5.0.1",
     "esbuild": "^0.28.2",
     "esbuild-plugin-tsconfig-paths": "^1.0.2",
-    "eslint": "^10.10.0",
+    "eslint": "^10.11.0",
     "globals": "^17.12.0",
     "nodemon": "^3.1.14",
     "prisma": "^7.10.0",
-    "supertest": "^7.2.2",
+    "supertest": "^7.3.0",
     "ts-node": "^10.9.2",
-    "tsc-alias": "^1.9.4",
+    "tsc-alias": "^1.9.5",
     "tsconfig-paths": "^4.2.0",
-    "tsx": "^4.23.13",
+    "tsx": "^4.23.15",
     "typescript": "npm:@typescript/typescript6@^6.0.2",
-    "typescript-eslint": "^8.70.0",
-    "vitest": "^5.0.0"
-  }
+    "typescript-eslint": "^8.70.1",
+    "vitest": "^5.0.1"
+  },
+  "optionalDependencies": {}
 }

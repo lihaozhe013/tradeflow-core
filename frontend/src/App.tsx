@@ -381,7 +381,6 @@ function AppContentInner({ location, t }: AppContentInnerProps): React.ReactElem
         <div style={{ maxWidth: '1800px', margin: '0 auto' }}>
           <ErrorBoundary>
             <Routes>
-              <Route path="/" element={<HomeRedirect />} />
               <Route
                 path="/overview"
                 element={
@@ -466,6 +465,14 @@ function App(): React.ReactElement {
       <AuthProvider>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <HomeRedirect />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="*"
             element={

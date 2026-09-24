@@ -23,7 +23,7 @@ async function main() {
     outfile,
     bundle: true,
     platform: 'node',
-    target: ['node24'],
+    target: ['esnext'],
     format: 'esm',
     sourcemap: false,
     minify: true,
@@ -33,18 +33,13 @@ async function main() {
     },
     plugins: [
       {
-        name: 'prisma-client-rewrite',
-        setup(build) {
-          build.onResolve({ filter: /^@prisma\/client$/ }, () => {
-            return { path: '../prisma/client/index.js', external: true };
-          });
-        }
-      },
-      {
         name: 'alias-atslash',
         setup(build) {
           build.onResolve({ filter: /^@\// }, (args) => {
             const sub = args.path.replace(/^@\//, '');
+            if (sub === 'prisma/client') {
+              return { path: './prisma/client/generated/client.ts', external: true };
+            }
             const base = path.resolve(projectRoot, sub);
 
             const candidates = [];

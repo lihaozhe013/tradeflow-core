@@ -1,4 +1,4 @@
-import { getTestEnvironment, runPnpm } from './test-support.mjs';
+import { getTestEnvironment, runBunScript } from './test-support.mjs';
 
 let env;
 try {
@@ -9,14 +9,14 @@ try {
 }
 
 const stages = [
-  ['prepare the isolated E2E database', ['--dir', 'backend', 'test:db:setup']],
-  ['seed the isolated database', ['--dir', 'backend', 'test:seed']],
-  ['run the frontend Playwright suite', ['--dir', 'frontend', 'test:e2e:run']]
+  ['prepare the isolated E2E database', ['backend', 'test:db:setup']],
+  ['seed the isolated database', ['backend', 'test:seed']],
+  ['run the frontend Playwright suite', ['frontend', 'test:e2e:run']]
 ];
 
-for (const [description, args] of stages) {
+for (const [description, [workspace, script]] of stages) {
   console.info(`\n[test:e2e] Starting: ${description}`);
-  const exitCode = runPnpm(args, env);
+  const exitCode = runBunScript(workspace, script, env);
   if (exitCode !== 0) {
     console.error(`[test:e2e] Stopped after failure: ${description}`);
     process.exit(exitCode);

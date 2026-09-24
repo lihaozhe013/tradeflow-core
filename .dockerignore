@@ -1,0 +1,15 @@
+.git
+.github
+.idea
+.vscode
+**/node_modules
+**/coverage
+**/test-results
+**/playwright-report
+**/*.log
+backend/test-config
+backend/config
+backend/cache
+backend/prisma/client
+config
+cache

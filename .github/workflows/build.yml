@@ -6,29 +6,127 @@ on:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: tradeflow-ci
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 10s --health-timeout 5s
+          --health-retries 10
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4.4.0
-        with:
-          version: 10
 
-      - name: Use Node.js 26.x
+      - name: Install Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.2
+
+      - name: Use Node.js 26.x for development tools
         uses: actions/setup-node@v5
         with:
           node-version: 26.x
-          cache: 'pnpm'
 
-      - name: Install dependencies and build project
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Prepare isolated E2E database config
         run: |
-          pnpm install:all
+          mkdir -p backend/test-config
+          cp config-example/config/config.e2e.yaml backend/test-config/config.yaml
+          sed -i 's/replace-with-local-postgres-password/tradeflow-ci/' backend/test-config/config.yaml
+        env:
+          TRADEFLOW_CONFIG_DIR: ${{ github.workspace }}/backend/test-config
+
+      - name: Generate Prisma Client and prepare database
+        run: |
+          bun run --cwd backend prisma:generate
+          bun run test:setup
+        env:
+          TRADEFLOW_CONFIG_DIR: ${{ github.workspace }}/backend/test-config
+
+      - name: Lint and test backend
+        run: |
+          bun run lint:backend
+          bun run type-check:backend
+          bun run --cwd backend test
+        env:
+          TRADEFLOW_CONFIG_DIR: ${{ github.workspace }}/backend/test-config
+
+      - name: Type-check frontend
+        run: bun run type-check:frontend
+
+      - name: Install Playwright browser
+        run: bunx playwright install --with-deps chromium
+        working-directory: frontend
+
+      - name: Build application
+        run: |
           cp -r config-example/build-config .
-          python build.py
+          uv run build.py
+
+      - name: Seed database for production image E2E
+        run: bun run --cwd backend test:seed
+        env:
+          TRADEFLOW_CONFIG_DIR: ${{ github.workspace }}/backend/test-config
+
+      - name: Build production image
+        run: docker build --tag tradeflow-core:ci .
+
+      - name: Smoke-test Bun production image with Playwright
+        env:
+          RUNNER_TEMP: ${{ runner.temp }}
+        run: |
+          set -euo pipefail
+          runtime_config="$RUNNER_TEMP/tradeflow-container-config"
+          mkdir -p "$runtime_config"
+          cp backend/test-config/config.yaml "$runtime_config/config.yaml"
+          sed -i 's/hostByBackend: false/hostByBackend: true/' "$runtime_config/config.yaml"
+          docker run --detach --name tradeflow-core-smoke --network host \
+            --mount "type=bind,source=$runtime_config,target=/workspace/config,readonly" \
+            tradeflow-core:ci
+          cleanup() {
+            docker logs tradeflow-core-smoke || true
+            docker rm --force tradeflow-core-smoke >/dev/null 2>&1 || true
+          }
+          trap cleanup EXIT
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:18080/ >/dev/null; then
+              break
+            fi
+            if [ "$attempt" -eq 30 ]; then
+              docker logs tradeflow-core-smoke
+              exit 1
+            fi
+            sleep 2
+          done
+          static_html="$(curl --fail --silent --show-error http://127.0.0.1:18080/)"
+          static_entry="$(printf '%s' "$static_html" | sed -n 's/.*src="\([^"]*\.js\)".*/\1/p' | head -n 1)"
+          if [ -z "$static_entry" ]; then
+            echo "The production image did not serve a JavaScript entry point."
+            exit 1
+          fi
+          curl --fail --silent --show-error "http://127.0.0.1:18080/${static_entry#./}" -o /dev/null
+          docker exec tradeflow-core-smoke bun --version
+          if docker exec tradeflow-core-smoke sh -c 'command -v node >/dev/null 2>&1'; then
+            echo "The production image unexpectedly contains Node.js."
+            exit 1
+          fi
+          docker exec tradeflow-core-smoke sh -c 'tr "\000" " " < /proc/1/cmdline' | rg 'bun --no-install backend/server.js'
+          TRADEFLOW_E2E_EXTERNAL_SERVER=true TRADEFLOW_E2E_HEADLESS=true \
+            bun run --cwd frontend test:e2e:run
 
       - name: Read version from file
         id: get_version
-        run: echo "VERSION=$(cat VERSION)" >> $GITHUB_OUTPUT
+        run: echo "VERSION=$(cat VERSION)" >> "$GITHUB_OUTPUT"
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v4

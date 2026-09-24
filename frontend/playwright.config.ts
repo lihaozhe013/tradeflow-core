@@ -11,6 +11,26 @@ const configDir = path.resolve(
 const backendUrl = 'http://127.0.0.1:18080';
 const frontendUrl = 'http://127.0.0.1:15173';
 const headless = ['1', 'true'].includes(process.env['TRADEFLOW_E2E_HEADLESS']?.toLowerCase() ?? '');
+const externalServer = ['1', 'true'].includes(
+  process.env['TRADEFLOW_E2E_EXTERNAL_SERVER']?.toLowerCase() ?? ''
+);
+
+const backendWebServer = externalServer
+  ? []
+  : [
+      {
+        command: 'bun run dev',
+        cwd: backendDir,
+        url: `${backendUrl}/api/auth/me`,
+        timeout: 120_000,
+        reuseExistingServer: false,
+        env: {
+          ...process.env,
+          NODE_ENV: 'test',
+          TRADEFLOW_CONFIG_DIR: configDir
+        }
+      }
+    ];
 
 export default defineConfig({
   testDir: './e2e',
@@ -22,7 +42,7 @@ export default defineConfig({
   reporter: [['list'], ['html', { outputFolder: 'playwright-report', open: 'never' }]],
   outputDir: 'test-results',
   use: {
-    baseURL: frontendUrl,
+    baseURL: externalServer ? backendUrl : frontendUrl,
     headless,
     screenshot: 'only-on-failure',
     trace: 'retain-on-failure'
@@ -34,28 +54,21 @@ export default defineConfig({
     }
   ],
   webServer: [
-    {
-      command: 'pnpm dev',
-      cwd: backendDir,
-      url: `${backendUrl}/api/auth/me`,
-      timeout: 120_000,
-      reuseExistingServer: false,
-      env: {
-        ...process.env,
-        NODE_ENV: 'test',
-        TRADEFLOW_CONFIG_DIR: configDir
-      }
-    },
-    {
-      command: 'pnpm exec vite --host 127.0.0.1 --port 15173 --strictPort',
-      cwd: frontendDir,
-      url: frontendUrl,
-      timeout: 120_000,
-      reuseExistingServer: false,
-      env: {
-        ...process.env,
-        TRADEFLOW_API_URL: backendUrl
-      }
-    }
+    ...backendWebServer,
+    ...(externalServer
+      ? []
+      : [
+          {
+            command: 'bun run vite --host 127.0.0.1 --port 15173 --strictPort',
+            cwd: frontendDir,
+            url: frontendUrl,
+            timeout: 120_000,
+            reuseExistingServer: false,
+            env: {
+              ...process.env,
+              TRADEFLOW_API_URL: backendUrl
+            }
+          }
+        ])
   ]
 });
