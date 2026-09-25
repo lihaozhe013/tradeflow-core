@@ -1,23 +1,9 @@
+import ResponsiveTable from '@/components/ResponsiveTable';
 import { useState, useEffect, useCallback, type FC } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ColumnsType, TableProps } from 'antd/es/table';
 import type { FormProps } from 'antd';
-import {
-  Table,
-  Button,
-  Modal,
-  Form,
-  Input,
-  Select,
-  Space,
-  message,
-  Popconfirm,
-  Card,
-  Typography,
-  Row,
-  Col,
-  Divider
-} from 'antd';
+import { Button, Modal, Form, Input, Select, Space, message, Popconfirm, Card, Typography, Row, Col, Divider } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { PRODUCT_CATEGORIES } from '@/config';
 import { useSimpleApi } from '@/hooks/useSimpleApi';
@@ -299,8 +285,7 @@ const Products: FC = () => {
 
         <Divider />
 
-        <div className="responsive-table">
-          <Table<ProductItem>
+        <ResponsiveTable<ProductItem>
             columns={columns}
             dataSource={products}
             rowKey="code"
@@ -319,8 +304,7 @@ const Products: FC = () => {
                 })
             }}
             scroll={{ x: 900 }}
-          />
-        </div>
+        />
       </Card>
 
       {canWrite && (

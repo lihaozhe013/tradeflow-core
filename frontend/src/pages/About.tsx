@@ -72,22 +72,22 @@ function About() {
               {t('about.systemInfo')}
             </Title>
             <Row gutter={[16, 16]}>
-              <Col span={12}>
+              <Col xs={24} md={12}>
                 <Text strong>{t('about.systemVersion')}: </Text>
                 <Text>
                   {aboutData?.system?.version ?? '0.1.0'}
                   <Text type="secondary"> ({__COMMIT_HASH__})</Text>
                 </Text>
               </Col>
-              <Col span={12}>
+              <Col xs={24} md={12}>
                 <Text strong>{t('about.releaseDate')}: </Text>
                 <Text>{aboutData?.system?.releaseDate ?? '2025-01-01'}</Text>
               </Col>
-              <Col span={12}>
+              <Col xs={24} md={12}>
                 <Text strong>{t('about.techStack')}: </Text>
                 <Text>{aboutData?.system?.techStack ?? 'React + Node.js + SQLite'}</Text>
               </Col>
-              <Col span={12}>
+              <Col xs={24} md={12}>
                 <Text strong>{t('about.development')}: </Text>
                 <Text>{aboutData?.system?.team ?? t('about.devTeam')}</Text>
               </Col>

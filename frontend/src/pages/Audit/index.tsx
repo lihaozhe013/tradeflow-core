@@ -1,5 +1,6 @@
+import ResponsiveTable from '@/components/ResponsiveTable';
 import { useState, useCallback } from 'react';
-import { Table, Card, Input, Button, Space, DatePicker, Tag, message } from 'antd';
+import { Card, Input, Button, Space, DatePicker, Tag, message } from 'antd';
 import { SearchOutlined, ReloadOutlined } from '@ant-design/icons';
 import type { ColumnsType, TablePaginationConfig } from 'antd/es/table';
 import type { Dayjs } from 'dayjs';
@@ -230,7 +231,7 @@ function Audit(): React.ReactElement {
         </Button>
       </Space>
 
-      <Table
+      <ResponsiveTable
         columns={columns}
         dataSource={data}
         rowKey="id"

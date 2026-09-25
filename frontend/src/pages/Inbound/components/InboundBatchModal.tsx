@@ -79,7 +79,7 @@ const InboundBatchModal: FC<InboundBatchModalProps> = ({
       </div>
       <Form<InboundFormValues> form={form} layout="vertical" onFinish={onSave}>
         <Row gutter={16}>
-          <Col span={8}>
+          <Col xs={24} sm={12} xl={8}>
             <Form.Item label={t('inbound.supplierCode')} name="supplier_code">
               <AutoComplete
                 placeholder={t('inbound.inputSupplierCode') ?? ''}
@@ -93,7 +93,7 @@ const InboundBatchModal: FC<InboundBatchModalProps> = ({
               />
             </Form.Item>
           </Col>
-          <Col span={8}>
+          <Col xs={24} sm={12} xl={8}>
             <Form.Item label={t('inbound.supplierShortName')} name="supplier_short_name">
               <AutoComplete
                 placeholder={t('inbound.inputSupplierShortName') ?? ''}
@@ -107,7 +107,7 @@ const InboundBatchModal: FC<InboundBatchModalProps> = ({
               />
             </Form.Item>
           </Col>
-          <Col span={8}>
+          <Col xs={24} sm={12} xl={8}>
             <Form.Item label={t('inbound.supplierFullName')} name="supplier_full_name">
               <Input placeholder={t('inbound.autoFill') ?? ''} disabled />
             </Form.Item>
@@ -115,7 +115,7 @@ const InboundBatchModal: FC<InboundBatchModalProps> = ({
         </Row>
 
         <Row gutter={16}>
-          <Col span={8}>
+          <Col xs={24} sm={12} xl={8}>
             <Form.Item label={t('inbound.productCode')} name="product_code">
               <AutoComplete
                 placeholder={t('inbound.inputProductCode') ?? ''}
@@ -129,7 +129,7 @@ const InboundBatchModal: FC<InboundBatchModalProps> = ({
               />
             </Form.Item>
           </Col>
-          <Col span={8}>
+          <Col xs={24} sm={12} xl={8}>
             <Form.Item label={t('inbound.productModel')} name="product_model">
               <AutoComplete
                 placeholder={t('inbound.inputProductModel') ?? ''}
@@ -143,7 +143,7 @@ const InboundBatchModal: FC<InboundBatchModalProps> = ({
               />
             </Form.Item>
           </Col>
-          <Col span={8}>
+          <Col xs={24} sm={12} xl={8}>
             <Form.Item label={t('inbound.inboundDate')} name="inbound_date">
               <DatePicker
                 style={{ width: '100%' }}
@@ -157,7 +157,7 @@ const InboundBatchModal: FC<InboundBatchModalProps> = ({
         </Row>
 
         <Row gutter={16}>
-          <Col span={8}>
+          <Col xs={24} sm={12} xl={8}>
             <Form.Item
               label={t('inbound.quantity')}
               name="quantity"
@@ -175,7 +175,7 @@ const InboundBatchModal: FC<InboundBatchModalProps> = ({
               />
             </Form.Item>
           </Col>
-          <Col span={8}>
+          <Col xs={24} sm={12} xl={8}>
             <Form.Item
               label={t('inbound.unitPriceInputType')}
               name="manual_price"
@@ -193,7 +193,7 @@ const InboundBatchModal: FC<InboundBatchModalProps> = ({
               />
             </Form.Item>
           </Col>
-          <Col span={8}>
+          <Col xs={24} sm={12} xl={8}>
             <Form.Item
               label={t('inbound.unitPrice')}
               name="unit_price"
@@ -217,7 +217,7 @@ const InboundBatchModal: FC<InboundBatchModalProps> = ({
         </Row>
 
         <Row gutter={16}>
-          <Col span={8}>
+          <Col xs={24} sm={12} xl={8}>
             <Form.Item label={t('inbound.invoiceDate')} name="invoice_date">
               <DatePicker
                 style={{ width: '100%' }}
@@ -227,12 +227,12 @@ const InboundBatchModal: FC<InboundBatchModalProps> = ({
               />
             </Form.Item>
           </Col>
-          <Col span={8}>
+          <Col xs={24} sm={12} xl={8}>
             <Form.Item label={t('inbound.invoiceNumber')} name="invoice_number">
               <Input placeholder={t('inbound.inputInvoiceNumber') ?? ''} />
             </Form.Item>
           </Col>
-          <Col span={8}>
+          <Col xs={24} sm={12} xl={8}>
             <Form.Item label={t('inbound.orderNumber')} name="order_number">
               <Input placeholder={t('inbound.inputOrderNumber') ?? ''} />
             </Form.Item>
@@ -240,7 +240,7 @@ const InboundBatchModal: FC<InboundBatchModalProps> = ({
         </Row>
 
         <Row gutter={16}>
-          <Col span={8}>
+          <Col xs={24} sm={12} xl={8}>
             <Form.Item label={t('inbound.receiptNumber')} name="receipt_number">
               <Input placeholder={t('inbound.inputReceiptNumber') ?? ''} />
             </Form.Item>

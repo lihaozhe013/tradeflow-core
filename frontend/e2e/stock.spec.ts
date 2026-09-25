@@ -2,6 +2,7 @@ import { type Page } from '@playwright/test';
 import { expect, test } from './fixtures';
 import {
   apiRequest,
+  expectDesktopOrNarrowLayout,
   type E2eRecords,
   logInAs,
   paginationButton,
@@ -212,12 +213,13 @@ test('inbound supports create, search, validation, edit, batch update, and delet
     );
     await batchDialog.getByRole('button', { name: 'Batch Update 2 Records' }).click();
     expect((await batchResponse).ok()).toBeTruthy();
-    await expect(page.getByRole('row').filter({ hasText: firstOrder })).toContainText(batchInvoice);
-    await expect(page.getByRole('row').filter({ hasText: secondOrder })).toContainText(
-      batchInvoice
-    );
-
     const firstUpdatedRow = page.getByRole('row').filter({ hasText: firstOrder });
+    await firstUpdatedRow.getByRole('button', { name: 'Expand row' }).click();
+    await expect(page.getByText(batchInvoice, { exact: true })).toBeVisible();
+    const secondUpdatedRow = page.getByRole('row').filter({ hasText: secondOrder });
+    await secondUpdatedRow.getByRole('button', { name: 'Expand row' }).click();
+    await expect(page.getByText(batchInvoice, { exact: true }).last()).toBeVisible();
+
     await firstUpdatedRow.getByRole('button', { name: 'Delete' }).click();
     await page.getByRole('button', { name: 'Confirm', exact: true }).click();
     records.forget(`/inbound/${firstInboundId}`);
@@ -324,10 +326,12 @@ test('outbound supports inventory validation, create, search, edit, batch update
     );
     await batchDialog.getByRole('button', { name: 'Batch Update 2 Records' }).click();
     expect((await batchResponse).ok()).toBeTruthy();
-    await expect(page.getByRole('row').filter({ hasText: firstOrder })).toContainText(batchReceipt);
-    await expect(page.getByRole('row').filter({ hasText: secondOrder })).toContainText(
-      batchReceipt
-    );
+    const firstUpdatedRow = page.getByRole('row').filter({ hasText: firstOrder });
+    await firstUpdatedRow.getByRole('button', { name: 'Expand row' }).click();
+    await expect(page.getByText(batchReceipt, { exact: true })).toBeVisible();
+    const secondUpdatedRow = page.getByRole('row').filter({ hasText: secondOrder });
+    await secondUpdatedRow.getByRole('button', { name: 'Expand row' }).click();
+    await expect(page.getByText(batchReceipt, { exact: true }).last()).toBeVisible();
 
     await page
       .getByRole('row')
@@ -451,4 +455,105 @@ test('overview isolates a failed top-sales chart request', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible();
   await expect(page.locator('.ant-alert-error')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Quick Inbound' })).toBeVisible();
+});
+
+test.describe('mobile inbound records', () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test('supports search, edit, batch update, and delete from record cards', async ({
+    page,
+    records
+  }) => {
+    const firstOrder = uniqueId('E2E-MOBILE-IN-ORDER');
+    const secondOrder = uniqueId('E2E-MOBILE-IN-ORDER');
+
+    try {
+      const fixture = await createStockFixtures(page, records);
+      const firstInboundId = await createInboundFromUi(page, records, fixture, firstOrder, 8);
+      await createInboundFromUi(page, records, fixture, secondOrder, 4);
+
+      await page.getByPlaceholder('Search order / invoice / receipt number').fill('E2E-MOBILE-IN-ORDER');
+      await page.getByPlaceholder('Search order / invoice / receipt number').press('Enter');
+      const recordsList = page.locator('.responsive-record-cards');
+      await expect(recordsList.locator('.responsive-record-card')).toHaveCount(2);
+
+      let firstCard = recordsList.locator('.responsive-record-card').filter({ hasText: firstOrder });
+      await expect(firstCard).toContainText('8');
+      await firstCard.getByRole('button', { name: 'Edit' }).click();
+      const editDialog = page.getByRole('dialog');
+      await editDialog.getByLabel('Quantity').fill('10');
+      const updateResponse = page.waitForResponse(
+        (response) =>
+          response.url().includes('/api/inbound/') && response.request().method() === 'PUT'
+      );
+      await editDialog.getByRole('button', { name: 'Save', exact: true }).click();
+      expect((await updateResponse).ok()).toBeTruthy();
+      firstCard = recordsList.locator('.responsive-record-card').filter({ hasText: firstOrder });
+      await expect(firstCard).toContainText('10');
+
+      const invoiceNumber = uniqueId('E2E-MOBILE-BATCH-INVOICE');
+      for (const card of [firstCard, recordsList.locator('.responsive-record-card').filter({ hasText: secondOrder })]) {
+        await card.getByRole('checkbox').check();
+      }
+      await page.getByRole('button', { name: /Batch Edit/ }).click();
+      const batchDialog = page.getByRole('dialog');
+      await batchDialog.getByPlaceholder('Enter invoice number').fill(invoiceNumber);
+      const batchResponse = page.waitForResponse(
+        (response) =>
+          response.url().endsWith('/api/inbound/batch') && response.request().method() === 'POST'
+      );
+      await batchDialog.getByRole('button', { name: 'Batch Update 2 Records' }).click();
+      expect((await batchResponse).ok()).toBeTruthy();
+
+      firstCard = recordsList.locator('.responsive-record-card').filter({ hasText: firstOrder });
+      await firstCard.locator('details summary').click();
+      await expect(firstCard).toContainText(invoiceNumber);
+      await firstCard.getByRole('button', { name: 'Delete' }).click();
+      await page.getByRole('button', { name: 'Confirm', exact: true }).click();
+      records.forget(`/inbound/${firstInboundId}`);
+      await expect(recordsList.locator('.responsive-record-card').filter({ hasText: firstOrder })).toHaveCount(0);
+    } finally {
+      await records.cleanup();
+    }
+  });
+});
+
+test('captures the target responsive widths without horizontal overflow', async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await logInAs(page, 'editor');
+
+  for (const viewport of [
+    { width: 360, height: 800 },
+    { width: 390, height: 844 },
+    { width: 1280, height: 800 },
+    { width: 1366, height: 768 }
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.goto('/#/inventory');
+    await expect(page.getByRole('heading', { name: 'Inventory' })).toBeVisible();
+    await expectDesktopOrNarrowLayout(page);
+    if (viewport.width < 768) {
+      const navigationButton = page.getByRole('button', { name: 'Open navigation' });
+      const buttonBounds = await navigationButton.boundingBox();
+      expect(buttonBounds?.width).toBeGreaterThanOrEqual(40);
+      expect(buttonBounds?.height).toBeGreaterThanOrEqual(40);
+    }
+    await page.screenshot({ path: testInfo.outputPath(`responsive-${viewport.width}.png`) });
+  }
+});
+
+test('mobile inventory cards support sorting and pagination', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await logInAs(page, 'editor');
+  await page.goto('/#/inventory');
+
+  const sortControl = page.getByRole('combobox', { name: 'Sort records' });
+  await sortControl.click();
+  await page.getByText('Product Model ↑', { exact: true }).click();
+  await expect(sortControl).toBeVisible();
+
+  const nextPage = page.getByRole('listitem', { name: 'Next Page' }).getByRole('button');
+  await expect(nextPage).toBeEnabled();
+  await nextPage.click();
+  await expect(page.locator('.responsive-record-pagination')).toContainText('21-40 of');
 });

@@ -1,7 +1,8 @@
 /* 登录页面样式 */
 .login-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #ebebeb 0%, #d8d8d8 100%);
+  min-height: 100dvh;
+  background: #f4f6f9;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -15,11 +16,10 @@
 
 .login-card {
   position: relative;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 12px 36px rgba(16, 24, 40, 0.08);
+  border-radius: 16px;
+  background: #fff;
+  border: 1px solid #e6eaf0;
 }
 
 .login-header {
@@ -32,8 +32,8 @@
 }
 
 .logo-image {
-  width: 160px;
-  height: 160px;
+  width: 128px;
+  height: 128px;
 }
 
 .login-title {
@@ -91,5 +91,14 @@
 
   .login-title {
     font-size: 20px;
+  }
+
+  .login-card .ant-card-body {
+    padding: 20px;
+  }
+
+  .logo-image {
+    width: 104px;
+    height: 104px;
   }
 }

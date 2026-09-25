@@ -81,7 +81,7 @@ const OutboundModal: FC<OutboundModalProps> = ({
     >
       <Form<OutboundFormValues> form={form} layout="vertical" onFinish={onSave}>
         <Row gutter={16}>
-          <Col span={8}>
+          <Col xs={24} sm={12} xl={8}>
             <Form.Item
               label={t('outbound.customerCode')}
               name="customer_code"
@@ -98,7 +98,7 @@ const OutboundModal: FC<OutboundModalProps> = ({
               />
             </Form.Item>
           </Col>
-          <Col span={8}>
+          <Col xs={24} sm={12} xl={8}>
             <Form.Item
               label={t('outbound.customerShortName')}
               name="customer_short_name"
@@ -120,7 +120,7 @@ const OutboundModal: FC<OutboundModalProps> = ({
               />
             </Form.Item>
           </Col>
-          <Col span={8}>
+          <Col xs={24} sm={12} xl={8}>
             <Form.Item label={t('outbound.customerFullName')} name="customer_full_name">
               <Input placeholder={t('outbound.autoFill') ?? ''} disabled />
             </Form.Item>
@@ -128,7 +128,7 @@ const OutboundModal: FC<OutboundModalProps> = ({
         </Row>
 
         <Row gutter={16}>
-          <Col span={8}>
+          <Col xs={24} sm={12} xl={8}>
             <Form.Item
               label={t('outbound.productCode')}
               name="product_code"
@@ -145,7 +145,7 @@ const OutboundModal: FC<OutboundModalProps> = ({
               />
             </Form.Item>
           </Col>
-          <Col span={8}>
+          <Col xs={24} sm={12} xl={8}>
             <Form.Item
               label={t('outbound.productModel')}
               name="product_model"
@@ -162,7 +162,7 @@ const OutboundModal: FC<OutboundModalProps> = ({
               />
             </Form.Item>
           </Col>
-          <Col span={8}>
+          <Col xs={24} sm={12} xl={8}>
             <Form.Item
               label={t('outbound.outboundDate')}
               name="outbound_date"
@@ -179,7 +179,7 @@ const OutboundModal: FC<OutboundModalProps> = ({
         </Row>
 
         <Row gutter={16}>
-          <Col span={8}>
+          <Col xs={24} sm={12} xl={8}>
             <Form.Item
               label={t('outbound.quantity')}
               name="quantity"
@@ -198,7 +198,7 @@ const OutboundModal: FC<OutboundModalProps> = ({
               />
             </Form.Item>
           </Col>
-          <Col span={8}>
+          <Col xs={24} sm={12} xl={8}>
             <Form.Item
               label={t('outbound.unitPriceInputType')}
               name="manual_price"
@@ -216,7 +216,7 @@ const OutboundModal: FC<OutboundModalProps> = ({
               />
             </Form.Item>
           </Col>
-          <Col span={8}>
+          <Col xs={24} sm={12} xl={8}>
             <Form.Item
               label={t('outbound.unitPrice')}
               name="unit_price"
@@ -238,7 +238,7 @@ const OutboundModal: FC<OutboundModalProps> = ({
         </Row>
 
         <Row gutter={16}>
-          <Col span={8}>
+          <Col xs={24} sm={12} xl={8}>
             <Form.Item label={t('outbound.totalPrice')} name="total_price">
               <InputNumber
                 style={{ width: '100%' }}
@@ -249,7 +249,7 @@ const OutboundModal: FC<OutboundModalProps> = ({
               />
             </Form.Item>
           </Col>
-          <Col span={8}>
+          <Col xs={24} sm={12} xl={8}>
             <Form.Item label={t('outbound.invoiceDate')} name="invoice_date">
               <DatePicker
                 style={{ width: '100%' }}
@@ -258,7 +258,7 @@ const OutboundModal: FC<OutboundModalProps> = ({
               />
             </Form.Item>
           </Col>
-          <Col span={8}>
+          <Col xs={24} sm={12} xl={8}>
             <Form.Item label={t('outbound.invoiceNumber')} name="invoice_number">
               <Input placeholder={t('outbound.inputInvoiceNumber') ?? ''} />
             </Form.Item>
@@ -266,12 +266,12 @@ const OutboundModal: FC<OutboundModalProps> = ({
         </Row>
 
         <Row gutter={16}>
-          <Col span={8}>
+          <Col xs={24} sm={12} xl={8}>
             <Form.Item label={t('outbound.orderNumber')} name="order_number">
               <Input placeholder={t('outbound.inputOrderNumber') ?? ''} />
             </Form.Item>
           </Col>
-          <Col span={8}>
+          <Col xs={24} sm={12} xl={8}>
             <Form.Item label={t('outbound.receiptNumber')} name="receipt_number">
               <Input placeholder={t('outbound.inputReceiptNumber') ?? ''} />
             </Form.Item>

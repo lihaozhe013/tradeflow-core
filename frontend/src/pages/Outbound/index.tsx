@@ -545,6 +545,7 @@ const Outbound: FC = () => {
             <Col>
               <Button
                 type="default"
+                className="batch-action-button"
                 icon={<EditOutlined />}
                 onClick={handleBatchEdit}
                 disabled={selectedRowKeys.length === 0}

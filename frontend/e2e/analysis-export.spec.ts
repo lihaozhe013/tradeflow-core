@@ -1,6 +1,13 @@
 import { type Page } from '@playwright/test';
 import { expect, test } from './fixtures';
-import { apiRequest, type E2eRecords, logInAs, uniqueId, useEnglish } from './support';
+import {
+  apiRequest,
+  expectDesktopOrNarrowLayout,
+  type E2eRecords,
+  logInAs,
+  uniqueId,
+  useEnglish
+} from './support';
 
 interface CreatedRecord {
   id: number;
@@ -229,4 +236,23 @@ test('export page downloads every report category and handles empty or failed re
   } finally {
     await records.cleanup();
   }
+});
+
+test.describe('mobile export', () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test('keeps date filters usable and downloads a report', async ({ page, records }) => {
+    try {
+      await createAnalysisFixtures(page, records, new Date().toISOString().slice(0, 10));
+      await page.goto('/#/export');
+      await expect(page.getByRole('button', { name: 'Export All Base Info' })).toBeVisible();
+      await expect(page.locator('.responsive-date-range .ant-picker')).toHaveCount(10);
+      await expectDesktopOrNarrowLayout(page);
+
+      await expectExcelDownload(page, 'Inventory Export');
+      await expectDesktopOrNarrowLayout(page);
+    } finally {
+      await records.cleanup();
+    }
+  });
 });

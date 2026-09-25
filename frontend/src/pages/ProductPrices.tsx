@@ -1,3 +1,4 @@
+import ResponsiveTable from '@/components/ResponsiveTable';
 import { useState, useCallback, useEffect, type FC } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ColumnsType, TableProps } from 'antd/es/table';
@@ -6,24 +7,7 @@ import type { AutoCompleteProps } from 'antd/es/auto-complete';
 import type { SelectProps } from 'antd/es/select';
 import type { Dayjs } from 'dayjs';
 import { currency_unit_symbol } from '@/config/types';
-import {
-  Table,
-  Button,
-  Modal,
-  Form,
-  Select,
-  DatePicker,
-  InputNumber,
-  Space,
-  message,
-  Popconfirm,
-  Card,
-  Typography,
-  Row,
-  Col,
-  Divider,
-  AutoComplete
-} from 'antd';
+import { Button, Modal, Form, Select, DatePicker, InputNumber, Space, message, Popconfirm, Card, Typography, Row, Col, Divider, AutoComplete } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { useSimpleApi, useSimpleApiData } from '@/hooks/useSimpleApi';
@@ -438,8 +422,7 @@ const ProductPrices: FC = () => {
 
         <Divider />
 
-        <div className="responsive-table">
-          <Table<ProductPriceItem>
+        <ResponsiveTable<ProductPriceItem>
             columns={columns}
             dataSource={productPrices}
             rowKey="id"
@@ -458,8 +441,7 @@ const ProductPrices: FC = () => {
                 })
             }}
             scroll={{ x: 800 }}
-          />
-        </div>
+        />
       </Card>
 
       {canWrite && (
@@ -477,7 +459,7 @@ const ProductPrices: FC = () => {
             onValuesChange={handleFormValuesChange}
           >
             <Row gutter={8}>
-              <Col span={12}>
+              <Col xs={24} md={12}>
                 <Form.Item label={t('productPrices.partnerCode')} name="partner_code">
                   <AutoComplete
                     options={partnerCodeOptions}
@@ -494,7 +476,7 @@ const ProductPrices: FC = () => {
                   />
                 </Form.Item>
               </Col>
-              <Col span={12}>
+              <Col xs={24} md={12}>
                 <Form.Item
                   label={t('productPrices.partnerShortName')}
                   name="partner_short_name"
@@ -519,7 +501,7 @@ const ProductPrices: FC = () => {
               </Col>
             </Row>
             <Row gutter={8}>
-              <Col span={12}>
+              <Col xs={24} md={12}>
                 <Form.Item label={t('productPrices.productCode')} name="product_code">
                   <AutoComplete
                     options={productCodeOptions}
@@ -536,7 +518,7 @@ const ProductPrices: FC = () => {
                   />
                 </Form.Item>
               </Col>
-              <Col span={12}>
+              <Col xs={24} md={12}>
                 <Form.Item
                   label={t('productPrices.productModel')}
                   name="product_model"

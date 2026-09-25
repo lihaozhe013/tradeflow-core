@@ -1,23 +1,9 @@
+import ResponsiveTable from '@/components/ResponsiveTable';
 import { useState, useEffect, useCallback, type FC } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ColumnsType, TableProps } from 'antd/es/table';
 import type { FormProps } from 'antd';
-import {
-  Table,
-  Button,
-  Modal,
-  Form,
-  Input,
-  Select,
-  Space,
-  message,
-  Popconfirm,
-  Card,
-  Typography,
-  Row,
-  Col,
-  Divider
-} from 'antd';
+import { Button, Modal, Form, Input, Select, Space, message, Popconfirm, Card, Typography, Row, Col, Divider } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useSimpleApi } from '@/hooks/useSimpleApi';
 import { usePermissions } from '@/auth/usePermissions';
@@ -336,8 +322,7 @@ const Partners: FC = () => {
 
         <Divider />
 
-        <div className="responsive-table">
-          <Table<PartnerItem>
+        <ResponsiveTable<PartnerItem>
             columns={columns}
             dataSource={partners}
             rowKey="short_name"
@@ -356,8 +341,7 @@ const Partners: FC = () => {
                 })
             }}
             scroll={{ x: 900 }}
-          />
-        </div>
+        />
       </Card>
 
       {canWrite && (

@@ -1,4 +1,5 @@
-import { Table, Button, Space, Popconfirm } from 'antd';
+import ResponsiveTable from '@/components/ResponsiveTable';
+import { Button, Space, Popconfirm } from 'antd';
 import type { ColumnsType, TablePaginationConfig } from 'antd/es/table';
 import type { TableRowSelection } from 'antd/es/table/interface';
 import type { TableProps } from 'antd/es/table';
@@ -66,18 +67,16 @@ const InboundTable: FC<InboundTableProps> = ({
       onFilter: (value, record) => record.product_model === value
     },
     {
+      title: t('inbound.orderNumber'),
+      dataIndex: 'order_number',
+      key: 'order_number',
+      width: 160
+    },
+    {
       title: t('inbound.quantity'),
       dataIndex: 'quantity',
       key: 'quantity',
       width: 80
-    },
-    {
-      title: t('inbound.unitPrice'),
-      dataIndex: 'unit_price',
-      key: 'unit_price',
-      width: 100,
-      render: (price) => `${currency_unit_symbol}${price}`,
-      sorter: true
     },
     {
       title: t('inbound.totalPrice'),
@@ -88,17 +87,19 @@ const InboundTable: FC<InboundTableProps> = ({
       sorter: true
     },
     {
+      title: t('inbound.unitPrice'),
+      dataIndex: 'unit_price',
+      key: 'unit_price',
+      width: 100,
+      render: (price) => `${currency_unit_symbol}${price}`,
+      sorter: true
+    },
+    {
       title: t('inbound.inboundDate'),
       dataIndex: 'inbound_date',
       key: 'inbound_date',
       width: 100,
       sorter: true
-    },
-    {
-      title: t('inbound.orderNumber'),
-      dataIndex: 'order_number',
-      key: 'order_number',
-      width: 160
     },
     {
       title: t('inbound.receiptNumber'),
@@ -148,8 +149,10 @@ const InboundTable: FC<InboundTableProps> = ({
   };
 
   return (
-    <div className="responsive-table">
-      <Table
+    <ResponsiveTable
+        mobileTitleKey="order_number"
+        mobileSubtitleKey="product_model"
+        mobileSummaryKeys={['partner.short_name', 'quantity', 'total_price']}
         columns={columns}
         dataSource={inboundRecords}
         rowKey="id"
@@ -158,8 +161,7 @@ const InboundTable: FC<InboundTableProps> = ({
         onChange={onTableChange}
         pagination={pagination}
         scroll={{ x: 1320 }}
-      />
-    </div>
+    />
   );
 };
 

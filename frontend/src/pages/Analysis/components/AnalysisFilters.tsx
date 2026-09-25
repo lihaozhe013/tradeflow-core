@@ -1,11 +1,10 @@
 import React from 'react';
-import { Row, Col, DatePicker, AutoComplete, Button, Space, Segmented } from 'antd';
+import { Row, Col, AutoComplete, Button, Space, Segmented } from 'antd';
 import { DownloadOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import type { Dayjs } from 'dayjs';
 import type { PartnerOption, ProductOption, AnalysisType } from '@/types/analysis';
-
-const { RangePicker } = DatePicker;
+import ResponsiveDateRange from '@/components/ResponsiveDateRange';
 
 interface AnalysisFiltersProps {
   dateRange: [Dayjs, Dayjs];
@@ -76,12 +75,19 @@ const AnalysisFilters: React.FC<AnalysisFiltersProps> = ({
           <div style={{ marginBottom: 8 }}>
             <strong>{t('analysis.timeRange')}</strong>
           </div>
-          <RangePicker
+          <ResponsiveDateRange
             value={dateRange}
-            onChange={onDateRangeChange}
-            style={{ width: '100%' }}
+            onChange={(dates) =>
+              onDateRangeChange(
+                dates,
+                dates
+                  ? [dates[0]?.format('YYYY-MM-DD') ?? '', dates[1]?.format('YYYY-MM-DD') ?? '']
+                  : ['', '']
+              )
+            }
             format="YYYY-MM-DD"
-            placeholder={[t('analysis.startDate'), t('analysis.endDate')]}
+            startPlaceholder={t('analysis.startDate')}
+            endPlaceholder={t('analysis.endDate')}
           />
         </Col>
 

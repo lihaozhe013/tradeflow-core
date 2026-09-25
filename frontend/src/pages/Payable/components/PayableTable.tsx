@@ -1,18 +1,7 @@
+import ResponsiveTable from '@/components/ResponsiveTable';
 import { useState, useMemo, type FC, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  Table,
-  Button,
-  Popconfirm,
-  Tag,
-  message,
-  Modal,
-  Input,
-  Space,
-  Typography,
-  Row,
-  Col
-} from 'antd';
+import { Button, Popconfirm, Tag, message, Modal, Input, Space, Typography, Row, Col } from 'antd';
 import type { ColumnsType, TablePaginationConfig } from 'antd/es/table';
 import type { SortOrder } from 'antd/es/table/interface';
 import type { TableProps } from 'antd/es/table';
@@ -353,7 +342,7 @@ const PayableTable: FC<PayableTableProps> = ({
         </Col>
       </Row>
 
-      <Table<PayableRecord>
+      <ResponsiveTable<PayableRecord>
         columns={tableColumns}
         dataSource={data}
         rowKey="supplier_code"
@@ -379,13 +368,13 @@ const PayableTable: FC<PayableTableProps> = ({
             <div style={{ marginBottom: 24 }}>
               <Title level={5}>{t('payable.supplierInfo')}</Title>
               <Row gutter={16}>
-                <Col span={8}>
+                <Col xs={24} sm={12} xl={8}>
                   {t('payable.supplierCode')}: {supplierDetails.supplier?.code ?? '-'}
                 </Col>
-                <Col span={8}>
+                <Col xs={24} sm={12} xl={8}>
                   {t('payable.supplierShortName')}: {supplierDetails.supplier?.short_name ?? '-'}
                 </Col>
-                <Col span={8}>
+                <Col xs={24} sm={12} xl={8}>
                   {t('payable.supplierFullName')}: {supplierDetails.supplier?.full_name ?? '-'}
                 </Col>
               </Row>
@@ -394,14 +383,14 @@ const PayableTable: FC<PayableTableProps> = ({
             <div style={{ marginBottom: 24 }}>
               <Title level={5}>{t('payable.summary')}</Title>
               <Row gutter={16}>
-                <Col span={8}>
+                <Col xs={24} sm={12} xl={8}>
                   {t('payable.totalPayable')}:{' '}
                   {formatCurrency(supplierDetails.summary?.total_payable)}
                 </Col>
-                <Col span={8}>
+                <Col xs={24} sm={12} xl={8}>
                   {t('payable.totalPaid')}: {formatCurrency(supplierDetails.summary?.total_paid)}
                 </Col>
-                <Col span={8}>
+                <Col xs={24} sm={12} xl={8}>
                   {t('payable.balance')}:{getBalanceTag(supplierDetails.summary?.balance)}
                 </Col>
               </Row>
@@ -427,7 +416,7 @@ const PayableTable: FC<PayableTableProps> = ({
                   </Button>
                 )}
               </Title>
-              <Table<PayablePaymentRecord>
+              <ResponsiveTable<PayablePaymentRecord>
                 size="small"
                 dataSource={supplierDetails.payment_records?.data ?? []}
                 rowKey="id"
@@ -501,7 +490,7 @@ const PayableTable: FC<PayableTableProps> = ({
                   {t('payable.viewInvoicedDetails')}
                 </Button>
               </Title>
-              <Table
+              <ResponsiveTable
                 size="small"
                 dataSource={supplierDetails.inbound_records?.data ?? []}
                 rowKey="id"

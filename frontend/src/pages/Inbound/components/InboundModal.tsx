@@ -81,7 +81,7 @@ const InboundModal: FC<InboundModalProps> = ({
     >
       <Form<InboundFormValues> form={form} layout="vertical" onFinish={onSave}>
         <Row gutter={16}>
-          <Col span={8}>
+          <Col xs={24} sm={12} xl={8}>
             <Form.Item
               label={t('inbound.supplierCode')}
               name="supplier_code"
@@ -98,7 +98,7 @@ const InboundModal: FC<InboundModalProps> = ({
               />
             </Form.Item>
           </Col>
-          <Col span={8}>
+          <Col xs={24} sm={12} xl={8}>
             <Form.Item
               label={t('inbound.supplierShortName')}
               name="supplier_short_name"
@@ -120,7 +120,7 @@ const InboundModal: FC<InboundModalProps> = ({
               />
             </Form.Item>
           </Col>
-          <Col span={8}>
+          <Col xs={24} sm={12} xl={8}>
             <Form.Item label={t('inbound.supplierFullName')} name="supplier_full_name">
               <Input placeholder={t('inbound.autoFill') ?? ''} disabled />
             </Form.Item>
@@ -128,7 +128,7 @@ const InboundModal: FC<InboundModalProps> = ({
         </Row>
 
         <Row gutter={16}>
-          <Col span={8}>
+          <Col xs={24} sm={12} xl={8}>
             <Form.Item
               label={t('inbound.productCode')}
               name="product_code"
@@ -145,7 +145,7 @@ const InboundModal: FC<InboundModalProps> = ({
               />
             </Form.Item>
           </Col>
-          <Col span={8}>
+          <Col xs={24} sm={12} xl={8}>
             <Form.Item
               label={t('inbound.productModel')}
               name="product_model"
@@ -162,7 +162,7 @@ const InboundModal: FC<InboundModalProps> = ({
               />
             </Form.Item>
           </Col>
-          <Col span={8}>
+          <Col xs={24} sm={12} xl={8}>
             <Form.Item
               label={t('inbound.inboundDate')}
               name="inbound_date"
@@ -179,7 +179,7 @@ const InboundModal: FC<InboundModalProps> = ({
         </Row>
 
         <Row gutter={16}>
-          <Col span={8}>
+          <Col xs={24} sm={12} xl={8}>
             <Form.Item
               label={t('inbound.quantity')}
               name="quantity"
@@ -198,7 +198,7 @@ const InboundModal: FC<InboundModalProps> = ({
               />
             </Form.Item>
           </Col>
-          <Col span={8}>
+          <Col xs={24} sm={12} xl={8}>
             <Form.Item
               label={t('inbound.unitPriceInputType')}
               name="manual_price"
@@ -216,7 +216,7 @@ const InboundModal: FC<InboundModalProps> = ({
               />
             </Form.Item>
           </Col>
-          <Col span={8}>
+          <Col xs={24} sm={12} xl={8}>
             <Form.Item
               label={t('inbound.unitPrice')}
               name="unit_price"
@@ -235,7 +235,7 @@ const InboundModal: FC<InboundModalProps> = ({
         </Row>
 
         <Row gutter={16}>
-          <Col span={8}>
+          <Col xs={24} sm={12} xl={8}>
             <Form.Item label={t('inbound.totalPrice')} name="total_price">
               <InputNumber
                 style={{ width: '100%' }}
@@ -246,7 +246,7 @@ const InboundModal: FC<InboundModalProps> = ({
               />
             </Form.Item>
           </Col>
-          <Col span={8}>
+          <Col xs={24} sm={12} xl={8}>
             <Form.Item label={t('inbound.invoiceDate')} name="invoice_date">
               <DatePicker
                 style={{ width: '100%' }}
@@ -255,7 +255,7 @@ const InboundModal: FC<InboundModalProps> = ({
               />
             </Form.Item>
           </Col>
-          <Col span={8}>
+          <Col xs={24} sm={12} xl={8}>
             <Form.Item label={t('inbound.invoiceNumber')} name="invoice_number">
               <Input placeholder={t('inbound.inputInvoiceNumber') ?? ''} />
             </Form.Item>
@@ -263,12 +263,12 @@ const InboundModal: FC<InboundModalProps> = ({
         </Row>
 
         <Row gutter={16}>
-          <Col span={8}>
+          <Col xs={24} sm={12} xl={8}>
             <Form.Item label={t('inbound.orderNumber')} name="order_number">
               <Input placeholder={t('inbound.inputOrderNumber') ?? ''} />
             </Form.Item>
           </Col>
-          <Col span={8}>
+          <Col xs={24} sm={12} xl={8}>
             <Form.Item label={t('inbound.receiptNumber')} name="receipt_number">
               <Input placeholder={t('inbound.inputReceiptNumber') ?? ''} />
             </Form.Item>

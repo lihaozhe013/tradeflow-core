@@ -1,18 +1,7 @@
+import ResponsiveTable from '@/components/ResponsiveTable';
 import { useState, useCallback, useEffect, useMemo, type ChangeEvent, type FC } from 'react';
 import type { ColumnsType, TableProps } from 'antd/es/table';
-import {
-  Table,
-  Card,
-  Typography,
-  Row,
-  Col,
-  Input,
-  Button,
-  message,
-  Space,
-  Tag,
-  Divider
-} from 'antd';
+import { Card, Typography, Row, Col, Input, Button, message, Space, Tag, Divider } from 'antd';
 import { SearchOutlined, ReloadOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useSimpleApi, useSimpleApiData } from '@/hooks/useSimpleApi';
@@ -231,8 +220,7 @@ const Inventory: FC = () => {
           </Col>
         </Row>
 
-        <div className="responsive-table">
-          <Table<InventoryItem>
+        <ResponsiveTable<InventoryItem>
             columns={inventoryColumns}
             dataSource={inventoryData}
             rowKey="product_model"
@@ -251,8 +239,7 @@ const Inventory: FC = () => {
                 })
             }}
             scroll={{ x: 600 }}
-          />
-        </div>
+        />
       </Card>
     </div>
   );

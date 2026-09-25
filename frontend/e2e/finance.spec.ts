@@ -309,3 +309,76 @@ test('payables support payment, supplier details, invoice listing, refresh, and 
     await records.cleanup();
   }
 });
+
+test.describe('mobile receivable workflow', () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test('supports payment create, detail, edit, and delete from cards', async ({ page, records }) => {
+    const remark = uniqueId('E2E-MOBILE-PAYMENT');
+
+    try {
+      const fixture = await paymentFixtures(page, records, 'receivable');
+      await page.goto('/#/receivable');
+      const search = page.getByPlaceholder('Search Customer');
+      await search.fill(fixture.customer.short_name);
+      await search.press('Enter');
+
+      let customerCard = page
+        .locator('.responsive-record-card')
+        .filter({ hasText: fixture.customer.short_name });
+      await expect(customerCard).toBeVisible();
+      await customerCard.getByRole('button', { name: 'Add Payment' }).click();
+      const paymentDialog = page.getByRole('dialog').last();
+      await fillPayment(page, remark);
+      const createResponse = page.waitForResponse(
+        (response) =>
+          response.url().endsWith('/api/receivable/payments') &&
+          response.request().method() === 'POST'
+      );
+      await paymentDialog.getByRole('button', { name: 'OK', exact: true }).click();
+      const payment = (await (await createResponse).json()) as CreatedRecord;
+      records.track(`/receivable/payments/${payment.id}`);
+
+      customerCard = page
+        .locator('.responsive-record-card')
+        .filter({ hasText: fixture.customer.short_name });
+      await expect(customerCard).toContainText('$12.50');
+      await customerCard.getByRole('button', { name: 'Details' }).click();
+      let detailsDialog = page.getByRole('dialog').first();
+      let paymentCard = detailsDialog
+        .locator('.responsive-record-card')
+        .filter({ hasText: remark });
+      await expect(paymentCard).toContainText('$12.50');
+
+      await paymentCard.getByRole('button', { name: 'Edit', exact: true }).click();
+      const editDialog = page.getByRole('dialog').last();
+      await editDialog.getByPlaceholder('Enter payment amount').fill('15');
+      const updateResponse = page.waitForResponse(
+        (response) =>
+          response.url().includes('/api/receivable/payments/') &&
+          response.request().method() === 'PUT'
+      );
+      await editDialog.getByRole('button', { name: 'OK', exact: true }).click();
+      expect((await updateResponse).ok()).toBeTruthy();
+
+      customerCard = page
+        .locator('.responsive-record-card')
+        .filter({ hasText: fixture.customer.short_name });
+      await customerCard.getByRole('button', { name: 'Details' }).click();
+      detailsDialog = page.getByRole('dialog').first();
+      paymentCard = detailsDialog
+        .locator('.responsive-record-card')
+        .filter({ hasText: remark });
+      await expect(paymentCard).toContainText('$15.00');
+      await paymentCard
+        .locator('button')
+        .filter({ has: page.locator('[aria-label="delete"]') })
+        .click();
+      await page.getByRole('button', { name: 'OK', exact: true }).last().click();
+      records.forget(`/receivable/payments/${payment.id}`);
+      await expect(paymentCard).toHaveCount(0);
+    } finally {
+      await records.cleanup();
+    }
+  });
+});

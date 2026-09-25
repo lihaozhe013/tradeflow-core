@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { logInAs, useEnglish } from './support';
+import { expectDesktopOrNarrowLayout, logInAs, useEnglish } from './support';
 
 test.beforeEach(async ({ page }) => useEnglish(page));
 
@@ -18,6 +18,7 @@ test('loads every application page for an editor and supports logout', async ({ 
   await logInAs(page, 'editor');
   await page.goto('/#/');
   await expect(page).toHaveURL(/#\/overview$/);
+  await page.getByRole('menuitem', { name: 'Master Data' }).click();
   await page.getByRole('menuitem', { name: 'Products' }).click();
   await expect(page).toHaveURL(/#\/products$/);
 
@@ -42,6 +43,9 @@ test('loads every application page for an editor and supports logout', async ({ 
     await page.goto(`/#/${route}`);
     await expect(page.getByText(pageText, { exact: true }).first()).toBeVisible();
   }
+
+  await page.setViewportSize({ width: 1366, height: 768 });
+  await expectDesktopOrNarrowLayout(page);
 
   await page.getByRole('button', { name: /Test editor/i }).click();
   await page.getByText('Log Out', { exact: true }).click();
@@ -103,11 +107,27 @@ test.describe('narrow viewport', () => {
     ] as const) {
       await page.goto(`/#/${route}`);
       await expect(page.getByText(title, { exact: true }).first()).toBeVisible();
+      await expectDesktopOrNarrowLayout(page);
     }
 
+    await page.goto('/#/inbound');
+    await page.getByRole('button', { name: 'Open navigation' }).click();
+    await expect(page.getByRole('dialog')).toBeVisible();
+    await page.getByRole('menuitem', { name: 'Inventory' }).click();
+    await expect(page.locator('.mobile-page-title')).toHaveText('Inventory');
+    await expectDesktopOrNarrowLayout(page);
+
+    await page.setViewportSize({ width: 360, height: 800 });
     await page.goto('/#/partners');
     await expect(page.getByRole('button', { name: 'Add Partner' })).toBeVisible();
     await page.getByRole('button', { name: 'Add Partner' }).click();
-    await expect(page.getByRole('dialog')).toBeVisible();
+    const dialog = page.locator('.ant-modal').filter({ hasText: 'Add Partner' });
+    await expect(dialog).toBeVisible();
+    const dialogWidth = await dialog.evaluate((element) =>
+      Number.parseFloat(getComputedStyle(element).width)
+    );
+    const availableWidth = await page.evaluate(() => document.documentElement.clientWidth);
+    expect(dialogWidth).toBeGreaterThan(availableWidth * 0.9);
+    await expectDesktopOrNarrowLayout(page);
   });
 });

@@ -121,11 +121,6 @@ const MonthlyInventoryChange = () => {
     <Card
       title={t('overview.monthlyInventoryChange')}
       variant="outlined"
-      style={{
-        borderRadius: '16px',
-        boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
-        height: 370
-      }}
       extra={
         <Select
           value={selectedProduct}

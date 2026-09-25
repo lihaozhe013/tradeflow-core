@@ -1,18 +1,6 @@
+import ResponsiveTable from '@/components/ResponsiveTable';
 import { useState, useCallback, useEffect, useRef } from 'react';
-import {
-  Card,
-  Form,
-  Input,
-  Button,
-  Table,
-  Modal,
-  Select,
-  Tag,
-  Space,
-  Popconfirm,
-  message,
-  Switch
-} from 'antd';
+import { Card, Form, Input, Button, Modal, Select, Tag, Space, Popconfirm, message, Switch } from 'antd';
 import { EditOutlined, DeleteOutlined, KeyOutlined, PlusOutlined } from '@ant-design/icons';
 import type { ColumnsType, TablePaginationConfig } from 'antd/es/table';
 import { useTranslation } from 'react-i18next';
@@ -381,7 +369,7 @@ function Users(): React.ReactElement {
             </Button>
           }
         >
-          <Table
+          <ResponsiveTable
             columns={columns}
             dataSource={userData}
             rowKey="username"

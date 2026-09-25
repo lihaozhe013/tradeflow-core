@@ -1,5 +1,6 @@
+import ResponsiveTable from '@/components/ResponsiveTable';
 import { useState, useEffect, useCallback, useRef, type FC } from 'react';
-import { Modal, Table, Button, message, Typography } from 'antd';
+import { Modal, Button, message, Typography } from 'antd';
 import { ReloadOutlined } from '@ant-design/icons';
 import { currency_unit_symbol } from '@/config/types';
 import type { ColumnsType, TablePaginationConfig } from 'antd/es/table';
@@ -179,7 +180,7 @@ const InvoicedModal: FC<InvoicedModalProps> = ({
         )}
       </div>
 
-      <Table<InvoicedRecord>
+      <ResponsiveTable<InvoicedRecord>
         columns={columns}
         dataSource={data}
         rowKey="invoice_number"

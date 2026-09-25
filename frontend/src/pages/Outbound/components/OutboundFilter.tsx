@@ -7,11 +7,11 @@ import {
   type FC,
   type SetStateAction
 } from 'react';
-import { Select, DatePicker, Button, Row, Col, Input } from 'antd';
-import type { RangePickerProps } from 'antd/es/date-picker';
+import { Select, Button, Row, Col, Input } from 'antd';
 import type { DefaultOptionType } from 'antd/es/select';
 import { DownOutlined, SearchOutlined, UpOutlined } from '@ant-design/icons';
 import dayjs, { type Dayjs } from 'dayjs';
+import ResponsiveDateRange from '@/components/ResponsiveDateRange';
 import { useTranslation } from 'react-i18next';
 import type { OutboundFilters, Partner, Product } from '../types';
 
@@ -57,7 +57,7 @@ const OutboundFilter: FC<OutboundFilterProps> = ({
     return [start ? dayjs(start) : null, end ? dayjs(end) : null];
   }, [filters.dateRange]);
 
-  const handleDateChange: RangePickerProps['onChange'] = (dates) => {
+  const handleDateChange = (dates: [Dayjs | null, Dayjs | null] | null): void => {
     setFilters((prev) => ({
       ...prev,
       dateRange: dates
@@ -123,7 +123,7 @@ const OutboundFilter: FC<OutboundFilterProps> = ({
   return (
     <div style={{ marginBottom: 16 }}>
       <Row gutter={16}>
-        <Col span={8}>
+        <Col xs={24} md={8}>
           <Input
             allowClear
             prefix={<SearchOutlined />}
@@ -133,7 +133,7 @@ const OutboundFilter: FC<OutboundFilterProps> = ({
             onPressEnter={() => handleNumberPressEnter('keyword', keywordInput)}
           />
         </Col>
-        <Col span={5}>
+        <Col xs={24} sm={12} md={5}>
           <Select
             allowClear
             showSearch
@@ -153,7 +153,7 @@ const OutboundFilter: FC<OutboundFilterProps> = ({
             filterOption={filterByLabel}
           />
         </Col>
-        <Col span={5}>
+        <Col xs={24} sm={12} md={5}>
           <Select
             allowClear
             showSearch
@@ -173,12 +173,12 @@ const OutboundFilter: FC<OutboundFilterProps> = ({
             filterOption={filterByLabel}
           />
         </Col>
-        <Col span={2}>
+        <Col xs={12} md={2}>
           <Button type="primary" icon={<SearchOutlined />} onClick={onFilter}>
             {t('outbound.filter')}
           </Button>
         </Col>
-        <Col span={4} style={{ textAlign: 'right' }}>
+        <Col xs={12} md={4} style={{ textAlign: 'right' }}>
           <Button
             type="link"
             icon={advancedOpen ? <UpOutlined /> : <DownOutlined />}
@@ -191,18 +191,18 @@ const OutboundFilter: FC<OutboundFilterProps> = ({
       {advancedOpen && (
         <>
           <Row gutter={16} style={{ marginTop: 12 }}>
-            <Col span={6}>
-              <DatePicker.RangePicker
-                style={{ width: '100%' }}
+            <Col xs={24} sm={12} md={6}>
+              <ResponsiveDateRange
                 value={rangeValue}
                 onChange={handleDateChange}
                 format="YYYY-MM-DD"
-                placeholder={[t('outbound.startDate') ?? '', t('outbound.endDate') ?? '']}
+                startPlaceholder={t('outbound.startDate') ?? ''}
+                endPlaceholder={t('outbound.endDate') ?? ''}
               />
             </Col>
           </Row>
           <Row gutter={16} style={{ marginTop: 12 }}>
-            <Col span={6}>
+            <Col xs={24} sm={12} md={6}>
               <Input
                 allowClear
                 placeholder={t('outbound.inputOrderNumber')}
@@ -213,7 +213,7 @@ const OutboundFilter: FC<OutboundFilterProps> = ({
                 onPressEnter={() => handleNumberPressEnter('order_number', orderInput)}
               />
             </Col>
-            <Col span={6}>
+            <Col xs={24} sm={12} md={6}>
               <Input
                 allowClear
                 placeholder={t('outbound.inputInvoiceNumber')}
@@ -224,7 +224,7 @@ const OutboundFilter: FC<OutboundFilterProps> = ({
                 onPressEnter={() => handleNumberPressEnter('invoice_number', invoiceInput)}
               />
             </Col>
-            <Col span={6}>
+            <Col xs={24} sm={12} md={6}>
               <Input
                 allowClear
                 placeholder={t('outbound.inputReceiptNumber')}

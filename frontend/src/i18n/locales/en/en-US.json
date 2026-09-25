@@ -126,6 +126,7 @@
     "advancedFilters": "Advanced Filters",
     "cancel": "Cancel",
     "chinese": "中文",
+    "clearSelection": "Clear",
     "collapse": "Collapse",
     "confirm": "Confirm",
     "delete": "Delete",
@@ -133,13 +134,18 @@
     "english": "English",
     "export": "Export",
     "followSystem": "Follow system",
+    "moreDetails": "More details",
+    "noData": "No data",
     "korean": "한국어",
     "language": "Language",
     "logout": "Log Out",
     "refresh": "Refresh",
     "reset": "Reset",
     "save": "Save",
-    "search": "Search"
+    "search": "Search",
+    "selectRecord": "Select record {{record}}",
+    "selectedCount": "{{count}} selected",
+    "sortRecords": "Sort records"
   },
   "export": {
     "baseInfo": "Base Info",
@@ -255,11 +261,16 @@
   },
   "nav": {
     "advanced": "Advanced",
+    "administration": "Management",
     "analysis": "Data Analysis",
     "audit": "Audit Log",
     "export": "Export",
+    "finance": "Finance & Reports",
     "inbound": "Inbound",
     "inventory": "Inventory",
+    "masterData": "Master Data",
+    "openNavigation": "Open navigation",
+    "operations": "Operations",
     "outbound": "Outbound",
     "overview": "Overview",
     "partners": "Partners",
@@ -267,6 +278,7 @@
     "productPrices": "Product Prices",
     "products": "Products",
     "receivable": "Receivable",
+    "toggleNavigation": "Toggle navigation",
     "users": "Users"
   },
   "outbound": {

@@ -1,9 +1,8 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Card, Row, Col, Button, DatePicker, Space, Form, Input, message } from 'antd';
+import { Card, Row, Col, Button, Space, Form, Input, message } from 'antd';
 import { DatabaseOutlined, FileExcelOutlined } from '@ant-design/icons';
-
-const { RangePicker } = DatePicker;
+import ResponsiveDateRange from '@/components/ResponsiveDateRange';
 
 const ExportPanel = ({
   handleExport,
@@ -89,7 +88,14 @@ const ExportPanel = ({
           >
             <Form layout="inline" style={{ marginBottom: 16 }}>
               <Form.Item label={t('export.dateRange')}>
-                <RangePicker value={dateRange} onChange={setDateRange} format="YYYY-MM-DD" />
+                <ResponsiveDateRange
+                  value={dateRange}
+                  onChange={(dates) => {
+                    if (dates?.[0] && dates?.[1]) setDateRange(dates);
+                  }}
+                  startPlaceholder={t('analysis.startDate')}
+                  endPlaceholder={t('analysis.endDate')}
+                />
               </Form.Item>
               <Form.Item label={t('export.productCode')}>
                 <Input
@@ -173,7 +179,14 @@ const ExportPanel = ({
           >
             <Form layout="inline" style={{ marginBottom: 16 }}>
               <Form.Item label={t('export.dateRange')}>
-                <RangePicker value={dateRange} onChange={setDateRange} format="YYYY-MM-DD" />
+                <ResponsiveDateRange
+                  value={dateRange}
+                  onChange={(dates) => {
+                    if (dates?.[0] && dates?.[1]) setDateRange(dates);
+                  }}
+                  startPlaceholder={t('analysis.startDate')}
+                  endPlaceholder={t('analysis.endDate')}
+                />
               </Form.Item>
               <Form.Item label={t('export.productCode')}>
                 <Input
@@ -262,14 +275,23 @@ const ExportPanel = ({
           >
             <Form layout="inline" style={{ marginBottom: 16 }}>
               <Form.Item label={t('export.inoutDate')}>
-                <RangePicker value={dateRange} onChange={setDateRange} format="YYYY-MM-DD" />
+                <ResponsiveDateRange
+                  value={dateRange}
+                  onChange={(dates) => {
+                    if (dates?.[0] && dates?.[1]) setDateRange(dates);
+                  }}
+                  startPlaceholder={t('analysis.startDate')}
+                  endPlaceholder={t('analysis.endDate')}
+                />
               </Form.Item>
               <Form.Item label={t('export.paymentDate')}>
-                <RangePicker
+                <ResponsiveDateRange
                   value={paymentDateRange}
-                  onChange={setPaymentDateRange}
-                  format="YYYY-MM-DD"
-                  placeholder={[t('export.paymentStart'), t('export.paymentEnd')]}
+                  onChange={(dates) => {
+                    if (dates?.[0] && dates?.[1]) setPaymentDateRange(dates);
+                  }}
+                  startPlaceholder={t('export.paymentStart')}
+                  endPlaceholder={t('export.paymentEnd')}
                 />
               </Form.Item>
             </Form>
@@ -311,7 +333,14 @@ const ExportPanel = ({
                 />
               </Form.Item>
               <Form.Item label={t('export.dateRange')} required>
-                <RangePicker value={dateRange} onChange={setDateRange} format="YYYY-MM-DD" />
+                <ResponsiveDateRange
+                  value={dateRange}
+                  onChange={(dates) => {
+                    if (dates?.[0] && dates?.[1]) setDateRange(dates);
+                  }}
+                  startPlaceholder={t('analysis.startDate')}
+                  endPlaceholder={t('analysis.endDate')}
+                />
               </Form.Item>
             </Form>
             <Space wrap>

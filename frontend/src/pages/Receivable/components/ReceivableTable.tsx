@@ -1,18 +1,7 @@
+import ResponsiveTable from '@/components/ResponsiveTable';
 import { useState, useMemo, type FC, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  Table,
-  Button,
-  Popconfirm,
-  Tag,
-  message,
-  Modal,
-  Input,
-  Space,
-  Typography,
-  Row,
-  Col
-} from 'antd';
+import { Button, Popconfirm, Tag, message, Modal, Input, Space, Typography, Row, Col } from 'antd';
 import { currency_unit_symbol } from '@/config/types';
 import type { ColumnsType, TablePaginationConfig } from 'antd/es/table';
 import type { TableProps } from 'antd/es/table';
@@ -361,7 +350,7 @@ const ReceivableTable: FC<ReceivableTableProps> = ({
         </Col>
       </Row>
 
-      <Table<ReceivableRecord>
+      <ResponsiveTable<ReceivableRecord>
         columns={tableColumns}
         dataSource={data}
         rowKey="customer_code"
@@ -387,13 +376,13 @@ const ReceivableTable: FC<ReceivableTableProps> = ({
             <div style={{ marginBottom: 24 }}>
               <Title level={5}>{t('receivable.customerInfo')}</Title>
               <Row gutter={16}>
-                <Col span={8}>
+                <Col xs={24} sm={12} xl={8}>
                   {t('receivable.customerCode')}: {customerDetails.customer?.code ?? '-'}
                 </Col>
-                <Col span={8}>
+                <Col xs={24} sm={12} xl={8}>
                   {t('receivable.customerShortName')}: {customerDetails.customer?.short_name ?? '-'}
                 </Col>
-                <Col span={8}>
+                <Col xs={24} sm={12} xl={8}>
                   {t('receivable.customerFullName')}: {customerDetails.customer?.full_name ?? '-'}
                 </Col>
               </Row>
@@ -402,14 +391,14 @@ const ReceivableTable: FC<ReceivableTableProps> = ({
             <div style={{ marginBottom: 24 }}>
               <Title level={5}>{t('receivable.summary')}</Title>
               <Row gutter={16}>
-                <Col span={8}>
+                <Col xs={24} sm={12} xl={8}>
                   {t('receivable.totalReceivable')}:{' '}
                   {formatCurrency(customerDetails.summary?.total_receivable)}
                 </Col>
-                <Col span={8}>
+                <Col xs={24} sm={12} xl={8}>
                   {t('receivable.totalPaid')}: {formatCurrency(customerDetails.summary?.total_paid)}
                 </Col>
-                <Col span={8}>
+                <Col xs={24} sm={12} xl={8}>
                   {t('receivable.balance')}:{getBalanceTag(customerDetails.summary?.balance)}
                 </Col>
               </Row>
@@ -435,7 +424,7 @@ const ReceivableTable: FC<ReceivableTableProps> = ({
                   </Button>
                 )}
               </Title>
-              <Table<ReceivablePaymentRecord>
+              <ResponsiveTable<ReceivablePaymentRecord>
                 size="small"
                 dataSource={customerDetails.payment_records?.data ?? []}
                 rowKey="id"
@@ -509,7 +498,7 @@ const ReceivableTable: FC<ReceivableTableProps> = ({
                   {t('receivable.viewInvoicedDetails')}
                 </Button>
               </Title>
-              <Table<ReceivableOutboundRecord>
+              <ResponsiveTable<ReceivableOutboundRecord>
                 size="small"
                 dataSource={customerDetails.outbound_records?.data ?? []}
                 rowKey="id"

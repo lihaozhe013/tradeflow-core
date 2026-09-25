@@ -1,4 +1,5 @@
-import { Table, Button, Space, Popconfirm } from 'antd';
+import ResponsiveTable from '@/components/ResponsiveTable';
+import { Button, Space, Popconfirm } from 'antd';
 import type { ColumnsType, TablePaginationConfig } from 'antd/es/table';
 import type { TableRowSelection } from 'antd/es/table/interface';
 import type { TableProps } from 'antd/es/table';
@@ -66,18 +67,16 @@ const OutboundTable: FC<OutboundTableProps> = ({
       onFilter: (value, record) => record.product_model === value
     },
     {
+      title: t('outbound.orderNumber'),
+      dataIndex: 'order_number',
+      key: 'order_number',
+      width: 160
+    },
+    {
       title: t('outbound.quantity'),
       dataIndex: 'quantity',
       key: 'quantity',
       width: 80
-    },
-    {
-      title: t('outbound.unitPrice'),
-      dataIndex: 'unit_price',
-      key: 'unit_price',
-      width: 100,
-      render: (price) => `${currency_unit_symbol}${price}`,
-      sorter: true
     },
     {
       title: t('outbound.totalPrice'),
@@ -88,17 +87,19 @@ const OutboundTable: FC<OutboundTableProps> = ({
       sorter: true
     },
     {
+      title: t('outbound.unitPrice'),
+      dataIndex: 'unit_price',
+      key: 'unit_price',
+      width: 100,
+      render: (price) => `${currency_unit_symbol}${price}`,
+      sorter: true
+    },
+    {
       title: t('outbound.outboundDate'),
       dataIndex: 'outbound_date',
       key: 'outbound_date',
       width: 100,
       sorter: true
-    },
-    {
-      title: t('outbound.orderNumber'),
-      dataIndex: 'order_number',
-      key: 'order_number',
-      width: 160
     },
     {
       title: t('outbound.receiptNumber'),
@@ -148,8 +149,10 @@ const OutboundTable: FC<OutboundTableProps> = ({
   };
 
   return (
-    <div className="responsive-table">
-      <Table
+    <ResponsiveTable
+        mobileTitleKey="order_number"
+        mobileSubtitleKey="product_model"
+        mobileSummaryKeys={['partner.short_name', 'quantity', 'total_price']}
         columns={columns}
         dataSource={outboundRecords}
         rowKey="id"
@@ -158,8 +161,7 @@ const OutboundTable: FC<OutboundTableProps> = ({
         onChange={onTableChange}
         pagination={pagination}
         scroll={{ x: 1320 }}
-      />
-    </div>
+    />
   );
 };
 

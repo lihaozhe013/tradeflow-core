@@ -1,5 +1,6 @@
+import ResponsiveTable from '@/components/ResponsiveTable';
 import React from 'react';
-import { Table, Card } from 'antd';
+import { Card } from 'antd';
 import { useTranslation } from 'react-i18next';
 import type { DetailItem, PartnerOption, AnalysisType } from '@/types/analysis';
 
@@ -110,7 +111,7 @@ const AnalysisDetailTable: React.FC<AnalysisDetailTableProps> = ({
 
   return (
     <Card title={t('analysis.detailData')} loading={loading} style={{ marginBottom: 24 }}>
-      <Table
+      <ResponsiveTable
         dataSource={data}
         columns={getColumns()}
         rowKey="group_key"

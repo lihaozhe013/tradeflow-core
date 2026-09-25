@@ -1,11 +1,23 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { HashRouter as Router, Routes, Route, Link, Navigate, useLocation } from 'react-router-dom';
 import type { Location } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
-import { Menu, Layout, Alert, Space, Dropdown, Button, Tag } from 'antd';
+import { Menu, Layout, Alert, Space, Dropdown, Button, Tag, Drawer, Grid } from 'antd';
 import type { MenuProps } from 'antd';
-import { UserOutlined, LogoutOutlined, SettingOutlined } from '@ant-design/icons';
+import {
+  AppstoreOutlined,
+  DatabaseOutlined,
+  DollarOutlined,
+  InfoCircleOutlined,
+  MenuFoldOutlined,
+  MenuUnfoldOutlined,
+  MenuOutlined,
+  SwapOutlined,
+  UserOutlined,
+  LogoutOutlined,
+  SettingOutlined
+} from '@ant-design/icons';
 import Inbound from '@/pages/Inbound';
 import Outbound from '@/pages/Outbound';
 import Inventory from '@/pages/Inventory';
@@ -29,7 +41,7 @@ import LanguageSelector from '@/components/LanguageSelector';
 import type { User } from '@/auth/auth';
 import '@/App.css';
 
-const { Header, Content, Footer } = Layout;
+const { Header, Content, Sider } = Layout;
 
 interface ErrorBoundaryProps {
   readonly children: React.ReactNode;
@@ -155,17 +167,28 @@ function UserMenu(): React.ReactElement {
   };
 
   return (
-    <Space>
-      <Tag color={getRoleColor(user?.role)}>{getRoleText(user?.role)}</Tag>
-      <Dropdown menu={{ items: userMenuItems, onClick: handleMenuClick }} placement="bottomRight">
-        <Button type="text" style={{ color: 'white' }}>
+    <>
+      <Dropdown
+        menu={{ items: userMenuItems, onClick: handleMenuClick }}
+        placement="bottomRight"
+        dropdownRender={(menu) => (
+          <div className="user-menu-dropdown">
+            {menu}
+            <div className="user-menu-language">
+              <span>{t('common.language')}</span>
+              <LanguageSelector minWidth={150} />
+            </div>
+          </div>
+        )}
+      >
+        <Button type="text" className="user-menu-trigger">
           <Space>
             <UserOutlined />
             <span>{displayName}</span>
           </Space>
         </Button>
       </Dropdown>
-    </Space>
+    </>
   );
 }
 
@@ -196,7 +219,8 @@ type MenuKey =
   | 'analysis'
   | 'export'
   | 'audit'
-  | 'users';
+  | 'users'
+  | 'about';
 
 interface AppContentInnerProps {
   readonly location: Location;
@@ -205,7 +229,26 @@ interface AppContentInnerProps {
 
 function AppContentInner({ location, t }: AppContentInnerProps): React.ReactElement {
   const { hasPermission } = usePermissions();
+  const { user } = useAuth();
   const canAccessRestrictedPages = hasPermission('editor');
+  const screens = Grid.useBreakpoint();
+  const isMobile = !screens.md;
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [isWideViewport, setIsWideViewport] = useState(() =>
+    window.matchMedia('(min-width: 1440px)').matches
+  );
+  const [collapsed, setCollapsed] = useState(() => !window.matchMedia('(min-width: 1440px)').matches);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(min-width: 1440px)');
+    const updateViewport = (): void => setIsWideViewport(mediaQuery.matches);
+    mediaQuery.addEventListener('change', updateViewport);
+    return () => mediaQuery.removeEventListener('change', updateViewport);
+  }, []);
+
+  useEffect(() => {
+    setCollapsed(!isWideViewport);
+  }, [isWideViewport]);
 
   const getSelectedKey = (): MenuKey | '' => {
     const path = location.pathname;
@@ -222,165 +265,168 @@ function AppContentInner({ location, t }: AppContentInnerProps): React.ReactElem
     if (path === '/export') return 'export';
     if (path === '/audit') return 'audit';
     if (path === '/users') return 'users';
-    if (path === '/about') return '';
+    if (path === '/about') return 'about';
     return 'overview';
   };
 
-  const advancedItems: MenuProps['items'] = [
-    {
-      key: 'audit',
-      label: <Link to="/audit">{t('nav.audit')}</Link>
-    },
-    {
-      key: 'users',
-      label: <Link to="/users">{t('nav.users')}</Link>
-    }
-  ];
+  const menuItems = useMemo<Required<MenuProps>['items']>(() => {
+    const linkItem = (key: MenuKey, path: string, label: string) => ({
+      key,
+      label: <Link to={path}>{label}</Link>
+    });
+    const operationItems = [
+      linkItem('inbound', '/inbound', t('nav.inbound')),
+      linkItem('outbound', '/outbound', t('nav.outbound')),
+      linkItem('inventory', '/inventory', t('nav.inventory'))
+    ];
+    const masterDataItems = [
+      linkItem('partners', '/partners', t('nav.partners')),
+      linkItem('products', '/products', t('nav.products')),
+      linkItem('product-prices', '/product-prices', t('nav.productPrices'))
+    ];
+    const administrationItems = [
+      linkItem('audit', '/audit', t('nav.audit')),
+      linkItem('users', '/users', t('nav.users'))
+    ];
 
-  const overviewMenuItem = {
-    key: 'overview',
-    label: (
-      <Link to="/overview" style={{ fontWeight: 'bold' }}>
-        {t('nav.overview')}
-      </Link>
-    )
-  };
-
-  const restrictedFinancialMenuItems: Required<MenuProps>['items'] = [
-    {
-      key: 'receivable',
-      label: (
-        <Link to="/receivable" style={{ fontWeight: 'bold' }}>
-          {t('nav.receivable')}
-        </Link>
-      )
-    },
-    {
-      key: 'payable',
-      label: (
-        <Link to="/payable" style={{ fontWeight: 'bold' }}>
-          {t('nav.payable')}
-        </Link>
-      )
-    },
-    {
-      key: 'analysis',
-      label: (
-        <Link to="/analysis" style={{ fontWeight: 'bold' }}>
-          {t('nav.analysis')}
-        </Link>
-      )
-    },
-    {
-      key: 'export',
-      label: (
-        <Link to="/export" style={{ fontWeight: 'bold' }}>
-          {t('nav.export')}
-        </Link>
-      )
-    }
-  ];
-
-  const menuItems: Required<MenuProps>['items'] = [
-    ...(canAccessRestrictedPages ? [overviewMenuItem] : []),
-    {
-      key: 'inbound',
-      label: (
-        <Link to="/inbound" style={{ fontWeight: 'bold' }}>
-          {t('nav.inbound')}
-        </Link>
-      )
-    },
-    {
-      key: 'outbound',
-      label: (
-        <Link to="/outbound" style={{ fontWeight: 'bold' }}>
-          {t('nav.outbound')}
-        </Link>
-      )
-    },
-    {
-      key: 'inventory',
-      label: (
-        <Link to="/inventory" style={{ fontWeight: 'bold' }}>
-          {t('nav.inventory')}
-        </Link>
-      )
-    },
-    {
-      key: 'partners',
-      label: (
-        <Link to="/partners" style={{ fontWeight: 'bold' }}>
-          {t('nav.partners')}
-        </Link>
-      )
-    },
-    {
-      key: 'products',
-      label: (
-        <Link to="/products" style={{ fontWeight: 'bold' }}>
-          {t('nav.products')}
-        </Link>
-      )
-    },
-    {
-      key: 'product-prices',
-      label: (
-        <Link to="/product-prices" style={{ fontWeight: 'bold' }}>
-          {t('nav.productPrices')}
-        </Link>
-      )
-    },
-    ...(canAccessRestrictedPages ? restrictedFinancialMenuItems : []),
-    ...(advancedItems.length > 0
-      ? [
-          {
-            key: 'advanced',
-            label: <span style={{ fontWeight: 'bold' }}>{t('nav.advanced')}</span>,
-            // icon: <SettingOutlined />,
-            children: advancedItems
-          }
-        ]
-      : [])
-  ];
+    return [
+      ...(canAccessRestrictedPages
+        ? [
+            {
+              key: 'overview',
+              icon: <AppstoreOutlined />,
+              label: <Link to="/overview">{t('nav.overview')}</Link>
+            }
+          ]
+        : []),
+      {
+        key: 'operations',
+        icon: <SwapOutlined />,
+        label: t('nav.operations'),
+        children: operationItems
+      },
+      {
+        key: 'master-data',
+        icon: <DatabaseOutlined />,
+        label: t('nav.masterData'),
+        children: masterDataItems
+      },
+      ...(canAccessRestrictedPages
+        ? [
+            {
+              key: 'finance',
+              icon: <DollarOutlined />,
+              label: t('nav.finance'),
+              children: [
+                linkItem('receivable', '/receivable', t('nav.receivable')),
+                linkItem('payable', '/payable', t('nav.payable')),
+                linkItem('analysis', '/analysis', t('nav.analysis')),
+                linkItem('export', '/export', t('nav.export'))
+              ]
+            }
+          ]
+        : []),
+      {
+        key: 'administration',
+        icon: <SettingOutlined />,
+        label: t('nav.administration'),
+        children: administrationItems
+      },
+      {
+        key: 'about',
+        icon: <InfoCircleOutlined />,
+        label: <Link to="/about">{t('about.title')}</Link>
+      }
+    ];
+  }, [canAccessRestrictedPages, t]);
 
   const selectedKey = getSelectedKey();
+  const openGroupKey = selectedKey === 'inbound' || selectedKey === 'outbound' || selectedKey === 'inventory'
+    ? 'operations'
+    : selectedKey === 'partners' || selectedKey === 'products' || selectedKey === 'product-prices'
+      ? 'master-data'
+      : selectedKey === 'receivable' || selectedKey === 'payable' || selectedKey === 'analysis' || selectedKey === 'export'
+        ? 'finance'
+        : selectedKey === 'audit' || selectedKey === 'users'
+          ? 'administration'
+          : '';
+  const [openKeys, setOpenKeys] = useState<string[]>(openGroupKey ? [openGroupKey] : []);
+  useEffect(() => {
+    if (openGroupKey) setOpenKeys([openGroupKey]);
+  }, [openGroupKey]);
+  const selectedLabelKey: Partial<Record<MenuKey, string>> = {
+    overview: 'nav.overview',
+    inbound: 'nav.inbound',
+    outbound: 'nav.outbound',
+    inventory: 'nav.inventory',
+    partners: 'nav.partners',
+    products: 'nav.products',
+    'product-prices': 'nav.productPrices',
+    receivable: 'nav.receivable',
+    payable: 'nav.payable',
+    analysis: 'nav.analysis',
+    export: 'nav.export',
+    audit: 'nav.audit',
+    users: 'nav.users',
+    about: 'about.title'
+  };
+  const pageTitle = t(selectedLabelKey[selectedKey as MenuKey] ?? 'nav.inbound');
+
+  const navigation = (
+    <Menu
+      mode="inline"
+      selectedKeys={[selectedKey]}
+      openKeys={collapsed && !isMobile ? undefined : openKeys}
+      onOpenChange={setOpenKeys}
+      onClick={() => setMobileNavOpen(false)}
+      items={menuItems}
+      inlineCollapsed={collapsed && !isMobile}
+    />
+  );
 
   return (
-    <Layout style={{ minHeight: '100vh' }}>
-      <Header
-        style={{
-          padding: '0 24px',
-          height: '50px',
-          lineHeight: '50px',
-          display: 'flex',
-          alignItems: 'center'
-        }}
-      >
-        <div style={{ flex: 1 }}>
-          <Menu
-            theme="dark"
-            mode="horizontal"
-            selectedKeys={[selectedKey]}
-            items={menuItems}
-            style={{ lineHeight: '50px', background: 'transparent' }}
-          />
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <UserMenu />
-          <Link to="/about">
-            <img
-              src="/logo.svg"
-              alt={t('common.logoAlt', { defaultValue: 'Tradeflow logo' })}
-              className="header-logo"
-            />
+    <Layout className="app-shell-layout">
+      {!isMobile && (
+        <Sider
+          className="app-sidebar"
+          theme="light"
+          width={232}
+          collapsedWidth={68}
+          collapsed={collapsed}
+          trigger={null}
+        >
+          <Link to="/about" className={`app-brand${collapsed ? ' is-collapsed' : ''}`}>
+            <img src="/logo.svg" alt={t('common.logoAlt', { defaultValue: 'Tradeflow logo' })} />
+            {!collapsed && <span>TradeFlow</span>}
           </Link>
-        </div>
-      </Header>
-      <Content style={{ padding: '25px', background: '#f0f2f5', marginTop: '0px' }}>
-        <div style={{ maxWidth: '1800px', margin: '0 auto' }}>
-          <ErrorBoundary>
-            <Routes>
+          {navigation}
+        </Sider>
+      )}
+      <Layout className="app-main-layout">
+        <Header className="app-topbar">
+          <div className="app-topbar-start">
+            <Button
+              type="text"
+              className="navigation-toggle"
+              aria-label={isMobile ? t('nav.openNavigation') : t('nav.toggleNavigation')}
+              icon={isMobile ? <MenuOutlined /> : collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+              onClick={() =>
+                isMobile ? setMobileNavOpen(true) : setCollapsed((value) => !value)
+              }
+            />
+            {isMobile && <span className="mobile-page-title">{pageTitle}</span>}
+          </div>
+          <div className="app-topbar-end">
+            <Tag color={getRoleColor(user?.role)} className="topbar-role-tag">
+              {getRoleText(user?.role)}
+            </Tag>
+            <UserMenu />
+          </div>
+        </Header>
+        <Content className="app-content">
+          <div className="app-page-container">
+            <ErrorBoundary>
+              <Routes>
               <Route
                 path="/overview"
                 element={
@@ -438,23 +484,27 @@ function AppContentInner({ location, t }: AppContentInnerProps): React.ReactElem
               />
               <Route path="/about" element={<About />} />
               <Route path="*" element={<HomeRedirect />} />
-            </Routes>
-          </ErrorBoundary>
-        </div>
-      </Content>
-      <Footer
-        style={{
-          textAlign: 'center',
-          background: '#fff',
-          borderTop: '1px solid #e8e8e8',
-          padding: '12px 24px'
-        }}
+              </Routes>
+            </ErrorBoundary>
+          </div>
+        </Content>
+      </Layout>
+      <Drawer
+        title={
+          <Link to="/about" className="app-brand" onClick={() => setMobileNavOpen(false)}>
+            <img src="/logo.svg" alt={t('common.logoAlt', { defaultValue: 'Tradeflow logo' })} />
+            <span>TradeFlow</span>
+          </Link>
+        }
+        placement="left"
+        open={mobileNavOpen}
+        onClose={() => setMobileNavOpen(false)}
+        width={300}
+        className="mobile-navigation-drawer"
+        styles={{ body: { padding: 8 } }}
       >
-        <Space>
-          <span style={{ color: '#666' }}>{t('common.language')}:</span>
-          <LanguageSelector />
-        </Space>
-      </Footer>
+        {navigation}
+      </Drawer>
     </Layout>
   );
 }

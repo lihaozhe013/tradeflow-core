@@ -9,7 +9,7 @@ import type { TopSalesResponse } from '@/pages/Overview/types';
 const TopSalesPieChart = () => {
   const { t } = useTranslation();
 
-  // 预定义颜色数组
+  // Keep category colors stable across refreshes.
   const COLORS = [
     '#0088FE',
     '#00C49F',
@@ -24,7 +24,7 @@ const TopSalesPieChart = () => {
     '#D9D9D9'
   ] as const;
 
-  // 使用useSimpleApiData获取销售数据
+  // Load sales data through the shared API hook.
   const {
     data: salesResponse,
     loading,
@@ -36,7 +36,7 @@ const TopSalesPieChart = () => {
 
   const resolvedResponse = salesResponse ?? DEFAULT_TOP_SALES_RESPONSE;
 
-  // 处理数据格式
+  // Convert the API response to the shape expected by Recharts.
   const chartData = resolvedResponse.success
     ? resolvedResponse.data.map((item) => ({
         name: item.product_model,
@@ -46,7 +46,7 @@ const TopSalesPieChart = () => {
 
   const RADIAN = Math.PI / 180;
 
-  // 自定义标签渲染函数
+  // Keep labels readable by omitting categories that occupy very little space.
   const renderCustomizedLabel = ({
     cx = 0,
     cy = 0,
@@ -58,7 +58,7 @@ const TopSalesPieChart = () => {
     const percentNumber =
       typeof percent === 'number' ? percent : typeof percent === 'string' ? parseFloat(percent) : 0;
 
-    if (Number.isNaN(percentNumber) || percentNumber < 0.05) return null; // 小于5%不显示标签
+    if (Number.isNaN(percentNumber) || percentNumber < 0.05) return null;
 
     const inner = Number(innerRadius);
     const outer = Number(outerRadius);
@@ -105,17 +105,13 @@ const TopSalesPieChart = () => {
   return (
     <Card
       title={t('overview.topSalesDistribution')}
-      style={{
-        borderRadius: '16px',
-        boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
-        minHeight: 270
-      }}
-      bodyStyle={{ padding: '8px' }}
+      className="overview-sales-chart-card"
     >
-      <div style={{ color: '#999', fontSize: 12, marginBottom: 8, marginLeft: 17 }}>
+      <div className="overview-period-note">
         {t('overview.includesOnlyTheModtRecentYear')}
       </div>
-      <ResponsiveContainer width="100%" height={500}>
+      <div className="overview-sales-chart-container">
+        <ResponsiveContainer width="100%" height="100%">
         <PieChart>
           <Pie
             data={chartData}
@@ -123,8 +119,8 @@ const TopSalesPieChart = () => {
             cy="50%"
             labelLine={false}
             label={renderCustomizedLabel}
-            outerRadius={140}
-            innerRadius={70}
+            outerRadius="70%"
+            innerRadius="34%"
             fill="#8884d8"
             dataKey="value"
           >
@@ -152,7 +148,8 @@ const TopSalesPieChart = () => {
           />
           <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} iconSize={8} />
         </PieChart>
-      </ResponsiveContainer>
+        </ResponsiveContainer>
+      </div>
     </Card>
   );
 };

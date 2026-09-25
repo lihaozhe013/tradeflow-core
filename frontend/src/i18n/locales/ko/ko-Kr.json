@@ -126,6 +126,7 @@
     "advancedFilters": "상세 필터",
     "cancel": "취소",
     "chinese": "中文",
+    "clearSelection": "선택 지우기",
     "collapse": "접기",
     "confirm": "확인",
     "delete": "삭제",
@@ -133,13 +134,18 @@
     "english": "English",
     "export": "내보내기",
     "followSystem": "시스템 설정 따르기",
+    "moreDetails": "자세히 보기",
+    "noData": "데이터 없음",
     "korean": "한국어",
     "language": "언어",
     "logout": "로그아웃",
     "refresh": "새로고침",
     "reset": "재설정",
     "save": "저장",
-    "search": "검색"
+    "search": "검색",
+    "selectRecord": "{{record}} 기록 선택",
+    "selectedCount": "{{count}}개 선택됨",
+    "sortRecords": "기록 정렬"
   },
   "export": {
     "baseInfo": "기초 정보",
@@ -256,11 +262,16 @@
   },
   "nav": {
     "advanced": "고급",
+    "administration": "관리",
     "analysis": "데이터 분석",
     "audit": "감사 로그",
     "export": "보고서",
+    "finance": "재무 및 보고서",
     "inbound": "입고",
     "inventory": "재고",
+    "masterData": "기초 자료",
+    "openNavigation": "탐색 메뉴 열기",
+    "operations": "입출고 및 재고",
     "outbound": "출고",
     "overview": "개요",
     "partners": "파트너",
@@ -268,6 +279,7 @@
     "productPrices": "가격",
     "products": "제품",
     "receivable": "매출채권",
+    "toggleNavigation": "탐색 메뉴 전환",
     "users": "사용자 관리"
   },
   "outbound": {
