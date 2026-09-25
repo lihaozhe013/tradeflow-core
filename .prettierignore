@@ -3,3 +3,6 @@ build/
 node_modules/
 pnpm-lock.yaml
 backend/prisma/client
+backend/.agents/
+backend/.claude/
+backend/.windsurf/

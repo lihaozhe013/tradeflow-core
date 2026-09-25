@@ -13,3 +13,6 @@ backend/cache
 backend/prisma/client
 config
 cache
+backend/.agents/
+backend/.claude/
+backend/.windsurf/

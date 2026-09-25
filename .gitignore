@@ -36,3 +36,7 @@ node_modules
 
 # Dist
 dist/
+backend/.agents/
+backend/.claude/
+backend/.windsurf/
+backend/skills-lock.json
