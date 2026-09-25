@@ -99,6 +99,10 @@ The project test command runs the complete backend Vitest suite first, reseeds t
 database, and then runs the frontend in a visible Chromium window through Playwright. If any stage
 fails, later stages do not run.
 
+Use `bun run test` to run the project suites. `bun test` invokes Bun's native test runner, which
+bypasses the database setup and is not compatible with the Vitest and Playwright test files in this
+repository. It exits with a message directing you to the project test command.
+
 1. Run a test command once to create the local test configuration automatically from the example:
 
 ```bash
