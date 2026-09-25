@@ -6,7 +6,7 @@
   "main": "dist/server.js",
   "scripts": {
     "build": "node ./scripts/bundle.mjs",
-    "prisma:generate": "prisma generate",
+    "prisma:generate": "prisma generate --no-hints",
     "dev": "tsx watch server.ts",
     "dev:debug": "tsx watch --inspect server.ts",
     "lint": "eslint .",
