@@ -171,10 +171,11 @@ function shutdown(requestedExitCode = 0, terminationSignal = 'SIGTERM') {
 
 function startService(service) {
   const options = {
+    cwd: resolve(rootDir, service.directory),
     stdio: ['inherit', 'pipe', 'pipe']
   };
 
-  const child = spawn(bun, ['--cwd', resolve(rootDir, service.directory), 'run', 'dev'], options);
+  const child = spawn(bun, ['run', 'dev'], options);
 
   children.set(service.name, child);
   attachOutput(service.name, 'stdout', child.stdout, process.stdout);
