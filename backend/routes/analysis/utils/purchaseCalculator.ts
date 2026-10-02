@@ -1,4 +1,5 @@
 import { Prisma } from '@/prisma/client';
+import type { PrismaClient as DbClient } from '@/prisma/client';
 import { prisma } from '@/prismaClient';
 import decimalCalc from '@/utils/decimalCalculator';
 import type { PurchaseData } from '@/routes/analysis/utils/types';
@@ -11,7 +12,8 @@ export async function calculatePurchaseData(
   startDate: string,
   endDate: string,
   supplierCode: string | null | undefined,
-  productModel: string | null | undefined
+  productModel: string | null | undefined,
+  db: DbClient | Prisma.TransactionClient = prisma
 ): Promise<PurchaseData> {
   // Build Purchase Query Conditions
   const purchaseSqlConditions: Prisma.Sql[] = [
@@ -35,7 +37,7 @@ export async function calculatePurchaseData(
     WHERE ${Prisma.join(purchaseSqlConditions, ' AND ')}
   `;
 
-  const result = await prisma.$queryRaw<PurchaseResult[]>(query);
+  const result = await db.$queryRaw<PurchaseResult[]>(query);
   const purchaseRow = result[0];
   const purchaseAmount = decimalCalc.fromSqlResult(purchaseRow?.purchase_amount, 0, 2);
 

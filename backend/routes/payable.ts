@@ -3,114 +3,42 @@ import { prisma } from '@/prismaClient';
 import type { Prisma } from '@/prisma/client';
 import decimalCalc from '@/utils/decimalCalculator';
 import invoiceCacheService from '@/utils/invoiceCacheService';
+import { listAccountBalances } from '@/services/readService';
 
 const router: Router = express.Router();
-
-interface PayableRow {
-  supplier_code: string;
-  supplier_short_name: string;
-  supplier_full_name: string;
-  total_payable: number;
-  total_paid: number;
-  balance: number;
-  last_payment_date: string | null;
-  last_payment_method: string | null;
-  payment_count: number;
-}
 
 /**
  * GET /api/payable
  */
 router.get('/', async (req: Request, res: Response): Promise<void> => {
-  const {
-    page = 1,
-    limit = 10,
-    supplier_short_name,
-    sort_field = 'balance',
-    sort_order = 'desc'
-  } = req.query;
-
-  let whereClause = 'WHERE p.type = 0';
-
-  if (supplier_short_name) {
-    const sanitizedVal = String(supplier_short_name).replace(/'/g, "''");
-    whereClause += ` AND p.short_name LIKE '%${sanitizedVal}%'`;
-  }
-
-  const allowedSortFields = [
-    'supplier_code',
-    'supplier_short_name',
-    'total_payable',
-    'total_paid',
-    'balance',
-    'last_payment_date'
-  ];
-  let orderBy = 'balance DESC';
-  if (sort_field && allowedSortFields.includes(sort_field as string)) {
-    const sortOrderStr =
-      sort_order && (sort_order as string).toLowerCase() === 'asc' ? 'ASC' : 'DESC';
-    orderBy = `${sort_field} ${sortOrderStr}`;
-  }
-
-  const offset = (Number(page) - 1) * Number(limit);
-
-  const sql = `
-    SELECT
-      p.code AS supplier_code,
-      p.short_name AS supplier_short_name,
-      p.full_name AS supplier_full_name,
-      COALESCE(i.total_payable, 0) AS total_payable,
-      COALESCE(pp.total_paid, 0) AS total_paid,
-      COALESCE(i.total_payable, 0) - COALESCE(pp.total_paid, 0) AS balance,
-      pp.last_payment_date,
-      pp.last_payment_method,
-      pp.payment_count
-    FROM partners p
-    LEFT JOIN (
-      SELECT supplier_code, SUM(total_price) AS total_payable
-      FROM inbound_records
-      GROUP BY supplier_code
-    ) i ON p.code = i.supplier_code
-    LEFT JOIN (
-      SELECT supplier_code, SUM(amount) AS total_paid, MAX(pay_date) AS last_payment_date, MAX(pay_method) AS last_payment_method, COUNT(*) AS payment_count
-      FROM payable_payments
-      GROUP BY supplier_code
-    ) pp ON p.code = pp.supplier_code
-    ${whereClause}
-    ORDER BY ${orderBy}
-    LIMIT ${Number(limit)} OFFSET ${offset}
-  `;
-
-  const rows = await prisma.$queryRawUnsafe<PayableRow[]>(sql);
-
-  const processedRows = rows.map((row) => {
-    const totalPayable = decimalCalc.fromSqlResult(row.total_payable, 0);
-    const totalPaid = decimalCalc.fromSqlResult(row.total_paid, 0);
-    const balance = decimalCalc.calculateBalance(totalPayable, totalPaid);
-
-    // Convert BigInt to Number for payment_count
-    const paymentCount = row.payment_count ? Number(row.payment_count) : 0;
-
-    return {
-      ...row,
-      total_payable: totalPayable,
-      total_paid: totalPaid,
-      balance: balance,
-      payment_count: paymentCount
-    };
+  const page = Number(req.query['page'] ?? 1);
+  const limit = Number(req.query['limit'] ?? 10);
+  const result = await listAccountBalances(prisma, {
+    kind: 'payable',
+    shortName:
+      typeof req.query['supplier_short_name'] === 'string'
+        ? req.query['supplier_short_name']
+        : undefined,
+    page,
+    limit,
+    sortField: typeof req.query['sort_field'] === 'string' ? req.query['sort_field'] : undefined,
+    sortOrder: req.query['sort_order'] === 'asc' ? 'asc' : 'desc'
   });
-
-  const where: Prisma.PartnerWhereInput = { type: 0 };
-  if (supplier_short_name) {
-    where.short_name = { contains: supplier_short_name as string };
-  }
-  const total = await prisma.partner.count({ where });
-
   res.json({
-    data: processedRows,
-    total: total,
-    page: Number(page),
-    limit: Number(limit)
+    data: result.data.map((row) => ({
+      supplier_code: row.partner_code,
+      supplier_short_name: row.short_name,
+      supplier_full_name: row.full_name,
+      total_payable: row.total_amount,
+      total_paid: row.total_paid,
+      balance: row.balance,
+      last_payment_date: row.last_payment_date,
+      last_payment_method: row.last_payment_method,
+      payment_count: row.payment_count
+    })),
+    total: result.total,
+    page: result.page,
+    limit: result.limit
   });
 });
 

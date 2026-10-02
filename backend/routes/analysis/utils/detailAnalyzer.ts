@@ -1,4 +1,5 @@
 import { Prisma } from '@/prisma/client';
+import type { PrismaClient as DbClient } from '@/prisma/client';
 import { prisma } from '@/prismaClient';
 import decimalCalc from '@/utils/decimalCalculator';
 import { calculateFilteredSoldGoodsCost } from '@/routes/analysis/utils/costCalculator';
@@ -28,7 +29,8 @@ export async function calculateDetailAnalysis(
   endDate: string,
   partnerCode: string | null | undefined, // Generalized customerCode argument
   productModel: string | null | undefined,
-  analysisType: AnalysisType = 'outbound'
+  analysisType: AnalysisType = 'outbound',
+  db: DbClient | Prisma.TransactionClient = prisma
 ): Promise<DetailItem[]> {
   // Determine the grouping type
   const groupByPartner = !partnerCode || partnerCode === 'All';
@@ -41,7 +43,8 @@ export async function calculateDetailAnalysis(
       partnerCode,
       productModel,
       groupByPartner,
-      groupByProduct
+      groupByProduct,
+      db
     );
   }
 
@@ -51,7 +54,8 @@ export async function calculateDetailAnalysis(
     partnerCode,
     productModel,
     groupByPartner,
-    groupByProduct
+    groupByProduct,
+    db
   );
 }
 
@@ -61,7 +65,8 @@ async function handleInboundAnalysis(
   supplierCode: string | null | undefined,
   productModel: string | null | undefined,
   groupBySupplier: boolean,
-  _groupByProduct: boolean
+  _groupByProduct: boolean,
+  db: DbClient | Prisma.TransactionClient
 ): Promise<DetailItem[]> {
   // Logic: Group by Supplier if Supplier is "All", otherwise Group by Product
   const groupField = groupBySupplier ? Prisma.sql`r.supplier_code` : Prisma.sql`p.product_model`;
@@ -100,7 +105,7 @@ async function handleInboundAnalysis(
       GROUP BY ${groupByCols}
     `;
 
-  const inboundGroups = await prisma.$queryRaw<InboundGroupResult[]>(inboundSql);
+  const inboundGroups = await db.$queryRaw<InboundGroupResult[]>(inboundSql);
   const results: DetailItem[] = inboundGroups.map((group) => {
     const normalPurchase = decimalCalc.fromSqlResult(group.normal_purchase, 0, 2);
     const specialIncome = decimalCalc.fromSqlResult(group.special_income, 0, 2);
@@ -126,7 +131,8 @@ async function handleOutboundAnalysis(
   customerCode: string | null | undefined,
   productModel: string | null | undefined,
   groupByCustomer: boolean,
-  _groupByProduct: boolean
+  _groupByProduct: boolean,
+  db: DbClient | Prisma.TransactionClient
 ): Promise<DetailItem[]> {
   // Logic: Group by Customer if Customer is "All", otherwise Group by Product
   const groupField = groupByCustomer ? Prisma.sql`r.customer_code` : Prisma.sql`p.product_model`;
@@ -166,7 +172,7 @@ async function handleOutboundAnalysis(
     GROUP BY ${groupByCols}
   `;
 
-  const outboundGroups = await prisma.$queryRaw<OutboundGroupResult[]>(outboundSql);
+  const outboundGroups = await db.$queryRaw<OutboundGroupResult[]>(outboundSql);
 
   if (!outboundGroups || outboundGroups.length === 0) {
     return [];
@@ -189,7 +195,8 @@ async function handleOutboundAnalysis(
       startDate,
       endDate,
       currentCustomerCode === 'All' ? null : currentCustomerCode,
-      currentProductModel === 'All' ? null : currentProductModel
+      currentProductModel === 'All' ? null : currentProductModel,
+      db
     );
 
     const normalSales = decimalCalc.fromSqlResult(group.normal_sales, 0, 2);

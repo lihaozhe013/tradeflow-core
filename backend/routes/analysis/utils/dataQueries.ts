@@ -1,22 +1,25 @@
 import { prisma } from '@/prismaClient';
+import type { Prisma, PrismaClient as DbClient } from '@/prisma/client';
 import type { FilterOptions } from '@/routes/analysis/utils/types';
 
 /**
  * Retrieve filter options (customer and product lists)
  */
-export async function getFilterOptions(): Promise<FilterOptions> {
+export async function getFilterOptions(
+  db: DbClient | Prisma.TransactionClient = prisma
+): Promise<FilterOptions> {
   const [customers, suppliers, products] = await Promise.all([
-    prisma.partner.findMany({
+    db.partner.findMany({
       where: { type: 1 },
       orderBy: { short_name: 'asc' },
       select: { code: true, short_name: true, full_name: true }
     }),
-    prisma.partner.findMany({
+    db.partner.findMany({
       where: { type: 0 },
       orderBy: { short_name: 'asc' },
       select: { code: true, short_name: true, full_name: true }
     }),
-    prisma.product.findMany({
+    db.product.findMany({
       orderBy: { product_model: 'asc' },
       select: { code: true, product_model: true }
     })

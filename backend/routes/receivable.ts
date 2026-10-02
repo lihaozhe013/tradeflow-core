@@ -3,119 +3,42 @@ import { prisma } from '@/prismaClient';
 import type { Prisma } from '@/prisma/client';
 import decimalCalc from '@/utils/decimalCalculator';
 import invoiceCacheService from '@/utils/invoiceCacheService';
+import { listAccountBalances } from '@/services/readService';
 
 const router: Router = express.Router();
-
-interface ReceivableRow {
-  customer_code: string;
-  customer_short_name: string;
-  customer_full_name: string;
-  total_receivable: number;
-  total_paid: number;
-  balance: number;
-  last_payment_date: string | null;
-  last_payment_method: string | null;
-  payment_count: number;
-}
 
 /**
  * GET /api/receivable
  */
 router.get('/', async (req: Request, res: Response): Promise<void> => {
-  const {
-    page = 1,
-    limit = 10,
-    customer_short_name,
-    sort_field = 'balance',
-    sort_order = 'desc'
-  } = req.query;
-
-  let whereClause = 'WHERE p.type = 1';
-
-  if (customer_short_name) {
-    // Basic sanitization for LIKE clause
-    const sanitizedVal = String(customer_short_name).replace(/'/g, "''");
-    whereClause += ` AND p.short_name LIKE '%${sanitizedVal}%'`;
-  }
-
-  const allowedSortFields = [
-    'customer_code',
-    'customer_short_name',
-    'total_receivable',
-    'total_paid',
-    'balance',
-    'last_payment_date'
-  ];
-  let orderBy = 'balance DESC';
-  if (sort_field && allowedSortFields.includes(sort_field as string)) {
-    const sortOrderStr =
-      sort_order && (sort_order as string).toLowerCase() === 'asc' ? 'ASC' : 'DESC';
-    orderBy = `${sort_field} ${sortOrderStr}`;
-  }
-
-  const offset = (Number(page) - 1) * Number(limit);
-
-  // Using raw SQL for the main dashboard view to maintain the exact aggregation logic and efficiency
-  // Prisma doesn't support this kind of complex left-joined aggregation + sorting on aggregates easily without fetching all data.
-  const sql = `
-    SELECT
-      p.code AS customer_code,
-      p.short_name AS customer_short_name,
-      p.full_name AS customer_full_name,
-      COALESCE(o.total_receivable, 0) AS total_receivable,
-      COALESCE(r.total_paid, 0) AS total_paid,
-      COALESCE(o.total_receivable, 0) - COALESCE(r.total_paid, 0) AS balance,
-      r.last_payment_date,
-      r.last_payment_method,
-      r.payment_count
-    FROM partners p
-    LEFT JOIN (
-      SELECT customer_code, SUM(total_price) AS total_receivable
-      FROM outbound_records
-      GROUP BY customer_code
-    ) o ON p.code = o.customer_code
-    LEFT JOIN (
-      SELECT customer_code, SUM(amount) AS total_paid, MAX(pay_date) AS last_payment_date, MAX(pay_method) AS last_payment_method, COUNT(*) AS payment_count
-      from receivable_payments
-      GROUP BY customer_code
-    ) r ON p.code = r.customer_code
-    ${whereClause}
-    ORDER BY ${orderBy}
-    LIMIT ${Number(limit)} OFFSET ${offset}
-  `;
-
-  const rows = await prisma.$queryRawUnsafe<ReceivableRow[]>(sql);
-
-  // Process rows to ensure decimal precision
-  const processedRows = rows.map((row) => {
-    const totalReceivable = decimalCalc.fromSqlResult(row.total_receivable, 0);
-    const totalPaid = decimalCalc.fromSqlResult(row.total_paid, 0);
-    const balance = decimalCalc.calculateBalance(totalReceivable, totalPaid);
-
-    // Convert BigInt to Number for payment_count
-    const paymentCount = row.payment_count ? Number(row.payment_count) : 0;
-
-    return {
-      ...row,
-      total_receivable: totalReceivable,
-      total_paid: totalPaid,
-      balance: balance,
-      payment_count: paymentCount
-    };
+  const page = Number(req.query['page'] ?? 1);
+  const limit = Number(req.query['limit'] ?? 10);
+  const result = await listAccountBalances(prisma, {
+    kind: 'receivable',
+    shortName:
+      typeof req.query['customer_short_name'] === 'string'
+        ? req.query['customer_short_name']
+        : undefined,
+    page,
+    limit,
+    sortField: typeof req.query['sort_field'] === 'string' ? req.query['sort_field'] : undefined,
+    sortOrder: req.query['sort_order'] === 'asc' ? 'asc' : 'desc'
   });
-
-  // Count total partners matching criteria
-  const where: Prisma.PartnerWhereInput = { type: 1 };
-  if (customer_short_name) {
-    where.short_name = { contains: customer_short_name as string };
-  }
-  const total = await prisma.partner.count({ where });
-
   res.json({
-    data: processedRows,
-    total: total,
-    page: Number(page),
-    limit: Number(limit)
+    data: result.data.map((row) => ({
+      customer_code: row.partner_code,
+      customer_short_name: row.short_name,
+      customer_full_name: row.full_name,
+      total_receivable: row.total_amount,
+      total_paid: row.total_paid,
+      balance: row.balance,
+      last_payment_date: row.last_payment_date,
+      last_payment_method: row.last_payment_method,
+      payment_count: row.payment_count
+    })),
+    total: result.total,
+    page: result.page,
+    limit: result.limit
   });
 });
 

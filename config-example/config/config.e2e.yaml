@@ -15,6 +15,14 @@ auth:
     windowMinutes: 5
     maxAttempts: 1000
   allowExportsForReader: true
+mcp:
+  enabled: false
+  allowedHosts: []
+  allowedOrigins: []
+  requestsPerMinute: 60
+  maxConcurrentRequests: 2
+  maxConcurrentAnalysis: 1
+  credentials: []
 server:
   httpPort: 18080
 frontend:

@@ -1,4 +1,4 @@
-import type { Prisma } from '@/prisma/client';
+import type { Prisma, PrismaClient as DbClient } from '@/prisma/client';
 import { prisma } from '@/prismaClient';
 import decimalCalc from '@/utils/decimalCalculator';
 
@@ -11,7 +11,8 @@ export async function calculateFilteredSoldGoodsCost(
   startDate: string,
   endDate: string,
   customerCode: string | null | undefined,
-  productModel: string | null | undefined
+  productModel: string | null | undefined,
+  db: DbClient | Prisma.TransactionClient = prisma
 ): Promise<number> {
   // 1. Fetch all INBOUND records (Supply) - Sorted Oldest First
   // We need 'all' history to trace the FIFO queue correctly.
@@ -22,7 +23,7 @@ export async function calculateFilteredSoldGoodsCost(
     inboundWhere.product = { product_model: productModel };
   }
 
-  const allInbound = await prisma.inboundRecord.findMany({
+  const allInbound = await db.inboundRecord.findMany({
     where: inboundWhere,
     orderBy: [{ inbound_date: 'asc' }, { id: 'asc' }],
     select: {
@@ -51,7 +52,7 @@ export async function calculateFilteredSoldGoodsCost(
   // proper FIFO consumption for *all* sales of this product to know which batch is being sold
   // to *this* customer. FIFO is global per product.
 
-  const allOutbound = await prisma.outboundRecord.findMany({
+  const allOutbound = await db.outboundRecord.findMany({
     where: outboundWhere,
     orderBy: [{ outbound_date: 'asc' }, { id: 'asc' }],
     select: {

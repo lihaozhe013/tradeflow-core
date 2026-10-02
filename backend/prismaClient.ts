@@ -11,7 +11,7 @@ function getDatabaseConfig() {
   return config.database || {};
 }
 
-function createPrismaClient() {
+function createPrismaClient(options: { logQueries: boolean; maxConnections?: number }) {
   const dbConfig = getDatabaseConfig();
   const { user, password, host, port, dbName, maxConnections } = dbConfig;
   const connectionString = `postgresql://${user}:${password}@${host}:${port}/${dbName}`;
@@ -21,7 +21,10 @@ function createPrismaClient() {
   // Configure connection pool explicitly
   // Default max connections to 5 as requested (safe for 20 max total connections)
   // If provided in config, use that value.
-  const poolMax = maxConnections ? Number(maxConnections) : 5;
+  const configuredPoolMax = maxConnections ? Number(maxConnections) : 5;
+  const poolMax = options.maxConnections
+    ? Math.min(configuredPoolMax, options.maxConnections)
+    : configuredPoolMax;
 
   const pool = new Pool({
     connectionString,
@@ -33,7 +36,9 @@ function createPrismaClient() {
   const adapter = new PrismaPg(pool);
 
   const log: Prisma.LogLevel[] =
-    process.env['NODE_ENV'] === 'development' ? ['query', 'info', 'warn', 'error'] : ['error'];
+    process.env['NODE_ENV'] === 'development' && options.logQueries
+      ? ['query', 'info', 'warn', 'error']
+      : ['error'];
 
   return new PrismaClient({
     adapter,
@@ -41,9 +46,10 @@ function createPrismaClient() {
   });
 }
 
-export const prisma = prismaInstance || createPrismaClient();
+export const prisma = prismaInstance || createPrismaClient({ logQueries: true });
+export const mcpPrisma = createPrismaClient({ logQueries: false, maxConnections: 2 });
 
 // Handle graceful shutdown
 process.on('beforeExit', async () => {
-  await prisma.$disconnect();
+  await Promise.all([prisma.$disconnect(), mcpPrisma.$disconnect()]);
 });

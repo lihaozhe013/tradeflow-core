@@ -25,6 +25,8 @@ const SENSITIVE_KEYS = [
 ];
 
 function shouldSkipLogging(req: Request): boolean {
+  if (req.originalUrl.split('?')[0] === '/mcp' || req.originalUrl.startsWith('/mcp/')) return true;
+
   // Check exact matches
   if (IGNORED_PATHS.includes(req.path)) return true;
 

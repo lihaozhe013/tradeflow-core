@@ -27,6 +27,33 @@ export interface AuthConfig {
   allowExportsForReader?: boolean;
 }
 
+export type McpToolName =
+  | 'search_partners'
+  | 'search_products'
+  | 'get_inventory'
+  | 'list_transactions'
+  | 'get_receivables'
+  | 'get_payables'
+  | 'get_analysis';
+
+export interface McpCredentialConfig {
+  id: string;
+  tokenSha256: string;
+  expiresAt: string;
+  enabled?: boolean;
+  tools: McpToolName[];
+}
+
+export interface McpConfig {
+  enabled: boolean;
+  allowedHosts: string[];
+  allowedOrigins: string[];
+  requestsPerMinute?: number;
+  maxConcurrentRequests?: number;
+  maxConcurrentAnalysis?: number;
+  credentials: McpCredentialConfig[];
+}
+
 /**
  * AppConfig Interface
  */
@@ -43,6 +70,7 @@ export interface AppConfig {
     maxConnections?: number;
   };
   auth?: AuthConfig;
+  mcp?: McpConfig;
   server?: ServerConfig;
   frontend?: FrontendConfig;
 }

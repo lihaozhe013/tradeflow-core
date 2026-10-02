@@ -1,7 +1,7 @@
 import express, { type Router, type Request, type Response } from 'express';
 import { prisma } from '@/prismaClient';
-import type { Prisma } from '@/prisma/client';
 import { pagination_limit } from '@/utils/paths';
+import { searchPartners } from '@/services/readService';
 
 const router: Router = express.Router();
 
@@ -17,55 +17,30 @@ interface PartnerBinding {
 router.get('/', async (req: Request, res: Response): Promise<void> => {
   const { type, short_name, full_name, code, page, limit } = req.query;
 
-  const where: Prisma.PartnerWhereInput = {};
-
-  if (type !== undefined) {
-    where.type = parseInt(type as string);
-  }
-  if (short_name) {
-    where.short_name = { contains: short_name as string };
-  }
-  if (full_name) {
-    where.full_name = { contains: full_name as string };
-  }
-  if (code) {
-    where.code = { contains: code as string };
-  }
-
   const usePagination = page !== undefined || limit !== undefined;
-
-  if (!usePagination) {
-    const rows = await prisma.partner.findMany({
-      where,
-      orderBy: { short_name: 'asc' }
-    });
-
-    res.json({ data: rows });
-    return;
-  }
-
   let pageNum = parseInt(String(page ?? '1'), 10);
   if (!Number.isFinite(pageNum) || pageNum < 1) pageNum = 1;
   const limitNum = Number(limit) || pagination_limit;
-  const skip = (pageNum - 1) * limitNum;
+  const result = await searchPartners(prisma, {
+    type: type !== undefined ? parseInt(type as string) : undefined,
+    shortName: short_name as string | undefined,
+    fullName: full_name as string | undefined,
+    code: code as string | undefined,
+    ...(usePagination ? { page: pageNum, limit: limitNum } : {})
+  });
 
-  const [rows, total] = await prisma.$transaction([
-    prisma.partner.findMany({
-      where,
-      orderBy: { short_name: 'asc' },
-      skip,
-      take: limitNum
-    }),
-    prisma.partner.count({ where })
-  ]);
+  if (!usePagination) {
+    res.json({ data: result.data });
+    return;
+  }
 
   res.json({
-    data: rows,
+    data: result.data,
     pagination: {
       page: pageNum,
       limit: limitNum,
-      total,
-      pages: Math.ceil(total / limitNum)
+      total: 'total' in result ? result.total : 0,
+      pages: 'pages' in result ? result.pages : 0
     }
   });
 });

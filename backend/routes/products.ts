@@ -1,7 +1,7 @@
 import express, { type Router, type Request, type Response } from 'express';
 import { prisma } from '@/prismaClient';
-import type { Prisma } from '@/prisma/client';
 import { pagination_limit } from '@/utils/paths';
+import { searchProducts } from '@/services/readService';
 
 const router: Router = express.Router();
 
@@ -16,51 +16,29 @@ interface ProductBinding {
 router.get('/', async (req: Request, res: Response): Promise<void> => {
   const { category, product_model, code, page, limit } = req.query;
 
-  const where: Prisma.ProductWhereInput = {};
-
-  if (category) {
-    where.category = { contains: category as string };
-  }
-  if (product_model) {
-    where.product_model = { contains: product_model as string };
-  }
-  if (code) {
-    where.code = { contains: code as string };
-  }
-
   const usePagination = page !== undefined || limit !== undefined;
-
-  if (!usePagination) {
-    const rows = await prisma.product.findMany({
-      where,
-      orderBy: { code: 'asc' }
-    });
-    res.json({ data: rows });
-    return;
-  }
-
   let pageNum = parseInt(String(page ?? '1'), 10);
   if (!Number.isFinite(pageNum) || pageNum < 1) pageNum = 1;
   const limitNum = Number(limit) || pagination_limit;
-  const skip = (pageNum - 1) * limitNum;
+  const result = await searchProducts(prisma, {
+    category: category as string | undefined,
+    productModel: product_model as string | undefined,
+    code: code as string | undefined,
+    ...(usePagination ? { page: pageNum, limit: limitNum } : {})
+  });
 
-  const [rows, total] = await prisma.$transaction([
-    prisma.product.findMany({
-      where,
-      orderBy: { code: 'asc' },
-      skip,
-      take: limitNum
-    }),
-    prisma.product.count({ where })
-  ]);
+  if (!usePagination) {
+    res.json({ data: result.data });
+    return;
+  }
 
   res.json({
-    data: rows,
+    data: result.data,
     pagination: {
       page: pageNum,
       limit: limitNum,
-      total,
-      pages: Math.ceil(total / limitNum)
+      total: 'total' in result ? result.total : 0,
+      pages: 'pages' in result ? result.pages : 0
     }
   });
 });

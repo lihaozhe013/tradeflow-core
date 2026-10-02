@@ -1,9 +1,9 @@
 import express, { type Router, type Request, type Response } from 'express';
 import { prisma } from '@/prismaClient';
 import { inventoryService } from '@/utils/inventoryService';
-import type { Prisma } from '@/prisma/client';
 import decimalCalc from '@/utils/decimalCalculator';
 import { pagination_limit } from '@/utils/paths';
+import { listInventory } from '@/services/readService';
 
 const router: Router = express.Router();
 
@@ -14,39 +14,19 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
   const { product_model, page = 1, limit = pagination_limit } = req.query;
   const pageNum = Number(page) || 1;
   const limitNum = Number(limit) || pagination_limit;
-  const skip = (pageNum - 1) * limitNum;
-
-  // Filter
-  const where: Prisma.InventoryWhereInput = {};
-  if (product_model) {
-    where.product_model = { contains: String(product_model) };
-  }
-
-  // Query DB
-  const [rows, total] = await prisma.$transaction([
-    prisma.inventory.findMany({
-      where,
-      orderBy: { product_model: 'asc' },
-      skip,
-      take: limitNum
-    }),
-    prisma.inventory.count({ where })
-  ]);
-
-  const results = rows.map((row) => {
-    return {
-      product_model: row.product_model,
-      current_inventory: row.quantity
-    };
+  const result = await listInventory(prisma, {
+    productModel: product_model ? String(product_model) : undefined,
+    page: pageNum,
+    limit: limitNum
   });
 
   res.json({
-    data: results,
+    data: result.data,
     pagination: {
       page: pageNum,
       limit: limitNum,
-      total,
-      pages: Math.ceil(total / limitNum)
+      total: result.total,
+      pages: result.pages
     }
   });
 });

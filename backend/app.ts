@@ -24,8 +24,10 @@ import aboutRoutes from '@/routes/about';
 import authRoutes from '@/routes/auth';
 import usersRoutes from '@/routes/users';
 import auditRoutes from '@/routes/audit';
+import { createMcpRouter, getMcpSettings } from '@/mcp/server';
+import type { McpConfig } from '@/types/config';
 
-export function createApp(): Express {
+export function createApp(mcpSettings: McpConfig = getMcpSettings()): Express {
   const app: Express = express();
 
   // Initialize Cache Files
@@ -59,6 +61,14 @@ export function createApp(): Express {
   // =============================================================================
 
   app.use('/api/auth', authRoutes);
+
+  if (mcpSettings.enabled) {
+    app.use('/mcp', createMcpRouter(mcpSettings));
+  } else {
+    app.use('/mcp', (_req: Request, res: Response) => {
+      res.status(404).json({ error: 'Not found' });
+    });
+  }
 
   app.use('/api', (req, res, next) => {
     if (req.path.startsWith('/auth/')) {

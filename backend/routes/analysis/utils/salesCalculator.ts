@@ -1,4 +1,5 @@
 import { Prisma } from '@/prisma/client';
+import type { PrismaClient as DbClient } from '@/prisma/client';
 import { prisma } from '@/prismaClient';
 import decimalCalc from '@/utils/decimalCalculator';
 import type { SalesData } from '@/routes/analysis/utils/types';
@@ -7,7 +8,8 @@ export async function calculateSalesData(
   startDate: string,
   endDate: string,
   customerCode: string | null | undefined,
-  productModel: string | null | undefined
+  productModel: string | null | undefined,
+  db: DbClient | Prisma.TransactionClient = prisma
 ): Promise<SalesData> {
   const baseConditions: Prisma.Sql[] = [
     Prisma.sql`r.outbound_date >= ${startDate}`,
@@ -34,7 +36,7 @@ export async function calculateSalesData(
     special_expense: number | null;
   }
 
-  const result = await prisma.$queryRaw<SalesRow[]>(query);
+  const result = await db.$queryRaw<SalesRow[]>(query);
   const salesRow = result[0];
 
   const normalSales = decimalCalc.fromSqlResult(salesRow?.normal_sales, 0, 2);

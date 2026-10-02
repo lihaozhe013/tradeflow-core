@@ -4,6 +4,7 @@ import { Prisma } from '@/prisma/client';
 import decimalCalc from '@/utils/decimalCalculator';
 import { pagination_limit } from '@/utils/paths';
 import { inventoryService } from '@/utils/inventoryService';
+import { listTransactions } from '@/services/readService';
 
 const router: Router = express.Router();
 
@@ -29,94 +30,35 @@ function numberFilterValue(val: unknown): string {
  * GET /api/outbound
  */
 router.get('/', async (req: Request, res: Response): Promise<void> => {
-  const { page = 1 } = req.query;
-  let pageNum = parseInt(page as string, 10);
-  if (!Number.isFinite(pageNum) || pageNum < 1) pageNum = 1;
-  const limit = pagination_limit;
-  const skip = (pageNum - 1) * limit;
-
-  const where: Prisma.OutboundRecordWhereInput = {};
-
-  if (isProvided(req.query['customer_short_name'])) {
-    where.partner = {
-      short_name: {
-        contains: req.query['customer_short_name'] as string
-      }
-    };
-  }
-  if (isProvided(req.query['product_model'])) {
-    where.product = {
-      product_model: { contains: req.query['product_model'] as string }
-    };
-  }
-  const outboundDateFilter: Prisma.StringNullableFilter<'OutboundRecord'> = {};
-  if (isProvided(req.query['start_date'])) {
-    outboundDateFilter.gte = req.query['start_date'] as string;
-  }
-  if (isProvided(req.query['end_date'])) {
-    outboundDateFilter.lte = req.query['end_date'] as string;
-  }
-  if (outboundDateFilter.gte || outboundDateFilter.lte) {
-    where.outbound_date = outboundDateFilter;
-  }
-
-  const keyword = numberFilterValue(req.query['keyword']);
-  if (keyword) {
-    where.OR = [
-      { order_number: { contains: keyword, mode: 'insensitive' } },
-      { invoice_number: { contains: keyword, mode: 'insensitive' } },
-      { receipt_number: { contains: keyword, mode: 'insensitive' } }
-    ];
-  }
-  const orderNumber = numberFilterValue(req.query['order_number']);
-  if (orderNumber) {
-    where.order_number = { contains: orderNumber, mode: 'insensitive' };
-  }
-  const invoiceNumber = numberFilterValue(req.query['invoice_number']);
-  if (invoiceNumber) {
-    where.invoice_number = { contains: invoiceNumber, mode: 'insensitive' };
-  }
-  const receiptNumber = numberFilterValue(req.query['receipt_number']);
-  if (receiptNumber) {
-    where.receipt_number = { contains: receiptNumber, mode: 'insensitive' };
-  }
-
-  const sortField = req.query['sort_field'] as string;
+  const pageParam = req.query['page'] ?? '1';
+  let page = parseInt(pageParam as string, 10);
+  if (!Number.isFinite(page) || page < 1) page = 1;
   const allowedSortFields = ['outbound_date', 'unit_price', 'total_price', 'id'];
-  let orderBy: Prisma.OutboundRecordOrderByWithRelationInput = { id: 'desc' }; // Default
-
-  if (sortField && allowedSortFields.includes(sortField)) {
-    const fieldMap: Record<string, keyof Prisma.OutboundRecordOrderByWithRelationInput> = {
-      outbound_date: 'outbound_date',
-      unit_price: 'unit_price',
-      total_price: 'total_price',
-      id: 'id'
-    };
-    const prismaField = fieldMap[sortField];
-    const sortOrder =
-      req.query['sort_order'] && (req.query['sort_order'] as string).toLowerCase() === 'asc'
-        ? 'asc'
-        : 'desc';
-    if (prismaField) {
-      orderBy = {
-        [prismaField]: sortOrder
-      } as Prisma.OutboundRecordOrderByWithRelationInput;
-    }
-  }
-
-  const [rawRows, total] = await prisma.$transaction([
-    prisma.outboundRecord.findMany({
-      where,
-      orderBy,
-      skip,
-      take: limit,
-      include: { partner: true, product: true }
-    }),
-    prisma.outboundRecord.count({ where })
-  ]);
-
-  // Rows are already in snake_case
-  const rows = rawRows.map((row) => ({
+  const requestedSort = req.query['sort_field'] as string | undefined;
+  const result = await listTransactions(prisma, {
+    direction: 'outbound',
+    page,
+    limit: pagination_limit,
+    partnerShortName: isProvided(req.query['customer_short_name'])
+      ? (req.query['customer_short_name'] as string)
+      : undefined,
+    productModel: isProvided(req.query['product_model'])
+      ? (req.query['product_model'] as string)
+      : undefined,
+    startDate: isProvided(req.query['start_date'])
+      ? (req.query['start_date'] as string)
+      : undefined,
+    endDate: isProvided(req.query['end_date']) ? (req.query['end_date'] as string) : undefined,
+    keyword: numberFilterValue(req.query['keyword']) || undefined,
+    orderNumber: numberFilterValue(req.query['order_number']) || undefined,
+    invoiceNumber: numberFilterValue(req.query['invoice_number']) || undefined,
+    receiptNumber: numberFilterValue(req.query['receipt_number']) || undefined,
+    sortField:
+      requestedSort && allowedSortFields.includes(requestedSort) ? requestedSort : undefined,
+    sortOrder:
+      (req.query['sort_order'] as string | undefined)?.toLowerCase() === 'asc' ? 'asc' : 'desc'
+  });
+  const rows = result.data.map((row) => ({
     ...row,
     product_model: row.product?.product_model || null
   }));
@@ -124,10 +66,10 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
   res.json({
     data: rows,
     pagination: {
-      page: pageNum,
-      limit: limit,
-      total,
-      pages: Math.ceil(total / limit)
+      page: result.page,
+      limit: result.limit,
+      total: result.total,
+      pages: result.pages
     }
   });
 });
