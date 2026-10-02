@@ -305,7 +305,7 @@ pub async fn connect_simple(
         }
         Ok(())
     })?;
-    connect_at(
+    Box::pin(connect_at(
         session,
         store,
         client.clone(),
@@ -313,7 +313,7 @@ pub async fn connect_simple(
         existing,
         mode,
         config::config_path(&client)?,
-    )
+    ))
     .await
 }
 pub async fn connect_at(

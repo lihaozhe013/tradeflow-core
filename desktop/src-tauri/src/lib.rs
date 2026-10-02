@@ -1,6 +1,6 @@
 use serde_json::{Value, json};
-use std::future::Future;
 use std::path::PathBuf;
+use std::{future::Future, pin::Pin};
 use tauri::{Emitter, Manager, State};
 use tokio::sync::Mutex;
 use tradeflow_connect::{
@@ -30,7 +30,7 @@ async fn observed(
     action: Action,
     client: Option<Client>,
     server: Option<&str>,
-    work: impl Future<Output = anyhow::Result<Value>>,
+    work: Pin<Box<dyn Future<Output = anyhow::Result<Value>> + Send + '_>>,
 ) -> Result<Value, Value> {
     let store = Store::system().map_err(|e| json!({"errorCode":connection::safe_code(&e)}))?;
     let emitter = app.clone();
@@ -65,26 +65,32 @@ async fn login(
     password: String,
     preserve_previous: Option<bool>,
 ) -> Result<Value, Value> {
-    observed(&app, Action::Login, None, Some(&server), async {
-        let _operation = state
-            .operation
-            .try_lock()
-            .map_err(|_| anyhow::anyhow!("OPERATION_BUSY"))?;
-        let session = api::login(&server, &username, &password).await?;
-        let capabilities = session.capabilities().await?;
-        let result =
-            json!({"user":session.user,"capabilities":capabilities,"baseUrl":session.base_url});
-        if preserve_previous.unwrap_or(false) {
-            let previous = state.session.lock().await.take();
-            if let Some(previous) = previous {
-                *state.previous_session.lock().await = Some(previous);
+    observed(
+        &app,
+        Action::Login,
+        None,
+        Some(&server),
+        Box::pin(async {
+            let _operation = state
+                .operation
+                .try_lock()
+                .map_err(|_| anyhow::anyhow!("OPERATION_BUSY"))?;
+            let session = api::login(&server, &username, &password).await?;
+            let capabilities = session.capabilities().await?;
+            let result =
+                json!({"user":session.user,"capabilities":capabilities,"baseUrl":session.base_url});
+            if preserve_previous.unwrap_or(false) {
+                let previous = state.session.lock().await.take();
+                if let Some(previous) = previous {
+                    *state.previous_session.lock().await = Some(previous);
+                }
+            } else {
+                *state.previous_session.lock().await = None;
             }
-        } else {
-            *state.previous_session.lock().await = None;
-        }
-        *state.session.lock().await = Some(session);
-        Ok(result)
-    })
+            *state.session.lock().await = Some(session);
+            Ok(result)
+        }),
+    )
     .await
 }
 #[tauri::command]
@@ -210,7 +216,7 @@ async fn connect_agent(
         Action::Connect,
         target(&client).ok(),
         server.as_deref(),
-        async {
+        Box::pin(async {
             let _operation = state
                 .operation
                 .try_lock()
@@ -226,7 +232,7 @@ async fn connect_agent(
                 &mode,
             )
             .await
-        },
+        }),
     )
     .await
 }
@@ -268,7 +274,7 @@ async fn diagnose(app: tauri::AppHandle, profile: String, client: String) -> Res
         Action::Doctor,
         target(&client).ok(),
         server.as_deref(),
-        async {
+        Box::pin(async {
             let report = connection::doctor(
                 &store,
                 &profile,
@@ -280,7 +286,7 @@ async fn diagnose(app: tauri::AppHandle, profile: String, client: String) -> Res
                 anyhow::bail!("{code}");
             }
             Ok(report)
-        },
+        }),
     )
     .await
 }
@@ -299,7 +305,7 @@ async fn repair_agent(
         Action::Repair,
         target(&client).ok(),
         server.as_deref(),
-        async {
+        Box::pin(async {
             let _operation = state
                 .operation
                 .try_lock()
@@ -312,7 +318,7 @@ async fn repair_agent(
                 &std::env::current_dir()?,
             )
             .await
-        },
+        }),
     )
     .await
 }
@@ -330,7 +336,7 @@ async fn disconnect_agent(
         Action::Remove,
         loaded.as_ref().map(|p| p.client.clone()),
         loaded.as_ref().map(|p| p.base_url.as_str()),
-        async {
+        Box::pin(async {
             let _operation = state
                 .operation
                 .try_lock()
@@ -351,7 +357,7 @@ async fn disconnect_agent(
                 None
             };
             connection::disconnect(session.as_ref(), &store, &profile, mode == "revoke").await
-        },
+        }),
     )
     .await
 }

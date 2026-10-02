@@ -82,7 +82,7 @@ pub fn classify(error: &str) -> &'static str {
     }
 }
 pub async fn probe(profile: &Profile) -> Result<Value> {
-    let remote = diagnostics::step(Stage::McpHandshake, connect(profile)).await?;
+    let remote = diagnostics::step(Stage::McpHandshake, Box::pin(connect(profile))).await?;
     let result = async {
         let tools = diagnostics::step(Stage::DiscoverTools, async {
             remote
