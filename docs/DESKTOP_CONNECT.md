@@ -191,10 +191,12 @@ internal test artifacts. It does not publish releases. macOS uses ad-hoc signing
 are unsigned. Production code signing and notarization must be supplied before public distribution.
 
 For a minimal Windows-only build, push to `build-mcp-app`. The `Build MCP Windows app` workflow
-builds a Windows x64 NSIS installer with the bundled CLI, without tests, lint or TypeScript checks.
-It uses `desktop/src-tauri/tauri.windows-ci.conf.json` to skip the normal build's type-check step.
-It does not run on `master` pushes or publish a GitHub Release. Download
-`tradeflow-connect-windows-x64` from the completed Actions run's Artifacts section within seven
+builds separate Windows x64 and ARM64 NSIS installers with the matching bundled CLI, without tests,
+lint or TypeScript checks. Both targets build on the Windows x64 runner; ARM64 uses the MSVC cross
+compiler and the `aarch64-pc-windows-msvc` Rust target. It uses
+`desktop/src-tauri/tauri.windows-ci.conf.json` to skip the normal build's type-check step. It does
+not run on `master` pushes or publish a GitHub Release. Download `tradeflow-connect-windows-x64` or
+`tradeflow-connect-windows-arm64` from the completed Actions run's Artifacts section within seven
 days, unzip it, and run the installer. Windows may request confirmation for the unsigned test
 installer. New pushes cancel any older in-progress build on the same branch to limit runner usage.
 
@@ -251,10 +253,11 @@ page and exported report include these records. Unwind recovery does not catch W
 violations, stack overflow or external process termination; interrupted configuration journals are
 still checked on the next startup. Record the exact application version when reporting a failure.
 
-The separate `codex/windows-mcp-smoke` branch contains the Windows native smoke workflow. It drives
-real Tauri login and connection buttons with a local fixture backend and fake Agent detection,
-checks reuse/removal/query-failure rollback, and saves redacted reports. It does not certify actual
-OpenCode or WorkBuddy activation. `build-mcp-app` continues to build only the Windows installer.
+The temporary `codex/windows-mcp-smoke` branch was removed after native verification. Its Actions
+run linked below retains the verification record. The test drove real Tauri login and connection
+buttons with a local fixture backend and fake Agent detection, checked reuse/removal/query-failure
+rollback, and saved redacted reports. It does not certify actual OpenCode or WorkBuddy activation.
+`build-mcp-app` builds only Windows x64 and ARM64 installers.
 
 ### Native regression verification (2026-10-02)
 
