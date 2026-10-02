@@ -422,11 +422,15 @@ export async function getAccountDetails(
       : db.payablePayment.count({ where: { supplier_code: args.partnerCode } })
   ]);
 
-  const totalAmount = Number(recordSummary._sum.total_price ?? 0);
-  const totalPaid = Number(paymentSummary._sum.amount ?? 0);
+  const totalAmount = decimalCalc.fromSqlResult(recordSummary._sum.total_price ?? 0, 0, 2);
+  const totalPaid = decimalCalc.fromSqlResult(paymentSummary._sum.amount ?? 0, 0, 2);
   return {
     partner,
-    summary: { total_amount: totalAmount, total_paid: totalPaid, balance: totalAmount - totalPaid },
+    summary: {
+      total_amount: totalAmount,
+      total_paid: totalPaid,
+      balance: decimalCalc.toDbNumber(decimalCalc.subtract(totalAmount, totalPaid), 2)
+    },
     transactions: {
       data: records,
       total: recordCount,

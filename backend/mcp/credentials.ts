@@ -3,6 +3,8 @@ import { OAuthError, OAuthErrorCode } from '@modelcontextprotocol/server';
 import type { AuthInfo, OAuthTokenVerifier } from '@modelcontextprotocol/server';
 import type { McpConfig, McpCredentialConfig, McpToolName } from '@/types/config';
 import { MCP_TOOL_NAMES } from '@/mcp/tools';
+import { mcpPrisma } from '@/prismaClient';
+import { toolsForRole } from '@/mcp/tools';
 
 export type McpCredential = McpCredentialConfig;
 
@@ -25,8 +27,6 @@ export function validateMcpConfig(value: McpConfig): McpConfig {
   if (value.allowedOrigins.some((origin) => typeof origin !== 'string' || !origin.trim())) {
     throw new Error('MCP allowedOrigins must contain non-empty hostnames.');
   }
-  if (value.credentials.length === 0)
-    throw new Error('Enabled MCP requires at least one credential.');
 
   const ids = new Set<string>();
   for (const credential of value.credentials) {
@@ -120,14 +120,43 @@ export function createMcpTokenVerifier(config: McpConfig): OAuthTokenVerifier {
   return {
     async verifyAccessToken(token: string): Promise<AuthInfo> {
       const credential = findMcpCredential(config, token);
-      if (!credential) {
+      if (credential)
+        return {
+          token,
+          clientId: credential.id,
+          scopes: credential.tools,
+          expiresAt: Math.floor(Date.parse(credential.expiresAt) / 1000),
+          extra: { budgetKey: `static:${credential.id}` }
+        };
+      if (!config.enabled || !token || token.length > 512) {
         throw new OAuthError(OAuthErrorCode.InvalidToken, 'Invalid MCP access token.');
       }
+      const connection = await mcpPrisma.mcpConnection
+        .findUnique({
+          where: { tokenSha256: hashMcpToken(token) },
+          include: { owner: true }
+        })
+        .catch(() => {
+          throw new Error('MCP credential lookup failed.');
+        });
+      if (
+        !connection ||
+        connection.revokedAt ||
+        connection.expiresAt.getTime() <= Date.now() ||
+        !connection.owner.enabled ||
+        connection.passwordVersion !== connection.owner.last_password_change
+      ) {
+        throw new OAuthError(OAuthErrorCode.InvalidToken, 'Invalid MCP access token.');
+      }
+      const allowed = new Set(toolsForRole(connection.owner.role));
       return {
         token,
-        clientId: credential.id,
-        scopes: credential.tools as McpToolName[],
-        expiresAt: Math.floor(Date.parse(credential.expiresAt) / 1000)
+        clientId: connection.id,
+        scopes: connection.tools.filter((tool): tool is McpToolName =>
+          allowed.has(tool as McpToolName)
+        ),
+        expiresAt: Math.floor(connection.expiresAt.getTime() / 1000),
+        extra: { budgetKey: `user:${connection.ownerUsername}` }
       };
     }
   };

@@ -26,6 +26,7 @@ import usersRoutes from '@/routes/users';
 import auditRoutes from '@/routes/audit';
 import { createMcpRouter, getMcpSettings } from '@/mcp/server';
 import type { McpConfig } from '@/types/config';
+import { createMcpConnectionRouter } from '@/mcp/connections';
 
 export function createApp(mcpSettings: McpConfig = getMcpSettings()): Express {
   const app: Express = express();
@@ -61,6 +62,7 @@ export function createApp(mcpSettings: McpConfig = getMcpSettings()): Express {
   // =============================================================================
 
   app.use('/api/auth', authRoutes);
+  app.use('/api/mcp', createMcpConnectionRouter(mcpSettings));
 
   if (mcpSettings.enabled) {
     app.use('/mcp', createMcpRouter(mcpSettings));

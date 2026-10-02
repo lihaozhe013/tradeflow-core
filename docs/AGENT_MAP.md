@@ -3,16 +3,18 @@
 Use this file to find the source of truth, then inspect the code and tests for the task at hand.
 Avoid maintaining route inventories or copied data flows here.
 
-| Task                                     | Start here                                                                                     |
-| ---------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| API routes, authentication, permissions  | `backend/app.ts`, then `backend/routes/` and `backend/utils/auth.ts`                           |
-| Database model or generated client       | `backend/prisma/schema.prisma`, `backend/prismaClient.ts`, `backend/prisma/client.ts`          |
-| Inventory effects of purchases and sales | `backend/routes/inbound.ts`, `backend/routes/outbound.ts`, `backend/utils/inventoryService.ts` |
-| Analysis or spreadsheet export           | `backend/routes/analysis/`, `backend/routes/export/`                                           |
-| Browser routes and permissions           | `frontend/src/App.tsx`, `frontend/src/auth/`                                                   |
-| Browser API calls and localized text     | `frontend/src/utils/request.ts`, `frontend/src/hooks/`, `frontend/src/i18n/locales/`           |
-| Runtime configuration and build inputs   | `backend/utils/paths.ts`, `config-example/`, `build-config/`, `scripts/build/`                 |
-| Test setup and examples                  | `scripts/test*.mjs`, `backend/test/`, `frontend/e2e/`                                          |
+| Task                                       | Start here                                                                                     |
+| ------------------------------------------ | ---------------------------------------------------------------------------------------------- |
+| API routes, authentication, permissions    | `backend/app.ts`, then `backend/routes/` and `backend/utils/auth.ts`                           |
+| Database model or generated client         | `backend/prisma/schema.prisma`, `backend/prismaClient.ts`, `backend/prisma/client.ts`          |
+| Inventory effects of purchases and sales   | `backend/routes/inbound.ts`, `backend/routes/outbound.ts`, `backend/utils/inventoryService.ts` |
+| Analysis or spreadsheet export             | `backend/routes/analysis/`, `backend/routes/export/`                                           |
+| Browser routes and permissions             | `frontend/src/App.tsx`, `frontend/src/auth/`                                                   |
+| Browser API calls and localized text       | `frontend/src/utils/request.ts`, `frontend/src/hooks/`, `frontend/src/i18n/locales/`           |
+| Runtime configuration and build inputs     | `backend/utils/paths.ts`, `config-example/`, `build-config/`, `scripts/build/`                 |
+| Read-only MCP and account connections      | `backend/mcp/`, `backend/services/readService.ts`, `docs/MCP.md`                               |
+| Desktop agent installation and diagnostics | `desktop/core/`, `desktop/src-tauri/`, `desktop/src/`, `docs/DESKTOP_CONNECT.md`               |
+| Test setup and examples                    | `scripts/test*.mjs`, `backend/test/`, `frontend/e2e/`                                          |
 
 ## Easy-to-miss constraints
 

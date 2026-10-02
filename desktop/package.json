@@ -1,0 +1,33 @@
+{
+  "name": "@tradeflow/desktop",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun run prepare-sidecar && tauri dev",
+    "web:dev": "vite --host 127.0.0.1 --port 1420 --strictPort",
+    "web:build": "tsc --noEmit && vite build",
+    "typecheck": "tsc --noEmit",
+    "build": "node scripts/build.mjs",
+    "prepare-sidecar": "node scripts/prepare-sidecar.mjs",
+    "test": "cargo test --manifest-path Cargo.toml -p tradeflow-connect",
+    "test:ui": "playwright test"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "^2.0.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.0.0",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.1",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.0",
+    "@modelcontextprotocol/server": "2.2.0",
+    "@modelcontextprotocol/node": "2.1.0",
+    "zod": "4.6.5",
+    "@playwright/test": "^1.63.0"
+  }
+}

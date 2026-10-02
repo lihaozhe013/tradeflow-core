@@ -1,0 +1,18 @@
+[package]
+name = "tradeflow-desktop"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+name = "tradeflow_desktop"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tradeflow-connect = { path = "../core" }
+serde_json = "1"
+tokio = { version = "1", features = ["sync"] }
+tauri-plugin-clipboard-manager = "2"

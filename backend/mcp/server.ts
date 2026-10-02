@@ -6,7 +6,7 @@ import {
 } from '@modelcontextprotocol/express';
 import type { AuthInfo } from '@modelcontextprotocol/server';
 import type { Prisma } from '@/prisma/client';
-import type { Express, Request, Response } from 'express';
+import type { Express, Request, Response, NextFunction } from 'express';
 import * as z from 'zod/v4';
 import { mcpPrisma } from '@/prismaClient';
 import {
@@ -377,14 +377,27 @@ export function createMcpRouter(mcpConfig: McpConfig): Express {
       const tool = typeof body?.params?.name === 'string' ? body.params.name : undefined;
       logger.info('MCP request completed', {
         integrationId: agentId,
-        method: typeof body?.method === 'string' ? body.method : 'unknown',
+        method:
+          typeof body?.method === 'string' &&
+          [
+            'initialize',
+            'notifications/initialized',
+            'server/discover',
+            'tools/list',
+            'tools/call',
+            'ping'
+          ].includes(body.method)
+            ? body.method
+            : 'unknown',
         ...(MCP_TOOL_NAMES.includes(tool as McpToolName) ? { tool } : {}),
         durationMs: Date.now() - startedAt,
         status: res.statusCode
       });
     });
 
-    if (!allowRequest(settings, agentId, res)) return;
+    const budgetKey =
+      typeof auth?.extra?.['budgetKey'] === 'string' ? auth.extra['budgetKey'] : agentId;
+    if (!allowRequest(settings, budgetKey, res)) return;
 
     const server = new McpServer({ name: 'tradeflow-core', version: '1.0.0' });
     const scopes = new Set(
@@ -400,6 +413,10 @@ export function createMcpRouter(mcpConfig: McpConfig): Express {
       .catch(next);
   });
   app.use((_req, res) => res.status(404).json({ error: 'Not found' }));
+  app.use((_error: unknown, _req: Request, res: Response, _next: NextFunction) => {
+    logger.error('MCP protocol request failed', { status: 500 });
+    res.status(500).json({ error: 'MCP request failed.' });
+  });
   return app;
 }
 

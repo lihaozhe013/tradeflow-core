@@ -65,3 +65,8 @@ routes are not exposed.
 The static bearer credentials support MCP clients that can set request headers. They do not
 implement OAuth login or per-employee authorization. Changes to configured credentials, tool
 permissions, host allowlists, or limits take effect after a backend restart.
+
+Account-bound credentials can also be created and revoked without restarting through the
+[desktop connection assistant](DESKTOP_CONNECT.md). They follow the account's current role and
+password version; reader accounts retain their financial and analysis restrictions. A configured
+empty static credential list is valid for this database-backed mode.
