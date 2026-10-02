@@ -126,3 +126,57 @@ fn mcp_errors_do_not_confuse_url_ports_with_http_status_codes() {
         "HTTP_503"
     );
 }
+
+#[tokio::test]
+async fn panics_become_safe_errors_at_the_failed_step() {
+    let dir = tempfile::tempdir().unwrap();
+    let store = Store::at(dir.path().to_owned()).unwrap();
+    let operation = Operation::new(&store, Action::Connect, None, None, None);
+    let (_, report) = operation
+        .run(diagnostics::step(Stage::McpHandshake, async {
+            panic!("PRIVATE_CREDENTIAL");
+            #[allow(unreachable_code)]
+            Ok::<(), anyhow::Error>(())
+        }))
+        .await;
+    assert_eq!(report.error_code.as_deref(), Some("OPERATION_PANICKED"));
+    assert_eq!(
+        serde_json::to_value(report).unwrap()["failedStage"],
+        "mcp_handshake"
+    );
+    let operation = Operation::new(&store, Action::Connect, None, None, None);
+    let (result, _) = operation
+        .run(async {
+            diagnostics::sync_step(Stage::WriteConfig, || -> anyhow::Result<()> {
+                panic!("PRIVATE_CREDENTIAL")
+            })
+        })
+        .await;
+    assert_eq!(result.unwrap_err().to_string(), "OPERATION_PANICKED");
+    let logs = serde_json::to_string(&diagnostics::recent(&store).unwrap()).unwrap();
+    assert!(!logs.contains("PRIVATE_CREDENTIAL"));
+}
+
+#[test]
+fn crash_exports_use_only_validated_fields_and_keep_older_versions() {
+    let dir = tempfile::tempdir().unwrap();
+    let store = Store::at(dir.path().to_owned()).unwrap();
+    std::fs::create_dir(store.root.join("logs")).unwrap();
+    let event = serde_json::json!({
+        "timestamp":"2026-10-02T13:07:19Z", "appVersion":"0.1.0",
+        "operationId":null, "stage":"mcp_handshake", "sourceFile":"token_SECRET.rs/PRIVATE",
+        "sourceLine":123, "errorCode":"OPERATION_PANICKED", "payload":"PRIVATE_CREDENTIAL"
+    });
+    atomic_write(
+        &store.root.join("logs/crashes.jsonl"),
+        event.to_string().as_bytes(),
+    )
+    .unwrap();
+    let report = dir.path().join("report.json");
+    diagnostics::export(&store, &report).unwrap();
+    let text = std::fs::read_to_string(report).unwrap();
+    assert!(text.contains("0.1.0"));
+    assert!(text.contains("mcp_handshake"));
+    assert!(!text.contains("SECRET"));
+    assert!(!text.contains("PRIVATE"));
+}

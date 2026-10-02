@@ -362,6 +362,12 @@ fn operation_logs() -> Result<Value, String> {
         .map_err(|_| "LOG_READ_FAILED".into())
 }
 #[tauri::command]
+fn crash_reports() -> Result<Value, String> {
+    let store = Store::system().map_err(|e| connection::safe_code(&e))?;
+    serde_json::to_value(diagnostics::crash_events(&store).map_err(|e| connection::safe_code(&e))?)
+        .map_err(|_| "LOG_READ_FAILED".into())
+}
+#[tauri::command]
 async fn export_operation_logs(app: tauri::AppHandle) -> Result<Value, String> {
     use tauri_plugin_dialog::DialogExt;
     let (sender, receiver) = tokio::sync::oneshot::channel();
@@ -416,6 +422,7 @@ fn copy_prompt(
         .map_err(|_| "CLIPBOARD_WRITE_FAILED".into())
 }
 pub fn run() {
+    diagnostics::install_panic_logging();
     tauri::Builder::default()
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_dialog::init())
@@ -423,6 +430,7 @@ pub fn run() {
         .manage(AppState::default())
         .invoke_handler(tauri::generate_handler![
             operation_logs,
+            crash_reports,
             export_operation_logs,
             open_credentials_page,
             login,

@@ -779,7 +779,8 @@
       "INVALID_SERVER_RESPONSE": "服务器响应不兼容，请检查后端版本和反向代理。",
       "HTTP_500": "服务器内部错误，请按本次操作时间检查后端日志。",
       "ROLLBACK_FAILED": "无法恢复原配置，请到诊断页查看并恢复备份后再重试。",
-      "LOGIN_FIELDS_REQUIRED": "请填写用户名和密码后登录。"
+      "LOGIN_FIELDS_REQUIRED": "请填写用户名和密码后登录。",
+      "OPERATION_PANICKED": "原生操作意外中止。请查看诊断并导出报告后再重试。"
     },
     "prompts": {
       "business": "使用 TradeFlow MCP 连接 {{serverName}}。可用的只读工具：{{tools}}。请先列出工具，并使用 {\"page\":1,\"limit\":5} 发起一次最小库存查询。如有更多页，使用 limit 不大于 100 的分页请求。按要求的日期范围汇报工具返回的币种和 FIFO 成本口径，然后汇总本月各客户的销售额、成本和利润。如果没有财务工具，请说明账号权限限制，不要编造数据。",
@@ -833,7 +834,9 @@
       "remove": "移除本地配置",
       "recovery": "恢复操作",
       "bridge": "桥接"
-    }
+    },
+    "crashNotice": "已记录原生操作异常",
+    "crashAdvice": "重试前请导出诊断报告。重新启动时会检查中断的配置变更。"
   },
   "mcpConnections": {
     "title": "我的 MCP 凭证",

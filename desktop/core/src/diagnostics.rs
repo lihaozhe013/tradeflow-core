@@ -7,8 +7,9 @@ use fs2::FileExt;
 use serde::{Deserialize, Serialize};
 use std::{
     fs,
-    future::Future,
+    future::{Future, poll_fn},
     io::Write,
+    panic::{AssertUnwindSafe, catch_unwind},
     sync::{Arc, Mutex},
     time::Instant,
 };
@@ -73,6 +74,7 @@ pub struct Event {
 #[serde(rename_all = "camelCase")]
 pub struct Report {
     pub operation_id: String,
+    pub app_version: String,
     pub status: Status,
     pub failed_stage: Option<Stage>,
     pub error_code: Option<String>,
@@ -156,7 +158,7 @@ impl Operation {
         )
     }
     pub async fn run<T>(&self, future: impl Future<Output = Result<T>>) -> (Result<T>, Report) {
-        let result = CURRENT.scope(self.clone(), future).await;
+        let result = CURRENT.scope(self.clone(), guarded(future)).await;
         let mut events = self.0.events.lock().unwrap().clone();
         if result.is_err()
             && !events
@@ -197,6 +199,7 @@ impl Operation {
         };
         let report = Report {
             operation_id: self.0.id.clone(),
+            app_version: env!("CARGO_PKG_VERSION").into(),
             status: if result.is_ok() {
                 Status::Succeeded
             } else {
@@ -216,7 +219,7 @@ pub async fn step<T>(stage: Stage, future: impl Future<Output = Result<T>>) -> R
     if let Some(op) = &operation {
         op.event(stage.clone(), Status::Running, 0, None);
     }
-    let result = future.await;
+    let result = guarded(future).await;
     if let Some(op) = operation {
         op.event(
             stage,
@@ -237,7 +240,8 @@ pub fn sync_step<T>(stage: Stage, work: impl FnOnce() -> Result<T>) -> Result<T>
     if let Some(op) = &operation {
         op.event(stage.clone(), Status::Running, 0, None);
     }
-    let result = work();
+    let result = catch_unwind(AssertUnwindSafe(work))
+        .unwrap_or_else(|_| Err(anyhow::anyhow!("OPERATION_PANICKED")));
     if let Some(op) = operation {
         op.event(
             stage,
@@ -326,7 +330,7 @@ pub fn recent(store: &Store) -> Result<Vec<Event>> {
     Ok(events)
 }
 pub fn export(store: &Store, path: &std::path::Path) -> Result<()> {
-    let value = serde_json::json!({"version":1,"events":recent(store)?});
+    let value = serde_json::json!({"version":1,"appVersion":env!("CARGO_PKG_VERSION"),"events":recent(store)?,"crashes":crash_events(store)?});
     atomic_write(
         path,
         &serde_json::to_vec_pretty(&value).context("LOG_EXPORT_FAILED")?,
@@ -336,4 +340,127 @@ pub fn export(store: &Store, path: &std::path::Path) -> Result<()> {
 
 pub fn current() -> Option<Operation> {
     CURRENT.try_with(Clone::clone).ok()
+}
+
+async fn guarded<T>(future: impl Future<Output = Result<T>>) -> Result<T> {
+    let mut future = std::pin::pin!(future);
+    poll_fn(
+        |context| match catch_unwind(AssertUnwindSafe(|| future.as_mut().poll(context))) {
+            Ok(poll) => poll,
+            Err(_) => std::task::Poll::Ready(Err(anyhow::anyhow!("OPERATION_PANICKED"))),
+        },
+    )
+    .await
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CrashEvent {
+    timestamp: String,
+    app_version: String,
+    operation_id: Option<String>,
+    stage: Option<Stage>,
+    source_file: Option<String>,
+    source_line: Option<u32>,
+    error_code: String,
+}
+
+pub fn install_panic_logging() {
+    static INIT: std::sync::Once = std::sync::Once::new();
+    INIT.call_once(|| {
+        let file = (|| -> Result<fs::File> {
+            let store = Store::system()?;
+            let directory = store.root.join("logs");
+            private_dir(&directory)?;
+            let path = directory.join("crashes.jsonl");
+            reject_symlink(&path)?;
+            if !path.exists() {
+                atomic_write(&path, b"")?;
+            }
+            Ok(fs::OpenOptions::new().append(true).open(path)?)
+        })()
+        .ok()
+        .map(Mutex::new);
+        // Never format the panic payload: SDK errors can contain credentials.
+        // The emergency writer is independent of operation logging and its locks.
+        std::panic::set_hook(Box::new(move |info| {
+            let Some(file) = &file else {
+                return;
+            };
+            let Ok(mut file) = file.try_lock() else {
+                return;
+            };
+            let operation = current();
+            let event = CrashEvent {
+                timestamp: chrono::Utc::now().to_rfc3339(),
+                app_version: env!("CARGO_PKG_VERSION").into(),
+                operation_id: operation.as_ref().map(|op| op.0.id.clone()),
+                stage: operation.as_ref().and_then(|op| {
+                    op.0.events
+                        .try_lock()
+                        .ok()?
+                        .last()
+                        .map(|event| event.stage.clone())
+                }),
+                source_file: info
+                    .location()
+                    .and_then(|location| std::path::Path::new(location.file()).file_name())
+                    .and_then(|name| name.to_str())
+                    .map(str::to_owned),
+                source_line: info.location().map(|location| location.line()),
+                error_code: "OPERATION_PANICKED".into(),
+            };
+            if let Ok(mut bytes) = serde_json::to_vec(&event) {
+                bytes.push(b'\n');
+                if file.metadata().is_ok_and(|value| value.len() > 1024 * 1024) {
+                    let _ = file.set_len(0);
+                }
+                let _ = file.write_all(&bytes);
+                let _ = file.sync_data();
+            }
+        }));
+    });
+}
+
+pub fn crash_events(store: &Store) -> Result<Vec<CrashEvent>> {
+    let path = store.root.join("logs/crashes.jsonl");
+    reject_symlink(&path)?;
+    let text = match fs::read_to_string(path) {
+        Ok(text) => text,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(vec![]),
+        Err(_) => anyhow::bail!("LOG_READ_FAILED"),
+    };
+    Ok(text
+        .lines()
+        .filter_map(|line| {
+            let mut event: CrashEvent = serde_json::from_str(line).ok()?;
+            chrono::DateTime::parse_from_rfc3339(&event.timestamp).ok()?;
+            if event.error_code != "OPERATION_PANICKED"
+                || event.app_version.len() > 30
+                || !event
+                    .app_version
+                    .chars()
+                    .all(|c| c.is_ascii_digit() || c == '.')
+            {
+                return None;
+            }
+            if event
+                .operation_id
+                .as_ref()
+                .is_some_and(|id| Uuid::parse_str(id).is_err())
+            {
+                return None;
+            }
+            event.source_file = event.source_file.filter(|name| {
+                name.len() <= 100
+                    && name.ends_with(".rs")
+                    && name
+                        .chars()
+                        .all(|c| c.is_ascii_alphanumeric() || matches!(c, '_' | '-' | '.'))
+            });
+            Some(event)
+        })
+        .rev()
+        .take(20)
+        .collect())
 }

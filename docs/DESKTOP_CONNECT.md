@@ -237,3 +237,21 @@ OpenCode project override behavior. Keep the exact tested versions with release 
 
 The checked-in CI workflow is the build definition, not evidence that native installers have been
 produced. Record its artifact links and the native host acceptance results before a test release.
+
+## Windows 0.1.1 diagnostics
+
+Windows storage permissions use the current process user's SID and a protected DACL through native
+APIs. No shell or localized account-name output is involved. Agent detection and helper checks run
+with `CREATE_NO_WINDOW`; redirected CLI and bridge standard IO remain available.
+
+Native Rust panics inside observed operations return `OPERATION_PANICKED`. The assistant records
+only the application version, timestamp, operation ID, stage and source filename/line in a bounded
+private `logs/crashes.jsonl` file. Panic payloads and memory dumps are excluded. The Diagnostics
+page and exported report include these records. Unwind recovery does not catch Windows access
+violations, stack overflow or external process termination; interrupted configuration journals are
+still checked on the next startup. Record the exact application version when reporting a failure.
+
+The separate `codex/windows-mcp-smoke` branch contains the Windows native smoke workflow. It drives
+real Tauri login and connection buttons with a local fixture backend and fake Agent detection,
+checks reuse/removal/query-failure rollback, and saves redacted reports. It does not certify actual
+OpenCode or WorkBuddy activation. `build-mcp-app` continues to build only the Windows installer.

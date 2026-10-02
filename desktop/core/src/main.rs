@@ -46,6 +46,7 @@ fn client(value: &str) -> anyhow::Result<Client> {
 }
 #[tokio::main]
 async fn main() {
+    tradeflow_connect::diagnostics::install_panic_logging();
     let args = Args::parse();
     let serving = matches!(&args.command, Commands::Serve { .. });
     let action = match &args.command {

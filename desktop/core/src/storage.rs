@@ -261,24 +261,8 @@ fn restrict(path: &Path, directory: bool) -> Result<()> {
         )?;
     }
     #[cfg(windows)]
-    {
-        let who = std::process::Command::new("whoami")
-            .output()
-            .context("ACL_IDENTITY_FAILED")?;
-        if !who.status.success() {
-            bail!("ACL_IDENTITY_FAILED");
-        }
-        let identity = String::from_utf8(who.stdout)?.trim().to_owned();
-        let grant = format!("{identity}:{}F", if directory { "(OI)(CI)" } else { "" });
-        let status = std::process::Command::new("icacls")
-            .arg(path)
-            .args(["/inheritance:r", "/grant:r", &grant])
-            .output()
-            .context("ACL_UPDATE_FAILED")?;
-        if !status.status.success() {
-            bail!("ACL_UPDATE_FAILED");
-        }
-    }
+    crate::windows_acl::restrict(path, directory)?;
+
     Ok(())
 }
 pub fn atomic_write(path: &Path, bytes: &[u8]) -> Result<()> {

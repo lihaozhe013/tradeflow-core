@@ -488,3 +488,62 @@ fn credential_files_are_private_and_symlinks_are_rejected() {
     symlink(&store.root, &link).unwrap();
     assert!(Store::at(link).is_err());
 }
+
+#[cfg(windows)]
+#[test]
+fn windows_private_files_have_a_protected_single_user_dacl() {
+    use std::{os::windows::ffi::OsStrExt, ptr};
+    use windows_sys::Win32::Security::{
+        DACL_SECURITY_INFORMATION, GetFileSecurityW, GetSecurityDescriptorControl,
+        GetSecurityDescriptorDacl, SE_DACL_PROTECTED,
+    };
+    let dir = tempfile::tempdir().unwrap();
+    let (store, profile) = fixture(&dir);
+    store.save(&profile).unwrap();
+    for path in [
+        &store.root,
+        &store.root.join(format!("{}.json", profile.id)),
+    ] {
+        let path: Vec<u16> = path.as_os_str().encode_wide().chain(Some(0)).collect();
+        unsafe {
+            let mut required = 0;
+            GetFileSecurityW(
+                path.as_ptr(),
+                DACL_SECURITY_INFORMATION,
+                ptr::null_mut(),
+                0,
+                &mut required,
+            );
+            assert!(required > 0);
+            let mut buffer = vec![0usize; (required as usize).div_ceil(size_of::<usize>())];
+            let descriptor = buffer.as_mut_ptr().cast();
+            assert_ne!(
+                GetFileSecurityW(
+                    path.as_ptr(),
+                    DACL_SECURITY_INFORMATION,
+                    descriptor,
+                    required,
+                    &mut required
+                ),
+                0
+            );
+            let mut present = 0;
+            let mut defaulted = 0;
+            let mut acl = ptr::null_mut();
+            assert_ne!(
+                GetSecurityDescriptorDacl(descriptor, &mut present, &mut acl, &mut defaulted),
+                0
+            );
+            assert_ne!(present, 0);
+            assert!(!acl.is_null());
+            assert_eq!((*acl).AceCount, 1);
+            let mut control = 0;
+            let mut revision = 0;
+            assert_ne!(
+                GetSecurityDescriptorControl(descriptor, &mut control, &mut revision),
+                0
+            );
+            assert_ne!(control & SE_DACL_PROTECTED, 0);
+        }
+    }
+}

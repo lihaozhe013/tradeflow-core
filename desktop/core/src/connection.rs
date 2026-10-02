@@ -12,7 +12,6 @@ use std::{
     collections::HashSet,
     fs::{self, File},
     path::{Path, PathBuf},
-    process::Command,
 };
 
 fn operation_lock(store: &Store, client: &Client) -> Result<File> {
@@ -70,7 +69,7 @@ pub fn detect(client: &Client) -> Value {
                 PathBuf::from("/usr/local/bin").join(executable),
             ];
             let version = candidates.iter().find_map(|path| {
-                Command::new(path)
+                crate::process::command(path)
                     .arg("--version")
                     .output()
                     .ok()
@@ -107,7 +106,7 @@ pub async fn doctor(store: &Store, id: &str, client: Client, cwd: &Path) -> Resu
     let configured = diagnostics::sync_step(Stage::ReadConfig, || config::configured(&profile))?;
     let overrides = config::overrides(&profile, cwd);
     let helper_available = profile.mode != "bridge"
-        || Command::new(&profile.helper_path)
+        || crate::process::command(&profile.helper_path)
             .arg("--version")
             .output()
             .is_ok_and(|result| {
@@ -190,6 +189,7 @@ pub fn safe_code(error: &anyhow::Error) -> String {
         "OPENCODE_V2_REQUIRED",
         "OPERATION_BUSY",
         "OPERATION_FAILED",
+        "OPERATION_PANICKED",
         "PROFILE_ACCOUNT_MISMATCH",
         "PROFILE_CLIENT_MISMATCH",
         "PROFILE_CONFIG_PATH_CHANGED",

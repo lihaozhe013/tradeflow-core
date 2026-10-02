@@ -762,7 +762,8 @@
       "INVALID_SERVER_RESPONSE": "The server response is incompatible. Check the backend version and reverse proxy.",
       "HTTP_500": "The server encountered an error. Check backend logs using this operation’s timestamp.",
       "ROLLBACK_FAILED": "The previous configuration could not be restored. Review Diagnostics and restore the backup before retrying.",
-      "LOGIN_FIELDS_REQUIRED": "Enter your username and password before signing in."
+      "LOGIN_FIELDS_REQUIRED": "Enter your username and password before signing in.",
+      "OPERATION_PANICKED": "A native operation stopped unexpectedly. Review Diagnostics and export the report before retrying."
     },
     "prompts": {
       "business": "Use TradeFlow MCP connection {{serverName}}. Its read-only tools are: {{tools}}. First list available tools and run a minimal inventory query with {\"page\":1,\"limit\":5}. When a result has more pages, paginate with limit no greater than 100. For the requested date range, report the currency and FIFO costing basis returned by the tools. Then summarize this month’s sales, cost and profit by customer. If financial tools are unavailable, explain the account’s permissions instead of inventing numbers.",
@@ -816,7 +817,9 @@
       "remove": "Remove local configuration",
       "recovery": "Recover operation",
       "bridge": "Bridge"
-    }
+    },
+    "crashNotice": "Recorded native operation failures",
+    "crashAdvice": "Export the diagnostic report before retrying. Interrupted configuration changes are checked on restart."
   },
   "mcpConnections": {
     "title": "My MCP credentials",

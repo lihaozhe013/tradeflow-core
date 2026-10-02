@@ -6,6 +6,7 @@ import zh from '../../frontend/src/i18n/locales/zh/zh-CN.json';
 import en from '../../frontend/src/i18n/locales/en/en-US.json';
 import './style.css';
 import connectIcon from './assets/connect.svg';
+import { version } from '../package.json';
 
 type Client = 'opencode' | 'workbuddy';
 type Language = 'zh' | 'en';
@@ -48,6 +49,15 @@ type Event = {
   errorCode: string | null;
   httpStatus: number | null;
 };
+type Crash = {
+  timestamp: string;
+  appVersion: string;
+  operationId: string | null;
+  stage: string | null;
+  errorCode: string;
+  sourceFile: string | null;
+  sourceLine: number | null;
+};
 type Operation = {
   operationId: string;
   status: string;
@@ -84,6 +94,7 @@ function App() {
   const [agents, setAgents] = useState<Agent[]>([]);
   const [selected, setSelected] = useState<Client[]>([]);
   const [cleanup, setCleanup] = useState<Cleanup[]>([]);
+  const [crashes, setCrashes] = useState<Crash[]>([]);
   const [logs, setLogs] = useState<Event[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
   const [outcomes, setOutcomes] = useState<Outcome[]>([]);
@@ -159,12 +170,14 @@ function App() {
     Promise.all([
       invoke<{ language: Setting }>('get_settings'),
       refresh(),
-      invoke<Event[]>('operation_logs')
+      invoke<Event[]>('operation_logs'),
+      invoke<Crash[]>('crash_reports').catch(() => [] as Crash[])
     ])
-      .then(([settings, , history]) => {
+      .then(([settings, , history, crashHistory]) => {
         if (active) {
           setSetting(settings.language);
           setLogs(history);
+          setCrashes(Array.isArray(crashHistory) ? crashHistory : []);
         }
       })
       .catch((failure) => {
@@ -214,6 +227,8 @@ function App() {
     }
     try {
       setLogs(await invoke<Event[]>('operation_logs'));
+      const crashHistory = await invoke<Crash[]>('crash_reports').catch(() => [] as Crash[]);
+      setCrashes(Array.isArray(crashHistory) ? crashHistory : []);
     } catch {
       setLogWarning('LOG_READ_FAILED');
     }
@@ -655,6 +670,13 @@ function App() {
                 {t.exportLogs}
               </button>
             </div>
+            {crashes.length > 0 && (
+              <details>
+                <summary>{t.crashNotice}</summary>
+                <p>{t.crashAdvice}</p>
+                <pre>{JSON.stringify(crashes, null, 2)}</pre>
+              </details>
+            )}
             {recovery.map((issue, i) => (
               <p key={i} className="error">
                 {t.recoveryRequired} {errorText(issue.errorCode)}
@@ -797,7 +819,9 @@ function App() {
           <pre>{prompt}</pre>
         </section>
       )}
-      <footer>{t.testBuild}</footer>
+      <footer>
+        {t.testBuild} · {version}
+      </footer>
       <dialog ref={dialog} className="disconnect-dialog" onClose={() => setRemoveTarget(null)}>
         <h2>{t.removeLocal}</h2>
         {removeTarget && (
