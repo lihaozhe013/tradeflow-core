@@ -76,3 +76,16 @@ page works while MCP is disabled, requires real account authentication, and neve
 tokens. See
 [local removal and remote revocation](DESKTOP_CONNECT.md#remove-locally-and-revoke-remotely) for the
 desktop workflow.
+
+## Optional Agent skill and manual connection
+
+The portable [TradeFlow MCP skill](../skills/tradeflow-mcp/SKILL.md) teaches an Agent to choose
+tools, use `limit` pagination, interpret FIFO analysis and account balances, and diagnose connection
+failures. Copy the complete `skills/tradeflow-mcp/` folder to the host's skill location or import it
+as a local skill package. The skill has no secrets and does not register an MCP connection.
+
+Its [manual connection reference](../skills/tradeflow-mcp/references/connection.md) covers OpenCode
+V2 and WorkBuddy, administrator-issued credentials, and account-bound credential creation through
+the existing API. Direct remote use requires neither the Tauri assistant nor a local runtime. The
+web credential page still only lists and revokes credentials. Native host activation must be
+verified separately from a successful HTTP probe.

@@ -7,6 +7,10 @@ build helper.
 For repository rules and task entry points, read [AGENTS.md](AGENTS.md) and
 [docs/AGENT_MAP.md](docs/AGENT_MAP.md).
 
+For Agent access to business data, see [the read-only MCP service](docs/MCP.md) and the portable
+[TradeFlow MCP skill](skills/tradeflow-mcp/SKILL.md). The skill includes manual connection
+instructions for OpenCode and WorkBuddy without requiring the desktop assistant.
+
 ## Setup
 
 Requires Bun 1.4.2, Node.js 26+, `uv`, and PostgreSQL. Copy `config-example/` into the matching
