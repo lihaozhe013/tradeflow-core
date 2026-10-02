@@ -547,3 +547,15 @@ fn windows_private_files_have_a_protected_single_user_dacl() {
         }
     }
 }
+
+#[cfg(windows)]
+#[test]
+fn windows_background_commands_keep_stdio_without_a_console() {
+    let output = tradeflow_connect::process::command("powershell.exe")
+        .args(["-NoProfile", "-NonInteractive", "-Command", r#"Add-Type -Name Console -Namespace TradeFlowProbe -MemberDefinition '[DllImport("kernel32.dll")] public static extern IntPtr GetConsoleWindow();'; [TradeFlowProbe.Console]::GetConsoleWindow().ToInt64(); Write-Output 'redirected-output'"#])
+        .output().unwrap();
+    assert!(output.status.success());
+    let text = String::from_utf8(output.stdout).unwrap();
+    let lines: Vec<_> = text.lines().collect();
+    assert_eq!(lines, vec!["0", "redirected-output"]);
+}
