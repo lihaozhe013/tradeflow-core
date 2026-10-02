@@ -255,3 +255,19 @@ The separate `codex/windows-mcp-smoke` branch contains the Windows native smoke 
 real Tauri login and connection buttons with a local fixture backend and fake Agent detection,
 checks reuse/removal/query-failure rollback, and saves redacted reports. It does not certify actual
 OpenCode or WorkBuddy activation. `build-mcp-app` continues to build only the Windows installer.
+
+### Native regression verification (2026-10-02)
+
+The Windows runner reproduced application termination immediately after the connection button, with
+a truncated exit code of 253 and no connection-stage event. This is consistent with stack overflow,
+but the original full exception code was not captured. Observed GUI operations now use boxed
+futures, and the connection entry future shrank from 21,600 to 136 bytes on the local build. A
+regression test bounds its size before polling, since Tauri constructs command futures on the native
+window thread.
+
+After this change, the
+[Windows release smoke run](https://github.com/lihaozhe013/tradeflow-core/actions/runs/37029061255)
+passed actual window login, both Agent connection buttons, credential reuse, local removal and
+query-failure rollback with temporary credential revocation. Native private ACL and hidden-process
+standard-IO tests also passed. This validates the simulated installation flow; production server
+connections and actual Agent trust/reload/tool calls still require user acceptance on Windows.
