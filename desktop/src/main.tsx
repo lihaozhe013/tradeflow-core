@@ -4,6 +4,7 @@ import { invoke } from '@tauri-apps/api/core';
 import zh from '../../frontend/src/i18n/locales/zh/zh-CN.json';
 import en from '../../frontend/src/i18n/locales/en/en-US.json';
 import './style.css';
+import connectIcon from './assets/connect.svg';
 const t = (navigator.language.startsWith('zh') ? zh : en).desktopConnect;
 type Profile = {
   id: string;
@@ -62,7 +63,7 @@ function App() {
   return (
     <main>
       <header>
-        <div className="mark">TF</div>
+        <img className="mark" src={connectIcon} alt="" width="64" height="64" />
         <div>
           <h1>{t.title}</h1>
           <p>{t.subtitle}</p>

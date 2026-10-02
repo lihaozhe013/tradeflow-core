@@ -1,0 +1,45 @@
+name: Build MCP Windows app
+
+on:
+  push:
+    branches: [build-mcp-app]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-mcp-app-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    env:
+      TRADEFLOW_DESKTOP_TARGET: x86_64-pc-windows-msvc
+    steps:
+      - uses: actions/checkout@v5
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.2
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 26.x
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: desktop
+      - name: Install desktop dependencies
+        run: bun install --frozen-lockfile --filter @tradeflow/desktop
+      - name: Build Windows installer
+        run: >-
+          bun run --cwd desktop build -- --target x86_64-pc-windows-msvc --bundles nsis --config
+          src-tauri/tauri.windows-ci.conf.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tradeflow-connect-windows-x64
+          path: desktop/target/x86_64-pc-windows-msvc/release/bundle/nsis/*.exe
+          if-no-files-found: error
+          retention-days: 7

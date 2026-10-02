@@ -126,6 +126,18 @@ desktop CI workflow builds NSIS on Windows and DMG/app on both macOS architectur
 internal test artifacts. It does not publish releases. macOS uses ad-hoc signing; Windows packages
 are unsigned. Production code signing and notarization must be supplied before public distribution.
 
+For a minimal Windows-only build, push to `build-mcp-app`. The `Build MCP Windows app` workflow
+builds a Windows x64 NSIS installer with the bundled CLI, without tests, lint or TypeScript checks.
+It uses `desktop/src-tauri/tauri.windows-ci.conf.json` to skip the normal build's type-check step.
+It does not run on `master` pushes or publish a GitHub Release. Download
+`tradeflow-connect-windows-x64` from the completed Actions run's Artifacts section within seven
+days, unzip it, and run the installer. Windows may request confirmation for the unsigned test
+installer. New pushes cancel any older in-progress build on the same branch to limit runner usage.
+
+The desktop icon source is `desktop/src/assets/connect.svg`. Regenerate native icons with
+`bun run --cwd desktop tauri icon src/assets/connect.svg --output <temporary-directory>` and copy
+the matching desktop PNG, ICO and ICNS files into `desktop/src-tauri/icons/`.
+
 Protocol tests run an isolated official TypeScript SDK fixture and exercise the Rust direct client,
 rejection of invalid credentials, and stdio forwarding with structured content. Config checks cover
 comments, existing servers, malformed files, rollback, concurrent changes, Chinese and
