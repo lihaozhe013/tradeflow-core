@@ -15,6 +15,14 @@ const createSchema = z
   })
   .strict();
 const idSchema = z.string().uuid();
+const listSchema = z
+  .object({
+    page: z.coerce.number().int().min(1).max(1_000_000).default(1),
+    limit: z.coerce.number().int().min(1).max(100).default(100),
+    status: z.enum(['active', 'revoked', 'expired', 'password_changed']).optional(),
+    client: z.enum(['opencode', 'workbuddy']).optional()
+  })
+  .strict();
 const publicFields = {
   id: true,
   client: true,
@@ -61,13 +69,64 @@ export function createMcpConnectionRouter(settings: McpConfig): Router {
     });
   });
   router.get('/connections', async (req, res) => {
-    const data = await mcpPrisma.mcpConnection.findMany({
-      where: { ownerUsername: req.user!.username },
-      select: publicFields,
-      orderBy: { createdAt: 'desc' },
-      take: 100
+    const parsed = listSchema.safeParse(req.query);
+    if (!parsed.success) {
+      res.status(400).json({ success: false, code: 'INVALID_CONNECTION_QUERY' });
+      return;
+    }
+    const owner = await mcpPrisma.user.findUniqueOrThrow({
+      where: { username: req.user!.username }
     });
-    res.json({ success: true, data });
+    const { page, limit, status, client } = parsed.data;
+    const now = new Date();
+    const sameVersion = { passwordVersion: owner.last_password_change };
+    const differentVersion =
+      owner.last_password_change === null
+        ? { passwordVersion: { not: null } }
+        : {
+            OR: [
+              { passwordVersion: null },
+              { passwordVersion: { not: owner.last_password_change } }
+            ]
+          };
+    const statusFilter =
+      status === 'revoked'
+        ? { revokedAt: { not: null } }
+        : status === 'expired'
+          ? { revokedAt: null, expiresAt: { lte: now } }
+          : status === 'password_changed'
+            ? { revokedAt: null, expiresAt: { gt: now }, ...differentVersion }
+            : status === 'active'
+              ? { revokedAt: null, expiresAt: { gt: now }, ...sameVersion }
+              : {};
+    const where = { ownerUsername: owner.username, ...(client ? { client } : {}), ...statusFilter };
+    const [total, rows] = await mcpPrisma.$transaction([
+      mcpPrisma.mcpConnection.count({ where }),
+      mcpPrisma.mcpConnection.findMany({
+        where,
+        select: { ...publicFields, passwordVersion: true },
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        skip: (page - 1) * limit,
+        take: limit
+      })
+    ]);
+    const allowed = new Set<string>(toolsForRole(owner.role));
+    const data = rows.map(({ passwordVersion, ...entry }) => ({
+      ...entry,
+      status: entry.revokedAt
+        ? 'revoked'
+        : entry.expiresAt <= now
+          ? 'expired'
+          : passwordVersion !== owner.last_password_change
+            ? 'password_changed'
+            : 'active',
+      effectiveTools: entry.tools.filter((tool) => allowed.has(tool))
+    }));
+    res.json({
+      success: true,
+      data,
+      pagination: { page, limit, total, pages: Math.ceil(total / limit) }
+    });
   });
   router.post('/connections', async (req, res) => {
     if (!settings.enabled) {

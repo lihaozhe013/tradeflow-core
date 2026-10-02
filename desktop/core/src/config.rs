@@ -128,6 +128,28 @@ pub struct Change {
     after: String,
     path: PathBuf,
 }
+#[derive(Clone)]
+pub struct PlannedChange {
+    pub before: Option<String>,
+    pub after: String,
+    pub path: PathBuf,
+}
+#[derive(Clone)]
+pub struct SwitchPlan {
+    pub before: Option<String>,
+    pub staged: String,
+    pub final_after: String,
+    pub path: PathBuf,
+}
+impl SwitchPlan {
+    pub fn staged_change(&self) -> PlannedChange {
+        PlannedChange {
+            before: self.before.clone(),
+            after: self.staged.clone(),
+            path: self.path.clone(),
+        }
+    }
+}
 impl Change {
     pub fn rollback(&self) -> Result<()> {
         if read(&self.path)?.as_deref() != Some(&self.after) {
@@ -141,6 +163,105 @@ impl Change {
     }
 }
 pub fn install(store: &Store, profile: &Profile, remove: bool) -> Result<Change> {
+    install_replacing(store, profile, None, remove)
+}
+pub fn install_replacing(
+    store: &Store,
+    profile: &Profile,
+    replaced: Option<&Profile>,
+    remove: bool,
+) -> Result<Change> {
+    if let Some(old) = replaced
+        && (old.client != profile.client || old.config_path != profile.config_path)
+    {
+        bail!("PROFILE_CLIENT_MISMATCH");
+    }
+    let planned = plan_replacing(profile, replaced, remove)?;
+    apply_plan(store, profile, planned)
+}
+pub fn plan_replacing(
+    profile: &Profile,
+    replaced: Option<&Profile>,
+    remove: bool,
+) -> Result<PlannedChange> {
+    if let Some(old) = replaced
+        && (old.client != profile.client || old.config_path != profile.config_path)
+    {
+        bail!("PROFILE_CLIENT_MISMATCH");
+    }
+    let before = read(&profile.config_path)?;
+    let text = before.as_deref().unwrap_or("{}\n");
+    let replacement = entry(profile);
+    let mut after = patch(
+        text,
+        &profile.client,
+        &profile.server_name(),
+        if remove { None } else { Some(&replacement) },
+    )?;
+    if let Some(old) = replaced
+        && old.server_name() != profile.server_name()
+    {
+        after = patch(&after, &profile.client, &old.server_name(), None)?;
+    }
+    Ok(PlannedChange {
+        before,
+        after,
+        path: profile.config_path.clone(),
+    })
+}
+pub fn plan_switch(
+    staged_profile: &Profile,
+    final_profile: &Profile,
+    replaced: Option<&Profile>,
+) -> Result<SwitchPlan> {
+    if staged_profile.client != final_profile.client
+        || staged_profile.config_path != final_profile.config_path
+        || replaced.is_some_and(|old| {
+            old.client != final_profile.client || old.config_path != final_profile.config_path
+        })
+    {
+        bail!("PROFILE_CLIENT_MISMATCH");
+    }
+    let before = read(&final_profile.config_path)?;
+    let text = before.as_deref().unwrap_or("{}\n");
+    let staged = patch(
+        text,
+        &staged_profile.client,
+        &staged_profile.server_name(),
+        Some(&entry(staged_profile)),
+    )?;
+    let mut final_after = patch(
+        text,
+        &final_profile.client,
+        &final_profile.server_name(),
+        Some(&entry(final_profile)),
+    )?;
+    if let Some(old) = replaced
+        && old.server_name() != final_profile.server_name()
+    {
+        final_after = patch(
+            &final_after,
+            &final_profile.client,
+            &old.server_name(),
+            None,
+        )?;
+    }
+    if staged_profile.server_name() != final_profile.server_name() {
+        final_after = patch(
+            &final_after,
+            &final_profile.client,
+            &staged_profile.server_name(),
+            None,
+        )?;
+    }
+    Ok(SwitchPlan {
+        before,
+        staged,
+        final_after,
+        path: final_profile.config_path.clone(),
+    })
+}
+pub fn apply_plan(store: &Store, profile: &Profile, planned: PlannedChange) -> Result<Change> {
     let lock_path = store.root.join(format!("{}.lock", profile.client.name()));
     let lock = fs::OpenOptions::new()
         .create(true)
@@ -149,15 +270,8 @@ pub fn install(store: &Store, profile: &Profile, remove: bool) -> Result<Change>
         .write(true)
         .open(lock_path)?;
     lock.try_lock_exclusive().context("CONFIG_BUSY")?;
-    let before = read(&profile.config_path)?;
-    let text = before.as_deref().unwrap_or("{}\n");
-    let replacement = entry(profile);
-    let after = patch(
-        text,
-        &profile.client,
-        &profile.server_name(),
-        if remove { None } else { Some(&replacement) },
-    )?;
+    let before = planned.before;
+    let after = planned.after;
     let backup_dir = store.root.join("backups");
     private_dir(&backup_dir)?;
     if let Some(before) = &before {
@@ -166,15 +280,77 @@ pub fn install(store: &Store, profile: &Profile, remove: bool) -> Result<Change>
             before.as_bytes(),
         )?;
     }
-    if read(&profile.config_path)? != before {
+    if read(&planned.path)? != before {
         bail!("CONFIG_CONCURRENT_CHANGE");
     }
-    atomic_write(&profile.config_path, after.as_bytes())?;
+    atomic_write(&planned.path, after.as_bytes())?;
     Ok(Change {
         before,
         after,
-        path: profile.config_path.clone(),
+        path: planned.path,
     })
+}
+pub fn commit_switch(
+    store: &Store,
+    profile: &Profile,
+    change: &Change,
+    final_after: String,
+) -> Result<Change> {
+    if change.after == final_after {
+        return Ok(Change {
+            before: change.before.clone(),
+            after: change.after.clone(),
+            path: change.path.clone(),
+        });
+    }
+    let lock_path = store.root.join(format!("{}.lock", profile.client.name()));
+    let lock = fs::OpenOptions::new()
+        .create(true)
+        .truncate(false)
+        .read(true)
+        .write(true)
+        .open(lock_path)?;
+    lock.try_lock_exclusive().context("CONFIG_BUSY")?;
+    if read(&change.path)?.as_deref() != Some(&change.after) {
+        bail!("CONFIG_CONCURRENT_CHANGE");
+    }
+    atomic_write(&change.path, final_after.as_bytes())?;
+    Ok(Change {
+        before: change.before.clone(),
+        after: final_after,
+        path: change.path.clone(),
+    })
+}
+pub fn restore_journal(
+    store: &Store,
+    client: &Client,
+    path: &Path,
+    before: &Option<String>,
+    after: &str,
+    final_after: &str,
+) -> Result<()> {
+    let lock_path = store.root.join(format!("{}.lock", client.name()));
+    let lock = fs::OpenOptions::new()
+        .create(true)
+        .truncate(false)
+        .read(true)
+        .write(true)
+        .open(lock_path)?;
+    lock.try_lock_exclusive().context("CONFIG_BUSY")?;
+    let current = read(path)?;
+    if &current == before {
+        return Ok(());
+    }
+    if current.as_deref() != Some(after)
+        && (final_after.is_empty() || current.as_deref() != Some(final_after))
+    {
+        bail!("CONFIG_RECOVERY_CONCURRENT_CHANGE");
+    }
+    if let Some(before) = before {
+        atomic_write(path, before.as_bytes())
+    } else {
+        fs::remove_file(path).context("CONFIG_RECOVERY_FAILED")
+    }
 }
 pub fn overrides(profile: &Profile, cwd: &Path) -> Vec<String> {
     let mut found = vec![];
@@ -209,4 +385,14 @@ pub fn overrides(profile: &Profile, cwd: &Path) -> Vec<String> {
         found.push("OPENCODE_CONFIG_OVERRIDE".into());
     }
     found
+}
+
+pub fn validate_path(path: &Path) -> Result<()> {
+    if let Some(text) = read(path)? {
+        parse(&text)?;
+    }
+    Ok(())
+}
+pub fn journal_committed(path: &Path, expected: &str) -> Result<bool> {
+    Ok(read(path)?.as_deref() == Some(expected))
 }

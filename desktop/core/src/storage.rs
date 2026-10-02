@@ -50,6 +50,43 @@ impl Profile {
 pub struct Store {
     pub root: PathBuf,
 }
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PendingRevocation {
+    pub base_url: String,
+    pub owner_username: String,
+    pub client: Client,
+    pub connection_id: String,
+    pub expires_at: Option<String>,
+    pub last_error: Option<String>,
+}
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Settings {
+    pub language: String,
+}
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SwitchJournal {
+    pub id: String,
+    pub phase: String,
+    pub candidate: Profile,
+    #[serde(default = "default_candidate_is_new")]
+    pub candidate_is_new: bool,
+    #[serde(default)]
+    pub staged_profile_id: Option<String>,
+    pub source_profile_id: Option<String>,
+    #[serde(default)]
+    pub source_profile_ids: Vec<String>,
+    pub retired_credentials: Vec<PendingRevocation>,
+    pub config_path: PathBuf,
+    pub config_before: Option<String>,
+    pub config_after: String,
+    #[serde(default)]
+    pub config_final: String,
+}
+fn default_candidate_is_new() -> bool {
+    true
+}
 impl Store {
     pub fn system() -> Result<Self> {
         let root = std::env::var_os("TRADEFLOW_CONNECT_DATA_DIR")
@@ -82,6 +119,96 @@ impl Store {
         let path = self.path(id)?;
         reject_symlink(&path)?;
         fs::remove_file(path).context("PROFILE_REMOVE_FAILED")
+    }
+    pub fn pending_revocations(&self) -> Result<Vec<PendingRevocation>> {
+        let path = self.root.join("pending-revocations.json");
+        reject_symlink(&path)?;
+        match fs::read(path) {
+            Ok(bytes) => serde_json::from_slice(&bytes).context("INVALID_PENDING_REVOCATIONS"),
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(Vec::new()),
+            Err(error) => Err(error.into()),
+        }
+    }
+    pub fn save_pending_revocations(&self, values: &[PendingRevocation]) -> Result<()> {
+        atomic_write(
+            &self.root.join("pending-revocations.json"),
+            &serde_json::to_vec(values)?,
+        )
+    }
+    pub fn queue_revocation(&self, value: PendingRevocation) -> Result<()> {
+        let mut values = self.pending_revocations()?;
+        if let Some(existing) = values.iter_mut().find(|entry| {
+            entry.base_url == value.base_url && entry.connection_id == value.connection_id
+        }) {
+            existing.last_error = value.last_error;
+        } else {
+            values.push(value);
+        }
+        self.save_pending_revocations(&values)
+    }
+    pub fn settings(&self) -> Result<Settings> {
+        let path = self.root.join("settings.json");
+        reject_symlink(&path)?;
+        match fs::read(path) {
+            Ok(bytes) => {
+                let settings: Settings =
+                    serde_json::from_slice(&bytes).context("INVALID_SETTINGS")?;
+                if !matches!(settings.language.as_str(), "system" | "zh" | "en") {
+                    anyhow::bail!("INVALID_LANGUAGE");
+                }
+                Ok(settings)
+            }
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(Settings {
+                language: "system".into(),
+            }),
+            Err(error) => Err(error.into()),
+        }
+    }
+    pub fn save_settings(&self, settings: &Settings) -> Result<()> {
+        if !matches!(settings.language.as_str(), "system" | "zh" | "en") {
+            anyhow::bail!("INVALID_LANGUAGE");
+        }
+        atomic_write(
+            &self.root.join("settings.json"),
+            &serde_json::to_vec(settings)?,
+        )
+    }
+    fn operations_dir(&self) -> Result<PathBuf> {
+        let path = self.root.join("operations");
+        private_dir(&path)?;
+        Ok(path)
+    }
+    pub fn save_switch_journal(&self, journal: &SwitchJournal) -> Result<()> {
+        Uuid::parse_str(&journal.id).context("INVALID_OPERATION_ID")?;
+        atomic_write(
+            &self.operations_dir()?.join(format!("{}.json", journal.id)),
+            &serde_json::to_vec(journal)?,
+        )
+    }
+    pub fn switch_journals(&self) -> Result<Vec<SwitchJournal>> {
+        let directory = self.operations_dir()?;
+        let mut values = Vec::new();
+        for entry in fs::read_dir(directory)? {
+            let path = entry?.path();
+            if path
+                .extension()
+                .is_some_and(|extension| extension == "json")
+            {
+                reject_symlink(&path)?;
+                values.push(serde_json::from_slice(&fs::read(path)?)?);
+            }
+        }
+        Ok(values)
+    }
+    pub fn remove_switch_journal(&self, id: &str) -> Result<()> {
+        Uuid::parse_str(id).context("INVALID_OPERATION_ID")?;
+        let path = self.operations_dir()?.join(format!("{id}.json"));
+        reject_symlink(&path)?;
+        match fs::remove_file(path) {
+            Ok(()) => Ok(()),
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
+            Err(error) => Err(error.into()),
+        }
     }
     pub fn profiles(&self) -> Result<Vec<Profile>> {
         let mut profiles = vec![];

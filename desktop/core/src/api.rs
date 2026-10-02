@@ -1,3 +1,4 @@
+use crate::diagnostics::{self, Stage};
 use anyhow::{Context, Result, bail};
 use reqwest::{Client, Url};
 use serde_json::{Value, json};
@@ -35,14 +36,46 @@ pub fn http_client() -> Result<Client> {
 async fn decode(response: reqwest::Response) -> Result<Value> {
     let code = response.status().as_u16();
     if !(200..300).contains(&code) {
-        bail!("HTTP_{code}");
+        let body = response.json::<Value>().await.unwrap_or(Value::Null);
+        match body["code"].as_str() {
+            Some("AUTH_DISABLED" | "MCP_DISABLED" | "ROLE_NOT_SUPPORTED" | "ACCOUNT_DISABLED") => {
+                bail!("{}", body["code"].as_str().unwrap())
+            }
+            _ => bail!("HTTP_{code}"),
+        }
     }
     if code == 204 {
         return Ok(Value::Null);
     }
     response.json().await.context("INVALID_SERVER_RESPONSE")
 }
+pub fn network_error(error: reqwest::Error) -> anyhow::Error {
+    let code = if error.is_timeout() {
+        "NETWORK_TIMEOUT"
+    } else {
+        let mut text = error.to_string().to_ascii_lowercase();
+        let mut cause = std::error::Error::source(&error);
+        while let Some(value) = cause {
+            text.push_str(&value.to_string().to_ascii_lowercase());
+            cause = value.source();
+        }
+        if text.contains("certificate") || text.contains("tls") {
+            "TLS_ERROR"
+        } else if error.is_connect() {
+            "NETWORK_CONNECTION_FAILED"
+        } else {
+            "NETWORK_ERROR"
+        }
+    };
+    anyhow::anyhow!(code)
+}
 pub async fn login(base_url: &str, username: &str, password: &str) -> Result<Session> {
+    diagnostics::step(Stage::Login, login_inner(base_url, username, password)).await
+}
+async fn login_inner(base_url: &str, username: &str, password: &str) -> Result<Session> {
+    if username.trim().is_empty() || password.is_empty() {
+        bail!("LOGIN_FIELDS_REQUIRED");
+    }
     let base_url = normalize_url(base_url)?;
     let value = decode(
         http_client()?
@@ -50,7 +83,7 @@ pub async fn login(base_url: &str, username: &str, password: &str) -> Result<Ses
             .json(&json!({"username":username,"password":password}))
             .send()
             .await
-            .context("NETWORK_OR_TLS_ERROR")?,
+            .map_err(network_error)?,
     )
     .await?;
     let jwt = value["token"]
@@ -73,6 +106,9 @@ pub async fn login(base_url: &str, username: &str, password: &str) -> Result<Ses
 }
 impl Session {
     pub async fn capabilities(&self) -> Result<Value> {
+        diagnostics::step(Stage::Capabilities, self.capabilities_inner()).await
+    }
+    async fn capabilities_inner(&self) -> Result<Value> {
         let data = self.get("/api/mcp/capabilities").await?;
         if data["data"]["version"] != 1 || data["data"]["endpointPath"] != "/mcp" {
             bail!("BACKEND_UPGRADE_REQUIRED");
@@ -93,7 +129,7 @@ impl Session {
                 .bearer_auth(&self.jwt)
                 .send()
                 .await
-                .context("NETWORK_OR_TLS_ERROR")?,
+                .map_err(network_error)?,
         )
         .await
     }
@@ -105,22 +141,57 @@ impl Session {
                 .json(&json!({"client":client,"deviceId":device_id}))
                 .send()
                 .await
-                .context("NETWORK_OR_TLS_ERROR")?,
+                .map_err(network_error)?,
         )
         .await?;
-        Ok(value["data"].clone())
+        let data = &value["data"];
+        if !data["id"]
+            .as_str()
+            .is_some_and(|id| uuid::Uuid::parse_str(id).is_ok())
+            || !data["token"]
+                .as_str()
+                .is_some_and(|token| token.starts_with("tfmcp_") && token.len() <= 512)
+            || !data["expiresAt"]
+                .as_str()
+                .is_some_and(|date| chrono::DateTime::parse_from_rfc3339(date).is_ok())
+            || !data["tools"].as_array().is_some_and(|tools| {
+                !tools.is_empty()
+                    && tools.iter().all(|tool| {
+                        matches!(
+                            tool.as_str(),
+                            Some(
+                                "search_partners"
+                                    | "search_products"
+                                    | "get_inventory"
+                                    | "list_transactions"
+                                    | "get_receivables"
+                                    | "get_payables"
+                                    | "get_analysis"
+                            )
+                        )
+                    })
+            })
+        {
+            bail!("INVALID_SERVER_RESPONSE");
+        }
+        Ok(data.clone())
     }
     pub async fn revoke(&self, id: &str) -> Result<()> {
         uuid::Uuid::parse_str(id).context("INVALID_CONNECTION_ID")?;
-        decode(
-            http_client()?
-                .delete(format!("{}/api/mcp/connections/{id}", self.base_url))
-                .bearer_auth(&self.jwt)
-                .send()
-                .await
-                .context("NETWORK_OR_TLS_ERROR")?,
-        )
-        .await?;
-        Ok(())
+        let response = http_client()?
+            .delete(format!("{}/api/mcp/connections/{id}", self.base_url))
+            .bearer_auth(&self.jwt)
+            .send()
+            .await
+            .map_err(network_error)?;
+        if response.status().is_success() {
+            return Ok(());
+        }
+        let status = response.status().as_u16();
+        let body = response.json::<Value>().await.unwrap_or(Value::Null);
+        if status == 404 && body["code"] == "CONNECTION_NOT_FOUND" {
+            return Ok(());
+        }
+        bail!("HTTP_{status}")
     }
 }

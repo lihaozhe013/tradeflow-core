@@ -7,7 +7,7 @@ import { createApp } from '@/app';
 import { mcpPrisma } from '@/prismaClient';
 import { signToken } from '@/utils/auth';
 import { config } from '@/utils/paths';
-import { createMcpTokenVerifier } from '@/mcp/credentials';
+import { createMcpTokenVerifier, hashMcpToken } from '@/mcp/credentials';
 import type { McpConfig } from '@/types/config';
 
 const settings: McpConfig = {
@@ -176,6 +176,54 @@ describe('User MCP connections', () => {
       await client.close();
       await new Promise<void>((resolve) => server.close(() => resolve()));
     }
+  });
+  it('paginates more than 100 credentials, derives status and rejects invalid queries', async () => {
+    const owner = await mcpPrisma.user.findUniqueOrThrow({ where: { username: users[0]! } });
+    await mcpPrisma.mcpConnection.createMany({
+      data: Array.from({ length: 105 }, (_, index) => ({
+        ownerUsername: owner.username,
+        client: 'workbuddy',
+        deviceId,
+        tokenSha256: hashMcpToken(`${prefix}_pagination_${index}`),
+        tools: ['get_inventory', 'get_analysis'],
+        passwordVersion: index < 4 ? 'old-password-version' : owner.last_password_change,
+        expiresAt: new Date(index >= 4 && index < 6 ? 0 : Date.now() + 60_000),
+        revokedAt: index >= 6 && index < 9 ? new Date() : null
+      }))
+    });
+    const list = (query: string) =>
+      request(app).get(`/api/mcp/connections?${query}`).set('Authorization', `Bearer ${readerJwt}`);
+    const result = await list('page=6&limit=20&client=workbuddy');
+    expect(result.status).toBe(200);
+    expect(result.body.pagination.total).toBeGreaterThanOrEqual(105);
+    expect(result.body.data.length).toBeGreaterThan(0);
+    for (const status of ['active', 'expired', 'revoked', 'password_changed']) {
+      const filtered = await list(`status=${status}&limit=100&client=workbuddy`);
+      expect(filtered.status).toBe(200);
+      expect(filtered.body.data.length).toBeGreaterThan(0);
+      expect(filtered.body.data.every((row: { status: string }) => row.status === status)).toBe(
+        true
+      );
+      expect(filtered.body.data[0].effectiveTools).not.toContain('get_analysis');
+      expect(JSON.stringify(filtered.body)).not.toMatch(
+        /tokenSha256|passwordVersion|password_hash/
+      );
+    }
+    for (const query of ['page=0', 'limit=101', 'status=wrong', 'client=wrong', 'page=1.5'])
+      expect((await list(query)).status).toBe(400);
+    const disabled = createApp({ ...settings, enabled: false });
+    const visible = await request(disabled)
+      .get('/api/mcp/connections?limit=20')
+      .set('Authorization', `Bearer ${readerJwt}`);
+    expect(visible.status).toBe(200);
+    const id = visible.body.data[0].id;
+    expect(
+      (
+        await request(disabled)
+          .delete(`/api/mcp/connections/${id}`)
+          .set('Authorization', `Bearer ${readerJwt}`)
+      ).status
+    ).toBe(204);
   });
   it('reports disabled MCP and refuses issuance', async () => {
     const disabled = createApp({ ...settings, enabled: false });

@@ -76,7 +76,11 @@ export const canReaderUseRequest = (method: string | undefined, url: string): bo
 
   return (
     (normalizedMethod === 'POST' && isReaderPostPathAllowed(url)) ||
-    (normalizedMethod === 'PUT' && isReaderSelfServicePathAllowed(url))
+    (normalizedMethod === 'PUT' && isReaderSelfServicePathAllowed(url)) ||
+    (normalizedMethod === 'DELETE' &&
+      /^\/mcp\/connections\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        normalizePath(url)
+      ))
   );
 };
 

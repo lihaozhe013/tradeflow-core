@@ -26,21 +26,85 @@ budgets and permissions.
 
 ## User workflow
 
-Enter the server origin, such as `https://tradeflow.example.com`, and sign in with your TradeFlow
-account. Non-root URL paths, embedded passwords, queries, and fragments are rejected. HTTP is only
-accepted for loopback development. Select an installed agent, create its connection, then enable or
-trust the connection in that agent and reload if necessary. Run one minimal inventory query before
-using the generated business prompt.
+1. Enter the server origin, such as `https://tradeflow.example.com`, and sign in with your TradeFlow
+   account. HTTP is accepted only for loopback development. Paths, embedded passwords, queries, and
+   fragments are rejected.
+2. Select OpenCode, WorkBuddy, or both and click **Connect selected agents**. The page lists the
+   local connections that will be replaced. Each Agent is processed independently.
+3. Wait for **Service verified. Reload the Agent and run one query.** Enable/trust or reload the
+   connection in the Agent, then use the copied business prompt. Its minimal query uses `limit: 5`.
 
-The GUI separates configuration installation and direct endpoint verification from actual host
-activation. A successful endpoint check does not prove that a WorkBuddy/OpenCode conversation has
-loaded the connection. Reports always leave host verification to an actual agent query.
+**Switch server** opens the same login form. There is no separate switching wizard. A failed login
+leaves the existing session and Agent configuration intact. A verified destination replaces the
+assistant's existing entries for that Agent, preserving other MCP servers and JSONC comments. An
+existing valid credential for the destination account is reused. Expired or rejected credentials are
+replaced while preserving the local profile name. Successful replacements leave old remote
+credentials for manual revocation; an offline old server does not block the new connection.
 
-Use Update credential after expiry or password changes. The assistant creates the replacement,
-installs and tests it, then revokes the predecessor. Failed installation restores the previous
-configuration unless another program changed it. Failed credential cleanup remains visible for a
-later retry. Sign out clears the login JWT; it does not revoke installed integrations. Revoke and
-Disconnect revokes the server credential before removing the local managed entry.
+Endpoint verification does not prove host activation. A running Agent may still hold its old
+configuration until it is reloaded. Sign out only clears the in-memory login session; installed
+connections continue to work.
+
+### Remove locally and revoke remotely
+
+1. On a connection card, click **Remove local configuration**, then confirm. No login or network is
+   needed. Only the assistant-managed entry and its active profile are removed. If the configuration
+   is damaged or concurrently modified, the assistant stops rather than replacing unrelated data.
+2. Reload or restart the Agent. Removing a configuration file entry does not terminate a running
+   Agent or remove a credential from its memory.
+3. Open **Diagnostics → Remote cleanup records → Open My MCP credentials**. Sign in to the original
+   server with the original account, select the old credential ID, and revoke it. You can also open
+   `https://your-original-server/#/mcp-connections` directly. Each server manages its own
+   credentials.
+
+Cleanup records contain only server origin, username, Agent, credential ID, expiry when known, and
+safe status. They contain no token, password, or JWT and never prevent new connections. Records are
+historical reminders: manual web revocation does not automatically delete a local reminder. The
+legacy cleanup retry command still treats only explicit `CONNECTION_NOT_FOUND` as already removed;
+other HTTP 404 responses remain failures.
+
+The assistant saves a private recovery journal before changing configuration. Verification failure
+restores the previous file unless another program changed it, and attempts to revoke newly issued
+credentials. Cleanup failure leaves a redacted reminder. After restart, unverified changes roll back
+and verified changes finish local cleanup. External edits are never silently overwritten.
+
+### Diagnostics and operation logs
+
+The connection result displays the failing step, safe error code, and next action. Starting a new
+operation clears the prior result, including after login failure. The main screen contains only
+connection checks, business prompts, and local removal; repair, bridge selection, repair prompts,
+and remote cleanup reminders live in **Diagnostics**.
+
+Rust records login, capability checks, Agent detection, credential issuance, configuration changes,
+MCP handshake, discovery, minimal query, commit, rollback, and temporary credential cleanup. GUI
+progress and CLI reports use the same events and operation IDs. **Export diagnostic report** saves
+recent events through a file picker. Logs survive restarts in the private data directory's `logs/`
+folder: at most three JSONL files, each at most 5 MiB. They exclude passwords, JWTs, MCP tokens,
+headers, raw configuration, business parameters, and query results. A logging failure is displayed
+separately from the connection result. The stdio bridge reserves stdout for MCP messages.
+
+TradeFlow Connect supports Simplified Chinese, English, and Follow system. The setting persists
+locally. Chinese system locales select Simplified Chinese; other locales select English. Korean is
+not offered. UI explanations, operation stages, and generated prompts follow the selected language.
+CLI commands, MCP tool names, and diagnostic JSON keys remain unchanged.
+
+## My MCP credentials on the web
+
+Open **Administration → My MCP credentials** or `/#/mcp-connections`. Reader, editor, and superuser
+accounts can view and revoke only their own credentials. The table shows Agent, device and
+credential IDs, dates, status, and effective/granted tools. Filter by status, select one or multiple
+credentials, revoke them, and retry failed items. Tokens cannot be displayed or recovered. This page
+does not create credentials or edit permissions.
+
+The page remains usable while MCP is disabled; account authentication must be enabled. Status is
+revoked, expired, password changed, or active, in that precedence. Effective tools are constrained
+by the account's current role. Revocation is idempotent and blocks subsequent MCP requests, not a
+business query already executing. No additional database migration is required for this page.
+
+`GET /api/mcp/connections` retains its `data` array and adds `pagination`. Query parameters are
+`page` (default 1), `limit` (default 100 for compatibility, maximum 100), `status`, and `client`.
+The web UI requests 20 rows per page. Listing never returns password versions or credential hashes.
+`DELETE /api/mcp/connections/:id` remains account-scoped, returning 204 for repeated revocation.
 
 ## Agent adapters and compatibility status
 

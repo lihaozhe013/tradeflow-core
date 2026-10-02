@@ -32,6 +32,7 @@ import Analysis from '@/pages/Analysis';
 import About from '@/pages/About';
 import Audit from '@/pages/Audit';
 import Users from '@/pages/Users';
+import McpConnections from '@/pages/McpConnections';
 import { AuthProvider } from '@/auth/AuthContext';
 import { useAuth } from '@/auth/useAuth';
 import { usePermissions } from '@/auth/usePermissions';
@@ -219,6 +220,7 @@ type MenuKey =
   | 'analysis'
   | 'export'
   | 'audit'
+  | 'mcp-connections'
   | 'users'
   | 'about';
 
@@ -264,6 +266,7 @@ function AppContentInner({ location, t }: AppContentInnerProps): React.ReactElem
     if (path === '/analysis') return 'analysis';
     if (path === '/export') return 'export';
     if (path === '/audit') return 'audit';
+    if (path === '/mcp-connections') return 'mcp-connections';
     if (path === '/users') return 'users';
     if (path === '/about') return 'about';
     return 'overview';
@@ -286,7 +289,8 @@ function AppContentInner({ location, t }: AppContentInnerProps): React.ReactElem
     ];
     const administrationItems = [
       linkItem('audit', '/audit', t('nav.audit')),
-      linkItem('users', '/users', t('nav.users'))
+      linkItem('users', '/users', t('nav.users')),
+      linkItem('mcp-connections', '/mcp-connections', t('nav.mcpConnections'))
     ];
 
     return [
@@ -347,7 +351,7 @@ function AppContentInner({ location, t }: AppContentInnerProps): React.ReactElem
       ? 'master-data'
       : selectedKey === 'receivable' || selectedKey === 'payable' || selectedKey === 'analysis' || selectedKey === 'export'
         ? 'finance'
-        : selectedKey === 'audit' || selectedKey === 'users'
+        : selectedKey === 'audit' || selectedKey === 'users' || selectedKey === 'mcp-connections'
           ? 'administration'
           : '';
   const [openKeys, setOpenKeys] = useState<string[]>(openGroupKey ? [openGroupKey] : []);
@@ -368,6 +372,7 @@ function AppContentInner({ location, t }: AppContentInnerProps): React.ReactElem
     export: 'nav.export',
     audit: 'nav.audit',
     users: 'nav.users',
+    'mcp-connections': 'nav.mcpConnections',
     about: 'about.title'
   };
   const pageTitle = t(selectedLabelKey[selectedKey as MenuKey] ?? 'nav.inbound');
@@ -482,6 +487,7 @@ function AppContentInner({ location, t }: AppContentInnerProps): React.ReactElem
                   </ProtectedRoute>
                 }
               />
+              <Route path="/mcp-connections" element={<McpConnections />} />
               <Route path="/about" element={<About />} />
               <Route path="*" element={<HomeRedirect />} />
               </Routes>

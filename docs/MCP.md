@@ -70,3 +70,9 @@ Account-bound credentials can also be created and revoked without restarting thr
 [desktop connection assistant](DESKTOP_CONNECT.md). They follow the account's current role and
 password version; reader accounts retain their financial and analysis restrictions. A configured
 empty static credential list is valid for this database-backed mode.
+
+Account users can also inspect and revoke their own credentials at `/#/mcp-connections`. The web
+page works while MCP is disabled, requires real account authentication, and never displays bearer
+tokens. See
+[local removal and remote revocation](DESKTOP_CONNECT.md#remove-locally-and-revoke-remotely) for the
+desktop workflow.
