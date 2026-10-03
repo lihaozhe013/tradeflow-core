@@ -4,6 +4,9 @@
   "workspaces": {
     "": {
       "name": "tradeflow-core",
+      "devDependencies": {
+        "@babel/parser": "7.29.9",
+      },
     },
     "backend": {
       "name": "backend",

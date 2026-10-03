@@ -35,3 +35,23 @@ bun run test
 and rerun. Tests require the isolated `tradeflow_e2e` database and Playwright Chromium. Install the
 browser once with `cd frontend && bunx playwright install chromium`. Use `bun run test:e2e` for the
 browser suite alone. Do not use `bun test` or `scripts/init_postgres.sql` for test setup.
+
+## Manual translation check
+
+Run `bun run check:i18n` occasionally to find translation gaps. This read-only command prints
+missing keys by language, keys referenced in code but absent from all applicable languages, empty or
+invalid values, and object/string structure conflicts. Reports include locale file paths, known
+source locations, and existing translations as references for manual completion. Web resources
+require Chinese, English, and Korean; desktop-only `desktopConnect` resources require Chinese and
+English.
+
+The source scan recognizes the project's `t` calls (including typed component props), aliases from
+`useTranslation`, `i18n.t` calls, and desktop resource property accesses. Unresolved dynamic
+expressions are listed for manual review and do not fail the check. This is a static completeness
+check, not a translation-quality or hardcoded-text check; identical text across languages is
+allowed. It does not change locale files or run as part of tests, builds, or CI. When adding
+languages, update the locale configuration at the top of `scripts/check-i18n.mjs`.
+
+Exit codes are `0` for no definite gaps, `1` for missing or invalid translations, and `2` for file,
+JSON, or source parsing errors. Run the checker's own isolated tests manually with
+`node --test scripts/check-i18n.test.mjs`; no database or browser is required.

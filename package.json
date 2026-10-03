@@ -26,11 +26,15 @@
     "test": "node scripts/test.mjs",
     "test:e2e": "node scripts/test-e2e.mjs",
     "test:setup": "node scripts/test-setup.mjs",
+    "check:i18n": "node scripts/check-i18n.mjs",
     "lint:backend": "bun run --cwd backend lint",
     "type-check:backend": "bun run --cwd backend typecheck",
     "type-check:frontend": "bun run --cwd frontend type-check",
     "desktop:dev": "bun run --cwd desktop dev",
     "desktop:build": "bun run --cwd desktop build",
     "desktop:test": "bun run --cwd desktop test"
+  },
+  "devDependencies": {
+    "@babel/parser": "7.29.9"
   }
 }
