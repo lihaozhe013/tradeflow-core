@@ -150,9 +150,10 @@ const OutboundTable: FC<OutboundTableProps> = ({
 
   return (
     <ResponsiveTable
-        mobileTitleKey="order_number"
-        mobileSubtitleKey="product_model"
-        mobileSummaryKeys={['partner.short_name', 'quantity', 'total_price']}
+        mobileTitleKey="product_model"
+        mobileSubtitleKey={null}
+        mobileSummaryKeys={['quantity', 'total_price']}
+        mobileCardVariant="summary"
         columns={columns}
         dataSource={outboundRecords}
         rowKey="id"

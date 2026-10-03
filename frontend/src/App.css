@@ -492,6 +492,41 @@ body {
     padding: 14px;
   }
 
+  .responsive-record-card--summary {
+    border-radius: 12px;
+  }
+
+  .responsive-record-card--summary .responsive-record-heading {
+    align-items: center;
+    min-height: 44px;
+  }
+
+  .responsive-record-card--summary .responsive-record-title {
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  .responsive-record-card--summary > .ant-card-body > .responsive-record-summary {
+    gap: 8px 12px;
+    margin-top: 12px;
+  }
+
+  .responsive-record-card--summary > .ant-card-body > .responsive-record-summary .responsive-record-field:last-child {
+    align-items: flex-end;
+    text-align: right;
+  }
+
+  .responsive-record-card--summary .responsive-record-value {
+    color: #172033;
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 1.35;
+  }
+
+  .responsive-record-card--summary > .ant-card-body > .responsive-record-summary .responsive-record-field:last-child .responsive-record-value {
+    color: var(--app-primary);
+  }
+
   .responsive-record-heading {
     display: flex;
     align-items: flex-start;
@@ -563,6 +598,47 @@ body {
     cursor: pointer;
   }
 
+  .responsive-record-card--summary .responsive-record-details summary {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    padding-top: 8px;
+    list-style: none;
+  }
+
+  .responsive-record-card--summary .responsive-record-details summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .responsive-record-card--summary .responsive-record-details summary::after {
+    margin-left: auto;
+    content: '⌄';
+    font-size: 16px;
+    transition: transform 160ms ease;
+  }
+
+  .responsive-record-card--summary .responsive-record-details[open] summary::after {
+    transform: rotate(180deg);
+  }
+
+  .responsive-record-card--summary .responsive-record-details .responsive-record-summary {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .responsive-record-card--summary .responsive-record-details .responsive-record-field {
+    display: grid;
+    grid-template-columns: minmax(0, 40%) minmax(0, 1fr);
+    align-items: start;
+    column-gap: 12px;
+  }
+
+  .responsive-record-card--summary .responsive-record-details .responsive-record-value {
+    font-size: 13px;
+    font-weight: 400;
+    overflow-wrap: anywhere;
+  }
+
   .responsive-record-details .responsive-record-summary {
     margin-top: 4px;
   }
@@ -584,6 +660,10 @@ body {
   .responsive-record-actions .ant-btn {
     min-height: 36px;
     padding-inline: 8px;
+  }
+
+  .responsive-record-card--summary .responsive-record-actions .ant-btn {
+    min-height: 44px;
   }
 
   .responsive-record-pagination {

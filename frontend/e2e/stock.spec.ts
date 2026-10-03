@@ -478,7 +478,13 @@ test.describe('mobile inbound records', () => {
       await expect(recordsList.locator('.responsive-record-card')).toHaveCount(2);
 
       let firstCard = recordsList.locator('.responsive-record-card').filter({ hasText: firstOrder });
+      await expect(firstCard.locator('.responsive-record-title')).toHaveText(fixture.product.product_model);
       await expect(firstCard).toContainText('8');
+      await expect(firstCard).toContainText('$16');
+      await expect(firstCard.getByRole('button', { name: 'Edit' })).toBeHidden();
+      await firstCard.locator('details summary').click();
+      await expect(firstCard).toContainText(fixture.supplier.short_name);
+      await expect(firstCard.getByRole('button', { name: 'Edit' })).toBeVisible();
       await firstCard.getByRole('button', { name: 'Edit' }).click();
       const editDialog = page.getByRole('dialog');
       await editDialog.getByLabel('Quantity').fill('10');
@@ -490,6 +496,7 @@ test.describe('mobile inbound records', () => {
       expect((await updateResponse).ok()).toBeTruthy();
       firstCard = recordsList.locator('.responsive-record-card').filter({ hasText: firstOrder });
       await expect(firstCard).toContainText('10');
+      await firstCard.locator('details summary').click();
 
       const invoiceNumber = uniqueId('E2E-MOBILE-BATCH-INVOICE');
       for (const card of [firstCard, recordsList.locator('.responsive-record-card').filter({ hasText: secondOrder })]) {
@@ -512,6 +519,54 @@ test.describe('mobile inbound records', () => {
       await page.getByRole('button', { name: 'Confirm', exact: true }).click();
       records.forget(`/inbound/${firstInboundId}`);
       await expect(recordsList.locator('.responsive-record-card').filter({ hasText: firstOrder })).toHaveCount(0);
+    } finally {
+      await records.cleanup();
+    }
+  });
+});
+
+test.describe('mobile outbound records', () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test('shows the summary card at narrow widths and keeps all fields and actions expandable', async ({
+    page,
+    records
+  }) => {
+    const orderNumber = uniqueId('E2E-MOBILE-OUT-ORDER');
+
+    try {
+      const fixture = await createStockFixtures(page, records);
+      await createInboundFromUi(page, records, fixture, uniqueId('E2E-MOBILE-OUT-STOCK'), 20);
+      await createOutboundFromUi(page, records, fixture, orderNumber, 5);
+
+      await page.getByPlaceholder('Search order / invoice / receipt number').fill(orderNumber);
+      await page.getByPlaceholder('Search order / invoice / receipt number').press('Enter');
+      const card = page.locator('.responsive-record-card--summary');
+      await expect(card).toHaveCount(1);
+      await expect(card.locator('.responsive-record-title')).toHaveText(fixture.product.product_model);
+      const summary = card.locator(':scope > .ant-card-body > .responsive-record-summary');
+      await expect(summary).toContainText('5');
+      await expect(summary).toContainText('$15');
+      await expect(card.getByRole('button', { name: 'Edit' })).toBeHidden();
+
+      for (const width of [360, 390, 430]) {
+        await page.setViewportSize({ width, height: 844 });
+        const cardBounds = await card.boundingBox();
+        const cardWidths = await card.evaluate((element) => ({
+          clientWidth: element.clientWidth,
+          scrollWidth: element.scrollWidth
+        }));
+        expect(cardBounds ? cardBounds.x + cardBounds.width : width + 1).toBeLessThanOrEqual(width);
+        expect(cardWidths.scrollWidth).toBeLessThanOrEqual(cardWidths.clientWidth);
+      }
+
+      const details = card.locator('details');
+      await details.locator('summary').click();
+      await expect(details).toHaveAttribute('open', '');
+      await expect(details).toContainText(fixture.customer.short_name);
+      await expect(details).toContainText(orderNumber);
+      await expect(details.getByRole('button', { name: 'Edit' })).toBeVisible();
+      await expect(details.getByRole('button', { name: 'Delete' })).toBeVisible();
     } finally {
       await records.cleanup();
     }

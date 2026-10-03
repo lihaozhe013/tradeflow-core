@@ -16,8 +16,9 @@ import { useTranslation } from 'react-i18next';
 
 type ResponsiveTableProps<RecordType extends object> = TableProps<RecordType> & {
   readonly mobileTitleKey?: string;
-  readonly mobileSubtitleKey?: string;
+  readonly mobileSubtitleKey?: string | null;
   readonly mobileSummaryKeys?: readonly string[];
+  readonly mobileCardVariant?: 'default' | 'summary';
 };
 
 function readPath(value: unknown, path: Key | readonly Key[] | undefined): unknown {
@@ -104,6 +105,7 @@ function ResponsiveTable<RecordType extends object>({
   mobileTitleKey,
   mobileSubtitleKey,
   mobileSummaryKeys,
+  mobileCardVariant = 'default',
   ...tableProps
 }: ResponsiveTableProps<RecordType>): ReactElement {
   const { t } = useTranslation();
@@ -271,9 +273,12 @@ function ResponsiveTable<RecordType extends object>({
       ? mobileColumns.find((column) => getColumnKey(column) === mobileTitleKey)
       : undefined) ??
     mobileColumns.find((column) => column.dataIndex && !isActionColumn(column));
-  const subtitleColumn = mobileSubtitleKey
-    ? mobileColumns.find((column) => getColumnKey(column) === mobileSubtitleKey)
-    : mobileColumns.find((column) => column !== titleColumn && column.dataIndex && !isActionColumn(column));
+  const subtitleColumn =
+    mobileSubtitleKey === null
+      ? undefined
+      : mobileSubtitleKey
+        ? mobileColumns.find((column) => getColumnKey(column) === mobileSubtitleKey)
+        : mobileColumns.find((column) => column !== titleColumn && column.dataIndex && !isActionColumn(column));
   const summaryCandidates = mobileColumns.filter(
     (column) => column !== titleColumn && column !== subtitleColumn && !isActionColumn(column)
   );
@@ -325,8 +330,20 @@ function ResponsiveTable<RecordType extends object>({
               const key = getRecordKey(record, index, rowKey);
               const checked = selectedKeys.includes(key);
               const checkboxProps = rowSelection?.getCheckboxProps?.(record);
+              const cardClassName =
+                mobileCardVariant === 'summary'
+                  ? 'responsive-record-card responsive-record-card--summary'
+                  : 'responsive-record-card';
+              const cardActions = actionColumns.map((column, actionIndex) => (
+                <div
+                  className="responsive-record-actions"
+                  key={getColumnKey(column) ?? `action-${actionIndex}`}
+                >
+                  {renderCell(column, record, index)}
+                </div>
+              ));
               return (
-                <Card className="responsive-record-card" size="small" key={key}>
+                <Card className={cardClassName} size="small" key={key}>
                   <div className="responsive-record-heading">
                     {rowSelection && (
                       <Checkbox
@@ -348,23 +365,20 @@ function ResponsiveTable<RecordType extends object>({
                     </div>
                   )}
 
-                  {detailColumns.length > 0 && (
+                  {(detailColumns.length > 0 ||
+                    (mobileCardVariant === 'summary' && cardActions.length > 0)) && (
                     <details className="responsive-record-details">
                       <summary>{t('common.moreDetails')}</summary>
-                      <div className="responsive-record-summary">
-                        {detailColumns.map((column) => renderField(column, record, index))}
-                      </div>
+                      {detailColumns.length > 0 && (
+                        <div className="responsive-record-summary">
+                          {detailColumns.map((column) => renderField(column, record, index))}
+                        </div>
+                      )}
+                      {mobileCardVariant === 'summary' && cardActions}
                     </details>
                   )}
 
-                  {actionColumns.map((column, actionIndex) => (
-                    <div
-                      className="responsive-record-actions"
-                      key={getColumnKey(column) ?? `action-${actionIndex}`}
-                    >
-                      {renderCell(column, record, index)}
-                    </div>
-                  ))}
+                  {mobileCardVariant === 'default' && cardActions}
                 </Card>
               );
             })}
