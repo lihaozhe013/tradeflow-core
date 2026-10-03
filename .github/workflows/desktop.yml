@@ -3,17 +3,24 @@ on:
   workflow_dispatch:
   pull_request:
     paths:
-      ['desktop/**', 'frontend/src/i18n/locales/**', 'bun.lock', '.github/workflows/desktop.yml']
+      [
+        'desktop/**',
+        'frontend/src/i18n/locales/**',
+        'bun.lock',
+        '.github/workflows/desktop.yml',
+        '.github/workflows/build-mcp-app.yml',
+        '.github/workflows/build.yml'
+      ]
 jobs:
   desktop:
     strategy:
       fail-fast: false
       matrix:
         include:
-          - os: windows-latest
+          - os: windows-2025
             target: x86_64-pc-windows-msvc
             bundles: nsis
-          - os: macos-latest
+          - os: macos-15
             target: aarch64-apple-darwin
             bundles: dmg,app
           - os: macos-15-intel
@@ -21,18 +28,18 @@ jobs:
             bundles: dmg,app
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v5
-      - uses: oven-sh/setup-bun@v2
+      - uses: actions/checkout@v7.0.1
+      - uses: oven-sh/setup-bun@v2.2.0
         with:
           bun-version: 1.4.2
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@v7.0.0
         with:
           node-version: 26.x
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
           targets: ${{ matrix.target }}
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@v2.9.2
         with:
           workspaces: desktop
       - run: bun install --frozen-lockfile
@@ -49,7 +56,7 @@ jobs:
           }}
         env:
           TRADEFLOW_DESKTOP_TARGET: ${{ matrix.target }}
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7.0.1
         with:
           name: tradeflow-connect-test-${{ matrix.target }}
           path: |

@@ -5,7 +5,7 @@ import { listen } from '@tauri-apps/api/event';
 import zh from '../../frontend/src/i18n/locales/zh/zh-CN.json';
 import en from '../../frontend/src/i18n/locales/en/en-US.json';
 import './style.css';
-import connectIcon from './assets/connect.svg';
+import connectIcon from './assets/connect.svg?no-inline';
 import { version } from '../package.json';
 
 type Client = 'opencode' | 'workbuddy';

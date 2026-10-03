@@ -1,9 +1,9 @@
-# TradeFlow Connect (internal test release)
+# TradeFlow Connect (test release)
 
-TradeFlow Connect is a Tauri 2 desktop assistant for Windows x64 and macOS Intel/Apple Silicon. It
-creates account-bound MCP credentials and installs user-level OpenCode V2 or WorkBuddy connections.
-Business tools remain read-only. Reader accounts cannot discover or call receivable, payable, or
-analysis tools. Authorized tools read the entire instance, not an employee partition.
+TradeFlow Connect is a Tauri 2 desktop assistant for Windows x64/ARM64, macOS Apple Silicon, and
+Linux x64. It creates account-bound MCP credentials and installs user-level OpenCode V2 or WorkBuddy
+connections. Business tools remain read-only. Reader accounts cannot discover or call receivable,
+payable, or analysis tools. Authorized tools read the entire instance, not an employee partition.
 
 ## Server upgrade
 
@@ -186,19 +186,23 @@ Desktop builds are separate from the server Docker workflow. To supply release s
 pass a private Tauri configuration override with `--config <path>` (for example the macOS signing
 identity or Windows certificate thumbprint/timestamp URL), and supply Apple notarization credentials
 through the standard Tauri environment variables. Keep signing secrets out of repository files. The
-desktop CI workflow builds NSIS on Windows and DMG/app on both macOS architectures and uploads
-internal test artifacts. It does not publish releases. macOS uses ad-hoc signing; Windows packages
-are unsigned. Production code signing and notarization must be supplied before public distribution.
+automatic test release is an unsigned Windows/macOS-ad-hoc-signed pre-release; Windows may request
+confirmation for its installers. Configure production signing and notarization before distributing
+signed production builds.
 
-For a minimal Windows-only build, push to `build-mcp-app`. The `Build MCP Windows app` workflow
-builds separate Windows x64 and ARM64 NSIS installers with the matching bundled CLI, without tests,
-lint or TypeScript checks. Both targets build on the Windows x64 runner; ARM64 uses the MSVC cross
-compiler and the `aarch64-pc-windows-msvc` Rust target. It uses
-`desktop/src-tauri/tauri.windows-ci.conf.json` to skip the normal build's type-check step. It does
-not run on `master` pushes or publish a GitHub Release. Download `tradeflow-connect-windows-x64` or
-`tradeflow-connect-windows-arm64` from the completed Actions run's Artifacts section within seven
-days, unzip it, and run the installer. Windows may request confirmation for the unsigned test
-installer. New pushes cancel any older in-progress build on the same branch to limit runner usage.
+Push to `build-mcp-app` to validate and build the Windows x64 and ARM64 NSIS installers, Apple
+Silicon DMG, and Linux x64 `.deb` and AppImage. You can also dispatch the workflow from that branch
+in GitHub Actions. The fixed download page is
+[`desktop-latest`](https://github.com/lihaozhe013/tradeflow-core/releases/tag/desktop-latest). Each
+successful run updates the same pre-release, advances the tag to the source commit, publishes
+version/platform/architecture/run-specific filenames with a SHA-256 manifest, then removes every
+other GitHub release and tag in the repository. The release job runs only after all validation and
+native builds succeed. Runs are serialized; an older build skips publishing if the source branch has
+advanced. Installer artifacts attached to Actions runs are retained for seven days.
+
+The workflow uses Bun 1.4.2 for workspace installs, Node 26 for desktop build scripts, and GitHub
+Actions with the Node 24 action runtime. Windows x64 and ARM64 use the installed Visual Studio
+Developer environment, with ARM64 tools selected for the companion executable.
 
 The desktop icon source is `desktop/src/assets/connect.svg`. Regenerate native icons with
 `bun run --cwd desktop tauri icon src/assets/connect.svg --output <temporary-directory>` and copy
@@ -257,7 +261,7 @@ The temporary `codex/windows-mcp-smoke` branch was removed after native verifica
 run linked below retains the verification record. The test drove real Tauri login and connection
 buttons with a local fixture backend and fake Agent detection, checked reuse/removal/query-failure
 rollback, and saved redacted reports. It does not certify actual OpenCode or WorkBuddy activation.
-`build-mcp-app` builds only Windows x64 and ARM64 installers.
+`build-mcp-app` builds release installers for Windows x64/ARM64, macOS Apple Silicon, and Linux x64.
 
 ### Native regression verification (2026-10-02)
 

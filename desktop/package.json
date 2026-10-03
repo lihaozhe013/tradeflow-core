@@ -11,7 +11,9 @@
     "build": "node scripts/build.mjs",
     "prepare-sidecar": "node scripts/prepare-sidecar.mjs",
     "test": "cargo test --manifest-path Cargo.toml -p tradeflow-connect",
-    "test:ui": "playwright test"
+    "test:ui": "playwright test",
+    "test:ui:production": "playwright test --config playwright.production.config.ts",
+    "test:release": "bun test scripts/publish-release.test.ts"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.0.0",

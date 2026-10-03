@@ -25,7 +25,7 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["nsis", "dmg", "app"],
+    "targets": ["nsis", "dmg", "app", "deb", "appimage"],
     "externalBin": ["binaries/tradeflow-connect"],
     "macOS": {
       "minimumSystemVersion": "12.0",
