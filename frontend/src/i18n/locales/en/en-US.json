@@ -40,7 +40,14 @@
       "startExport": "Start Export",
       "title": "Advanced Export Options",
       "warning": "Warning",
-      "warningDescription": "Be aware that this operation may take a long time"
+      "warningDescription": "Be aware that this operation may take a long time",
+      "detailData": "Detailed data",
+      "purchase": "Purchase",
+      "purchaseAmount": "Purchase amount",
+      "sales": "Sales",
+      "selectSupplier": "Select supplier",
+      "supplier": "Supplier",
+      "type": "Type"
     },
     "allCustomers": "All Customers",
     "allProducts": "All Products",
@@ -145,7 +152,14 @@
     "search": "Search",
     "selectRecord": "Select record {{record}}",
     "selectedCount": "{{count}} selected",
-    "sortRecords": "Sort records"
+    "sortRecords": "Sort records",
+    "deleteFailed": "Delete failed",
+    "deleteSuccess": "Deleted successfully",
+    "logoAlt": "TradeFlow logo",
+    "no": "No",
+    "user": "User",
+    "validationError": "Form validation failed",
+    "yes": "Yes"
   },
   "export": {
     "baseInfo": "Base Info",
@@ -241,7 +255,15 @@
     "totalPrice": "Total Price",
     "unitPrice": "Unit Price",
     "unitPriceInputType": "Unit Price Input Type",
-    "viewInvoice": "View"
+    "viewInvoice": "View",
+    "addSuccess": "Added successfully",
+    "editSuccess": "Updated successfully",
+    "priceGreaterThanZero": "Unit price must be greater than 0",
+    "productMismatch": "Product code and model do not match. Please select the product again.",
+    "saveFailed": "Failed to save the inbound record.",
+    "supplierMismatch": "Supplier code and short name do not match. Please select the supplier again.",
+    "dataFormatError": "Failed to fetch product list: invalid data format",
+    "productListFailed": "Failed to fetch product list"
   },
   "inventory": {
     "currentInventory": "Current Inventory",
@@ -257,7 +279,9 @@
     "searchProductModel": "Search Product Model",
     "status": "Status",
     "title": "Inventory",
-    "totalCostEstimate": "Total Cost Estimate"
+    "totalCostEstimate": "Total Cost Estimate",
+    "fetchFailed": "Failed to fetch inventory data",
+    "refreshCacheFailed": "Failed to refresh the inventory cache"
   },
   "nav": {
     "advanced": "Advanced",
@@ -335,7 +359,19 @@
     "totalPrice": "Total Price",
     "unitPrice": "Unit Price",
     "unitPriceInputType": "Unit Price Input Type",
-    "viewInvoice": "View Invoice"
+    "viewInvoice": "View Invoice",
+    "addSuccess": "Added successfully",
+    "autoPriceFailed": "Could not retrieve the unit price automatically. It was set to 0; please enter it manually.",
+    "consoleRender": "[Outbound] Render: record count/pagination",
+    "customerCodeShortNameMismatch": "Customer code and short name do not match. Please select the customer again.",
+    "deleteFailed": "Delete failed",
+    "deleteSuccess": "Deleted successfully",
+    "editSuccess": "Updated successfully",
+    "fetchPartnersFailed": "Failed to fetch the customer list",
+    "fetchProductsFailed": "Failed to fetch the product list",
+    "productCodeModelMismatch": "Product code and model do not match. Please select the product again.",
+    "saveFailed": "Failed to save the outbound record.",
+    "priceGreaterThanZero": "Unit price must be greater than 0"
   },
   "overview": {
     "currentInventory": "Current Inventory",
@@ -369,7 +405,17 @@
     "totalCost": "Total Cost",
     "totalPurchase": "Total Purchase",
     "totalSales": "Total Sales",
-    "viewDetails": "View Details"
+    "viewDetails": "View Details",
+    "dataFetchFailed": "Failed to fetch data. Refresh the statistics first.",
+    "dataFormatError": "Failed to fetch product list: invalid data format",
+    "dataGenerationFailed": "Statistics have not been generated. Refresh first.",
+    "fetchDataFailed": "Failed to fetch data",
+    "inventoryChangeFailed": "Failed to fetch inventory change data. Refresh the statistics first.",
+    "product": "Product",
+    "productListFailed": "Failed to fetch product list",
+    "requestFailed": "Request failed",
+    "selectProductToView": "Select a product to view inventory changes",
+    "other": "Other"
   },
   "partners": {
     "actions": "Actions",
@@ -569,7 +615,8 @@
     "uninvoicedDetails": "Uninvoiced Details",
     "unitPrice": "Unit Price",
     "unpaid": "Unpaid: {{amount}}",
-    "viewInvoicedDetails": "View Invoiced Details"
+    "viewInvoicedDetails": "View Invoiced Details",
+    "deleteFailed": "Failed to delete the payment record. Check your network connection."
   },
   "users": {
     "actions": "Actions",

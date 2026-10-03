@@ -40,7 +40,14 @@
       "startExport": "开始导出",
       "title": "高级导出选项",
       "warning": "警告",
-      "warningDescription": "请注意，这个操作可能需要较长时间。"
+      "warningDescription": "请注意，这个操作可能需要较长时间。",
+      "detailData": "详细数据",
+      "purchase": "进货",
+      "purchaseAmount": "进货金额",
+      "sales": "销售",
+      "selectSupplier": "请选择供应商",
+      "supplier": "供应商",
+      "type": "类型"
     },
     "allCustomers": "全部客户",
     "allProducts": "全部产品",
@@ -145,7 +152,14 @@
     "search": "搜索",
     "selectRecord": "选择记录 {{record}}",
     "selectedCount": "已选择 {{count}} 项",
-    "sortRecords": "排序记录"
+    "sortRecords": "排序记录",
+    "deleteFailed": "删除失败",
+    "deleteSuccess": "删除成功",
+    "logoAlt": "TradeFlow 标志",
+    "no": "否",
+    "user": "用户",
+    "validationError": "表单验证失败",
+    "yes": "是"
   },
   "export": {
     "baseInfo": "基础信息",
@@ -183,7 +197,8 @@
     "statement": "对账单导出",
     "statementTip": "对账单采用定制格式，与完整记录格式不同",
     "success": "导出成功！文件大小：{{size}}KB，已开始下载",
-    "unknownError": "未知错误"
+    "unknownError": "未知错误",
+    "receipt": "收据"
   },
   "inbound": {
     "actions": "操作",
@@ -235,7 +250,20 @@
     "totalPrice": "总价",
     "unitPrice": "单价",
     "unitPriceInputType": "单价输入方式",
-    "viewInvoice": "点击查看"
+    "viewInvoice": "点击查看",
+    "addSuccess": "新增成功",
+    "editSuccess": "修改成功",
+    "priceGreaterThanZero": "单价必须大于0",
+    "productMismatch": "产品代号与型号不匹配，请重新选择",
+    "saveFailed": "入库记录保存失败",
+    "supplierMismatch": "供应商代号与简称不匹配，请重新选择",
+    "dataFetchFailed": "数据获取失败，请先刷新统计数据",
+    "inventoryChangeFailed": "获取库存变化数据失败，请先刷新统计数据",
+    "paginationTotal": "第 {{start}}-{{end}} 条/共 {{total}} 条",
+    "requestFailed": "请求失败",
+    "totalCost": "总成本",
+    "dataFormatError": "产品列表获取失败：数据格式错误",
+    "productListFailed": "获取产品列表失败"
   },
   "inventory": {
     "currentInventory": "当前库存",
@@ -342,7 +370,8 @@
     "totalPrice": "总价",
     "unitPrice": "单价",
     "unitPriceInputType": "单价输入方式",
-    "viewInvoice": "点击查看"
+    "viewInvoice": "点击查看",
+    "priceGreaterThanZero": "单价必须大于0"
   },
   "overview": {
     "currentInventory": "当前库存",
@@ -385,7 +414,8 @@
     "totalCost": "总成本",
     "totalPurchase": "总采购额",
     "totalSales": "总销售额",
-    "viewDetails": "查看详细"
+    "viewDetails": "查看详细",
+    "other": "其他"
   },
   "partners": {
     "actions": "操作",
