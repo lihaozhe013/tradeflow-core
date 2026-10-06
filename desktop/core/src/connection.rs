@@ -419,9 +419,12 @@ pub async fn connect_at(
                     .context("INVALID_SERVER_RESPONSE")?
                     .into(),
                 tools: serde_json::from_value(
-                    issued.get("effectiveTools").unwrap_or(&issued["tools"]).clone(),
+                    issued
+                        .get("effectiveTools")
+                        .unwrap_or(&issued["tools"])
+                        .clone(),
                 )
-                    .context("INVALID_SERVER_RESPONSE")?,
+                .context("INVALID_SERVER_RESPONSE")?,
                 expires_at: issued["expiresAt"]
                     .as_str()
                     .context("INVALID_SERVER_RESPONSE")?
