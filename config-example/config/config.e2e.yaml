@@ -8,6 +8,11 @@ database:
   password: replace-with-local-postgres-password
   dbName: tradeflow_e2e
   maxConnections: 5
+  bootstrap:
+    createDatabase: true
+    maintenanceDatabase: postgres
+    lockTimeoutMs: 30000
+    statementTimeoutMs: 60000
 auth:
   enabled: true
   tokenExpiresInHours: 12

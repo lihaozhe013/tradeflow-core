@@ -3,6 +3,7 @@ import { PrismaClient } from '@/prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
 import { config } from '@/utils/paths';
+import { createPoolConfig, validateDatabaseConfig } from '@/utils/databaseConnection';
 import { logger } from '@/utils/logger';
 
 const prismaInstance: PrismaClient | null = null;
@@ -12,9 +13,8 @@ function getDatabaseConfig() {
 }
 
 function createPrismaClient(options: { logQueries: boolean; maxConnections?: number }) {
-  const dbConfig = getDatabaseConfig();
-  const { user, password, host, port, dbName, maxConnections } = dbConfig;
-  const connectionString = `postgresql://${user}:${password}@${host}:${port}/${dbName}`;
+  const dbConfig = validateDatabaseConfig(getDatabaseConfig());
+  const { host, port, dbName, maxConnections } = dbConfig;
 
   logger.info(`Configured for PostgreSQL: ${host}:${port}/${dbName}`);
 
@@ -26,12 +26,7 @@ function createPrismaClient(options: { logQueries: boolean; maxConnections?: num
     ? Math.min(configuredPoolMax, options.maxConnections)
     : configuredPoolMax;
 
-  const pool = new Pool({
-    connectionString,
-    max: poolMax,
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 5000
-  });
+  const pool = new Pool(createPoolConfig(dbConfig, dbName, poolMax));
 
   const adapter = new PrismaPg(pool);
 

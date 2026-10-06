@@ -68,6 +68,12 @@ export interface AppConfig {
     password?: string;
     dbName?: string;
     maxConnections?: number;
+    bootstrap?: {
+      createDatabase?: boolean;
+      maintenanceDatabase?: string;
+      lockTimeoutMs?: number;
+      statementTimeoutMs?: number;
+    };
   };
   auth?: AuthConfig;
   mcp?: McpConfig;

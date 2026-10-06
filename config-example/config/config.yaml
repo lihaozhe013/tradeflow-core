@@ -8,6 +8,11 @@ database:
   password: postgres
   dbName: tradeflow
   maxConnections: 5
+  bootstrap:
+    createDatabase: true
+    maintenanceDatabase: postgres
+    lockTimeoutMs: 30000
+    statementTimeoutMs: 60000
 auth:
   enabled: true
   tokenExpiresInHours: 12

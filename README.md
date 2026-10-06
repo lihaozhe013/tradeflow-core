@@ -23,6 +23,14 @@ bun run dev
 
 `bun run dev` starts the API and browser app and writes a fresh ignored `debug.log`.
 
+Before accepting requests, the backend creates the configured PostgreSQL database when permitted and
+adds missing tables, columns, and constraints from the Prisma schema. Existing data and extra
+columns are kept. Startup stops with a redacted actionable error when safe additive setup is not
+possible. The configured PostgreSQL role needs permission to create objects in the `public` schema;
+it also needs permission to create the database when the target database is missing. If a required
+column has no database default and its table already contains rows, backfill it manually before
+restarting.
+
 ## Build and test
 
 ```bash

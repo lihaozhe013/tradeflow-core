@@ -7,13 +7,14 @@ payable, or analysis tools. Authorized tools read the entire instance, not an em
 
 ## Server upgrade
 
-1. Back up the database and apply `backend/prisma/upgrades/20261002_mcp_connections.sql` with your
-   normal PostgreSQL administration tool. This upgrade only adds a table, indexes, and its user
-   association. Do not run the repository's destructive database initialization script.
-2. Generate the Prisma client and build the backend using the existing deployment workflow.
-3. Enable `auth.enabled` and `mcp.enabled`, set allowed hosts, and expose the backend through HTTPS.
+1. Back up the database and deploy the updated backend. On startup it adds missing tables, columns,
+   indexes, and constraints from the Prisma schema while retaining existing data. The configured
+   PostgreSQL role needs permission to create objects in the `public` schema and to create the
+   database if it does not already exist. Backfill required fields without a database default before
+   restarting if their table already contains rows.
+2. Enable `auth.enabled` and `mcp.enabled`, set allowed hosts, and expose the backend through HTTPS.
    `mcp.credentials: []` is now valid; existing static credentials remain supported unchanged.
-4. Start the upgraded backend. Credential creation and revocation do not require restarts. Backend
+3. Start the upgraded backend. Credential creation and revocation do not require restarts. Backend
    rollback can leave the added table in place.
 
 User connection endpoints require a real login JWT even if normal web authentication is disabled.

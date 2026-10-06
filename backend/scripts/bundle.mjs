@@ -1,6 +1,7 @@
 import { build } from 'esbuild';
 import path from 'node:path';
 import fs from 'node:fs';
+import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -17,6 +18,16 @@ async function main() {
   const projectRoot = path.resolve(__dirname, '..');
   const entry = path.resolve(projectRoot, 'server.ts');
   const outfile = path.resolve(projectRoot, 'dist/server.js');
+  const schemaPath = path.resolve(projectRoot, 'prisma/schema.prisma');
+  const manifestPath = path.resolve(projectRoot, 'prisma/bootstrap/generated/schema-manifest.json');
+  if (!fs.existsSync(manifestPath)) {
+    throw new Error('Database schema manifest is missing. Run `bun run prisma:generate` first.');
+  }
+  const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+  const schemaHash = createHash('sha256').update(fs.readFileSync(schemaPath)).digest('hex');
+  if (manifest.schemaHash !== schemaHash) {
+    throw new Error('Database schema manifest is stale. Run `bun run prisma:generate` first.');
+  }
 
   await build({
     entryPoints: [entry],
