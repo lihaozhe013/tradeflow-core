@@ -27,6 +27,7 @@ import auditRoutes from '@/routes/audit';
 import { createMcpRouter, getMcpSettings } from '@/mcp/server';
 import type { McpConfig } from '@/types/config';
 import { createMcpConnectionRouter } from '@/mcp/connections';
+import transactionDraftRoutes from '@/routes/transactionDrafts';
 
 export function createApp(mcpSettings: McpConfig = getMcpSettings()): Express {
   const app: Express = express();
@@ -91,6 +92,7 @@ export function createApp(mcpSettings: McpConfig = getMcpSettings()): Express {
   app.use('/api/overview', editorPageAccess, overviewRoutes);
   app.use('/api/inbound', inboundRoutes);
   app.use('/api/outbound', outboundRoutes);
+  app.use('/api/transaction-drafts', transactionDraftRoutes);
   app.use('/api/inventory', inventoryRoutes);
   app.use('/api/partners', partnersRoutes);
   app.use('/api/products', productsRoutes);

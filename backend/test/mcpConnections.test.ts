@@ -134,6 +134,49 @@ describe('User MCP connections', () => {
     });
     await expect(verifier.verifyAccessToken(token)).rejects.toThrow();
   });
+  it('adds staging tools to account connections only while the live role allows them', async () => {
+    const stagingSettings: McpConfig = { ...settings, stagingWrites: { enabled: true } };
+    const stagingApp = createApp(stagingSettings);
+    const stagingVerifier = createMcpTokenVerifier(stagingSettings);
+    const liveEditor = await mcpPrisma.user.findUniqueOrThrow({ where: { username: users[1]! } });
+    const liveEditorJwt = signToken(liveEditor).token;
+    const issued = await request(stagingApp)
+      .post('/api/mcp/connections')
+      .set('Authorization', `Bearer ${liveEditorJwt}`)
+      .send({ client: 'opencode', deviceId });
+    expect(issued.status).toBe(201);
+    expect(issued.body.data.tools).toHaveLength(7);
+    expect(issued.body.data.effectiveTools).toHaveLength(11);
+    const token = issued.body.data.token as string;
+    expect((await stagingVerifier.verifyAccessToken(token)).scopes).toHaveLength(11);
+
+    const list = await request(stagingApp)
+      .get('/api/mcp/connections')
+      .set('Authorization', `Bearer ${liveEditorJwt}`);
+    const connection = list.body.data.find((item: { id: string }) => item.id === issued.body.data.id);
+    expect(connection.effectiveTools).toHaveLength(11);
+
+    const server = createServer(stagingApp);
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+    const address = server.address();
+    if (!address || typeof address === 'string') throw new Error('Staging MCP server did not start');
+    const client = new Client({ name: 'staging-permission-test', version: '1' });
+    try {
+      await client.connect(
+        new StreamableHTTPClientTransport(new URL(`http://127.0.0.1:${address.port}/mcp`), {
+          authProvider: { token: async () => token }
+        })
+      );
+      expect((await client.listTools()).tools).toHaveLength(11);
+      await mcpPrisma.user.update({ where: { username: users[1]! }, data: { role: 'reader' } });
+      expect((await stagingVerifier.verifyAccessToken(token)).scopes).toHaveLength(4);
+      expect((await client.listTools()).tools).toHaveLength(4);
+    } finally {
+      await mcpPrisma.user.update({ where: { username: users[1]! }, data: { role: 'editor' } });
+      await client.close();
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
+  });
   it('shares request budget between credentials owned by one account', async () => {
     const first = await issue(readerJwt);
     const second = await issue(readerJwt, 'workbuddy');

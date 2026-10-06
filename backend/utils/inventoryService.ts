@@ -116,10 +116,13 @@ export const inventoryService = {
   /**
    * Handle Inbound Create
    */
-  async onInboundCreate(record: Prisma.InboundRecordGetPayload<{ include: { product: true } }>) {
+  async onInboundCreate(
+    record: Prisma.InboundRecordGetPayload<{ include: { product: true } }>,
+    transaction?: Prisma.TransactionClient
+  ) {
     const product_model = record.product?.product_model;
     if (!product_model || !record.quantity) return;
-    await prisma.$transaction(async (tx) => {
+    const apply = async (tx: Prisma.TransactionClient) => {
       await tx.inventoryLedger.create({
         data: {
           product_model: product_model,
@@ -134,16 +137,21 @@ export const inventoryService = {
         update: { quantity: { increment: record.quantity! } },
         create: { product_model: product_model, quantity: record.quantity! }
       });
-    });
+    };
+    if (transaction) await apply(transaction);
+    else await prisma.$transaction(apply);
   },
 
   /**
    * Handle Outbound Create
    */
-  async onOutboundCreate(record: Prisma.OutboundRecordGetPayload<{ include: { product: true } }>) {
+  async onOutboundCreate(
+    record: Prisma.OutboundRecordGetPayload<{ include: { product: true } }>,
+    transaction?: Prisma.TransactionClient
+  ) {
     const product_model = record.product?.product_model;
     if (!product_model || !record.quantity) return;
-    await prisma.$transaction(async (tx) => {
+    const apply = async (tx: Prisma.TransactionClient) => {
       // Ledger stores negative qty for outbound? Or stores positive number with type OUTBOUND?
       // User query example: SELECT SUM(Change_Qty).
       // So for outbound, Change_Qty should be negative.
@@ -163,7 +171,9 @@ export const inventoryService = {
         update: { quantity: { increment: changeQty } },
         create: { product_model: product_model, quantity: changeQty }
       });
-    });
+    };
+    if (transaction) await apply(transaction);
+    else await prisma.$transaction(apply);
   },
 
   /**

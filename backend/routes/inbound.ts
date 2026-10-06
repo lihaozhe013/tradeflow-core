@@ -5,6 +5,7 @@ import decimalCalc from '@/utils/decimalCalculator';
 import { pagination_limit } from '@/utils/paths';
 import { inventoryService } from '@/utils/inventoryService';
 import { listTransactions } from '@/services/readService';
+import { createInboundRecord } from '@/services/transactionWriteService';
 
 const router: Router = express.Router();
 
@@ -92,26 +93,20 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
     remark
   } = req.body;
 
-  const total_price = decimalCalc.calculateTotalPrice(quantity, unit_price);
-
-  const result = await prisma.inboundRecord.create({
-    data: {
+  const result = await prisma.$transaction((tx) =>
+    createInboundRecord(tx, {
       supplier_code,
       product_code,
       quantity,
       unit_price,
-      total_price,
       inbound_date,
       invoice_date,
       invoice_number,
       receipt_number,
       order_number,
       remark
-    },
-    include: { product: true }
-  });
-
-  await inventoryService.onInboundCreate(result);
+    })
+  );
   res.json({ id: result.id, message: 'Inbound record created!' });
 });
 

@@ -118,6 +118,7 @@ model User {
   last_password_change String?
   created_at           DateTime @default(now())
   mcpConnections       McpConnection[]
+  transactionDrafts    TransactionDraft[]
 
   @@map("users")
 }
@@ -137,6 +138,46 @@ model McpConnection {
 
   @@index([ownerUsername, createdAt])
   @@map("mcp_connections")
+}
+
+model TransactionDraft {
+  id                   String   @id @default(uuid())
+  direction            String
+  status               String   @default("pending")
+  version              Int      @default(1)
+  partner_code         String?
+  partner_text         String?
+  product_code         String?
+  product_text         String?
+  quantity             Int?
+  unit_price           Float?
+  transaction_date     String?
+  invoice_date         String?
+  invoice_number       String?
+  receipt_number       String?
+  order_number         String?
+  remark               String?
+  first_payload        Json
+  payload_hash         String
+  submission_key       String
+  request_id           String
+  row_index            Int
+  owner_username       String?
+  owner                User?    @relation(fields: [owner_username], references: [username], onUpdate: Cascade, onDelete: SetNull)
+  source_id            String
+  source_connection_id String?
+  last_modified_by     String?
+  reviewed_by          String?
+  reviewed_at          DateTime?
+  reject_reason        String?
+  approved_record_id   Int?
+  created_at           DateTime @default(now())
+  updated_at           DateTime @updatedAt
+
+  @@unique([submission_key, request_id, row_index])
+  @@index([direction, status, created_at])
+  @@index([submission_key, created_at])
+  @@map("transaction_drafts")
 }
 
 model ReceivablePayment {

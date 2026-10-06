@@ -11,6 +11,7 @@ import InboundFilter from '@/pages/Inbound/components/InboundFilter';
 import InboundTable from '@/pages/Inbound/components/InboundTable';
 import InboundModal from '@/pages/Inbound/components/InboundModal.tsx';
 import InboundBatchModal from '@/pages/Inbound/components/InboundBatchModal.tsx';
+import PendingDraftLink from '@/pages/TransactionDrafts/PendingDraftLink';
 import type {
   ApiListResponse,
   FetchParams,
@@ -511,6 +512,9 @@ const Inbound: FC = () => {
             <Title level={2} style={{ margin: 0 }}>
               {t('nav.inbound')}
             </Title>
+          </Col>
+          <Col>
+            <PendingDraftLink direction="inbound" />
           </Col>
           {canWrite && (
             <Col>

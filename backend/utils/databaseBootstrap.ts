@@ -189,7 +189,7 @@ function normalizeType(type: string): string {
 
 function normalizeDefault(value: string | null): string | null {
   if (value === null) return null;
-  let normalized = value.trim().toLowerCase().replace(/\s+/g, ' ');
+  let normalized = value.trim().toLowerCase().replace(/\s+/g, ' ').replace(/::text\b/g, '');
   while (normalized.startsWith('(') && normalized.endsWith(')')) {
     normalized = normalized.slice(1, -1).trim();
   }

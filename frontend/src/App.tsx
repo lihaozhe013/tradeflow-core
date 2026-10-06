@@ -33,6 +33,7 @@ import About from '@/pages/About';
 import Audit from '@/pages/Audit';
 import Users from '@/pages/Users';
 import McpConnections from '@/pages/McpConnections';
+import TransactionDrafts from '@/pages/TransactionDrafts';
 import { AuthProvider } from '@/auth/AuthContext';
 import { useAuth } from '@/auth/useAuth';
 import { usePermissions } from '@/auth/usePermissions';
@@ -211,6 +212,7 @@ type MenuKey =
   | 'overview'
   | 'inbound'
   | 'outbound'
+  | 'transaction-drafts'
   | 'inventory'
   | 'partners'
   | 'products'
@@ -257,6 +259,7 @@ function AppContentInner({ location, t }: AppContentInnerProps): React.ReactElem
     if (path === '/overview' || path === '/') return 'overview';
     if (path === '/inbound') return 'inbound';
     if (path === '/outbound') return 'outbound';
+    if (path === '/transaction-drafts') return 'transaction-drafts';
     if (path === '/inventory') return 'inventory';
     if (path === '/partners') return 'partners';
     if (path === '/products') return 'products';
@@ -280,6 +283,7 @@ function AppContentInner({ location, t }: AppContentInnerProps): React.ReactElem
     const operationItems = [
       linkItem('inbound', '/inbound', t('nav.inbound')),
       linkItem('outbound', '/outbound', t('nav.outbound')),
+      linkItem('transaction-drafts', '/transaction-drafts', t('nav.transactionDrafts')),
       linkItem('inventory', '/inventory', t('nav.inventory'))
     ];
     const masterDataItems = [
@@ -345,7 +349,7 @@ function AppContentInner({ location, t }: AppContentInnerProps): React.ReactElem
   }, [canAccessRestrictedPages, t]);
 
   const selectedKey = getSelectedKey();
-  const openGroupKey = selectedKey === 'inbound' || selectedKey === 'outbound' || selectedKey === 'inventory'
+  const openGroupKey = selectedKey === 'inbound' || selectedKey === 'outbound' || selectedKey === 'transaction-drafts' || selectedKey === 'inventory'
     ? 'operations'
     : selectedKey === 'partners' || selectedKey === 'products' || selectedKey === 'product-prices'
       ? 'master-data'
@@ -362,6 +366,7 @@ function AppContentInner({ location, t }: AppContentInnerProps): React.ReactElem
     overview: 'nav.overview',
     inbound: 'nav.inbound',
     outbound: 'nav.outbound',
+    'transaction-drafts': 'nav.transactionDrafts',
     inventory: 'nav.inventory',
     partners: 'nav.partners',
     products: 'nav.products',
@@ -442,6 +447,7 @@ function AppContentInner({ location, t }: AppContentInnerProps): React.ReactElem
               />
               <Route path="/inbound" element={<Inbound />} />
               <Route path="/outbound" element={<Outbound />} />
+              <Route path="/transaction-drafts" element={<TransactionDrafts />} />
               <Route path="/inventory" element={<Inventory />} />
               <Route path="/partners" element={<Partners />} />
               <Route path="/products" element={<Products />} />

@@ -189,9 +189,9 @@ describe('initializeDatabase', () => {
 
     expect(state.queries).toContain('CREATE DATABASE "trade""flow"');
     expect(state.configs.every((pool) => pool.password === 'test-password')).toBe(true);
-    expect(result.tablesCreated).toBe(12);
-    expect(result.indexesAdded).toBe(4);
-    expect(result.constraintsAdded).toBe(5);
+    expect(result.tablesCreated).toBe(13);
+    expect(result.indexesAdded).toBe(7);
+    expect(result.constraintsAdded).toBe(6);
     expect(state.queries).toContain('SELECT pg_advisory_lock(hashtext($1))');
     expect(state.queries).toContain('SELECT pg_advisory_xact_lock(hashtext($1))');
     expect(state.queries.at(-1)).toBe('COMMIT');

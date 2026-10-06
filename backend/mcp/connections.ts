@@ -4,7 +4,7 @@ import { mcpPrisma } from '@/prismaClient';
 import { authenticateToken, getAuthConfig } from '@/utils/auth';
 import { logger } from '@/utils/logger';
 import { generateMcpToken, hashMcpToken } from '@/mcp/credentials';
-import { toolsForRole } from '@/mcp/tools';
+import { effectiveToolsForRole, MCP_STAGING_TOOL_NAMES, toolsForRole } from '@/mcp/tools';
 import type { McpConfig } from '@/types/config';
 
 export const MCP_CREDENTIAL_DAYS = 90;
@@ -63,6 +63,11 @@ export function createMcpConnectionRouter(settings: McpConfig): Router {
         enabled: settings.enabled,
         endpointPath: '/mcp',
         allowedTools: toolsForRole(req.user!.role),
+        effectiveTools: effectiveToolsForRole(
+          req.user!.role,
+          settings.stagingWrites?.enabled === true
+        ),
+        stagingWritesEnabled: settings.stagingWrites?.enabled === true,
         credentialDays: MCP_CREDENTIAL_DAYS,
         dataScope: 'instance'
       }
@@ -110,7 +115,9 @@ export function createMcpConnectionRouter(settings: McpConfig): Router {
         take: limit
       })
     ]);
-    const allowed = new Set<string>(toolsForRole(owner.role));
+    const allowed = new Set<string>(
+      effectiveToolsForRole(owner.role, settings.stagingWrites?.enabled === true)
+    );
     const data = rows.map(({ passwordVersion, ...entry }) => ({
       ...entry,
       status: entry.revokedAt
@@ -120,7 +127,10 @@ export function createMcpConnectionRouter(settings: McpConfig): Router {
           : passwordVersion !== owner.last_password_change
             ? 'password_changed'
             : 'active',
-      effectiveTools: entry.tools.filter((tool) => allowed.has(tool))
+      effectiveTools: [
+        ...entry.tools.filter((tool) => allowed.has(tool)),
+        ...MCP_STAGING_TOOL_NAMES.filter((tool) => allowed.has(tool))
+      ]
     }));
     res.json({
       success: true,
@@ -159,7 +169,14 @@ export function createMcpConnectionRouter(settings: McpConfig): Router {
       connectionId: connection.id,
       client: connection.client
     });
-    res.status(201).json({ success: true, data: { ...connection, token } });
+    res.status(201).json({
+      success: true,
+      data: {
+        ...connection,
+        token,
+        effectiveTools: effectiveToolsForRole(owner.role, settings.stagingWrites?.enabled === true)
+      }
+    });
   });
   router.delete('/connections/:id', async (req, res) => {
     const parsed = idSchema.safeParse(req.params['id']);

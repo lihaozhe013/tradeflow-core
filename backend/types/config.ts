@@ -34,7 +34,11 @@ export type McpToolName =
   | 'list_transactions'
   | 'get_receivables'
   | 'get_payables'
-  | 'get_analysis';
+  | 'get_analysis'
+  | 'submit_transaction_drafts'
+  | 'update_transaction_draft'
+  | 'list_transaction_drafts'
+  | 'get_transaction_draft';
 
 export interface McpCredentialConfig {
   id: string;
@@ -51,6 +55,7 @@ export interface McpConfig {
   requestsPerMinute?: number;
   maxConcurrentRequests?: number;
   maxConcurrentAnalysis?: number;
+  stagingWrites?: { enabled: boolean };
   credentials: McpCredentialConfig[];
 }
 

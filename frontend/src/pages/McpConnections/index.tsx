@@ -139,7 +139,7 @@ export default function McpConnections(): React.ReactElement {
       render: (_, item) => (
         <details>
           <summary>
-            {item.effectiveTools.length} / {item.tools.length}
+            {t('mcpConnections.effective')}: {item.effectiveTools.length}
           </summary>
           <div>
             {t('mcpConnections.granted')}: {item.tools.join(', ')}

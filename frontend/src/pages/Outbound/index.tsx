@@ -11,6 +11,7 @@ import OutboundFilter from '@/pages/Outbound/components/OutboundFilter';
 import OutboundTable from '@/pages/Outbound/components/OutboundTable';
 import OutboundModal from '@/pages/Outbound/components/OutboundModal';
 import OutboundBatchModal from '@/pages/Outbound/components/OutboundBatchModal';
+import PendingDraftLink from '@/pages/TransactionDrafts/PendingDraftLink';
 import type {
   ApiListResponse,
   FetchParams,
@@ -521,6 +522,9 @@ const Outbound: FC = () => {
             <Title level={2} style={{ margin: 0 }}>
               {t('outbound.title')}
             </Title>
+          </Col>
+          <Col>
+            <PendingDraftLink direction="outbound" />
           </Col>
           {canWrite && (
             <Col>

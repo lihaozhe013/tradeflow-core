@@ -105,6 +105,10 @@ pub async fn probe(profile: &Profile) -> Result<Value> {
                         | "get_receivables"
                         | "get_payables"
                         | "get_analysis"
+                        | "submit_transaction_drafts"
+                        | "update_transaction_draft"
+                        | "list_transaction_drafts"
+                        | "get_transaction_draft"
                 )
             })
             .collect();
@@ -113,8 +117,10 @@ pub async fn probe(profile: &Profile) -> Result<Value> {
         }
         let name = if names.iter().any(|v| v == "search_products") {
             "search_products"
-        } else {
+        } else if names.iter().any(|v| v == "get_inventory") {
             "get_inventory"
+        } else {
+            "list_transaction_drafts"
         };
         diagnostics::step(Stage::SampleQuery, async {
             let call = remote

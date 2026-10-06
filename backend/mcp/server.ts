@@ -8,7 +8,6 @@ import type { AuthInfo } from '@modelcontextprotocol/server';
 import type { Prisma } from '@/prisma/client';
 import type { Express, Request, Response, NextFunction } from 'express';
 import * as z from 'zod/v4';
-import { mcpPrisma } from '@/prismaClient';
 import {
   calculateFilteredSoldGoodsCost,
   calculatePurchaseData,
@@ -28,6 +27,9 @@ import {
 import type { McpConfig, McpToolName } from '@/types/config';
 import { DEFAULT_MCP_PAGE_SIZE, MCP_TOOL_NAMES, MAX_MCP_PAGE_SIZE } from '@/mcp/tools';
 import { createMcpTokenVerifier, validateMcpConfig } from '@/mcp/credentials';
+import { createMcpDraftTools } from '@/mcp/transactionDraftTools';
+import type { DraftSource } from '@/services/transactionDraftService';
+import { withMcpReadOnlyTransaction } from '@/mcp/database';
 
 const pageSchema = z.number().int().min(1).default(1);
 const limitSchema = z.number().int().min(1).max(MAX_MCP_PAGE_SIZE).default(DEFAULT_MCP_PAGE_SIZE);
@@ -52,14 +54,7 @@ type ToolHandler<TArgs extends Record<string, unknown>> = (
   db: Prisma.TransactionClient
 ) => Promise<unknown>;
 
-export function withMcpReadOnlyTransaction<T>(
-  handler: (db: Prisma.TransactionClient) => Promise<T>
-): Promise<T> {
-  return mcpPrisma.$transaction(async (db) => {
-    await db.$executeRaw`SET TRANSACTION READ ONLY`;
-    return handler(db);
-  });
-}
+export { withMcpReadOnlyTransaction } from '@/mcp/database';
 
 function registerReadTool<TArgs extends Record<string, unknown>>(
   server: McpServer,
@@ -111,7 +106,8 @@ function registerReadTool<TArgs extends Record<string, unknown>>(
 function registerTools(
   server: McpServer,
   allowedTools: ReadonlySet<McpToolName>,
-  configValue: McpConfig
+  configValue: McpConfig,
+  draftSource: DraftSource
 ) {
   const register = <TArgs extends Record<string, unknown>>(
     name: McpToolName,
@@ -350,6 +346,10 @@ function registerTools(
     },
     true
   );
+
+  if (configValue.stagingWrites?.enabled) {
+    createMcpDraftTools(server, allowedTools, configValue, draftSource);
+  }
 }
 
 export function createMcpRouter(mcpConfig: McpConfig): Express {
@@ -399,13 +399,22 @@ export function createMcpRouter(mcpConfig: McpConfig): Express {
       typeof auth?.extra?.['budgetKey'] === 'string' ? auth.extra['budgetKey'] : agentId;
     if (!allowRequest(settings, budgetKey, res)) return;
 
+    const ownerUsername = budgetKey.startsWith('user:') ? budgetKey.slice('user:'.length) : null;
+    const draftSource: DraftSource = {
+      scopeKey: ownerUsername ? `account:${ownerUsername}` : `static:${agentId}`,
+      sourceId: ownerUsername ?? agentId,
+      ownerUsername,
+      connectionId: ownerUsername ? agentId : null,
+      actor: `mcp:${ownerUsername ?? agentId}`
+    };
+
     const server = new McpServer({ name: 'tradeflow-core', version: '1.0.0' });
     const scopes = new Set(
       (auth?.scopes ?? []).filter((scope): scope is McpToolName =>
         MCP_TOOL_NAMES.includes(scope as McpToolName)
       )
     );
-    registerTools(server, scopes, settings);
+    registerTools(server, scopes, settings, draftSource);
     const transport = new NodeStreamableHTTPServerTransport({ sessionIdGenerator: undefined });
     void server
       .connect(transport)

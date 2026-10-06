@@ -2,8 +2,11 @@
 
 TradeFlow Connect is a Tauri 2 desktop assistant for Windows x64/ARM64, macOS Apple Silicon, and
 Linux x64. It creates account-bound MCP credentials and installs user-level OpenCode V2 or WorkBuddy
-connections. Business tools remain read-only. Reader accounts cannot discover or call receivable,
-payable, or analysis tools. Authorized tools read the entire instance, not an employee partition.
+connections. Query tools are read-only. When staging writes are enabled, editor and superuser
+connections also receive tools that submit and update pending transaction drafts. Only an
+authenticated editor or superuser can review and merge drafts in the web app. Reader accounts cannot
+discover or call receivable, payable, analysis, or draft mutation tools. Authorized query tools read
+the entire instance, not an employee partition.
 
 ## Server upgrade
 

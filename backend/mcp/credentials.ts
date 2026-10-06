@@ -2,9 +2,8 @@ import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import { OAuthError, OAuthErrorCode } from '@modelcontextprotocol/server';
 import type { AuthInfo, OAuthTokenVerifier } from '@modelcontextprotocol/server';
 import type { McpConfig, McpCredentialConfig, McpToolName } from '@/types/config';
-import { MCP_TOOL_NAMES } from '@/mcp/tools';
+import { MCP_STAGING_TOOL_NAMES, MCP_TOOL_NAMES, effectiveToolsForRole } from '@/mcp/tools';
 import { mcpPrisma } from '@/prismaClient';
-import { toolsForRole } from '@/mcp/tools';
 
 export type McpCredential = McpCredentialConfig;
 
@@ -17,7 +16,15 @@ export function validateMcpConfig(value: McpConfig): McpConfig {
     throw new Error('MCP allowedHosts and allowedOrigins must be arrays.');
   }
   if (!Array.isArray(value.credentials)) throw new Error('MCP credentials must be an array.');
-  if (!value.enabled) return value;
+  if (
+    value.stagingWrites !== undefined &&
+    (!value.stagingWrites || typeof value.stagingWrites !== 'object' ||
+      typeof value.stagingWrites.enabled !== 'boolean')
+  ) {
+    throw new Error('MCP stagingWrites.enabled must be a boolean.');
+  }
+  const stagingWrites = { enabled: value.stagingWrites?.enabled ?? false };
+  if (!value.enabled) return { ...value, stagingWrites };
   if (
     value.allowedHosts.length === 0 ||
     value.allowedHosts.some((host) => typeof host !== 'string' || !host.trim())
@@ -82,6 +89,7 @@ export function validateMcpConfig(value: McpConfig): McpConfig {
 
   return {
     ...value,
+    stagingWrites,
     requestsPerMinute,
     maxConcurrentRequests,
     maxConcurrentAnalysis
@@ -148,13 +156,20 @@ export function createMcpTokenVerifier(config: McpConfig): OAuthTokenVerifier {
       ) {
         throw new OAuthError(OAuthErrorCode.InvalidToken, 'Invalid MCP access token.');
       }
-      const allowed = new Set(toolsForRole(connection.owner.role));
+      const allowed = new Set(
+        effectiveToolsForRole(connection.owner.role, config.stagingWrites?.enabled === true)
+      );
       return {
         token,
         clientId: connection.id,
-        scopes: connection.tools.filter((tool): tool is McpToolName =>
-          allowed.has(tool as McpToolName)
-        ),
+        scopes: [
+          ...new Set([
+            ...connection.tools.filter((tool): tool is McpToolName =>
+              allowed.has(tool as McpToolName)
+            ),
+            ...MCP_STAGING_TOOL_NAMES.filter((tool) => allowed.has(tool))
+          ])
+        ],
         expiresAt: Math.floor(connection.expiresAt.getTime() / 1000),
         extra: { budgetKey: `user:${connection.ownerUsername}` }
       };

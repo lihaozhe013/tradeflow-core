@@ -1,8 +1,9 @@
 # TradeFlow MCP server
 
-TradeFlow exposes a read-only Model Context Protocol endpoint at `/mcp`. It uses the existing
-PostgreSQL database and business calculations. MCP is disabled until explicitly enabled in the
-runtime `config/config.yaml`.
+TradeFlow exposes a Model Context Protocol endpoint at `/mcp`. Query tools read the existing
+PostgreSQL database. Optional draft tools can stage inbound and outbound rows for human review; they
+never write formal transaction records. MCP is disabled until explicitly enabled in the runtime
+`config/config.yaml`.
 
 ## Enable it
 
@@ -20,6 +21,8 @@ mcp:
   requestsPerMinute: 60
   maxConcurrentRequests: 2
   maxConcurrentAnalysis: 1
+  stagingWrites:
+    enabled: false
   credentials: []
 ```
 
@@ -34,6 +37,12 @@ The command prints the bearer token once and a credential entry containing only 
 Copy the entry under `mcp.credentials`, restart TradeFlow, and store the token in the agent's secret
 manager. To revoke access, remove or disable that entry and restart TradeFlow. Keep only enabled MCP
 tools in each credential; available tools are filtered before the server advertises them.
+
+Account-bound editor and superuser connections receive the optional draft tools automatically when
+`mcp.stagingWrites.enabled` is true; reader connections remain read-only. Existing connections gain
+the tools on their next request after the backend restarts with the setting enabled. Static
+credentials continue to require each tool in their configured `tools` list. The setting defaults to
+false.
 
 The endpoint is `https://tradeflow.example.com/mcp`. Configure the client with
 `Authorization: Bearer <token>` and the Streamable HTTP transport. Terminate public TLS at the
@@ -51,16 +60,30 @@ agent.
 | `get_receivables`   | Receivable balances or one customer's transaction and payment details                           |
 | `get_payables`      | Payable balances or one supplier's transaction and payment details                              |
 | `get_analysis`      | Date-filtered purchase or sales summary; sales includes FIFO cost, profit, and profit rate      |
+| `submit_transaction_drafts` | Submit 1–100 inbound or outbound rows into the review queue; retries use `requestId` |
+| `update_transaction_draft` | Update one pending draft using its current version |
+| `list_transaction_drafts` | Page through drafts submitted by this account or static credential |
+| `get_transaction_draft` | Read one draft in the caller's scope, including its review status |
 
 All list tools default to 20 rows per page and allow at most 100. Dates use `YYYY-MM-DD`. Results
 include the validated query parameters, pagination information, a query timestamp, and the
 configured currency symbol. Analysis reads the same FIFO cost calculation as the existing analysis
 API. It does not refresh overview or invoice caches or recalculate inventory.
 
-Partner contacts, phone numbers, addresses, and free-text remarks are excluded from MCP results.
-Each request is authenticated independently. MCP queries use a separate Prisma pool with SQL query
-logging disabled and run in a PostgreSQL read-only transaction. Existing business mutation and audit
-routes are not exposed.
+The query tools omit partner contacts, phone numbers, addresses, and free-text remarks. Draft tools
+return the fields submitted within the caller's scope, including remarks and the original submitted
+row. Draft updates require the current version. Partial rows remain pending until an editor or
+superuser fills in missing data and confirms the merge in the web application. The merge creates the
+formal row, inventory update, inventory ledger entry, audit entry, and approved draft state in one
+database transaction. Failed merges leave the draft pending. Draft rows do not affect inventory,
+balances, analysis, or exports before that merge.
+
+Each MCP request is authenticated independently. Query tools use a separate Prisma pool with SQL
+query logging disabled and run in a PostgreSQL read-only transaction. Draft writes use a separate
+service path that can only create or update scoped draft rows; MCP cannot approve or reject drafts.
+Account draft access is shared among that account's connections. Static credentials are isolated
+from each other. Human edit, approval, and void actions require account authentication even when the
+local development identity is otherwise available.
 
 The static bearer credentials support MCP clients that can set request headers. They do not
 implement OAuth login or per-employee authorization. Changes to configured credentials, tool
@@ -71,9 +94,9 @@ Account-bound credentials can also be created and revoked without restarting thr
 password version; reader accounts retain their financial and analysis restrictions. A configured
 empty static credential list is valid for this database-backed mode.
 
-Account users can also inspect and revoke their own credentials at `/#/mcp-connections`. The web
-page works while MCP is disabled, requires real account authentication, and never displays bearer
-tokens. See
+Account users can inspect and revoke their own credentials at `/#/mcp-connections`. The page also
+shows effective tools, including role-granted draft tools. Account users can inspect transaction
+drafts at `/#/transaction-drafts`; editors and superusers can edit, merge, and void them. See
 [local removal and remote revocation](DESKTOP_CONNECT.md#remove-locally-and-revoke-remotely) for the
 desktop workflow.
 

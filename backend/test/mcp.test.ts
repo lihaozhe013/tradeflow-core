@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { createServer, type Server } from 'node:http';
 import request from 'supertest';
 import { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/client';
@@ -5,7 +6,8 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createApp } from '@/app';
 import { hashMcpToken } from '@/mcp/credentials';
 import { withMcpReadOnlyTransaction } from '@/mcp/server';
-import { MCP_TOOL_NAMES } from '@/mcp/tools';
+import { MCP_STAGING_TOOL_NAMES, READ_MCP_TOOL_NAMES } from '@/mcp/tools';
+import { prisma } from '@/prismaClient';
 import type { McpConfig, McpToolName } from '@/types/config';
 import { authAgent } from '@/test/helpers/request';
 
@@ -20,7 +22,7 @@ const settings: McpConfig = {
       tokenSha256: hashMcpToken(token),
       expiresAt: new Date(Date.now() + 3_600_000).toISOString(),
       enabled: true,
-      tools: [...MCP_TOOL_NAMES]
+      tools: [...READ_MCP_TOOL_NAMES]
     },
     {
       id: 'restricted-agent',
@@ -71,7 +73,7 @@ afterAll(async () => {
 describe('TradeFlow MCP', () => {
   it('only advertises the tools allowed by the credential', async () => {
     const result = await client.listTools();
-    expect(result.tools.map((tool) => tool.name).sort()).toEqual([...MCP_TOOL_NAMES].sort());
+    expect(result.tools.map((tool) => tool.name).sort()).toEqual([...READ_MCP_TOOL_NAMES].sort());
 
     const restricted = makeClient('tfmcp_restricted-token-0123456789');
     await restricted.client.connect(restricted.transport);
@@ -83,6 +85,103 @@ describe('TradeFlow MCP', () => {
       ).rejects.toThrow(/Tool get_analysis not found/);
     } finally {
       await restricted.client.close();
+    }
+  });
+
+  it('registers explicitly scoped staging tools without creating formal transactions', async () => {
+    const firstToken = `tfmcp_stage_${randomUUID()}`;
+    const otherToken = `tfmcp_stage_${randomUUID()}`;
+    const stagingSettings: McpConfig = {
+      enabled: true,
+      stagingWrites: { enabled: true },
+      allowedHosts: ['127.0.0.1'],
+      allowedOrigins: ['127.0.0.1'],
+      credentials: [
+        {
+          id: `stage_${randomUUID().replaceAll('-', '').slice(0, 24)}`,
+          tokenSha256: hashMcpToken(firstToken),
+          expiresAt: new Date(Date.now() + 3_600_000).toISOString(),
+          enabled: true,
+          tools: [...MCP_STAGING_TOOL_NAMES]
+        },
+        {
+          id: `stage_${randomUUID().replaceAll('-', '').slice(0, 24)}`,
+          tokenSha256: hashMcpToken(otherToken),
+          expiresAt: new Date(Date.now() + 3_600_000).toISOString(),
+          enabled: true,
+          tools: [...MCP_STAGING_TOOL_NAMES]
+        }
+      ]
+    };
+    const stagingApp = createApp(stagingSettings);
+    const stagingServer = createServer(stagingApp);
+    await new Promise<void>((resolve) => stagingServer.listen(0, '127.0.0.1', resolve));
+    const address = stagingServer.address();
+    if (!address || typeof address === 'string') throw new Error('MCP staging server did not start');
+    const endpointUrl = `http://127.0.0.1:${address.port}/mcp`;
+    const stagedClient = {
+      client: new Client({ name: 'staging-write-test', version: '1' }),
+      transport: new StreamableHTTPClientTransport(new URL(endpointUrl), {
+        authProvider: { token: async () => firstToken }
+      })
+    };
+    const isolatedClient = {
+      client: new Client({ name: 'staging-isolation-test', version: '1' }),
+      transport: new StreamableHTTPClientTransport(new URL(endpointUrl), {
+        authProvider: { token: async () => otherToken }
+      })
+    };
+    let draftId = '';
+    const formalCountBefore = await prisma.inboundRecord.count();
+    try {
+      await stagedClient.client.connect(stagedClient.transport);
+      await isolatedClient.client.connect(isolatedClient.transport);
+      const tools = await stagedClient.client.listTools();
+      expect(tools.tools.map((tool) => tool.name).sort()).toEqual(
+        [...MCP_STAGING_TOOL_NAMES].sort()
+      );
+      expect(
+        tools.tools.find((tool) => tool.name === 'submit_transaction_drafts')?.annotations
+          ?.readOnlyHint
+      ).toBe(false);
+      const submitted = await stagedClient.client.callTool({
+        name: 'submit_transaction_drafts',
+        arguments: {
+          direction: 'inbound',
+          requestId: `stage-test-${randomUUID()}`,
+          records: [{ product_text: 'Unmatched MCP product', quantity: 2 }]
+        }
+      });
+      expect(submitted.isError).not.toBe(true);
+      const payload = submitted.structuredContent as {
+        records: Array<{ id: string; status: string; issues: Array<{ code: string }> }>;
+      };
+      expect(payload.records).toHaveLength(1);
+      draftId = payload.records[0]!.id;
+      expect(payload.records[0]!.status).toBe('pending');
+      expect(payload.records[0]!.issues.map((issue) => issue.code)).toContain('partner_required');
+
+      const ownDrafts = await isolatedClient.client.callTool({
+        name: 'list_transaction_drafts',
+        arguments: { page: 1, limit: 20 }
+      });
+      expect((ownDrafts.structuredContent as { total: number }).total).toBe(0);
+      const hiddenDraft = await isolatedClient.client.callTool({
+        name: 'get_transaction_draft',
+        arguments: { id: draftId }
+      });
+      expect(hiddenDraft.isError).toBe(true);
+      expect(await prisma.inboundRecord.count()).toBe(formalCountBefore);
+    } finally {
+      if (draftId) {
+        await prisma.transactionDraft.deleteMany({ where: { id: draftId } });
+        await prisma.systemLog.deleteMany({ where: { resource: `/transaction-drafts/${draftId}` } });
+      }
+      await stagedClient.client.close();
+      await isolatedClient.client.close();
+      await new Promise<void>((resolve, reject) =>
+        stagingServer.close((error) => (error ? reject(error) : resolve()))
+      );
     }
   });
 

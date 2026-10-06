@@ -27,6 +27,8 @@ mcp:
   requestsPerMinute: 60
   maxConcurrentRequests: 2
   maxConcurrentAnalysis: 1
+  stagingWrites:
+    enabled: false
   credentials: []
 server:
   httpPort: 8000
