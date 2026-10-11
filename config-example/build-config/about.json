@@ -1,20 +1,20 @@
 {
   "company": {
-    "description": "your company description",
-    "name": "Your Company Name",
-    "slogan": "your slogan"
+    "description": "",
+    "name": "",
+    "slogan": ""
   },
   "contact": {
-    "address": "Toronto, Ontario, Canada",
-    "email": "lihaozhe013@gmail.com",
-    "phone": "+1 437-661-7680"
+    "address": "",
+    "email": "",
+    "phone": ""
   },
-  "lastUpdated": "2025-08-04T10:30:00.000Z",
+  "lastUpdated": "2026-10-10T10:30:00.000Z",
   "system": {
-    "releaseDate": "2025-08-04",
-    "team": "Li Haozhe",
-    "techStack": "React 19 + Node.js + Express + SQLite3 + Ant Design",
-    "version": "0.1.0"
+    "releaseDate": "2026-10-10",
+    "team": "",
+    "techStack": "Bun",
+    "version": "1.0.0"
   },
   "title": "About Us"
 }

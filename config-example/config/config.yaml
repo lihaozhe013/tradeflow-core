@@ -21,14 +21,14 @@ auth:
     maxAttempts: 20
   allowExportsForReader: true
 mcp:
-  enabled: false
+  enabled: true
   allowedHosts: []
   allowedOrigins: []
   requestsPerMinute: 60
   maxConcurrentRequests: 2
   maxConcurrentAnalysis: 1
   stagingWrites:
-    enabled: false
+    enabled: true
   credentials: []
 server:
   httpPort: 8000
