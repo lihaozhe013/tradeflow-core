@@ -7,7 +7,7 @@ database:
   user: postgres
   password: postgres
   dbName: tradeflow_e2e
-  maxConnections: 5
+  maxConnections: 18
   bootstrap:
     createDatabase: true
     maintenanceDatabase: postgres

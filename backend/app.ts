@@ -62,6 +62,10 @@ export function createApp(mcpSettings: McpConfig = getMcpSettings()): Express {
   // API Route Registration
   // =============================================================================
 
+  app.get('/healthz', (_req, res) => {
+    res.sendStatus(204);
+  });
+
   app.use('/api/auth', authRoutes);
   app.use('/api/mcp', createMcpConnectionRouter(mcpSettings));
 

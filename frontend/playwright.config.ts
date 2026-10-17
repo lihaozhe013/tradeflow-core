@@ -10,7 +10,9 @@ const configDir = path.resolve(
 );
 const backendUrl = 'http://127.0.0.1:18080';
 const frontendUrl = 'http://127.0.0.1:15173';
-const headless = ['1', 'true'].includes(process.env['TRADEFLOW_E2E_HEADLESS']?.toLowerCase() ?? '');
+const headless = !['0', 'false'].includes(
+  process.env['TRADEFLOW_E2E_HEADLESS']?.toLowerCase() ?? ''
+);
 const externalServer = ['1', 'true'].includes(
   process.env['TRADEFLOW_E2E_EXTERNAL_SERVER']?.toLowerCase() ?? ''
 );
@@ -19,9 +21,9 @@ const backendWebServer = externalServer
   ? []
   : [
       {
-        command: 'bun run dev',
+        command: 'bun run prisma:generate && bun run tsx server.ts',
         cwd: backendDir,
-        url: `${backendUrl}/api/auth/me`,
+        url: `${backendUrl}/healthz`,
         timeout: 120_000,
         reuseExistingServer: false,
         env: {
