@@ -91,11 +91,10 @@ const LoginPage: React.FC = () => {
 
           {error && (
             <Alert
-              message={error}
+              title={error}
               type="error"
               showIcon
-              closable
-              onClose={clearError}
+              closable={{ onClose: clearError }}
               style={{ marginBottom: 24 }}
             />
           )}

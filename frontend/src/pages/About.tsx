@@ -41,7 +41,7 @@ function About() {
   if (error) {
     return (
       <Alert
-        message={t('about.loadFailed')}
+        title={t('about.loadFailed')}
         description={error}
         type="error"
         showIcon

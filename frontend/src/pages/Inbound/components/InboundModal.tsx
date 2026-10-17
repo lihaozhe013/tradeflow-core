@@ -226,7 +226,7 @@ const InboundModal: FC<InboundModalProps> = ({
                 style={{ width: '100%' }}
                 placeholder={t('inbound.inputUnitPrice') ?? ''}
                 precision={4}
-                addonBefore={currency_unit_symbol}
+                prefix={currency_unit_symbol}
                 onChange={onPriceOrQuantityChange}
                 disabled={!manualPrice}
               />
@@ -242,7 +242,7 @@ const InboundModal: FC<InboundModalProps> = ({
                 placeholder={t('inbound.autoCalc') ?? ''}
                 precision={3}
                 disabled
-                addonBefore={currency_unit_symbol}
+                prefix={currency_unit_symbol}
               />
             </Form.Item>
           </Col>

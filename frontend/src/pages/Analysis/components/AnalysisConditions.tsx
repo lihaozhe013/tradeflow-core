@@ -41,7 +41,7 @@ const AnalysisConditions: React.FC<AnalysisConditionsProps> = ({
 
   return (
     <Alert
-      message={
+      title={
         <Space wrap>
           <span>
             <strong>{t('analysis.analysisConditions')}:</strong>

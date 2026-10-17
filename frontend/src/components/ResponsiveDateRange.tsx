@@ -35,7 +35,7 @@ function ResponsiveDateRange({
   }
 
   return (
-    <Space direction="vertical" size={8} className="responsive-date-range">
+    <Space orientation="vertical" size={8} className="responsive-date-range">
       <DatePicker
         value={start}
         onChange={(date) => onChange([date, end])}

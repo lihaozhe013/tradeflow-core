@@ -172,11 +172,11 @@ export default function McpConnections(): React.ReactElement {
         <Alert
           type="info"
           showIcon
-          message={t('mcpConnections.scope')}
+          title={t('mcpConnections.scope')}
           description={t('mcpConnections.explanation', { server: window.location.origin })}
         />
-        {!enabled && <Alert type="warning" message={t('mcpConnections.disabled')} />}
-        {error && <Alert type="error" role="alert" message={t(`mcpConnections.${error}`)} />}
+        {!enabled && <Alert type="warning" title={t('mcpConnections.disabled')} />}
+        {error && <Alert type="error" role="alert" title={t(`mcpConnections.${error}`)} />}
         <Space wrap>
           <Select
             aria-label={t('mcpConnections.filter')}
@@ -206,7 +206,7 @@ export default function McpConnections(): React.ReactElement {
         {results.length > 0 && (
           <Alert
             type={failedIds.length ? 'warning' : 'success'}
-            message={t('mcpConnections.result', {
+            title={t('mcpConnections.result', {
               succeeded: results.length - failedIds.length,
               total: results.length
             })}

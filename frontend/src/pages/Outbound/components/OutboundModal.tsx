@@ -229,7 +229,7 @@ const OutboundModal: FC<OutboundModalProps> = ({
                 style={{ width: '100%' }}
                 placeholder={t('outbound.inputUnitPrice') ?? ''}
                 precision={4}
-                addonBefore={currency_unit_symbol}
+                prefix={currency_unit_symbol}
                 onChange={onPriceOrQuantityChange}
                 disabled={!manualPrice}
               />
@@ -245,7 +245,7 @@ const OutboundModal: FC<OutboundModalProps> = ({
                 placeholder={t('outbound.autoCalc') ?? ''}
                 precision={3}
                 disabled
-                addonBefore={currency_unit_symbol}
+                prefix={currency_unit_symbol}
               />
             </Form.Item>
           </Col>

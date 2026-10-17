@@ -31,7 +31,7 @@ const AdvancedExportModal: React.FC<AdvancedExportModalProps> = ({
     >
       {/* <p>{t('analysis.advancedExport.exportMethod') || "Please select export grouping type:"}</p> */}
 
-      <Space direction="vertical" style={{ width: '100%', marginTop: 20 }}>
+      <Space orientation="vertical" style={{ width: '100%', marginTop: 20 }}>
         <Button
           block
           size="large"

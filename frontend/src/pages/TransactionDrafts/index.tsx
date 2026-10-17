@@ -278,15 +278,43 @@ export default function TransactionDrafts(): React.ReactElement {
     Modal.confirm({
       title: t('transactionDrafts.confirmApprove'),
       content: (
-        <Descriptions size="small" column={1}>
-          <Descriptions.Item label={t('transactionDrafts.direction')}>{t(`transactionDrafts.${direction}`)}</Descriptions.Item>
-          <Descriptions.Item label={t('transactionDrafts.partner')}>{partner?.short_name ?? values.partner_code ?? '—'}</Descriptions.Item>
-          <Descriptions.Item label={t('transactionDrafts.product')}>{item?.product_model ?? values.product_code ?? '—'}</Descriptions.Item>
-          <Descriptions.Item label={t('transactionDrafts.quantity')}>{values.quantity ?? '—'}</Descriptions.Item>
-          <Descriptions.Item label={t('transactionDrafts.unitPrice')}>{values.unit_price ?? '—'}</Descriptions.Item>
-          <Descriptions.Item label={t('transactionDrafts.totalPrice')}>{totalPrice}</Descriptions.Item>
-          <Descriptions.Item label={t('transactionDrafts.date')}>{values.transaction_date?.format('YYYY-MM-DD') ?? '—'}</Descriptions.Item>
-        </Descriptions>
+        <Descriptions
+          size="small"
+          column={1}
+          items={[
+            {
+              key: 'direction',
+              label: t('transactionDrafts.direction'),
+              children: t(`transactionDrafts.${direction}`)
+            },
+            {
+              key: 'partner',
+              label: t('transactionDrafts.partner'),
+              children: partner?.short_name ?? values.partner_code ?? '—'
+            },
+            {
+              key: 'product',
+              label: t('transactionDrafts.product'),
+              children: item?.product_model ?? values.product_code ?? '—'
+            },
+            {
+              key: 'quantity',
+              label: t('transactionDrafts.quantity'),
+              children: values.quantity ?? '—'
+            },
+            {
+              key: 'unit-price',
+              label: t('transactionDrafts.unitPrice'),
+              children: values.unit_price ?? '—'
+            },
+            { key: 'total-price', label: t('transactionDrafts.totalPrice'), children: totalPrice },
+            {
+              key: 'date',
+              label: t('transactionDrafts.date'),
+              children: values.transaction_date?.format('YYYY-MM-DD') ?? '—'
+            }
+          ]}
+        />
       ),
       okText: t('transactionDrafts.approve'),
       cancelText: t('common.cancel'),
@@ -361,7 +389,7 @@ export default function TransactionDrafts(): React.ReactElement {
 
   return (
     <Card title={<h2 style={{ margin: 0, fontSize: 18 }}>{t('transactionDrafts.title')}</h2>}>
-      <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+      <Space orientation="vertical" size="middle" style={{ width: '100%' }}>
         <Space wrap>
           <Select value={direction} onChange={setActiveDirection} options={[
             { value: 'inbound', label: t('transactionDrafts.inbound') },
@@ -375,8 +403,8 @@ export default function TransactionDrafts(): React.ReactElement {
           <Button onClick={() => { setPage(1); void load(); }}>{t('common.search')}</Button>
           <Button onClick={() => void load()}>{t('common.refresh')}</Button>
         </Space>
-        {reviewEnabled === false && <Alert type="info" showIcon message={t('transactionDrafts.loginRequiredNotice')} />}
-        {reviewEnabled === true && !canWrite && <Alert type="info" showIcon message={t('transactionDrafts.readerNotice')} />}
+        {reviewEnabled === false && <Alert type="info" showIcon title={t('transactionDrafts.loginRequiredNotice')} />}
+        {reviewEnabled === true && !canWrite && <Alert type="info" showIcon title={t('transactionDrafts.readerNotice')} />}
         <ResponsiveTable<Draft>
           rowKey="id"
           columns={columns}
@@ -401,22 +429,58 @@ export default function TransactionDrafts(): React.ReactElement {
         </Space>}
         confirmLoading={detailLoading}
       >
-        {detail && <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-          <Descriptions size="small" column={{ xs: 1, sm: 2 }}>
-            <Descriptions.Item label={t('transactionDrafts.status')}>{t(`transactionDrafts.statuses.${detail.status}`)} · v{detail.version}</Descriptions.Item>
-            <Descriptions.Item label={t('transactionDrafts.source')}>{detail.source.kind}: {detail.source.id}</Descriptions.Item>
-            <Descriptions.Item label={t('transactionDrafts.batch')}>{detail.request_id} · {detail.row_index + 1}</Descriptions.Item>
-            <Descriptions.Item label={t('transactionDrafts.lastModified')}>{detail.last_modified_by ?? '—'}</Descriptions.Item>
-            {detail.approved_record_id !== null && <Descriptions.Item label={t('transactionDrafts.formalRecordId')}>{detail.approved_record_id}</Descriptions.Item>}
-            {detail.reject_reason && <Descriptions.Item label={t('transactionDrafts.rejectReason')}>{detail.reject_reason}</Descriptions.Item>}
-          </Descriptions>
+        {detail && <Space orientation="vertical" size="middle" style={{ width: '100%' }}>
+          <Descriptions
+            size="small"
+            column={{ xs: 1, sm: 2 }}
+            items={[
+              {
+                key: 'status',
+                label: t('transactionDrafts.status'),
+                children: `${t(`transactionDrafts.statuses.${detail.status}`)} · v${detail.version}`
+              },
+              {
+                key: 'source',
+                label: t('transactionDrafts.source'),
+                children: `${detail.source.kind}: ${detail.source.id}`
+              },
+              {
+                key: 'batch',
+                label: t('transactionDrafts.batch'),
+                children: `${detail.request_id} · ${detail.row_index + 1}`
+              },
+              {
+                key: 'last-modified',
+                label: t('transactionDrafts.lastModified'),
+                children: detail.last_modified_by ?? '—'
+              },
+              ...(detail.approved_record_id !== null
+                ? [
+                    {
+                      key: 'formal-record-id',
+                      label: t('transactionDrafts.formalRecordId'),
+                      children: detail.approved_record_id
+                    }
+                  ]
+                : []),
+              ...(detail.reject_reason
+                ? [
+                    {
+                      key: 'reject-reason',
+                      label: t('transactionDrafts.rejectReason'),
+                      children: detail.reject_reason
+                    }
+                  ]
+                : [])
+            ]}
+          />
           {versionConflict && <Alert
             type="warning"
             showIcon
-            message={t('transactionDrafts.versionConflict')}
+            title={t('transactionDrafts.versionConflict')}
             action={<Button size="small" onClick={() => void openDetail(detail.id)}>{t('transactionDrafts.reloadLatest')}</Button>}
           />}
-          {detail.issues.length > 0 && <Alert type="warning" showIcon message={t('transactionDrafts.needsAttention')} description={<ul>{detail.issues.map((issue) => <li key={`${issue.field}-${issue.code}`}>{t(`transactionDrafts.issueMessages.${issue.code}`, { field: issue.field })}</li>)}</ul>} />}
+          {detail.issues.length > 0 && <Alert type="warning" showIcon title={t('transactionDrafts.needsAttention')} description={<ul>{detail.issues.map((issue) => <li key={`${issue.field}-${issue.code}`}>{t(`transactionDrafts.issueMessages.${issue.code}`, { field: issue.field })}</li>)}</ul>} />}
           {detail.original && <details>
             <summary>{t('transactionDrafts.originalSubmission')}</summary>
             <pre style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', marginTop: 8 }}>{JSON.stringify(detail.original, null, 2)}</pre>

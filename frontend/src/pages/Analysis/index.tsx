@@ -107,7 +107,7 @@ const Analysis: React.FC = () => {
     <div style={{ padding: 24 }}>
       <Typography.Title level={2}>{t('analysis.title')}</Typography.Title>
 
-      <Card bordered={false}>
+      <Card variant="borderless">
         <AnalysisFilters
           dateRange={dateRange}
           onDateRangeChange={(dates) => setDateRange(dates as [Dayjs, Dayjs])}

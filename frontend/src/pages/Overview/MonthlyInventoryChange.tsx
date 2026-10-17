@@ -151,7 +151,7 @@ const MonthlyInventoryChange = () => {
         </div>
       ) : error ? (
         <Alert
-          message={t('overview.dataLoadFailed')}
+          title={t('overview.dataLoadFailed')}
           description={error}
           type="error"
           showIcon
@@ -164,7 +164,7 @@ const MonthlyInventoryChange = () => {
               title={t('overview.monthStartInventory')}
               value={inventoryData.month_start_inventory || 0}
               prefix={<InboxOutlined />}
-              valueStyle={{ color: '#1677ff', fontSize: '16px' }}
+              styles={{ content: { color: '#1677ff', fontSize: '16px' } }}
             />
           </Col>
           <Col span={24}>
@@ -172,7 +172,7 @@ const MonthlyInventoryChange = () => {
               title={t('overview.currentInventory')}
               value={inventoryData.current_inventory || 0}
               prefix={<StockOutlined />}
-              valueStyle={{ color: '#722ed1', fontSize: '16px' }}
+              styles={{ content: { color: '#722ed1', fontSize: '16px' } }}
             />
           </Col>
           <Col span={24}>
@@ -187,9 +187,11 @@ const MonthlyInventoryChange = () => {
                     ? t('overview.decrease')
                     : t('overview.noChange')
               }
-              valueStyle={{
-                color: getTrendColor(inventoryData.monthly_change),
-                fontSize: '16px'
+              styles={{
+                content: {
+                  color: getTrendColor(inventoryData.monthly_change),
+                  fontSize: '16px'
+                }
               }}
             />
           </Col>

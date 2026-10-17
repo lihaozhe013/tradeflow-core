@@ -99,7 +99,7 @@ const TopSalesPieChart = () => {
     );
   }
   if (error) {
-    return <Alert type="error" message={error} style={{ minHeight: 280 }} />;
+    return <Alert type="error" title={error} style={{ minHeight: 280 }} />;
   }
 
   return (

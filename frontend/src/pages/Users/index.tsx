@@ -307,7 +307,7 @@ function Users(): React.ReactElement {
   ];
 
   return (
-    <Space direction="vertical" style={{ width: '100%' }} size="middle">
+    <Space orientation="vertical" style={{ width: '100%' }} size="middle">
       <Card title={t('users.myProfile')}>
         <Form layout="inline">
           <Form.Item label={t('users.displayName')} htmlFor="profile-display-name">
@@ -376,7 +376,7 @@ function Users(): React.ReactElement {
             pagination={pagination}
             onChange={handleTableChange}
             loading={loading}
-            size="middle"
+            size="medium"
           />
         </Card>
       )}
@@ -423,11 +423,15 @@ function Users(): React.ReactElement {
             />
           </Form.Item>
           <Form.Item label={t('users.role')}>
-            <Select value={createRole} onChange={setCreateRole}>
-              <Select.Option value="reader">{t('users.reader')}</Select.Option>
-              <Select.Option value="editor">{t('users.editor')}</Select.Option>
-              <Select.Option value="superuser">{t('users.superuser')}</Select.Option>
-            </Select>
+            <Select
+              value={createRole}
+              onChange={setCreateRole}
+              options={[
+                { value: 'reader', label: t('users.reader') },
+                { value: 'editor', label: t('users.editor') },
+                { value: 'superuser', label: t('users.superuser') }
+              ]}
+            />
           </Form.Item>
           <Form.Item label={t('users.enabled')} valuePropName="checked">
             <Switch checked={createEnabled} onChange={setCreateEnabled} />
@@ -451,11 +455,15 @@ function Users(): React.ReactElement {
             <Input value={editDisplayName} onChange={(e) => setEditDisplayName(e.target.value)} />
           </Form.Item>
           <Form.Item label={t('users.role')}>
-            <Select value={editRole} onChange={setEditRole}>
-              <Select.Option value="reader">{t('users.reader')}</Select.Option>
-              <Select.Option value="editor">{t('users.editor')}</Select.Option>
-              <Select.Option value="superuser">{t('users.superuser')}</Select.Option>
-            </Select>
+            <Select
+              value={editRole}
+              onChange={setEditRole}
+              options={[
+                { value: 'reader', label: t('users.reader') },
+                { value: 'editor', label: t('users.editor') },
+                { value: 'superuser', label: t('users.superuser') }
+              ]}
+            />
           </Form.Item>
           <Form.Item label={t('users.enabled')} valuePropName="checked">
             <Switch checked={editEnabled} onChange={setEditEnabled} />

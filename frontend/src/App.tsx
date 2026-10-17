@@ -73,7 +73,7 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
       return (
         <div style={{ padding: 24 }}>
           <Alert
-            message="Page loading error."
+            title="Page loading error."
             description="An error occurred while rendering the page component. Please refresh the page and try again. If the issue persists, check whether the backend service is functioning properly."
             type="error"
             showIcon
@@ -173,7 +173,7 @@ function UserMenu(): React.ReactElement {
       <Dropdown
         menu={{ items: userMenuItems, onClick: handleMenuClick }}
         placement="bottomRight"
-        dropdownRender={(menu) => (
+        popupRender={(menu) => (
           <div className="user-menu-dropdown">
             {menu}
             <div className="user-menu-language">

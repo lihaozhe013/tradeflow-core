@@ -350,7 +350,7 @@ const PayableTable: FC<PayableTableProps> = ({
         pagination={tablePagination}
         onChange={onTableChange}
         scroll={{ x: 1200 }}
-        size="middle"
+        size="medium"
       />
 
       <Modal

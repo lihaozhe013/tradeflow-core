@@ -238,7 +238,7 @@ function Audit(): React.ReactElement {
         pagination={pagination}
         onChange={handleTableChange}
         loading={loading}
-        size="middle"
+        size="medium"
         scroll={{ x: 900 }}
       />
     </Card>

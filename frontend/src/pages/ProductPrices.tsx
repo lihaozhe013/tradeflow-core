@@ -560,7 +560,7 @@ const ProductPrices: FC = () => {
                 placeholder={t('productPrices.inputUnitPrice')}
                 precision={4}
                 min={0}
-                addonBefore={currency_unit_symbol}
+                prefix={currency_unit_symbol}
               />
             </Form.Item>
 

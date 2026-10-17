@@ -119,7 +119,7 @@ const OverviewMain = () => {
         }}
       >
         <Alert
-          message={t('overview.loadFailed')}
+          title={t('overview.loadFailed')}
           description={error}
           type="error"
           showIcon
@@ -196,7 +196,7 @@ const OverviewMain = () => {
                       title={t('overview.totalSales')}
                       value={overview.total_sales_amount}
                       prefix={<DollarOutlined />}
-                      valueStyle={{ color: '#3f8600' }}
+                      styles={{ content: { color: '#3f8600' } }}
                     />
                   </Col>
                   <Col xs={12} md={6}>
@@ -204,7 +204,7 @@ const OverviewMain = () => {
                       title={t('overview.totalCost')}
                       value={overview.sold_goods_cost}
                       prefix={<ShoppingCartOutlined />}
-                      valueStyle={{ color: '#fa8c16' }}
+                      styles={{ content: { color: '#fa8c16' } }}
                     />
                   </Col>
                   <Col xs={12} md={6}>
@@ -213,7 +213,7 @@ const OverviewMain = () => {
                       value={calculateProfitMargin()}
                       suffix="%"
                       prefix={<RiseOutlined />}
-                      valueStyle={{ color: '#3f8600' }}
+                      styles={{ content: { color: '#3f8600' } }}
                     />
                   </Col>
                   <Col xs={12} md={6}>
@@ -221,7 +221,7 @@ const OverviewMain = () => {
                       title={t('overview.totalPurchase')}
                       value={overview.total_purchase_amount}
                       prefix={<ShoppingCartOutlined />}
-                      valueStyle={{ color: '#1677ff' }}
+                      styles={{ content: { color: '#1677ff' } }}
                     />
                   </Col>
                 </Row>
