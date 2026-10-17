@@ -11,6 +11,9 @@ export type OutOfStockProduct = {
 export type OverviewStatsResponse = {
   overview: OverviewMetrics;
   out_of_inventory_products: OutOfStockProduct[];
+  top_sales_products: TopSalesRecord[];
+  monthly_inventory_changes: Record<string, MonthlyInventoryChangeData>;
+  last_updated: string;
 };
 
 export const DEFAULT_OVERVIEW_STATS: OverviewStatsResponse = {
@@ -19,7 +22,10 @@ export const DEFAULT_OVERVIEW_STATS: OverviewStatsResponse = {
     sold_goods_cost: 0,
     total_purchase_amount: 0
   },
-  out_of_inventory_products: []
+  out_of_inventory_products: [],
+  top_sales_products: [],
+  monthly_inventory_changes: {},
+  last_updated: ''
 };
 
 export type TopSalesRecord = {
@@ -27,13 +33,10 @@ export type TopSalesRecord = {
   total_sales: number;
 };
 
-export type TopSalesResponse = {
-  success: boolean;
-  data: TopSalesRecord[];
-  message?: string;
-};
-
-export const DEFAULT_TOP_SALES_RESPONSE: TopSalesResponse = {
-  success: false,
-  data: []
+export type MonthlyInventoryChangeData = {
+  product_model: string;
+  month_start_inventory: number;
+  current_inventory: number;
+  monthly_change: number;
+  query_date: string;
 };

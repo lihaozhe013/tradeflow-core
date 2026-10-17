@@ -1,17 +1,9 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import fs from 'fs';
 import { prisma } from '@/prismaClient';
 import { authAgent, getApp } from '@/test/helpers/request';
-import { resolveFilesInCachePath } from '@/utils/paths';
 
-const STATS_FILE = resolveFilesInCachePath('overview-stats.json');
-
-function deleteStatsFile(): void {
-  try {
-    fs.unlinkSync(STATS_FILE);
-  } catch {
-    // file may not exist yet
-  }
+async function deleteSnapshot(): Promise<void> {
+  await prisma.overviewSnapshot.deleteMany();
 }
 
 let knownProductModel = '';
@@ -23,19 +15,19 @@ beforeAll(async () => {
   knownProductModel = product.product_model;
 });
 
-afterAll(() => {
-  deleteStatsFile();
+afterAll(async () => {
+  await deleteSnapshot();
 });
 
 describe('GET/POST /api/overview/stats', () => {
-  it('returns 503 when the cache file does not exist', async () => {
-    deleteStatsFile();
+  it('returns 503 when the snapshot does not exist', async () => {
+    await deleteSnapshot();
     const agent = await authAgent('editor');
     const res = await agent.get('/api/overview/stats');
     expect(res.status).toBe(503);
   });
 
-  it('refreshes stats and writes the cache', async () => {
+  it('refreshes stats and writes the snapshot', async () => {
     const agent = await authAgent('editor');
     const res = await agent.post('/api/overview/stats');
 
@@ -49,10 +41,11 @@ describe('GET/POST /api/overview/stats', () => {
     expect(Array.isArray(res.body.out_of_inventory_products)).toBe(true);
     expect(Array.isArray(res.body.top_sales_products)).toBe(true);
     expect(res.body.top_sales_products.length).toBeGreaterThan(0);
-    expect(fs.existsSync(STATS_FILE)).toBe(true);
+    expect(await prisma.overviewSnapshot.count()).toBe(1);
+    expect(res.body.last_updated).toBeDefined();
   });
 
-  it('reads stats from cache afterwards', async () => {
+  it('reads stats from the database afterwards', async () => {
     const agent = await authAgent('editor');
     const res = await agent.get('/api/overview/stats');
     expect(res.status).toBe(200);
@@ -73,8 +66,8 @@ describe('GET /api/overview/top-sales-products', () => {
     expect(typeof first.total_sales).toBe('number');
   });
 
-  it('returns 503 when cache is missing', async () => {
-    deleteStatsFile();
+  it('returns 503 when snapshot is missing', async () => {
+    await deleteSnapshot();
     const agent = await authAgent('editor');
     const res = await agent.get('/api/overview/top-sales-products');
     expect(res.status).toBe(503);
@@ -83,7 +76,7 @@ describe('GET /api/overview/top-sales-products', () => {
 
 describe('GET /api/overview/monthly-inventory-change/:productModel', () => {
   it('returns monthly change data for a known product', async () => {
-    deleteStatsFile();
+    await deleteSnapshot();
     const editor = await authAgent('editor');
     await editor.post('/api/overview/stats');
 
@@ -96,8 +89,8 @@ describe('GET /api/overview/monthly-inventory-change/:productModel', () => {
     expect(res.body.data.current_inventory).toBeDefined();
   });
 
-  it('returns 503 when cache is missing', async () => {
-    deleteStatsFile();
+  it('returns 503 when snapshot is missing', async () => {
+    await deleteSnapshot();
     const agent = await authAgent('editor');
     const res = await agent.get(`/api/overview/monthly-inventory-change/${knownProductModel}`);
     expect(res.status).toBe(503);

@@ -8,7 +8,7 @@ import { config, getConfigDir, getCacheDir } from '@/utils/paths';
 import { logger } from '@/utils/logger';
 import { requestLogger, errorLogger } from '@/utils/loggerMiddleware';
 import { authenticateToken, authorize, checkWritePermission } from '@/utils/auth';
-import { initCacheFiles } from '@/utils/initCache';
+import { SnapshotError } from '@/services/snapshotRefresh';
 import overviewRoutes from '@/routes/overview';
 import inboundRoutes from '@/routes/inbound';
 import outboundRoutes from '@/routes/outbound';
@@ -31,9 +31,6 @@ import transactionDraftRoutes from '@/routes/transactionDrafts';
 
 export function createApp(mcpSettings: McpConfig = getMcpSettings()): Express {
   const app: Express = express();
-
-  // Initialize Cache Files
-  initCacheFiles();
 
   logger.info(`Config directory is set to: ${getConfigDir()}`);
   logger.info(`Cache directory is set to: ${getCacheDir()}`);
@@ -112,6 +109,16 @@ export function createApp(mcpSettings: McpConfig = getMcpSettings()): Express {
   // =============================================================================
   // Error Message Middleware
   // =============================================================================
+
+  app.use((err: CustomError, _req: Request, res: Response, next: NextFunction) => {
+    if (err instanceof SnapshotError) {
+      res
+        .status(err.status)
+        .json({ success: false, code: err.code, error: err.message, message: err.message });
+      return;
+    }
+    next(err);
+  });
 
   app.use(errorLogger);
 

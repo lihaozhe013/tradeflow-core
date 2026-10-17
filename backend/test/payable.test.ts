@@ -2,7 +2,6 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { prisma } from '@/prismaClient';
 import { authAgent, publicAgent } from '@/test/helpers/request';
 import { uniqueSuffix } from '@/test/helpers/assertXlsx';
-import invoiceCacheService from '@/utils/invoiceCacheService';
 
 let supplierCode = '';
 let supplierShortName = '';
@@ -10,7 +9,7 @@ let invoicedSupplierCode = '';
 let createdPaymentId = -1;
 
 beforeAll(async () => {
-  invoiceCacheService.clearAllCache();
+  await prisma.invoiceSnapshot.deleteMany({ where: { direction: 'payable' } });
 
   const supplier = await prisma.partner.findFirst({
     where: { type: 0 },
@@ -31,7 +30,7 @@ afterAll(async () => {
   if (createdPaymentId >= 0) {
     await prisma.payablePayment.delete({ where: { id: createdPaymentId } }).catch(() => undefined);
   }
-  invoiceCacheService.clearAllCache();
+  await prisma.invoiceSnapshot.deleteMany({ where: { direction: 'payable' } });
 });
 
 describe('GET /api/payable', () => {
@@ -158,11 +157,11 @@ describe('Payable details and invoiced records', () => {
 
   it('returns 404 for invoiced records before refresh', async () => {
     const agent = await authAgent('editor');
-    const res = await agent.get(`/api/payable/invoiced/UNKNOWN_CACHE_${uniqueSuffix()}`);
+    const res = await agent.get(`/api/payable/invoiced/UNKNOWN_SNAPSHOT_${uniqueSuffix()}`);
     expect(res.status).toBe(404);
   });
 
-  it('refreshes the supplier invoice cache and reads invoiced records', async () => {
+  it('refreshes the supplier invoice snapshot and reads invoiced records', async () => {
     const agent = await authAgent('editor');
     const refresh = await agent.post(`/api/payable/invoices/refresh/${invoicedSupplierCode}`);
 

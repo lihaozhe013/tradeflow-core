@@ -465,7 +465,7 @@
     "profitMargin": "총 이익률",
     "quickInbound": "빠른 입고",
     "quickOutbound": "빠른 출고",
-    "refreshData": "데이터 재분석",
+    "refreshData": "데이터 새로 고침",
     "refreshFailed": "데이터 새로고침 실패",
     "salesAmount": "판매 금액",
     "selectProduct": "제품 선택",
@@ -801,5 +801,19 @@
     "status": "상태",
     "title": "내 MCP 자격 증명",
     "tools": "사용 가능／부여된 도구"
+  },
+  "snapshot": {
+    "notReady": "데이터가 아직 생성되지 않았습니다. 데이터 새로 고침을 클릭하세요.",
+    "lastUpdated": "마지막 새로 고침: {{time}}",
+    "refreshData": "데이터 새로 고침",
+    "refreshed": "데이터를 새로 고쳤습니다",
+    "loadFailed": "데이터를 불러오지 못했습니다. 새로 고침을 시도하세요.",
+    "refreshFailed": "데이터 새로 고침에 실패했습니다. 마지막으로 저장한 결과가 유지됩니다.",
+    "refreshConflict": "데이터를 새로 고치거나 변경하는 중입니다. 잠시 후 다시 시도하세요.",
+    "invoiceTitle": "청구서 상세 - {{name}}",
+    "invoiceNumber": "청구서 번호",
+    "invoiceDate": "청구서 날짜",
+    "totalAmount": "총금액",
+    "recordCount": "기록 수"
   }
 }

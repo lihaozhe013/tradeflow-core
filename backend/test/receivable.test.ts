@@ -2,7 +2,6 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { prisma } from '@/prismaClient';
 import { authAgent, publicAgent } from '@/test/helpers/request';
 import { uniqueSuffix } from '@/test/helpers/assertXlsx';
-import invoiceCacheService from '@/utils/invoiceCacheService';
 
 let customerCode = '';
 let customerShortName = '';
@@ -10,7 +9,7 @@ let invoicedCustomerCode = '';
 let createdPaymentId = -1;
 
 beforeAll(async () => {
-  invoiceCacheService.clearAllCache();
+  await prisma.invoiceSnapshot.deleteMany({ where: { direction: 'receivable' } });
 
   const customer = await prisma.partner.findFirst({
     where: { type: 1 },
@@ -33,7 +32,7 @@ afterAll(async () => {
       .delete({ where: { id: createdPaymentId } })
       .catch(() => undefined);
   }
-  invoiceCacheService.clearAllCache();
+  await prisma.invoiceSnapshot.deleteMany({ where: { direction: 'receivable' } });
 });
 
 describe('GET /api/receivable', () => {
@@ -162,11 +161,11 @@ describe('Receivable details and invoiced records', () => {
 
   it('returns 404 for invoiced records before refresh', async () => {
     const agent = await authAgent('editor');
-    const res = await agent.get(`/api/receivable/invoiced/UNKNOWN_CACHE_${uniqueSuffix()}`);
+    const res = await agent.get(`/api/receivable/invoiced/UNKNOWN_SNAPSHOT_${uniqueSuffix()}`);
     expect(res.status).toBe(404);
   });
 
-  it('refreshes the invoice cache and reads invoiced records', async () => {
+  it('refreshes the invoice snapshot and reads invoiced records', async () => {
     const agent = await authAgent('editor');
     const refresh = await agent.post(`/api/receivable/invoices/refresh/${invoicedCustomerCode}`);
 

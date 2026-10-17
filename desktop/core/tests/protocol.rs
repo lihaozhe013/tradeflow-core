@@ -29,7 +29,7 @@ async fn rust_client_and_stdio_bridge_interoperate_with_typescript_server() {
             .stdout(Stdio::piped())
             .stderr(Stdio::inherit())
             .spawn()
-            .expect("Bun 1.4.2 is required for protocol interoperability tests"),
+            .expect("Bun is required for protocol interoperability tests"),
     );
     let mut line = String::new();
     BufReader::new(fixture.0.stdout.take().unwrap())

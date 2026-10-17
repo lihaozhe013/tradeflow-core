@@ -13,8 +13,8 @@ instructions for OpenCode and WorkBuddy without requiring the desktop assistant.
 
 ## Setup
 
-Requires Bun 1.4.2, Node.js 26+, `uv`, and PostgreSQL. Copy `config-example/` into the matching
-ignored runtime locations and set local database credentials. `build-config/` supplies build inputs.
+Requires Bun, Node.js 26+, `uv`, and PostgreSQL. Copy `config-example/` into the matching ignored
+runtime locations and set local database credentials. `build-config/` supplies build inputs.
 
 ```bash
 bun run install:all

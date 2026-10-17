@@ -192,16 +192,35 @@ test('receivables support filtering, payment create/edit/delete, details, and in
     await dialog.getByRole('button', { name: 'View Invoiced Details' }).click();
     const invoiceDialog = page.getByRole('dialog').last();
     await expect(invoiceDialog.getByText('Invoiced Details', { exact: false })).toBeVisible();
+    await expect(
+      invoiceDialog.getByText('Data has not been generated.', { exact: false })
+    ).toBeVisible();
     const refreshInvoiceResponse = page.waitForResponse(
       (candidate) =>
         candidate.url().includes(`/api/receivable/invoices/refresh/${fixture.customer.code}`) &&
         candidate.request().method() === 'POST'
     );
-    await invoiceDialog.getByRole('button', { name: 'Refresh Cache' }).click();
+    await invoiceDialog.getByRole('button', { name: 'Refresh Data' }).click();
     expect((await refreshInvoiceResponse).ok()).toBeTruthy();
     await expect(
       invoiceDialog.getByRole('row').filter({ hasText: fixture.invoiceNumber })
     ).toBeVisible();
+    const savedRefreshTime = await invoiceDialog
+      .getByText('Last refreshed:', { exact: false })
+      .textContent();
+    const refreshUrl = `**/api/receivable/invoices/refresh/${fixture.customer.code}`;
+    await page.route(refreshUrl, (route) =>
+      route.fulfill({ status: 500, contentType: 'application/json', body: '{}' })
+    );
+    await invoiceDialog.getByRole('button', { name: 'Refresh Data' }).click();
+    await expect(invoiceDialog.locator('.ant-alert-error')).toBeVisible();
+    await expect(
+      invoiceDialog.getByRole('row').filter({ hasText: fixture.invoiceNumber })
+    ).toBeVisible();
+    await expect(invoiceDialog.getByText('Last refreshed:', { exact: false })).toHaveText(
+      savedRefreshTime!
+    );
+    await page.unroute(refreshUrl);
     await invoiceDialog.getByRole('button', { name: 'Close' }).click();
     await dialog.first().getByRole('button', { name: 'Close' }).click();
 
@@ -250,7 +269,7 @@ test('payables support payment, supplier details, invoice listing, refresh, and 
         candidate.url().includes(`/api/payable/invoices/refresh/${fixture.supplier.code}`) &&
         candidate.request().method() === 'POST'
     );
-    await invoiceDialog.getByRole('button', { name: 'Refresh Cache' }).click();
+    await invoiceDialog.getByRole('button', { name: 'Refresh Data' }).click();
     expect((await refreshInvoiceResponse).ok()).toBeTruthy();
     await expect(
       invoiceDialog.getByRole('row').filter({ hasText: fixture.invoiceNumber })
@@ -313,7 +332,10 @@ test('payables support payment, supplier details, invoice listing, refresh, and 
 test.describe('mobile receivable workflow', () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
-  test('supports payment create, detail, edit, and delete from cards', async ({ page, records }) => {
+  test('supports payment create, detail, edit, and delete from cards', async ({
+    page,
+    records
+  }) => {
     const remark = uniqueId('E2E-MOBILE-PAYMENT');
 
     try {
@@ -366,9 +388,7 @@ test.describe('mobile receivable workflow', () => {
         .filter({ hasText: fixture.customer.short_name });
       await customerCard.getByRole('button', { name: 'Details' }).click();
       detailsDialog = page.getByRole('dialog').first();
-      paymentCard = detailsDialog
-        .locator('.responsive-record-card')
-        .filter({ hasText: remark });
+      paymentCard = detailsDialog.locator('.responsive-record-card').filter({ hasText: remark });
       await expect(paymentCard).toContainText('$15.00');
       await paymentCard
         .locator('button')

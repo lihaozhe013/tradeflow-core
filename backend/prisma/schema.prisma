@@ -75,17 +75,37 @@ model InventoryLedger {
 }
 
 model Partner {
-  code            String           @unique
-  short_name      String           @id
-  full_name       String?
-  address         String?
-  contact_person  String?
-  contact_phone   String?
-  type            Int?
-  inboundRecords  InboundRecord[]
-  outboundRecords OutboundRecord[]
+  code             String            @unique
+  short_name       String            @id
+  full_name        String?
+  address          String?
+  contact_person   String?
+  contact_phone    String?
+  type             Int?
+  inboundRecords   InboundRecord[]
+  outboundRecords  OutboundRecord[]
+  invoiceSnapshots InvoiceSnapshot[]
 
   @@map("partners")
+}
+
+model OverviewSnapshot {
+  id           String   @id
+  data         Json
+  last_updated DateTime
+
+  @@map("overview_snapshots")
+}
+
+model InvoiceSnapshot {
+  direction    String
+  partner_code String
+  partner      Partner  @relation(fields: [partner_code], references: [code], onUpdate: Cascade, onDelete: Cascade)
+  data         Json
+  last_updated DateTime
+
+  @@id([direction, partner_code])
+  @@map("invoice_snapshots")
 }
 
 model Product {

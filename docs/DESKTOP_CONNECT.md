@@ -169,8 +169,9 @@ profiles and the stdio executable are unavailable; that is outside this release'
 
 ## Development and test packages
 
-Use Bun 1.4.2 and Node 26+, plus stable Rust with rustfmt/clippy. Install workspace dependencies
-from the root. Native Tauri builds need each platform's standard compiler and WebView dependencies.
+Use the locally installed Bun and Node 26+, plus stable Rust with rustfmt/clippy. Install workspace
+dependencies from the root. Native Tauri builds need each platform's standard compiler and WebView
+dependencies.
 
 ```sh
 bun install
@@ -204,9 +205,9 @@ other GitHub release and tag in the repository. The release job runs only after 
 native builds succeed. Runs are serialized; an older build skips publishing if the source branch has
 advanced. Installer artifacts attached to Actions runs are retained for seven days.
 
-The workflow uses Bun 1.4.2 for workspace installs, Node 26 for desktop build scripts, and GitHub
-Actions with the Node 24 action runtime. Windows x64 and ARM64 use the installed Visual Studio
-Developer environment, with ARM64 tools selected for the companion executable.
+The workflow uses the current stable Bun for workspace installs, Node 26 for desktop build scripts,
+and GitHub Actions with the Node 24 action runtime. Windows x64 and ARM64 use the installed Visual
+Studio Developer environment, with ARM64 tools selected for the companion executable.
 
 The desktop icon source is `desktop/src/assets/connect.svg`. Regenerate native icons with
 `bun run --cwd desktop tauri icon src/assets/connect.svg --output <temporary-directory>` and copy

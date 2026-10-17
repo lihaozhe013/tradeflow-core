@@ -73,7 +73,7 @@ export function truncateAll(): Promise<number> {
   return prisma.$executeRawUnsafe(`
     TRUNCATE TABLE "users", "partners", "products", "inbound_records", "outbound_records",
       "inventory", "inventory_ledger", "product_prices", "receivable_payments",
-      "payable_payments", "system_logs" RESTART IDENTITY CASCADE
+      "payable_payments", "system_logs", "overview_snapshots", "invoice_snapshots" RESTART IDENTITY CASCADE
   `);
 }
 

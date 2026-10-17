@@ -2,7 +2,8 @@ import express, { type Router, type Request, type Response } from 'express';
 import { prisma } from '@/prismaClient';
 import type { Prisma } from '@/prisma/client';
 import decimalCalc from '@/utils/decimalCalculator';
-import invoiceCacheService from '@/utils/invoiceCacheService';
+import { getInvoiceSnapshot, refreshInvoiceSnapshot } from '@/services/invoiceSnapshotService';
+import { SnapshotError } from '@/services/snapshotRefresh';
 import { listAccountBalances } from '@/services/readService';
 
 const router: Router = express.Router();
@@ -235,54 +236,43 @@ router.get('/uninvoiced/:supplier_code', async (req: Request, res: Response): Pr
   });
 });
 
-/**
- * GET /api/payable/invoiced/:supplier_code
- * Get invoiced records grouped by invoice_number (from cache)
- */
-router.get('/invoiced/:supplier_code', (req: Request, res: Response): void => {
-  const supplier_code = req.params['supplier_code'] as string;
-  const { page = 1, limit = 10 } = req.query;
-
-  const cachedRecords = invoiceCacheService.getCachedInvoicedRecords(supplier_code);
-
-  if (!cachedRecords) {
-    res.status(404).json({
-      error: 'No cached data found. Please refresh the cache first.',
-      message: 'Cache not initialized'
-    });
-    return;
+router.get('/invoiced/:supplier_code', async (req: Request, res: Response): Promise<void> => {
+  const partnerCode = req.params['supplier_code'] as string;
+  const page = req.query['page'] ?? '1';
+  const limit = req.query['limit'] ?? '10';
+  if (
+    typeof page !== 'string' ||
+    typeof limit !== 'string' ||
+    !/^[1-9]\d*$/.test(page) ||
+    !/^[1-9]\d*$/.test(limit) ||
+    !Number.isSafeInteger(Number(page)) ||
+    !Number.isSafeInteger(Number(limit)) ||
+    !Number.isSafeInteger(Number(page) * Number(limit))
+  ) {
+    throw new SnapshotError(400, 'INVALID_PAGINATION', 'Page and limit must be positive integers.');
   }
-
+  const snapshot = await getInvoiceSnapshot('payable', partnerCode);
+  if (!snapshot) {
+    throw new SnapshotError(404, 'SNAPSHOT_NOT_READY', 'Data not generated, please refresh first.');
+  }
   const offset = (Number(page) - 1) * Number(limit);
-  const paginatedRecords = cachedRecords.slice(offset, offset + Number(limit));
-  const lastUpdated = invoiceCacheService.getLastUpdateTime(supplier_code);
-
   res.json({
-    data: paginatedRecords,
-    total: cachedRecords.length,
+    data: snapshot.data.slice(offset, offset + Number(limit)),
+    total: snapshot.data.length,
     page: Number(page),
     limit: Number(limit),
-    last_updated: lastUpdated
+    last_updated: snapshot.last_updated
   });
 });
 
-/**
- * POST /api/payable/invoices/refresh/:supplier_code
- * Refresh invoice cache for a supplier
- */
 router.post(
   '/invoices/refresh/:supplier_code',
   async (req: Request, res: Response): Promise<void> => {
-    const supplier_code = req.params['supplier_code'] as string;
-
-    const invoicedRecords = await invoiceCacheService.refreshSupplierCache(supplier_code);
-    const lastUpdated = invoiceCacheService.getLastUpdateTime(supplier_code);
-
+    const snapshot = await refreshInvoiceSnapshot('payable', req.params['supplier_code'] as string);
     res.json({
-      message: 'Invoice cache refreshed successfully',
-      total: invoicedRecords.length,
-      last_updated: lastUpdated,
-      data: invoicedRecords
+      message: 'Invoice data refreshed successfully',
+      total: snapshot.data.length,
+      ...snapshot
     });
   }
 );

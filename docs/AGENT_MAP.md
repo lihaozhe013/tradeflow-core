@@ -24,6 +24,9 @@ Avoid maintaining route inventories or copied data flows here.
   either transaction path must account for the inventory ledger and the full recalculation path.
 - `backend/utils/paths.ts` resolves runtime configuration and cache locations. Local `config/` and
   `cache/` contents are ignored; `config-example/` is the tracked template.
+- Overview and invoice summaries use manually refreshed database snapshots in `backend/services/`.
+  See [Database snapshots](DATABASE_SNAPSHOTS.md) for upgrade and legacy file cleanup. The cache
+  directory still stores the JWT signing secret.
 - The root test scripts use `backend/test-config/config.yaml` and require its database name to be
   `tradeflow_e2e`. `scripts/init_postgres.sql` drops the default `tradeflow` database; never use it
   for test setup. `bun run test:setup` prepares the isolated test database.

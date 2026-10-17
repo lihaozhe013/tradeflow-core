@@ -2,7 +2,7 @@ import type { Request, Response, NextFunction } from 'express';
 import { prisma } from '@/prismaClient';
 
 /**
- * Paths that should not be logged (e.g., manual cache refreshes)
+ * Paths that should not be logged (e.g., manual snapshot refreshes)
  */
 const IGNORED_PATHS = [
   '/api/overview/stats',
@@ -33,7 +33,7 @@ function shouldSkipLogging(req: Request): boolean {
   // Check exact matches
   if (IGNORED_PATHS.includes(req.path)) return true;
 
-  // Check for refresh patterns (common in cache operations)
+  // Check for refresh patterns (common in snapshot operations)
   if (req.originalUrl.includes('/refresh/')) return true;
 
   return false;

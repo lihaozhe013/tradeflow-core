@@ -68,7 +68,7 @@ agent.
 All list tools default to 20 rows per page and allow at most 100. Dates use `YYYY-MM-DD`. Results
 include the validated query parameters, pagination information, a query timestamp, and the
 configured currency symbol. Analysis reads the same FIFO cost calculation as the existing analysis
-API. It does not refresh overview or invoice caches or recalculate inventory.
+API. It does not refresh overview or invoice snapshots or recalculate inventory.
 
 The query tools omit partner contacts, phone numbers, addresses, and free-text remarks. Draft tools
 return the fields submitted within the caller's scope, including remarks and the original submitted

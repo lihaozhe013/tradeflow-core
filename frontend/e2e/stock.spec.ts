@@ -411,15 +411,15 @@ test('overview refreshes analytics, opens stock details, and exposes quick stock
   page
 }) => {
   await page.goto('/#/overview');
-  await expect(page.getByText('Total Sales', { exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Overview', exact: true })).toBeVisible();
   const monthlyCard = page.locator('.ant-card').filter({ hasText: 'Monthly Inventory Change' });
   const refreshResponse = page.waitForResponse(
     (response) =>
       response.url().endsWith('/api/overview/stats') && response.request().method() === 'POST'
   );
-  await page.getByRole('button', { name: 'Refresh Analytics' }).click();
+  await page.getByRole('button', { name: 'Refresh Data' }).click();
   expect((await refreshResponse).ok()).toBeTruthy();
-  await expect(page.getByRole('button', { name: 'Refresh Analytics' })).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'Refresh Data' })).toBeEnabled();
   await expect(monthlyCard.getByText('Current Inventory', { exact: true })).toBeVisible();
   await monthlyCard.getByRole('combobox').click();
   await page.locator('.ant-select-item-option').nth(1).click();
@@ -436,25 +436,60 @@ test('overview refreshes analytics, opens stock details, and exposes quick stock
   await expect(page).toHaveURL(/#\/outbound$/);
 });
 
-test('overview isolates a failed top-sales chart request', async ({ page }) => {
-  await page.route('**/api/**', (route) => {
-    const pathname = new URL(route.request().url()).pathname;
-    if (pathname.endsWith('/api/overview/top-sales-products')) {
-      return route.fulfill({ status: 503, contentType: 'application/json', body: '{}' });
-    }
-    return route.continue();
-  });
+test('overview keeps saved results and actions available after a failed refresh', async ({
+  page
+}) => {
+  await apiRequest(page, 'POST', '/overview/stats', {});
   await page.goto('/#/overview');
-  await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible();
-  const failedChartRequest = page.waitForResponse(
-    (response) =>
-      response.url().includes('/api/overview/top-sales-products') && response.status() === 503
+  await expect(page.getByText('Total Sales', { exact: true })).toBeVisible();
+  const savedTime = await page.getByText('Last refreshed:', { exact: false }).textContent();
+  await page.route('**/api/overview/stats', (route) =>
+    route.request().method() === 'POST'
+      ? route.fulfill({ status: 500, contentType: 'application/json', body: '{}' })
+      : route.continue()
   );
-  await page.getByRole('button', { name: 'Refresh Analytics' }).click();
-  await failedChartRequest;
-  await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible();
+  await page.getByRole('button', { name: 'Refresh Data' }).click();
   await expect(page.locator('.ant-alert-error')).toBeVisible();
+  await expect(page.getByText('Total Sales', { exact: true })).toBeVisible();
+  await expect(page.getByText('Last refreshed:', { exact: false })).toHaveText(savedTime!);
+  await expect(page.getByRole('button', { name: 'Refresh Data' })).toBeEnabled();
   await expect(page.getByRole('button', { name: 'Quick Inbound' })).toBeVisible();
+});
+
+test('overview requires an explicit refresh when no snapshot exists', async ({ page }) => {
+  const mutations: string[] = [];
+  page.on('request', (request) => {
+    if (request.method() === 'POST' && request.url().includes('/overview/'))
+      mutations.push(request.url());
+  });
+  await page.route('**/api/overview/stats', (route) =>
+    route.request().method() === 'GET'
+      ? route.fulfill({
+          status: 503,
+          contentType: 'application/json',
+          body: JSON.stringify({ code: 'SNAPSHOT_NOT_READY' })
+        })
+      : route.continue()
+  );
+  await page.goto('/#/overview');
+  await page.reload();
+  await expect(page.getByText('Data has not been generated.', { exact: false })).toBeVisible();
+  expect(mutations).toHaveLength(0);
+  await page.getByRole('button', { name: 'Refresh Data' }).click();
+  await expect(page.getByText('Total Sales', { exact: true })).toBeVisible();
+  expect(mutations).toHaveLength(1);
+  const subrequests: string[] = [];
+  page.on('request', (request) => {
+    if (/top-sales-products|monthly-inventory-change/.test(request.url()))
+      subrequests.push(request.url());
+  });
+  await page
+    .locator('.ant-card')
+    .filter({ hasText: 'Monthly Inventory Change' })
+    .getByRole('combobox')
+    .click();
+  await page.locator('.ant-select-item-option').nth(1).click();
+  expect(subrequests).toHaveLength(0);
 });
 
 test.describe('mobile inbound records', () => {
@@ -472,13 +507,19 @@ test.describe('mobile inbound records', () => {
       const firstInboundId = await createInboundFromUi(page, records, fixture, firstOrder, 8);
       await createInboundFromUi(page, records, fixture, secondOrder, 4);
 
-      await page.getByPlaceholder('Search order / invoice / receipt number').fill('E2E-MOBILE-IN-ORDER');
+      await page
+        .getByPlaceholder('Search order / invoice / receipt number')
+        .fill('E2E-MOBILE-IN-ORDER');
       await page.getByPlaceholder('Search order / invoice / receipt number').press('Enter');
       const recordsList = page.locator('.responsive-record-cards');
       await expect(recordsList.locator('.responsive-record-card')).toHaveCount(2);
 
-      let firstCard = recordsList.locator('.responsive-record-card').filter({ hasText: firstOrder });
-      await expect(firstCard.locator('.responsive-record-title')).toHaveText(fixture.product.product_model);
+      let firstCard = recordsList
+        .locator('.responsive-record-card')
+        .filter({ hasText: firstOrder });
+      await expect(firstCard.locator('.responsive-record-title')).toHaveText(
+        fixture.product.product_model
+      );
       await expect(firstCard).toContainText('8');
       await expect(firstCard).toContainText('$16');
       await expect(firstCard.getByRole('button', { name: 'Edit' })).toBeHidden();
@@ -499,7 +540,10 @@ test.describe('mobile inbound records', () => {
       await firstCard.locator('details summary').click();
 
       const invoiceNumber = uniqueId('E2E-MOBILE-BATCH-INVOICE');
-      for (const card of [firstCard, recordsList.locator('.responsive-record-card').filter({ hasText: secondOrder })]) {
+      for (const card of [
+        firstCard,
+        recordsList.locator('.responsive-record-card').filter({ hasText: secondOrder })
+      ]) {
         await card.getByRole('checkbox').check();
       }
       await page.getByRole('button', { name: /Batch Edit/ }).click();
@@ -518,7 +562,9 @@ test.describe('mobile inbound records', () => {
       await firstCard.getByRole('button', { name: 'Delete' }).click();
       await page.getByRole('button', { name: 'Confirm', exact: true }).click();
       records.forget(`/inbound/${firstInboundId}`);
-      await expect(recordsList.locator('.responsive-record-card').filter({ hasText: firstOrder })).toHaveCount(0);
+      await expect(
+        recordsList.locator('.responsive-record-card').filter({ hasText: firstOrder })
+      ).toHaveCount(0);
     } finally {
       await records.cleanup();
     }
@@ -543,7 +589,9 @@ test.describe('mobile outbound records', () => {
       await page.getByPlaceholder('Search order / invoice / receipt number').press('Enter');
       const card = page.locator('.responsive-record-card--summary');
       await expect(card).toHaveCount(1);
-      await expect(card.locator('.responsive-record-title')).toHaveText(fixture.product.product_model);
+      await expect(card.locator('.responsive-record-title')).toHaveText(
+        fixture.product.product_model
+      );
       const summary = card.locator(':scope > .ant-card-body > .responsive-record-summary');
       await expect(summary).toContainText('5');
       await expect(summary).toContainText('$15');
@@ -573,7 +621,9 @@ test.describe('mobile outbound records', () => {
   });
 });
 
-test('captures the target responsive widths without horizontal overflow', async ({ page }, testInfo) => {
+test('captures the target responsive widths without horizontal overflow', async ({
+  page
+}, testInfo) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await logInAs(page, 'editor');
 

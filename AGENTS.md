@@ -9,9 +9,9 @@ code; verify behavior in source rather than treating documentation as an API con
 - Write code comments, internal messages, documentation, and commit messages in English. Localized
   UI text belongs in the existing frontend locale resources. Add comments only for non-obvious
   constraints or behavior.
-- Use Bun 1.4.2 for workspace dependencies and scripts. Node.js 26+ is required by development and
-  build tools; production runs on Bun. Update the owning `package.json` and root `bun.lock`
-  together. Do not use npm, pnpm, or Yarn for repository dependencies.
+- Use the locally installed Bun for workspace dependencies and scripts. Node.js 26+ is required by
+  development and build tools; production runs on Bun. Update the owning `package.json` and root
+  `bun.lock` together. Do not use npm, pnpm, or Yarn for repository dependencies.
 - Keep browser code in `frontend/` and server/database code in `backend/`. The frontend must not
   import Node.js, Prisma, filesystem, or backend modules. Use the existing request, auth, config,
   routing, and i18n boundaries.

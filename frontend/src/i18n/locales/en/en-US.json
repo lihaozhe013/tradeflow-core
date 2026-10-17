@@ -467,7 +467,7 @@
     "profitMargin": "Profit Margin",
     "quickInbound": "Quick Inbound",
     "quickOutbound": "Quick Outbound",
-    "refreshData": "Refresh Analytics",
+    "refreshData": "Refresh Data",
     "refreshFailed": "Failed to refresh data",
     "salesAmount": "Sales Amount",
     "selectProduct": "Select Product",
@@ -975,5 +975,19 @@
     "cancel": "Cancel",
     "result": "Revoked {{succeeded}} of {{total}} credentials",
     "retry": "Retry failed items"
+  },
+  "snapshot": {
+    "notReady": "Data has not been generated. Click Refresh Data to generate it.",
+    "lastUpdated": "Last refreshed: {{time}}",
+    "refreshData": "Refresh Data",
+    "refreshed": "Data refreshed successfully",
+    "loadFailed": "Failed to load data. Please try refreshing.",
+    "refreshFailed": "Failed to refresh data. The last saved result has been preserved.",
+    "refreshConflict": "Data is being refreshed or changed. Please retry shortly.",
+    "invoiceTitle": "Invoiced Details - {{name}}",
+    "invoiceNumber": "Invoice Number",
+    "invoiceDate": "Invoice Date",
+    "totalAmount": "Total Amount",
+    "recordCount": "Record Count"
   }
 }

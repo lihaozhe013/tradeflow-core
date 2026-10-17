@@ -474,7 +474,7 @@
     "profitMargin": "利润率",
     "quickInbound": "快速入库",
     "quickOutbound": "快速出库",
-    "refreshData": "重新分析数据",
+    "refreshData": "刷新数据",
     "refreshFailed": "刷新数据失败",
     "requestFailed": "请求失败",
     "salesAmount": "销售额",
@@ -975,5 +975,19 @@
     "cancel": "取消",
     "result": "已撤销 {{succeeded}}／{{total}} 个凭证",
     "retry": "重试失败项"
+  },
+  "snapshot": {
+    "notReady": "尚未生成数据，请点击刷新数据。",
+    "lastUpdated": "上次刷新时间：{{time}}",
+    "refreshData": "刷新数据",
+    "refreshed": "数据刷新成功",
+    "loadFailed": "数据加载失败，请尝试刷新。",
+    "refreshFailed": "数据刷新失败，已保留上次成功的结果。",
+    "refreshConflict": "数据正在刷新或已发生变化，请稍后重试。",
+    "invoiceTitle": "已开票明细 - {{name}}",
+    "invoiceNumber": "发票号码",
+    "invoiceDate": "开票日期",
+    "totalAmount": "总金额",
+    "recordCount": "记录数"
   }
 }

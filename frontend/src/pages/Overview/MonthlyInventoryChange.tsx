@@ -1,6 +1,5 @@
-import { useState, useCallback, useEffect } from 'react';
-import { useMemo } from 'react';
-import { Card, Select, Statistic, Row, Col, Spin, Alert, Typography } from 'antd';
+import { useState } from 'react';
+import { Card, Select, Statistic, Row, Col, Typography } from 'antd';
 import {
   ArrowUpOutlined,
   ArrowDownOutlined,
@@ -8,97 +7,26 @@ import {
   StockOutlined
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
-import { useSimpleApi, useSimpleApiData } from '@/hooks/useSimpleApi';
+import type { MonthlyInventoryChangeData } from './types';
 
 const { Text } = Typography;
 const { Option } = Select;
 
-/**
- * 本月库存变化量组件
- * 用户可以选择产品，查看该产品本月的库存变化信息
- */
-type MonthlyInventoryChangeData = {
-  product_model: string;
-  month_start_inventory: number;
-  current_inventory: number;
-  monthly_change: number;
-  query_date: string;
-};
-
-type MonthlyInventoryChangeResponse = {
-  success: boolean;
-  data?: MonthlyInventoryChangeData;
-  message?: string;
-  error?: string;
-};
-
-const MonthlyInventoryChange = () => {
+const MonthlyInventoryChange = ({
+  changes
+}: {
+  changes: Record<string, MonthlyInventoryChangeData>;
+}) => {
   const { t } = useTranslation();
   const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
-  const [inventoryData, setInventoryData] = useState<MonthlyInventoryChangeData | null>(null);
-  const [inventoryLoading, setInventoryLoading] = useState(false);
-  const [inventoryError, setInventoryError] = useState<string | null>(null);
+  const products = Object.keys(changes);
+  const resolvedProduct =
+    selectedProduct && Object.hasOwn(changes, selectedProduct)
+      ? selectedProduct
+      : (products[0] ?? null);
+  const inventoryData = resolvedProduct ? changes[resolvedProduct] : null;
 
-  const { get } = useSimpleApi();
-
-  // 使用useSimpleApiData获取产品列表
-  type Product = { product_model: string };
-  type ProductsResponse = { data?: Product[] };
-  const {
-    data: productsResponse,
-    loading: productsLoading,
-    error: productsError
-  } = useSimpleApiData<ProductsResponse>('/products');
-
-  const products = useMemo(() => productsResponse?.data ?? [], [productsResponse]);
-
-  // 当产品列表加载完成时，自动选择第一个产品
-  useEffect(() => {
-    if (products.length > 0 && !selectedProduct) {
-      setSelectedProduct(products[0]?.product_model ?? null);
-    }
-  }, [products, selectedProduct]);
-
-  // 获取月度库存变化数据
-  const fetchMonthlyInventoryChange = useCallback(
-    async (productModel: string) => {
-      try {
-        setInventoryLoading(true);
-        setInventoryError(null);
-
-        const result = await get<MonthlyInventoryChangeResponse>(
-          `/overview/monthly-inventory-change/${encodeURIComponent(productModel)}`
-        );
-
-        if (result.success && result.data) {
-          setInventoryData(result.data);
-        } else {
-          setInventoryData(null);
-          setInventoryError(result.message ?? result.error ?? t('overview.inventoryChangeFailed'));
-        }
-      } catch (err) {
-        console.error(t('overview.inventoryChangeFailed'), err);
-        setInventoryError(t('overview.inventoryChangeFailed'));
-      } finally {
-        setInventoryLoading(false);
-      }
-    },
-    [get, t]
-  );
-
-  // 当选择的产品改变时，获取库存变化数据
-  const handleProductChange = useCallback((productModel: string) => {
-    setSelectedProduct(productModel);
-  }, []);
-
-  // 当默认产品设置后，自动加载数据
-  useEffect(() => {
-    if (selectedProduct) {
-      fetchMonthlyInventoryChange(selectedProduct);
-    }
-  }, [selectedProduct, fetchMonthlyInventoryChange]);
-
-  // 计算变化趋势图标和颜色
+  // Show the direction of the saved monthly change.
   const getTrendIcon = (change: number) => {
     if (change > 0) {
       return <ArrowUpOutlined style={{ color: '#52c41a' }} />;
@@ -114,17 +42,14 @@ const MonthlyInventoryChange = () => {
     return '#666';
   };
 
-  const loading = productsLoading || inventoryLoading;
-  const error = productsError ?? inventoryError;
-
   return (
     <Card
       title={t('overview.monthlyInventoryChange')}
       variant="outlined"
       extra={
         <Select
-          value={selectedProduct}
-          onChange={handleProductChange}
+          value={resolvedProduct}
+          onChange={setSelectedProduct}
           style={{ width: 200 }}
           placeholder={t('overview.selectProduct')}
           showSearch
@@ -135,29 +60,14 @@ const MonthlyInventoryChange = () => {
           }
         >
           {products.map((product) => (
-            <Option key={product.product_model} value={product.product_model}>
-              {product.product_model}
+            <Option key={product} value={product}>
+              {product}
             </Option>
           ))}
         </Select>
       }
     >
-      {loading ? (
-        <div style={{ textAlign: 'center', padding: '20px 0' }}>
-          <Spin size="large" />
-          <div style={{ marginTop: '8px' }}>
-            <Text type="secondary">{t('overview.loadingInventory')}</Text>
-          </div>
-        </div>
-      ) : error ? (
-        <Alert
-          title={t('overview.dataLoadFailed')}
-          description={error}
-          type="error"
-          showIcon
-          style={{ margin: '10px 0' }}
-        />
-      ) : inventoryData ? (
+      {inventoryData ? (
         <Row gutter={[8, 8]}>
           <Col span={24}>
             <Statistic

@@ -1,4 +1,4 @@
-FROM oven/bun:1.4.2-slim AS dependencies
+FROM oven/bun:slim AS dependencies
 
 WORKDIR /workspace
 
@@ -8,7 +8,7 @@ COPY frontend/package.json frontend/package.json
 
 RUN bun install --frozen-lockfile --production --omit=peer --filter backend
 
-FROM oven/bun:1.4.2-slim
+FROM oven/bun:slim
 
 RUN apt-get update -y && apt-get install -y openssl ca-certificates && rm -rf /var/lib/apt/lists/*
 
