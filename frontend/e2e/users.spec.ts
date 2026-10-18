@@ -1,5 +1,11 @@
 import { expect, test } from './fixtures';
-import { logInAs, paginationButton, uniqueId, useEnglish } from './support';
+import {
+  expectDesktopOrNarrowLayout,
+  logInAs,
+  paginationButton,
+  uniqueId,
+  useEnglish
+} from './support';
 
 test.beforeEach(async ({ page }) => useEnglish(page));
 
@@ -16,7 +22,21 @@ test('user administration creates, edits, disables, resets, authenticates, and d
 
   try {
     await page.goto('/#/users');
-    await expect(page.getByText('User List', { exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'User Management' })).toBeVisible();
+    const currentUserRow = page.getByRole('row').filter({ hasText: 'test_superuser' });
+    await expect(currentUserRow.getByText('Current account', { exact: true })).toBeVisible();
+    await expect(currentUserRow.getByRole('button', { name: 'Edit' })).toHaveCount(0);
+    await expect(currentUserRow.getByRole('button', { name: 'Reset Password' })).toHaveCount(0);
+    await expect(currentUserRow.getByRole('button', { name: 'Delete' })).toHaveCount(0);
+    await expect(currentUserRow.getByRole('link', { name: 'Go to profile settings' })).toHaveAttribute(
+      'href',
+      '#/profile'
+    );
+    for (const width of [375, 768, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      await expectDesktopOrNarrowLayout(page);
+    }
+    await page.setViewportSize({ width: 1280, height: 800 });
     await page.getByRole('button', { name: 'Create User' }).click();
     let dialog = page.getByRole('dialog');
     await dialog.getByLabel('Username').fill(username);
@@ -36,7 +56,7 @@ test('user administration creates, edits, disables, resets, authenticates, and d
     records.track(`/users/${encodeURIComponent(username)}`);
 
     let row = page.getByRole('row').filter({ hasText: username });
-    await expect(row).toContainText('reader');
+    await expect(row).toContainText('Reader');
     await row.getByRole('button', { name: 'Edit' }).click();
     dialog = page.getByRole('dialog');
     await dialog.getByRole('combobox').click();
@@ -49,7 +69,7 @@ test('user administration creates, edits, disables, resets, authenticates, and d
     await dialog.getByRole('button', { name: 'Confirm', exact: true }).click();
     expect((await updateResponse).ok()).toBeTruthy();
     row = page.getByRole('row').filter({ hasText: username });
-    await expect(row).toContainText('editor');
+    await expect(row).toContainText('Editor');
     await expect(row).toContainText('No');
 
     await row.getByRole('button', { name: 'Edit' }).click();
@@ -71,7 +91,7 @@ test('user administration creates, edits, disables, resets, authenticates, and d
     expect((await resetResponse).ok()).toBeTruthy();
 
     await page.getByRole('button', { name: /Test superuser/i }).click();
-    await page.getByText('Log Out', { exact: true }).click();
+    await page.getByRole('menuitem', { name: /Log Out/ }).click();
     await expect(page).toHaveURL(/#\/login$/);
     await page.getByPlaceholder('Username').fill(username);
     await page.getByPlaceholder('Password').fill(resetPassword);
@@ -119,8 +139,8 @@ test('profile and password self-service validate inputs and persist changes', as
     await page.getByPlaceholder('Password').fill(initialPassword);
     await page.getByRole('button', { name: 'Log In' }).click();
     await expect(page.getByRole('button', { name: new RegExp(username, 'i') })).toBeVisible();
-    await page.goto('/#/users');
-    await expect(page.getByText('My Profile', { exact: true })).toBeVisible();
+    await page.goto('/#/profile');
+    await expect(page.getByRole('heading', { name: 'Profile Settings' })).toBeVisible();
     const displayNameInput = page.getByLabel('Display Name');
     const updatedName = uniqueId('E2E Name');
     await displayNameInput.fill(updatedName);
@@ -130,6 +150,7 @@ test('profile and password self-service validate inputs and persist changes', as
     );
     await page.getByRole('button', { name: 'Save', exact: true }).click();
     expect((await profileResponse).ok()).toBeTruthy();
+    await expect(page.getByRole('button', { name: new RegExp(updatedName, 'i') })).toBeVisible();
     await page.reload();
     await expect(page.getByLabel('Display Name')).toHaveValue(updatedName);
 
@@ -162,7 +183,7 @@ test('profile and password self-service validate inputs and persist changes', as
     await page.getByPlaceholder('Password').fill(updatedPassword);
     await page.getByRole('button', { name: 'Log In' }).click();
     await expect(page.getByRole('button', { name: new RegExp(updatedName, 'i') })).toBeVisible();
-    await page.goto('/#/users');
+    await page.goto('/#/profile');
     await expect(page.getByLabel('Display Name')).toHaveValue(updatedName);
   } finally {
     await records.cleanup();

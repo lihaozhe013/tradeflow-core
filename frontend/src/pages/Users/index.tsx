@@ -1,13 +1,27 @@
 import ResponsiveTable from '@/components/ResponsiveTable';
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { Card, Form, Input, Button, Modal, Select, Tag, Space, Popconfirm, message, Switch } from 'antd';
+import {
+  Alert,
+  Card,
+  Form,
+  Input,
+  Button,
+  Modal,
+  Select,
+  Tag,
+  Space,
+  Popconfirm,
+  message,
+  Switch,
+  Typography
+} from 'antd';
 import { EditOutlined, DeleteOutlined, KeyOutlined, PlusOutlined } from '@ant-design/icons';
 import type { ColumnsType, TablePaginationConfig } from 'antd/es/table';
 import { useTranslation } from 'react-i18next';
 import { useApi } from '@/hooks/useApi';
 import { usePermissions } from '@/auth/usePermissions';
 import { useAuth } from '@/auth/useAuth';
-import { tokenManager } from '@/auth/auth';
+import { Link } from 'react-router-dom';
 
 interface UserData {
   username: string;
@@ -34,11 +48,6 @@ interface UpdateUserPayload {
   enabled?: boolean;
 }
 
-interface ChangePasswordResponse {
-  success: boolean;
-  token?: string;
-}
-
 function Users(): React.ReactElement {
   const { t } = useTranslation();
   const { isSuperuser } = usePermissions();
@@ -47,13 +56,9 @@ function Users(): React.ReactElement {
   const getRef = useRef(get);
   getRef.current = get;
 
-  const [displayName, setDisplayName] = useState((currentUser?.display_name as string) || '');
-  const [oldPassword, setOldPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-
   const [userData, setUserData] = useState<UserData[]>([]);
   const [total, setTotal] = useState(0);
+  const [listError, setListError] = useState(false);
   const [pagination, setPagination] = useState<TablePaginationConfig>({
     current: 1,
     pageSize: 20,
@@ -81,64 +86,42 @@ function Users(): React.ReactElement {
   const [createEnabled, setCreateEnabled] = useState(true);
 
   const fetchUsers = useCallback(async (page = 1, pageSize = 20) => {
-    const response = await getRef.current<UsersResponse>(
-      `/users?page=${page}&pageSize=${pageSize}`
-    );
+    setListError(false);
+    try {
+      const response = await getRef.current<UsersResponse>(
+        `/users?page=${page}&pageSize=${pageSize}`
+      );
 
-    if (response?.success) {
-      setUserData(response.data.items);
-      setTotal(response.data.total);
-      setPagination((prev) => ({
-        ...prev,
-        current: page,
-        pageSize,
-        total: response.data.total
-      }));
+      if (response?.success) {
+        setUserData(response.data.items);
+        setTotal(response.data.total);
+        setPagination((prev) => ({
+          ...prev,
+          current: page,
+          pageSize,
+          total: response.data.total
+        }));
+      } else {
+        setListError(true);
+      }
+    } catch (error) {
+      setListError(true);
+      throw error;
     }
   }, []);
 
   useEffect(() => {
     if (isSuperuser()) {
-      fetchUsers(1, 20);
+      void fetchUsers(1, 20).catch(() => undefined);
     }
   }, []);
 
-  const handleSaveDisplayName = async () => {
-    await put('/users/me', { display_name: displayName });
-    message.success(t('users.saveSuccess'));
-  };
-
-  const handleChangePassword = async () => {
-    if (newPassword !== confirmPassword) {
-      message.error(t('users.passwordMismatch'));
-      return;
-    }
-
-    if (newPassword.length < 6) {
-      message.error(t('users.passwordTooShort'));
-      return;
-    }
-
-    const response = await put<ChangePasswordResponse>('/users/me/password', {
-      oldPassword,
-      newPassword
-    });
-
-    if (response?.token) {
-      tokenManager.setToken(response.token);
-    }
-
-    message.success(t('users.passwordChanged'));
-    setOldPassword('');
-    setNewPassword('');
-    setConfirmPassword('');
-  };
-
   const handleTableChange = (pag: TablePaginationConfig) => {
-    fetchUsers(pag.current || 1, pag.pageSize || 20);
+    void fetchUsers(pag.current || 1, pag.pageSize || 20).catch(() => undefined);
   };
 
   const handleEdit = (user: UserData) => {
+    if (!isSuperuser() || user.username === currentUser?.username) return;
     setEditingUser(user);
     setEditDisplayName(user.display_name || '');
     setEditRole(user.role);
@@ -147,7 +130,7 @@ function Users(): React.ReactElement {
   };
 
   const handleEditSave = async () => {
-    if (!editingUser) return;
+    if (!isSuperuser() || !editingUser || editingUser.username === currentUser?.username) return;
 
     const payload: UpdateUserPayload = {
       display_name: editDisplayName,
@@ -159,17 +142,18 @@ function Users(): React.ReactElement {
 
     message.success(t('users.updateSuccess'));
     setEditModalOpen(false);
-    fetchUsers(pagination.current || 1, pagination.pageSize || 20);
+    await fetchUsers(pagination.current || 1, pagination.pageSize || 20);
   };
 
   const handleResetPassword = (user: UserData) => {
+    if (!isSuperuser() || user.username === currentUser?.username) return;
     setResettingUser(user);
     setResetPassword('');
     setResetModalOpen(true);
   };
 
   const handleResetPasswordConfirm = async () => {
-    if (!resettingUser) return;
+    if (!isSuperuser() || !resettingUser || resettingUser.username === currentUser?.username) return;
 
     if (!resetPassword || resetPassword.length < 6) {
       message.error(t('users.passwordTooShort'));
@@ -185,8 +169,12 @@ function Users(): React.ReactElement {
   };
 
   const handleDelete = async (username: string) => {
+    if (!isSuperuser() || username === currentUser?.username) return;
     await del(`/users/${username}`);
-    await fetchUsers(pagination.current || 1, pagination.pageSize || 20);
+    const page = pagination.current || 1;
+    const pageSize = pagination.pageSize || 20;
+    const nextPage = userData.length === 1 && page > 1 ? page - 1 : page;
+    await fetchUsers(nextPage, pageSize);
   };
 
   const handleOpenCreate = () => {
@@ -227,7 +215,7 @@ function Users(): React.ReactElement {
 
     message.success(t('users.createSuccess'));
     setCreateModalOpen(false);
-    fetchUsers(pagination.current || 1, pagination.pageSize || 20);
+    await fetchUsers(pagination.current || 1, pagination.pageSize || 20);
   };
 
   const roleTag = (role: string) => {
@@ -236,7 +224,7 @@ function Users(): React.ReactElement {
       editor: 'green',
       reader: 'blue'
     };
-    return <Tag color={colorMap[role] || 'default'}>{role}</Tag>;
+    return <Tag color={colorMap[role] || 'default'}>{t(`users.${role}`)}</Tag>;
   };
 
   const columns: ColumnsType<UserData> = [
@@ -273,8 +261,14 @@ function Users(): React.ReactElement {
       title: t('users.actions'),
       key: 'actions',
       width: 200,
-      render: (_, record) => (
-        <Space>
+      render: (_, record) =>
+        record.username === currentUser?.username ? (
+          <Space wrap>
+            <Tag color="blue">{t('users.currentAccount')}</Tag>
+            <Link to="/profile">{t('users.goToProfile')}</Link>
+          </Space>
+        ) : (
+          <Space wrap>
           <Button
             type="link"
             size="small"
@@ -292,7 +286,7 @@ function Users(): React.ReactElement {
             {t('users.resetPassword')}
           </Button>
           <Popconfirm
-            title={t('users.deleteConfirm')}
+            title={t('users.deleteConfirm', { username: record.username })}
             onConfirm={() => handleDelete(record.username)}
             okText={t('common.yes')}
             cancelText={t('common.no')}
@@ -301,74 +295,52 @@ function Users(): React.ReactElement {
               {t('users.delete')}
             </Button>
           </Popconfirm>
-        </Space>
-      )
+          </Space>
+        )
     }
   ];
 
   return (
-    <Space orientation="vertical" style={{ width: '100%' }} size="middle">
-      <Card title={t('users.myProfile')}>
-        <Form layout="inline">
-          <Form.Item label={t('users.displayName')} htmlFor="profile-display-name">
-            <Input
-              id="profile-display-name"
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-              style={{ width: 200 }}
-            />
-          </Form.Item>
-          <Form.Item>
-            <Button type="primary" onClick={handleSaveDisplayName} loading={loading}>
-              {t('users.save')}
-            </Button>
-          </Form.Item>
-        </Form>
-      </Card>
+    <Space orientation="vertical" style={{ width: '100%' }} size="large">
+      <div className="users-page-header">
+        <div>
+          <Typography.Title level={2}>{t('users.adminTitle')}</Typography.Title>
+          <Typography.Paragraph type="secondary">
+            {t('users.adminDescription')}
+          </Typography.Paragraph>
+        </div>
+        <Button type="primary" icon={<PlusOutlined />} onClick={handleOpenCreate}>
+          {t('users.createUser')}
+        </Button>
+      </div>
 
-      <Card title={t('users.changePassword')}>
-        <Form layout="inline">
-          <Form.Item label={t('users.oldPassword')} htmlFor="profile-old-password">
-            <Input.Password
-              id="profile-old-password"
-              value={oldPassword}
-              onChange={(e) => setOldPassword(e.target.value)}
-              style={{ width: 200 }}
-            />
-          </Form.Item>
-          <Form.Item label={t('users.newPassword')} htmlFor="profile-new-password">
-            <Input.Password
-              id="profile-new-password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              style={{ width: 200 }}
-            />
-          </Form.Item>
-          <Form.Item label={t('users.confirmPassword')} htmlFor="profile-confirm-password">
-            <Input.Password
-              id="profile-confirm-password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              style={{ width: 200 }}
-            />
-          </Form.Item>
-          <Form.Item>
-            <Button type="primary" onClick={handleChangePassword} loading={loading}>
-              {t('users.changePasswordButton')}
-            </Button>
-          </Form.Item>
-        </Form>
-      </Card>
-
-      {isSuperuser() && (
-        <Card
-          title={t('users.userList')}
-          extra={
-            <Button type="primary" icon={<PlusOutlined />} onClick={handleOpenCreate}>
-              {t('users.createUser')}
-            </Button>
-          }
-        >
+      <Card
+        title={
+          <Space>
+            <span>{t('users.userList')}</span>
+            <Tag>{t('users.total', { count: total })}</Tag>
+          </Space>
+        }
+      >
+        {listError ? (
+          <Alert
+            type="error"
+            showIcon
+            title={t('users.loadFailed')}
+            action={
+              <Button
+                size="small"
+                onClick={() =>
+                  void fetchUsers(pagination.current || 1, pagination.pageSize || 20).catch(
+                    () => undefined
+                  )
+                }
+              >
+                {t('users.retry')}
+              </Button>
+            }
+          />
+        ) : (
           <ResponsiveTable
             columns={columns}
             dataSource={userData}
@@ -378,8 +350,8 @@ function Users(): React.ReactElement {
             loading={loading}
             size="medium"
           />
-        </Card>
-      )}
+        )}
+      </Card>
 
       <Modal
         title={t('users.createUserTitle')}
@@ -390,7 +362,7 @@ function Users(): React.ReactElement {
         cancelText={t('common.cancel')}
         confirmLoading={loading}
       >
-        <Form layout="vertical">
+        <Form layout="vertical" onFinish={() => void handleCreate()}>
           <Form.Item label={t('users.username')} htmlFor="create-username">
             <Input
               id="create-username"
@@ -446,8 +418,9 @@ function Users(): React.ReactElement {
         onCancel={() => setEditModalOpen(false)}
         okText={t('common.confirm')}
         cancelText={t('common.cancel')}
+        confirmLoading={loading}
       >
-        <Form layout="vertical">
+        <Form layout="vertical" onFinish={() => void handleEditSave()}>
           <Form.Item label={t('users.username')}>
             <Input value={editingUser?.username} disabled />
           </Form.Item>
@@ -478,8 +451,9 @@ function Users(): React.ReactElement {
         onCancel={() => setResetModalOpen(false)}
         okText={t('common.confirm')}
         cancelText={t('common.cancel')}
+        confirmLoading={loading}
       >
-        <Form layout="vertical">
+        <Form layout="vertical" onFinish={() => void handleResetPasswordConfirm()}>
           <Form.Item label={t('users.username')}>
             <Input value={resettingUser?.username} disabled />
           </Form.Item>

@@ -35,7 +35,7 @@ test('loads every application page for an editor and supports logout', async ({ 
     ['analysis', 'Data Analysis'],
     ['export', 'Base Info'],
     ['audit', 'Audit Log'],
-    ['users', 'My Profile'],
+    ['profile', 'Profile Settings'],
     ['about', 'About Us']
   ] as const;
 
@@ -53,6 +53,7 @@ test('loads every application page for an editor and supports logout', async ({ 
 });
 
 test('enforces reader, editor, and superuser page and action access', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
   await logInAs(page, 'reader');
   await page.goto('/#/');
   await expect(page).toHaveURL(/#\/inbound$/);
@@ -62,28 +63,38 @@ test('enforces reader, editor, and superuser page and action access', async ({ p
   await page.goto('/#/partners');
   await expect(page.getByRole('heading', { name: 'Partners' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Add Partner' })).toHaveCount(0);
+  await page.getByRole('menuitem', { name: 'Management' }).click();
+  await expect(page.locator('.app-sidebar').getByRole('menuitem', { name: 'User Management' })).toHaveCount(0);
+  await page.getByRole('button', { name: /Test reader/i }).click();
+  await page.getByRole('menuitem', { name: 'Profile Settings' }).click();
+  await expect(page).toHaveURL(/#\/profile$/);
+  await expect(page.getByRole('heading', { name: 'Profile Settings' })).toBeVisible();
   await page.goto('/#/users');
-  await expect(page.getByText('My Profile', { exact: true })).toBeVisible();
-  await expect(page.getByText('User List', { exact: true })).toHaveCount(0);
+  await expect(page.getByText('Insufficient Permissions', { exact: true })).toBeVisible();
 
   await page.goto('/#/login');
   await logInAs(page, 'editor');
   await expect(page.getByRole('menuitem', { name: 'Overview' })).toBeVisible();
   await page.goto('/#/partners');
   await expect(page.getByRole('button', { name: 'Add Partner' })).toBeVisible();
-  await expect(page.getByText('User List', { exact: true })).toHaveCount(0);
+  await page.getByRole('menuitem', { name: 'Management' }).click();
+  await expect(page.locator('.app-sidebar').getByRole('menuitem', { name: 'User Management' })).toHaveCount(0);
+  await page.goto('/#/users');
+  await expect(page.getByText('Insufficient Permissions', { exact: true })).toBeVisible();
 
   await page.goto('/#/login');
   await logInAs(page, 'superuser');
   await expect(page.getByRole('menuitem', { name: 'Overview' })).toBeVisible();
+  await page.getByRole('menuitem', { name: 'Management' }).click();
+  await expect(page.locator('.app-sidebar').getByRole('menuitem', { name: 'User Management' })).toBeVisible();
   await page.goto('/#/users');
-  await expect(page.getByText('User List', { exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'User Management' })).toBeVisible();
   await page.goto('/#/audit');
   await expect(page.getByPlaceholder('Search by username')).toBeVisible();
 });
 
 test.describe('narrow viewport', () => {
-  test.use({ viewport: { width: 390, height: 844 } });
+  test.use({ viewport: { width: 375, height: 844 } });
 
   test('keeps navigation, primary forms, and dense page content usable', async ({ page }) => {
     await useEnglish(page);
@@ -103,7 +114,7 @@ test.describe('narrow viewport', () => {
       ['analysis', 'Data Analysis'],
       ['export', 'Base Info'],
       ['audit', 'Audit Log'],
-      ['users', 'My Profile']
+      ['profile', 'Profile Settings']
     ] as const) {
       await page.goto(`/#/${route}`);
       await expect(page.getByText(title, { exact: true }).first()).toBeVisible();

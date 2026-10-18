@@ -25,7 +25,8 @@ type AuthAction =
   | { type: 'LOGIN_FAILURE'; payload: string }
   | { type: 'LOGOUT' }
   | { type: 'CLEAR_ERROR' }
-  | { type: 'SET_USER'; payload: User | null };
+  | { type: 'SET_USER'; payload: User | null }
+  | { type: 'UPDATE_SESSION'; payload: { user?: User; token?: string } };
 
 /**
  * AuthProvider Props
@@ -95,6 +96,13 @@ const authReducer = (state: AuthState, action: AuthAction): AuthState => {
         user: action.payload,
         isAuthenticated: !!action.payload,
         isLoading: false
+      };
+
+    case 'UPDATE_SESSION':
+      return {
+        ...state,
+        user: action.payload.user ?? state.user,
+        token: action.payload.token ?? state.token
       };
 
     default:
@@ -201,6 +209,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     dispatch({ type: 'LOGOUT' });
   };
 
+  const updateSession = (session: { user?: User; token?: string }): void => {
+    if (session.user) {
+      userManager.setUser(session.user);
+    }
+    if (session.token) {
+      tokenManager.setToken(session.token);
+    }
+    dispatch({ type: 'UPDATE_SESSION', payload: session });
+  };
+
   /**
    * Clear Error
    */
@@ -218,6 +236,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     ...state,
     login,
     logout,
+    updateSession,
     clearError,
     hasPermission
   };

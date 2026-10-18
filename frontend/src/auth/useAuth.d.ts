@@ -49,6 +49,9 @@ export interface AuthContextValue extends AuthContextState {
    */
   logout: () => void;
 
+  /** Update the active user or authentication token and persist it locally. */
+  updateSession: (session: { user?: User; token?: string }) => void;
+
   /**
    * 清除错误
    */

@@ -32,6 +32,7 @@ import Analysis from '@/pages/Analysis';
 import About from '@/pages/About';
 import Audit from '@/pages/Audit';
 import Users from '@/pages/Users';
+import Profile from '@/pages/Profile';
 import McpConnections from '@/pages/McpConnections';
 import TransactionDrafts from '@/pages/TransactionDrafts';
 import { AuthProvider } from '@/auth/AuthContext';
@@ -141,7 +142,7 @@ function UserMenu(): React.ReactElement {
 
   const userMenuItems: MenuProps['items'] = [
     {
-      key: 'profile',
+      key: 'identity',
       label: (
         <Space>
           <UserOutlined />
@@ -151,6 +152,17 @@ function UserMenu(): React.ReactElement {
       disabled: true
     },
     { type: 'divider' },
+    {
+      key: 'profile',
+      label: (
+        <Link to="/profile">
+          <Space>
+            <SettingOutlined />
+            <span>{t('users.profileTitle')}</span>
+          </Space>
+        </Link>
+      )
+    },
     {
       key: 'logout',
       label: (
@@ -171,6 +183,7 @@ function UserMenu(): React.ReactElement {
   return (
     <>
       <Dropdown
+        trigger={['click']}
         menu={{ items: userMenuItems, onClick: handleMenuClick }}
         placement="bottomRight"
         popupRender={(menu) => (
@@ -235,6 +248,7 @@ function AppContentInner({ location, t }: AppContentInnerProps): React.ReactElem
   const { hasPermission } = usePermissions();
   const { user } = useAuth();
   const canAccessRestrictedPages = hasPermission('editor');
+  const canManageUsers = user?.role === 'superuser';
   const screens = Grid.useBreakpoint();
   const isMobile = !screens.md;
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -293,7 +307,7 @@ function AppContentInner({ location, t }: AppContentInnerProps): React.ReactElem
     ];
     const administrationItems = [
       linkItem('audit', '/audit', t('nav.audit')),
-      linkItem('users', '/users', t('nav.users')),
+      ...(canManageUsers ? [linkItem('users', '/users', t('nav.users'))] : []),
       linkItem('mcp-connections', '/mcp-connections', t('nav.mcpConnections'))
     ];
 
@@ -346,9 +360,9 @@ function AppContentInner({ location, t }: AppContentInnerProps): React.ReactElem
         label: <Link to="/about">{t('about.title')}</Link>
       }
     ];
-  }, [canAccessRestrictedPages, t]);
+  }, [canAccessRestrictedPages, canManageUsers, t]);
 
-  const selectedKey = getSelectedKey();
+  const selectedKey = location.pathname === '/profile' ? '' : getSelectedKey();
   const openGroupKey = selectedKey === 'inbound' || selectedKey === 'outbound' || selectedKey === 'transaction-drafts' || selectedKey === 'inventory'
     ? 'operations'
     : selectedKey === 'partners' || selectedKey === 'products' || selectedKey === 'product-prices'
@@ -380,7 +394,9 @@ function AppContentInner({ location, t }: AppContentInnerProps): React.ReactElem
     'mcp-connections': 'nav.mcpConnections',
     about: 'about.title'
   };
-  const pageTitle = t(selectedLabelKey[selectedKey as MenuKey] ?? 'nav.inbound');
+  const pageTitle = location.pathname === '/profile'
+    ? t('users.profileTitle')
+    : t(selectedLabelKey[selectedKey as MenuKey] ?? 'nav.inbound');
 
   const navigation = (
     <Menu
@@ -485,10 +501,11 @@ function AppContentInner({ location, t }: AppContentInnerProps): React.ReactElem
                 }
               />
               <Route path="/audit" element={<Audit />} />
+              <Route path="/profile" element={<Profile />} />
               <Route
                 path="/users"
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute requireRole="superuser">
                     <Users />
                   </ProtectedRoute>
                 }
