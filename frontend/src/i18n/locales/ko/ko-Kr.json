@@ -310,6 +310,8 @@
   "transactionDrafts": {
     "title": "MCP 입출고 임시 기록",
     "openQueue": "검토 대기 기록",
+    "openQueueWithCount": "검토 대기 기록 ({{count}}건)",
+    "pendingCount": "검토 대기 기록 {{count}}건",
     "inbound": "입고",
     "outbound": "출고",
     "direction": "구분",

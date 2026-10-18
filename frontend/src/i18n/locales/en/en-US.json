@@ -310,6 +310,8 @@
   "transactionDrafts": {
     "title": "MCP transaction drafts",
     "openQueue": "Pending drafts",
+    "openQueueWithCount": "Pending drafts ({{count}})",
+    "pendingCount": "{{count}} transaction drafts pending review",
     "inbound": "Inbound",
     "outbound": "Outbound",
     "direction": "Direction",

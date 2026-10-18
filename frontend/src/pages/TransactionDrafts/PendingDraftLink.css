@@ -1,0 +1,134 @@
+.pending-draft-link {
+  display: inline-flex;
+  min-height: 44px;
+  max-width: 100%;
+  align-items: center;
+  gap: 9px;
+  padding: 6px 11px 6px 8px;
+  border: 1px solid var(--app-border, #e6eaf0);
+  border-radius: 10px;
+  background: var(--app-surface, #fff);
+  color: #475467;
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.pending-draft-link:hover {
+  border-color: #d5dbe5;
+  background: #f8fafc;
+  color: #344054;
+}
+
+.pending-draft-link:focus-visible {
+  outline: 2px solid var(--app-primary, #1677ff);
+  outline-offset: 2px;
+}
+
+.pending-draft-link--active {
+  border-color: #f3d69c;
+  background: #fff9ec;
+  color: #87520a;
+}
+
+.pending-draft-link--active:hover {
+  border-color: #edc675;
+  background: #fff3d8;
+  color: #744300;
+}
+
+.pending-draft-link__icon {
+  display: inline-flex;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: #f2f4f7;
+  color: #667085;
+  font-size: 15px;
+}
+
+.pending-draft-link--active .pending-draft-link__icon {
+  background: #ffefc7;
+  color: #a15c00;
+}
+
+.pending-draft-link__label {
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+}
+
+.pending-draft-link__count {
+  display: inline-flex;
+  min-width: 24px;
+  height: 24px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #eef1f5;
+  color: #475467;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.pending-draft-link--active .pending-draft-link__count {
+  background: #e6a237;
+  color: #fff;
+}
+
+.pending-draft-link__arrow {
+  flex: 0 0 auto;
+  color: #98a2b3;
+  font-size: 10px;
+}
+
+.pending-draft-link--active .pending-draft-link__arrow {
+  color: #b7791f;
+}
+
+.pending-draft-link__status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  clip-path: inset(50%);
+}
+
+@media (max-width: 767px) {
+  .pending-draft-link {
+    gap: 7px;
+    padding-inline: 7px 9px;
+  }
+
+  .pending-draft-link__icon {
+    width: 26px;
+    height: 26px;
+    flex-basis: 26px;
+  }
+
+  .pending-draft-link__count {
+    min-width: 22px;
+    height: 22px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pending-draft-link {
+    transition: none;
+  }
+}

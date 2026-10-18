@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Badge, Button } from 'antd';
+import { ClockCircleOutlined, RightOutlined } from '@ant-design/icons';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { apiRequest } from '@/utils/request';
+import './PendingDraftLink.css';
 
 interface PendingDraftLinkProps {
   readonly direction: 'inbound' | 'outbound';
@@ -32,13 +33,37 @@ export default function PendingDraftLink({ direction }: PendingDraftLinkProps): 
     return () => window.removeEventListener('focus', loadCount);
   }, [loadCount]);
 
+  const isActive = count !== null && count > 0;
+  const displayCount = count === null ? '—' : count > 99 ? '99+' : count;
+  const accessibleLabel =
+    count === null
+      ? t('transactionDrafts.openQueue')
+      : t('transactionDrafts.openQueueWithCount', { count });
+
   return (
-    <Button>
-      <Link to={`/transaction-drafts?direction=${direction}`}>
-        <Badge count={count ?? 0} showZero>
-          {t('transactionDrafts.openQueue')}
-        </Badge>
+    <>
+      <Link
+        className={`pending-draft-link${isActive ? ' pending-draft-link--active' : ''}`}
+        to={`/transaction-drafts?direction=${direction}`}
+        aria-label={accessibleLabel}
+      >
+        <span className="pending-draft-link__icon" aria-hidden="true">
+          <ClockCircleOutlined />
+        </span>
+        <span className="pending-draft-link__label">{t('transactionDrafts.openQueue')}</span>
+        <span className="pending-draft-link__count" aria-hidden="true">
+          {displayCount}
+        </span>
+        <RightOutlined className="pending-draft-link__arrow" aria-hidden="true" />
       </Link>
-    </Button>
+      <span
+        className="pending-draft-link__status"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+      >
+        {count === null ? '' : t('transactionDrafts.pendingCount', { count })}
+      </span>
+    </>
   );
 }

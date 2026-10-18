@@ -310,6 +310,8 @@
   "transactionDrafts": {
     "title": "MCP 入出库待核实",
     "openQueue": "待核实记录",
+    "openQueueWithCount": "待核实记录（{{count}} 条）",
+    "pendingCount": "{{count}} 条记录待核实",
     "inbound": "入库",
     "outbound": "出库",
     "direction": "方向",
