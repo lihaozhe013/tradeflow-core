@@ -34,6 +34,6 @@
     "desktop:test": "bun run --cwd desktop test"
   },
   "devDependencies": {
-    "@babel/parser": "7.29.9"
+    "@babel/parser": "8.0.7"
   }
 }
