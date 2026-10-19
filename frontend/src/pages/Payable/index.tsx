@@ -8,6 +8,8 @@ import dayjs from 'dayjs';
 import { useSimpleApi, useSimpleApiData } from '@/hooks/useSimpleApi';
 import { usePermissions } from '@/auth/usePermissions';
 import type { UseSimpleApiReturn } from '@/hooks/types';
+import AccountSummaryCards from '@/components/AccountSummaryCards';
+import type { AccountSummary } from '@/components/AccountSummaryCards';
 import PayableTable from '@/pages/Payable/components/PayableTable';
 import PayableModal from '@/pages/Payable/components/PayableModal';
 import type {
@@ -50,6 +52,7 @@ const Payable: FC = () => {
   const [form] = Form.useForm<PayablePaymentFormValues>();
   const [pagination, setPagination] = useState<PaginationState>(DEFAULT_PAGINATION);
   const [filters, setFilters] = useState<PayableFilters>({});
+  const [summary, setSummary] = useState<AccountSummary | null>(null);
   const [sorter, setSorter] = useState<PayableSorterState>({
     field: 'balance',
     order: 'descend'
@@ -89,6 +92,7 @@ const Payable: FC = () => {
         const result = await apiInstance.get<PayableListResponse>(`/payable?${query.toString()}`);
 
         setPayableRecords(Array.isArray(result?.data) ? result.data : []);
+        setSummary(result?.summary ?? null);
         setPagination((prev) => ({
           ...prev,
           current: result?.page ?? page,
@@ -240,6 +244,10 @@ const Payable: FC = () => {
         </Row>
 
         <Divider />
+
+        <div style={{ marginBottom: 16 }}>
+          <AccountSummaryCards kind="payable" summary={summary} />
+        </div>
 
         <PayableTable
           data={payableRecords}

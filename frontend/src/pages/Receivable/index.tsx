@@ -8,6 +8,8 @@ import dayjs from 'dayjs';
 import { useSimpleApi, useSimpleApiData } from '@/hooks/useSimpleApi';
 import { usePermissions } from '@/auth/usePermissions';
 import type { UseSimpleApiReturn } from '@/hooks/types';
+import AccountSummaryCards from '@/components/AccountSummaryCards';
+import type { AccountSummary } from '@/components/AccountSummaryCards';
 import ReceivableTable from '@/pages/Receivable/components/ReceivableTable';
 import ReceivableModal from '@/pages/Receivable/components/ReceivableModal';
 import type {
@@ -50,6 +52,7 @@ const Receivable: FC = () => {
   const [form] = Form.useForm<ReceivablePaymentFormValues>();
   const [pagination, setPagination] = useState<PaginationState>(DEFAULT_PAGINATION);
   const [filters, setFilters] = useState<ReceivableFilters>({});
+  const [summary, setSummary] = useState<AccountSummary | null>(null);
   const [sorter, setSorter] = useState<ReceivableSorterState>({
     field: 'balance',
     order: 'descend'
@@ -91,6 +94,7 @@ const Receivable: FC = () => {
         );
 
         setReceivableRecords(Array.isArray(result?.data) ? result.data : []);
+        setSummary(result?.summary ?? null);
         setPagination((prev) => ({
           ...prev,
           current: result?.page ?? page,
@@ -242,6 +246,10 @@ const Receivable: FC = () => {
         </Row>
 
         <Divider />
+
+        <div style={{ marginBottom: 16 }}>
+          <AccountSummaryCards kind="receivable" summary={summary} />
+        </div>
 
         <ReceivableTable
           data={receivableRecords}

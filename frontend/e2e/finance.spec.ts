@@ -96,7 +96,8 @@ async function paymentFixtures(
 }
 
 async function fillPayment(page: Page, remark: string): Promise<void> {
-  const dialog = page.getByRole('dialog');
+  // The payment dialog opens on top of the details dialog, so target the last one.
+  const dialog = page.getByRole('dialog').last();
   await dialog.getByPlaceholder('Enter payment amount').fill('12.5');
   await dialog.getByPlaceholder('Select payment date').click();
   await page.locator('.ant-picker-cell-today').click();
@@ -158,7 +159,7 @@ test('receivables support filtering, payment create/edit/delete, details, and in
     dialog = page.getByRole('dialog');
     await expect(dialog.getByText('Customer Information', { exact: true })).toBeVisible();
     await expect(dialog.getByText('Receivables Summary', { exact: true })).toBeVisible();
-    let paymentRow = dialog.getByRole('row').filter({ hasText: remark });
+    const paymentRow = dialog.getByRole('row').filter({ hasText: remark });
     await expect(paymentRow).toContainText('$12.50');
 
     await paymentRow.getByRole('button', { name: 'Edit', exact: true }).click();
@@ -173,14 +174,8 @@ test('receivables support filtering, payment create/edit/delete, details, and in
     await editDialog.getByRole('button', { name: 'OK', exact: true }).click();
     expect((await updateResponse).ok()).toBeTruthy();
 
-    await page
-      .getByRole('row')
-      .filter({ hasText: fixture.customer.short_name })
-      .getByRole('button', { name: 'Details' })
-      .click();
-    dialog = page.getByRole('dialog');
-    paymentRow = dialog.getByRole('row').filter({ hasText: remark });
-    await expect(paymentRow).toContainText('$15.00');
+    // The details dialog stays open and refreshes after the payment modal saves.
+    await expect(dialog.getByRole('row').filter({ hasText: remark })).toContainText('$15.00');
     await paymentRow
       .locator('button')
       .filter({ has: page.locator('[aria-label="delete"]') })
@@ -189,40 +184,36 @@ test('receivables support filtering, payment create/edit/delete, details, and in
     records.forget(`/receivable/payments/${payment.id}`);
     await expect(dialog.getByRole('row').filter({ hasText: remark })).toHaveCount(0);
 
-    await dialog.getByRole('button', { name: 'View Invoiced Details' }).click();
-    const invoiceDialog = page.getByRole('dialog').last();
-    await expect(invoiceDialog.getByText('Invoiced Details', { exact: false })).toBeVisible();
-    await expect(
-      invoiceDialog.getByText('Data has not been generated.', { exact: false })
-    ).toBeVisible();
+    await dialog.getByRole('tab', { name: 'Invoiced Details', exact: true }).click();
+    await expect(dialog.getByText('Data has not been generated.', { exact: false })).toBeVisible();
     const refreshInvoiceResponse = page.waitForResponse(
       (candidate) =>
         candidate.url().includes(`/api/receivable/invoices/refresh/${fixture.customer.code}`) &&
         candidate.request().method() === 'POST'
     );
-    await invoiceDialog.getByRole('button', { name: 'Refresh Data' }).click();
+    await dialog.getByRole('button', { name: 'Refresh Data' }).click();
     expect((await refreshInvoiceResponse).ok()).toBeTruthy();
     await expect(
-      invoiceDialog.getByRole('row').filter({ hasText: fixture.invoiceNumber })
+      dialog.getByRole('row').filter({ hasText: fixture.invoiceNumber })
     ).toBeVisible();
-    const savedRefreshTime = await invoiceDialog
+    const savedRefreshTime = await dialog
       .getByText('Last refreshed:', { exact: false })
       .textContent();
     const refreshUrl = `**/api/receivable/invoices/refresh/${fixture.customer.code}`;
     await page.route(refreshUrl, (route) =>
       route.fulfill({ status: 500, contentType: 'application/json', body: '{}' })
     );
-    await invoiceDialog.getByRole('button', { name: 'Refresh Data' }).click();
-    await expect(invoiceDialog.locator('.ant-alert-error')).toBeVisible();
+    await dialog.getByRole('button', { name: 'Refresh Data' }).click();
+    await expect(dialog.locator('.ant-alert-error')).toBeVisible();
     await expect(
-      invoiceDialog.getByRole('row').filter({ hasText: fixture.invoiceNumber })
+      dialog.getByRole('row').filter({ hasText: fixture.invoiceNumber })
     ).toBeVisible();
-    await expect(invoiceDialog.getByText('Last refreshed:', { exact: false })).toHaveText(
+    await expect(dialog.getByText('Last refreshed:', { exact: false })).toHaveText(
       savedRefreshTime!
     );
     await page.unroute(refreshUrl);
-    await invoiceDialog.getByRole('button', { name: 'Close' }).click();
-    await dialog.first().getByRole('button', { name: 'Close' }).click();
+    await dialog.locator('.ant-modal-footer').getByRole('button', { name: 'Close' }).click();
+    await expect(page.getByRole('dialog')).toHaveCount(0);
 
     await page.getByRole('button', { name: 'Refresh' }).click();
     await expect(page.getByText('Data refreshed', { exact: true })).toBeVisible();
@@ -261,20 +252,18 @@ test('payables support payment, supplier details, invoice listing, refresh, and 
     const details = page.getByRole('dialog').first();
     await expect(details.getByText('Supplier Info', { exact: true })).toBeVisible();
     await expect(details.getByText('Summary', { exact: true })).toBeVisible();
-    await details.getByRole('button', { name: 'View Invoiced Details' }).click();
-    const invoiceDialog = page.getByRole('dialog').last();
-    await expect(invoiceDialog.getByRole('columnheader', { name: 'Invoice Number' })).toBeVisible();
+    await details.getByRole('tab', { name: 'Invoiced Details', exact: true }).click();
+    await expect(details.getByRole('columnheader', { name: 'Invoice Number' })).toBeVisible();
     const refreshInvoiceResponse = page.waitForResponse(
       (candidate) =>
         candidate.url().includes(`/api/payable/invoices/refresh/${fixture.supplier.code}`) &&
         candidate.request().method() === 'POST'
     );
-    await invoiceDialog.getByRole('button', { name: 'Refresh Data' }).click();
+    await details.getByRole('button', { name: 'Refresh Data' }).click();
     expect((await refreshInvoiceResponse).ok()).toBeTruthy();
     await expect(
-      invoiceDialog.getByRole('row').filter({ hasText: fixture.invoiceNumber })
+      details.getByRole('row').filter({ hasText: fixture.invoiceNumber })
     ).toBeVisible();
-    await invoiceDialog.getByRole('button', { name: 'Close' }).click();
     await details.getByRole('button', { name: 'Add Payment' }).click();
     await fillPayment(page, remark);
     const createResponse = page.waitForResponse(
@@ -287,13 +276,8 @@ test('payables support payment, supplier details, invoice listing, refresh, and 
     const payment = (await response.json()) as CreatedRecord;
     records.track(`/payable/payments/${payment.id}`);
 
-    await page
-      .getByRole('row')
-      .filter({ hasText: fixture.supplier.short_name })
-      .getByRole('button', { name: 'Details' })
-      .click();
-    const refreshedDetails = page.getByRole('dialog').first();
-    const paymentRow = refreshedDetails.getByRole('row').filter({ hasText: remark });
+    // The details dialog stays open and refreshes after the payment modal saves.
+    const paymentRow = details.getByRole('row').filter({ hasText: remark });
     await expect(paymentRow).toContainText('$12.50');
     await paymentRow.getByRole('button', { name: 'Edit', exact: true }).click();
     const editDialog = page.getByRole('dialog').last();
@@ -305,13 +289,7 @@ test('payables support payment, supplier details, invoice listing, refresh, and 
     await editDialog.getByRole('button', { name: 'OK', exact: true }).click();
     expect((await updateResponse).ok()).toBeTruthy();
 
-    await page
-      .getByRole('row')
-      .filter({ hasText: fixture.supplier.short_name })
-      .getByRole('button', { name: 'Details' })
-      .click();
-    const finalDetails = page.getByRole('dialog').first();
-    const updatedPaymentRow = finalDetails.getByRole('row').filter({ hasText: remark });
+    const updatedPaymentRow = details.getByRole('row').filter({ hasText: remark });
     await expect(updatedPaymentRow).toContainText('$15.00');
     await updatedPaymentRow
       .locator('button')
@@ -319,8 +297,9 @@ test('payables support payment, supplier details, invoice listing, refresh, and 
       .click();
     await page.getByRole('button', { name: 'OK', exact: true }).last().click();
     records.forget(`/payable/payments/${payment.id}`);
-    await expect(finalDetails.getByRole('row').filter({ hasText: remark })).toHaveCount(0);
-    await finalDetails.getByRole('button', { name: 'Close' }).click();
+    await expect(details.getByRole('row').filter({ hasText: remark })).toHaveCount(0);
+    await details.locator('.ant-modal-footer').getByRole('button', { name: 'Close' }).click();
+    await expect(page.getByRole('dialog')).toHaveCount(0);
 
     await page.getByRole('button', { name: 'Refresh' }).click();
     await expect(page.getByText('Data refreshed', { exact: true })).toBeVisible();
@@ -366,8 +345,8 @@ test.describe('mobile receivable workflow', () => {
         .filter({ hasText: fixture.customer.short_name });
       await expect(customerCard).toContainText('$12.50');
       await customerCard.getByRole('button', { name: 'Details' }).click();
-      let detailsDialog = page.getByRole('dialog').first();
-      let paymentCard = detailsDialog
+      const detailsDialog = page.getByRole('dialog').first();
+      const paymentCard = detailsDialog
         .locator('.responsive-record-card')
         .filter({ hasText: remark });
       await expect(paymentCard).toContainText('$12.50');
@@ -383,20 +362,19 @@ test.describe('mobile receivable workflow', () => {
       await editDialog.getByRole('button', { name: 'OK', exact: true }).click();
       expect((await updateResponse).ok()).toBeTruthy();
 
-      customerCard = page
-        .locator('.responsive-record-card')
-        .filter({ hasText: fixture.customer.short_name });
-      await customerCard.getByRole('button', { name: 'Details' }).click();
-      detailsDialog = page.getByRole('dialog').first();
-      paymentCard = detailsDialog.locator('.responsive-record-card').filter({ hasText: remark });
-      await expect(paymentCard).toContainText('$15.00');
+      // The details dialog stays open and refreshes after the payment modal saves.
+      await expect(
+        detailsDialog.locator('.responsive-record-card').filter({ hasText: remark })
+      ).toContainText('$15.00');
       await paymentCard
         .locator('button')
         .filter({ has: page.locator('[aria-label="delete"]') })
         .click();
       await page.getByRole('button', { name: 'OK', exact: true }).last().click();
       records.forget(`/receivable/payments/${payment.id}`);
-      await expect(paymentCard).toHaveCount(0);
+      await expect(
+        detailsDialog.locator('.responsive-record-card').filter({ hasText: remark })
+      ).toHaveCount(0);
     } finally {
       await records.cleanup();
     }

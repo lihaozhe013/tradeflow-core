@@ -1,4 +1,5 @@
 import type { Dayjs } from 'dayjs';
+import type { AccountSummary } from '@/components/AccountSummaryCards';
 
 export interface Supplier {
   readonly code: string;
@@ -119,11 +120,7 @@ export interface PayableListResponse {
   readonly page?: number;
   readonly total?: number;
   readonly limit?: number;
-}
-
-export interface PayableSearchStats {
-  readonly totalPayable: number;
-  readonly totalUnpaid: number;
+  readonly summary?: AccountSummary | null;
 }
 
 export interface ApiListResponse<T> {

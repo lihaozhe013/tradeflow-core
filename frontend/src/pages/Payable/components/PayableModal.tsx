@@ -1,6 +1,6 @@
-import { useMemo, type FC } from 'react';
+import { useMemo, useState, type FC } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Modal, Form, Input, InputNumber, DatePicker, Select } from 'antd';
+import { Modal, Form, Input, InputNumber, DatePicker, Select, Typography, Row, Col } from 'antd';
 import { currency_unit_symbol } from '@/config/types';
 import type { FormInstance } from 'antd/es/form';
 import type { DefaultOptionType } from 'antd/es/select';
@@ -13,6 +13,7 @@ import type {
 } from '../types';
 
 const { TextArea } = Input;
+const { Text } = Typography;
 
 interface PayableModalProps {
   readonly visible: boolean;
@@ -24,6 +25,16 @@ interface PayableModalProps {
   readonly onCancel: () => void;
 }
 
+const formatCurrency = (amount: number | null | undefined): string => {
+  if (amount === null || amount === undefined || Number.isNaN(Number(amount))) {
+    return `${currency_unit_symbol}0.00`;
+  }
+  return `${currency_unit_symbol}${Number(amount).toLocaleString('zh-CN', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  })}`;
+};
+
 const PayableModal: FC<PayableModalProps> = ({
   visible,
   editingPayment,
@@ -34,6 +45,8 @@ const PayableModal: FC<PayableModalProps> = ({
   onCancel
 }) => {
   const { t } = useTranslation();
+  const [submitting, setSubmitting] = useState(false);
+  const amount = Form.useWatch('amount', form);
 
   const supplierOptions = useMemo<DefaultOptionType[]>(
     () =>
@@ -44,13 +57,21 @@ const PayableModal: FC<PayableModalProps> = ({
     [suppliers]
   );
 
+  const currentBalance = Number(selectedSupplier?.balance ?? 0);
+  const enteredAmount = Number(amount ?? 0);
+  const balanceAfterPayment = currentBalance - enteredAmount;
+  const showRemainingHint = !editingPayment && amount !== undefined && amount !== null;
+
   const handleSubmit = async (): Promise<void> => {
     try {
       const values = (await form.validateFields()) as PayablePaymentFormValues;
+      setSubmitting(true);
       await onSave(values);
       form.resetFields();
     } catch (error) {
-      console.error('表单验证失败:', error);
+      console.error('Form validation failed:', error);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -70,9 +91,38 @@ const PayableModal: FC<PayableModalProps> = ({
       open={visible}
       onOk={handleSubmit}
       onCancel={handleCancel}
-      width={600}
+      confirmLoading={submitting}
+      width={560}
       destroyOnHidden
     >
+      {selectedSupplier && (
+        <div
+          style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            gap: 8,
+            padding: '8px 12px',
+            marginBottom: 16,
+            background: '#fafafa',
+            border: '1px solid #f0f0f0',
+            borderRadius: 6
+          }}
+        >
+          <Text strong>{selectedSupplier.supplier_short_name}</Text>
+          <Text type="secondary">({selectedSupplier.supplier_code})</Text>
+          <span style={{ flex: 1 }} />
+          <Text type="secondary">{t('payable.balance')}:</Text>
+          <Text
+            strong
+            style={{ color: currentBalance > 0 ? '#cf1322' : '#3f8600' }}
+          >
+            {formatCurrency(Math.abs(currentBalance))}
+          </Text>
+          {currentBalance < 0 && <Text type="success">({t('payable.overpaidShort')})</Text>}
+        </div>
+      )}
+
       <Form
         form={form}
         layout="vertical"
@@ -84,6 +134,7 @@ const PayableModal: FC<PayableModalProps> = ({
           name="supplier_code"
           label={t('payable.supplierCode')}
           rules={[{ required: true, message: t('payable.selectSupplier') }]}
+          hidden={Boolean(selectedSupplier)}
         >
           <Select
             placeholder={t('payable.selectSupplier') ?? ''}
@@ -95,46 +146,74 @@ const PayableModal: FC<PayableModalProps> = ({
           />
         </Form.Item>
 
-        <Form.Item
-          name="amount"
-          label={t('payable.paymentAmount')}
-          rules={[
-            { required: true, message: t('payable.inputAmount') },
-            { type: 'number', message: t('payable.inputAmountValid') }
-          ]}
-        >
-          <InputNumber
-            placeholder={t('payable.inputAmount') ?? ''}
-            style={{ width: '100%' }}
-            precision={2}
-            formatter={(value) =>
-              value !== undefined && value !== null
-                ? `${currency_unit_symbol} ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
-                : ''
-            }
-            parser={(value) => {
-              if (!value) return '';
-              const symbol = currency_unit_symbol ?? '';
-              // Escape regex special chars in symbol (e.g., $, ¥, €, /, etc.)
-              const escaped = symbol.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-              // Remove currency symbol (optionally followed by a space) and any commas
-              const re = new RegExp(`(${escaped}\\s?|,)`, 'g');
-              return value.replace(re, '');
-            }}
-          />
-        </Form.Item>
+        <Row gutter={16}>
+          <Col xs={24} sm={12}>
+            <Form.Item
+              name="amount"
+              label={t('payable.paymentAmount')}
+              rules={[
+                { required: true, message: t('payable.inputAmount') },
+                { type: 'number', message: t('payable.inputAmountValid') }
+              ]}
+            >
+              <InputNumber
+                placeholder={t('payable.inputAmount') ?? ''}
+                style={{ width: '100%' }}
+                precision={2}
+                formatter={(value) =>
+                  value !== undefined && value !== null
+                    ? `${currency_unit_symbol} ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+                    : ''
+                }
+                parser={(value) => {
+                  if (!value) return '';
+                  const symbol = currency_unit_symbol ?? '';
+                  // Escape regex special chars in symbol (e.g., $, ¥, €, /, etc.)
+                  const escaped = symbol.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                  // Remove currency symbol (optionally followed by a space) and any commas
+                  const re = new RegExp(`(${escaped}\\s?|,)`, 'g');
+                  return value.replace(re, '');
+                }}
+              />
+            </Form.Item>
+          </Col>
+          <Col xs={24} sm={12}>
+            <Form.Item
+              name="pay_date"
+              label={t('payable.paymentDate')}
+              rules={[{ required: true, message: t('payable.inputDate') }]}
+            >
+              <DatePicker
+                placeholder={t('payable.inputDate') ?? ''}
+                style={{ width: '100%' }}
+                format="YYYY-MM-DD"
+              />
+            </Form.Item>
+          </Col>
+        </Row>
 
-        <Form.Item
-          name="pay_date"
-          label={t('payable.paymentDate')}
-          rules={[{ required: true, message: t('payable.inputDate') }]}
-        >
-          <DatePicker
-            placeholder={t('payable.inputDate') ?? ''}
-            style={{ width: '100%' }}
-            format="YYYY-MM-DD"
-          />
-        </Form.Item>
+        {showRemainingHint && (
+          <div style={{ marginTop: -12, marginBottom: 16 }}>
+            {balanceAfterPayment >= 0 ? (
+              <Text type="secondary">
+                {t('payable.remainingBalanceAfter', {
+                  amount: formatCurrency(balanceAfterPayment)
+                })}
+              </Text>
+            ) : (
+              <Text type="warning">
+                {t('payable.overpaid', {
+                  amount: formatCurrency(Math.abs(balanceAfterPayment))
+                })}
+              </Text>
+            )}
+          </div>
+        )}
+        {editingPayment && (
+          <div style={{ marginTop: -12, marginBottom: 16 }}>
+            <Text type="secondary">{t('payable.editBalanceHint')}</Text>
+          </div>
+        )}
 
         <Form.Item
           name="pay_method"

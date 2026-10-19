@@ -216,6 +216,14 @@ interface AccountBalanceRow {
   payment_count: bigint | number | null;
 }
 
+interface AccountBalanceSummaryRow {
+  total_amount: number | string | bigint | null;
+  total_paid: number | string | bigint | null;
+  total_outstanding: number | string | bigint | null;
+  partner_count: bigint | number | null;
+  settled_count: bigint | number | null;
+}
+
 export async function listAccountBalances(
   db: ReadDatabase,
   args: {
@@ -270,7 +278,7 @@ export async function listAccountBalances(
   );
   const sortOrder = Prisma.raw(args.sortOrder === 'asc' ? 'ASC' : 'DESC');
 
-  const [rows, total] = await Promise.all([
+  const [rows, total, summaryRows] = await Promise.all([
     db.$queryRaw<AccountBalanceRow[]>(Prisma.sql`
       SELECT
         p.code AS partner_code,
@@ -305,9 +313,37 @@ export async function listAccountBalances(
         type: partnerType,
         ...(args.shortName ? { short_name: { contains: args.shortName } } : {})
       }
-    })
+    }),
+    // Aggregate over the full filtered partner set so summary cards stay
+    // accurate across pages (page rows alone would give shifting totals).
+    db.$queryRaw<AccountBalanceSummaryRow[]>(Prisma.sql`
+      SELECT
+        COALESCE(SUM(COALESCE(r.total_amount, 0)), 0) AS total_amount,
+        COALESCE(SUM(COALESCE(pay.total_paid, 0)), 0) AS total_paid,
+        COALESCE(SUM(GREATEST(
+          COALESCE(r.total_amount, 0) - COALESCE(pay.total_paid, 0), 0
+        )), 0) AS total_outstanding,
+        COUNT(*) AS partner_count,
+        COUNT(*) FILTER (
+          WHERE COALESCE(r.total_amount, 0) - COALESCE(pay.total_paid, 0) <= 0
+        ) AS settled_count
+      FROM partners p
+      LEFT JOIN (
+        SELECT ${column} AS partner_code, SUM(total_price) AS total_amount
+        FROM ${Prisma.raw(recordTable)}
+        GROUP BY ${column}
+      ) r ON p.code = r.partner_code
+      LEFT JOIN (
+        SELECT ${column} AS partner_code, SUM(amount) AS total_paid
+        FROM ${Prisma.raw(paymentTable)}
+        GROUP BY ${column}
+      ) pay ON p.code = pay.partner_code
+      WHERE p.type = ${partnerType}
+        AND (${name}::text IS NULL OR p.short_name ILIKE '%' || ${name} || '%')
+    `)
   ]);
 
+  const summary = summaryRows[0];
   return {
     data: rows.map((row) => ({
       ...row,
@@ -319,6 +355,14 @@ export async function listAccountBalances(
       ),
       payment_count: Number(row.payment_count ?? 0)
     })),
+    summary: {
+      total_amount: decimalCalc.fromSqlResult(summary?.total_amount ?? 0, 0, 2),
+      total_paid: decimalCalc.fromSqlResult(summary?.total_paid ?? 0, 0, 2),
+      // Only positive balances count as outstanding; overpaid partners are excluded.
+      total_outstanding: decimalCalc.fromSqlResult(summary?.total_outstanding ?? 0, 0, 2),
+      partner_count: Number(summary?.partner_count ?? 0),
+      settled_count: Number(summary?.settled_count ?? 0)
+    },
     total,
     page: args.page,
     limit: args.limit,

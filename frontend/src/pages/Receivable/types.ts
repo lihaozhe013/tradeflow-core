@@ -1,4 +1,5 @@
 import type { Dayjs } from 'dayjs';
+import type { AccountSummary } from '@/components/AccountSummaryCards';
 
 export interface Customer {
   readonly code: string;
@@ -88,8 +89,10 @@ export interface InvoicedRecordsResponse {
   readonly last_updated?: string;
 }
 
-export interface PaginationInfo {
+export interface PaginatedData<T> {
+  readonly data: T[];
   readonly page: number;
+  readonly limit: number;
   readonly total: number;
 }
 
@@ -108,14 +111,8 @@ export interface CustomerDetail {
 export interface ReceivableDetailResponse {
   readonly customer?: CustomerDetail | null;
   readonly summary?: ReceivableDetailSummary | null;
-  readonly payment_records?: {
-    readonly data: ReceivablePaymentRecord[];
-  } | null;
-  readonly payment_pagination?: PaginationInfo | null;
-  readonly outbound_records?: {
-    readonly data: ReceivableOutboundRecord[];
-  } | null;
-  readonly outbound_pagination?: PaginationInfo | null;
+  readonly payment_records?: PaginatedData<ReceivablePaymentRecord> | null;
+  readonly outbound_records?: PaginatedData<ReceivableOutboundRecord> | null;
 }
 
 export interface ReceivableListResponse {
@@ -123,11 +120,7 @@ export interface ReceivableListResponse {
   readonly page?: number;
   readonly total?: number;
   readonly limit?: number;
-}
-
-export interface ReceivableSearchStats {
-  readonly totalReceivable: number;
-  readonly totalUnpaid: number;
+  readonly summary?: AccountSummary | null;
 }
 
 export interface ApiListResponse<T> {

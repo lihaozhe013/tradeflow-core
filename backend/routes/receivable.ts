@@ -39,7 +39,14 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     })),
     total: result.total,
     page: result.page,
-    limit: result.limit
+    limit: result.limit,
+    summary: {
+      total_amount: result.summary.total_amount,
+      total_paid: result.summary.total_paid,
+      total_outstanding: result.summary.total_outstanding,
+      partner_count: result.summary.partner_count,
+      settled_count: result.summary.settled_count
+    }
   });
 });
 

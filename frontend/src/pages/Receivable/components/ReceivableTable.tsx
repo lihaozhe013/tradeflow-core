@@ -1,13 +1,28 @@
 import ResponsiveTable from '@/components/ResponsiveTable';
-import { useState, useMemo, type FC, type ReactNode } from 'react';
+import InvoicedSnapshotPanel from '@/components/InvoicedSnapshotPanel';
+import { useState, useEffect, type FC, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Popconfirm, Tag, message, Modal, Input, Space, Typography, Row, Col } from 'antd';
-import { currency_unit_symbol } from '@/config/types';
+import {
+  Button,
+  Descriptions,
+  Popconfirm,
+  Spin,
+  Statistic,
+  Tabs,
+  Tag,
+  message,
+  Modal,
+  Input,
+  Space,
+  Row,
+  Col,
+  Typography
+} from 'antd';
 import type { ColumnsType, TablePaginationConfig } from 'antd/es/table';
 import type { TableProps } from 'antd/es/table';
 import type { SortOrder } from 'antd/es/table/interface';
 import { PlusOutlined, EyeOutlined, DeleteOutlined } from '@ant-design/icons';
-import InvoicedModal from './InvoicedModal';
+import { currency_unit_symbol } from '@/config/types';
 import type { UseSimpleApiReturn } from '@/hooks/types';
 import type {
   PaginationState,
@@ -20,7 +35,6 @@ import type {
 } from '../types';
 
 const { Search } = Input;
-const { Text, Title } = Typography;
 
 interface ModalPaginationState {
   readonly current: number;
@@ -51,7 +65,7 @@ const DEFAULT_MODAL_PAGINATION: ModalPaginationState = {
 
 const formatCurrency = (amount: number | null | undefined): string => {
   if (amount === null || amount === undefined || Number.isNaN(Number(amount))) {
-    return '${currency_unit_symbol}0.00';
+    return `${currency_unit_symbol}0.00`;
   }
   return `${currency_unit_symbol}${Number(amount).toLocaleString('zh-CN', {
     minimumFractionDigits: 2,
@@ -82,7 +96,7 @@ const ReceivableTable: FC<ReceivableTableProps> = ({
     useState<ModalPaginationState>(DEFAULT_MODAL_PAGINATION);
   const [outboundPagination, setOutboundPagination] =
     useState<ModalPaginationState>(DEFAULT_MODAL_PAGINATION);
-  const [invoicedModalVisible, setInvoicedModalVisible] = useState(false);
+  const [detailsTab, setDetailsTab] = useState('payments');
 
   const getBalanceTag = (balance: number | null | undefined): ReactNode => {
     const numeric = Number(balance ?? 0);
@@ -121,61 +135,74 @@ const ReceivableTable: FC<ReceivableTableProps> = ({
 
       // Fetch uninvoiced records
       const uninvoicedResult = await apiInstance.get<{
-        data: any[];
+        data: ReceivableOutboundRecord[];
         total: number;
         page: number;
         limit: number;
       }>(`/receivable/uninvoiced/${customerCode}?${outboundQuery.toString()}`);
 
-      const result = {
+      const result: ReceivableDetailResponse = {
         ...detailsResult,
-        outbound_records: { data: uninvoicedResult?.data ?? [] },
-        outbound_pagination: {
+        outbound_records: {
+          data: uninvoicedResult?.data ?? [],
+          total: uninvoicedResult?.total ?? 0,
           page: uninvoicedResult?.page ?? outboundPage,
-          total: uninvoicedResult?.total ?? 0
+          limit: uninvoicedResult?.limit ?? DEFAULT_MODAL_PAGINATION.pageSize
         }
       };
 
-      setCustomerDetails(result ?? null);
+      setCustomerDetails(result);
 
-      const paymentPaginationInfo = result?.payment_pagination;
-      if (paymentPaginationInfo) {
+      const paymentRecords = result.payment_records;
+      if (paymentRecords) {
         setPaymentPagination({
-          current: paymentPaginationInfo.page,
-          pageSize: DEFAULT_MODAL_PAGINATION.pageSize,
-          total: paymentPaginationInfo.total
+          current: paymentRecords.page,
+          pageSize: paymentRecords.limit,
+          total: paymentRecords.total
         });
       }
 
-      const outboundPaginationInfo = result?.outbound_pagination;
-      if (outboundPaginationInfo) {
+      const outboundRecords = result.outbound_records;
+      if (outboundRecords) {
         setOutboundPagination({
-          current: outboundPaginationInfo.page,
-          pageSize: DEFAULT_MODAL_PAGINATION.pageSize,
-          total: outboundPaginationInfo.total
+          current: outboundRecords.page,
+          pageSize: outboundRecords.limit,
+          total: outboundRecords.total
         });
       }
     } catch (error) {
-      console.error('获取客户详情失败:', error);
+      console.error('Failed to fetch customer details:', error);
       message.error(t('receivable.fetchFailedNetwork'));
     }
   };
 
   const handleViewDetails = async (record: ReceivableRecord): Promise<void> => {
+    setDetailsLoading(true);
+    setSelectedCustomer(record);
+    setDetailsVisible(true);
+    setPaymentPagination(DEFAULT_MODAL_PAGINATION);
+    setOutboundPagination(DEFAULT_MODAL_PAGINATION);
     try {
-      setDetailsLoading(true);
-      setSelectedCustomer(record);
-      setDetailsVisible(true);
-      setPaymentPagination(DEFAULT_MODAL_PAGINATION);
-      setOutboundPagination(DEFAULT_MODAL_PAGINATION);
       await fetchCustomerDetails(record.customer_code, 1, 1);
-    } catch (error) {
-      console.error('获取客户详情失败:', error);
-      message.error(t('receivable.fetchFailedNetwork'));
     } finally {
       setDetailsLoading(false);
     }
   };
+
+  // Keep the open details modal in sync after the list refreshes (for example
+  // when a payment is saved or deleted from the payment modal above it) and
+  // bring the payment records tab back into view so the change is visible.
+  useEffect(() => {
+    if (detailsVisible && selectedCustomer) {
+      void fetchCustomerDetails(
+        selectedCustomer.customer_code,
+        paymentPagination.current,
+        outboundPagination.current
+      );
+      setDetailsTab('payments');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data]);
 
   const handlePaymentPageChange = async (page: number): Promise<void> => {
     if (selectedCustomer) {
@@ -293,15 +320,6 @@ const ReceivableTable: FC<ReceivableTableProps> = ({
     }
   ];
 
-  const searchStats = useMemo(() => {
-    const totalReceivable = data.reduce((sum, item) => sum + (item.total_receivable ?? 0), 0);
-    const totalUnpaid = data.reduce((sum, item) => sum + Math.max(item.balance ?? 0, 0), 0);
-    return {
-      totalReceivable,
-      totalUnpaid
-    };
-  }, [data]);
-
   const tablePagination: TablePaginationConfig = {
     ...pagination,
     showQuickJumper: true,
@@ -313,9 +331,150 @@ const ReceivableTable: FC<ReceivableTableProps> = ({
       })
   };
 
+  const detailsTabs = [
+    {
+      key: 'payments',
+      label: t('receivable.paymentRecords'),
+      children: (
+        <ResponsiveTable<ReceivablePaymentRecord>
+          size="small"
+          dataSource={customerDetails?.payment_records?.data ?? []}
+          rowKey="id"
+          pagination={{
+            ...paymentPagination,
+            showSizeChanger: false,
+            size: 'small',
+            onChange: handlePaymentPageChange,
+            showTotal: (total, range) => `${range[0]}-${range[1]} / ${total}`
+          }}
+          scroll={{ y: 260 }}
+          columns={[
+            {
+              title: t('receivable.paymentAmount'),
+              dataIndex: 'amount',
+              render: (value) => formatCurrency(value)
+            },
+            { title: t('receivable.paymentDate'), dataIndex: 'pay_date' },
+            {
+              title: t('receivable.paymentMethod'),
+              dataIndex: 'pay_method'
+            },
+            {
+              title: t('receivable.remark'),
+              dataIndex: 'remark',
+              ellipsis: true
+            },
+            ...(canWrite
+              ? [
+                  {
+                    title: t('receivable.action'),
+                    width: 120,
+                    render: (_value: unknown, record: ReceivablePaymentRecord) => (
+                      <Space>
+                        <Button
+                          type="link"
+                          size="small"
+                          onClick={() => {
+                            if (selectedCustomer) {
+                              onEditPayment(record, selectedCustomer);
+                            }
+                          }}
+                        >
+                          {t('receivable.editPayment')}
+                        </Button>
+                        <Popconfirm
+                          title={t('receivable.deletePaymentConfirm')}
+                          onConfirm={() => handleDeletePaymentConfirm(record.id)}
+                        >
+                          <Button type="link" size="small" danger icon={<DeleteOutlined />} />
+                        </Popconfirm>
+                      </Space>
+                    )
+                  }
+                ]
+              : [])
+          ]}
+        />
+      )
+    },
+    {
+      key: 'uninvoiced',
+      label: t('receivable.uninvoicedDetails'),
+      children: (
+        <ResponsiveTable
+          size="small"
+          dataSource={customerDetails?.outbound_records?.data ?? []}
+          rowKey="id"
+          pagination={{
+            ...outboundPagination,
+            showSizeChanger: false,
+            size: 'small',
+            onChange: handleOutboundPageChange,
+            showTotal: (total, range) => `${range[0]}-${range[1]} / ${total}`
+          }}
+          scroll={{ y: 260 }}
+          columns={[
+            {
+              title: t('receivable.outboundDate'),
+              dataIndex: 'outbound_date',
+              width: 100
+            },
+            {
+              title: t('receivable.productModel'),
+              dataIndex: 'product_model',
+              width: 120
+            },
+            {
+              title: t('receivable.quantity'),
+              dataIndex: 'quantity',
+              width: 80,
+              align: 'right'
+            },
+            {
+              title: t('receivable.unitPrice'),
+              dataIndex: 'unit_price',
+              width: 100,
+              align: 'right',
+              render: (value) => formatCurrency(value)
+            },
+            {
+              title: t('receivable.totalPrice'),
+              dataIndex: 'total_price',
+              width: 100,
+              align: 'right',
+              render: (value) => formatCurrency(value)
+            },
+            {
+              title: t('receivable.orderNumber'),
+              dataIndex: 'order_number',
+              width: 120,
+              ellipsis: true
+            },
+            {
+              title: t('receivable.remark'),
+              dataIndex: 'remark',
+              ellipsis: true
+            }
+          ]}
+        />
+      )
+    },
+    {
+      key: 'invoiced',
+      label: t('receivable.invoicedDetails'),
+      children: (
+        <InvoicedSnapshotPanel
+          direction="receivable"
+          partnerCode={selectedCustomer?.customer_code ?? null}
+          canWrite={canWrite}
+        />
+      )
+    }
+  ];
+
   return (
     <>
-      <Row justify="space-between" align="middle" style={{ marginBottom: 16 }}>
+      <Row style={{ marginBottom: 16 }}>
         <Col>
           <Search
             placeholder={t('receivable.searchCustomer') ?? ''}
@@ -324,15 +483,6 @@ const ReceivableTable: FC<ReceivableTableProps> = ({
             style={{ width: 250 }}
             defaultValue={filters.customer_short_name}
           />
-        </Col>
-        <Col>
-          <Text type="secondary">
-            {t('receivable.totalCustomers', {
-              count: pagination.total,
-              totalReceivable: formatCurrency(searchStats.totalReceivable),
-              totalUnpaid: formatCurrency(searchStats.totalUnpaid)
-            })}
-          </Text>
         </Col>
       </Row>
 
@@ -351,208 +501,95 @@ const ReceivableTable: FC<ReceivableTableProps> = ({
         title={`${t('receivable.details')} - ${selectedCustomer?.customer_short_name ?? ''}`}
         open={detailsVisible}
         onCancel={() => setDetailsVisible(false)}
-        footer={null}
         width={1000}
         style={{ top: 20 }}
+        destroyOnHidden
+        footer={
+          <Space>
+            {canWrite && selectedCustomer && (
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={() => onAddPayment(selectedCustomer)}
+              >
+                {t('receivable.addPayment')}
+              </Button>
+            )}
+            <Button onClick={() => setDetailsVisible(false)}>{t('receivable.close')}</Button>
+          </Space>
+        }
       >
         {detailsLoading ? (
-          <div style={{ textAlign: 'center', padding: 50 }}>{t('receivable.loading')}</div>
+          <div style={{ textAlign: 'center', padding: 50 }}>
+            <Spin />
+          </div>
         ) : customerDetails ? (
           <div>
-            <div style={{ marginBottom: 24 }}>
-              <Title level={5}>{t('receivable.customerInfo')}</Title>
-              <Row gutter={16}>
-                <Col xs={24} sm={12} xl={8}>
-                  {t('receivable.customerCode')}: {customerDetails.customer?.code ?? '-'}
-                </Col>
-                <Col xs={24} sm={12} xl={8}>
-                  {t('receivable.customerShortName')}: {customerDetails.customer?.short_name ?? '-'}
-                </Col>
-                <Col xs={24} sm={12} xl={8}>
-                  {t('receivable.customerFullName')}: {customerDetails.customer?.full_name ?? '-'}
-                </Col>
-              </Row>
-            </div>
+            <Descriptions
+              size="small"
+              column={{ xs: 1, sm: 2, md: 3 }}
+              title={t('receivable.customerInfo')}
+              style={{ marginBottom: 16 }}
+              items={[
+                {
+                  key: 'code',
+                  label: t('receivable.customerCode'),
+                  children: customerDetails.customer?.code ?? '-'
+                },
+                {
+                  key: 'short_name',
+                  label: t('receivable.customerShortName'),
+                  children: customerDetails.customer?.short_name ?? '-'
+                },
+                {
+                  key: 'full_name',
+                  label: t('receivable.customerFullName'),
+                  children: customerDetails.customer?.full_name ?? '-'
+                }
+              ]}
+            />
 
-            <div style={{ marginBottom: 24 }}>
-              <Title level={5}>{t('receivable.summary')}</Title>
-              <Row gutter={16}>
-                <Col xs={24} sm={12} xl={8}>
-                  {t('receivable.totalReceivable')}:{' '}
-                  {formatCurrency(customerDetails.summary?.total_receivable)}
-                </Col>
-                <Col xs={24} sm={12} xl={8}>
-                  {t('receivable.totalPaid')}: {formatCurrency(customerDetails.summary?.total_paid)}
-                </Col>
-                <Col xs={24} sm={12} xl={8}>
-                  {t('receivable.balance')}:{getBalanceTag(customerDetails.summary?.balance)}
-                </Col>
-              </Row>
-            </div>
-
-            <div style={{ marginBottom: 24 }}>
-              <Title level={5}>
-                {t('receivable.paymentRecords')}
-                {canWrite && (
-                  <Button
-                    type="primary"
-                    size="small"
-                    icon={<PlusOutlined />}
-                    style={{ marginLeft: 16 }}
-                    onClick={() => {
-                      setDetailsVisible(false);
-                      if (selectedCustomer) {
-                        onAddPayment(selectedCustomer);
-                      }
-                    }}
-                  >
-                    {t('receivable.addPayment')}
-                  </Button>
-                )}
-              </Title>
-              <ResponsiveTable<ReceivablePaymentRecord>
-                size="small"
-                dataSource={customerDetails.payment_records?.data ?? []}
-                rowKey="id"
-                pagination={{
-                  ...paymentPagination,
-                  showSizeChanger: false,
-                  size: 'small',
-                  onChange: handlePaymentPageChange,
-                  showTotal: (total, range) => `${range[0]}-${range[1]} / ${total}`
+            <Typography.Title level={5} style={{ marginBottom: 8 }}>
+              {t('receivable.summary')}
+            </Typography.Title>
+            <div
+              style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: 32,
+                alignItems: 'center',
+                marginBottom: 8
+              }}
+            >
+              <Statistic
+                title={t('receivable.totalReceivable')}
+                value={customerDetails.summary?.total_receivable ?? 0}
+                precision={2}
+                prefix={currency_unit_symbol}
+              />
+              <Statistic
+                title={t('receivable.totalPaid')}
+                value={customerDetails.summary?.total_paid ?? 0}
+                precision={2}
+                prefix={currency_unit_symbol}
+                valueStyle={{ color: '#3f8600' }}
+              />
+              <Statistic
+                title={t('receivable.balance')}
+                value={Math.abs(Number(customerDetails.summary?.balance ?? 0))}
+                precision={2}
+                prefix={currency_unit_symbol}
+                valueStyle={{
+                  color: Number(customerDetails.summary?.balance ?? 0) > 0 ? '#cf1322' : '#3f8600'
                 }}
-                scroll={{ y: 200 }}
-                columns={[
-                  {
-                    title: t('receivable.paymentAmount'),
-                    dataIndex: 'amount',
-                    render: (value) => formatCurrency(value)
-                  },
-                  { title: t('receivable.paymentDate'), dataIndex: 'pay_date' },
-                  {
-                    title: t('receivable.paymentMethod'),
-                    dataIndex: 'pay_method'
-                  },
-                  {
-                    title: t('receivable.remark'),
-                    dataIndex: 'remark',
-                    ellipsis: true
-                  },
-                  ...(canWrite
-                    ? [
-                        {
-                          title: t('receivable.action'),
-                          width: 120,
-                          render: (_value, record) => (
-                            <Space>
-                              <Button
-                                type="link"
-                                size="small"
-                                onClick={() => {
-                                  setDetailsVisible(false);
-                                  if (selectedCustomer) {
-                                    onEditPayment(record, selectedCustomer);
-                                  }
-                                }}
-                              >
-                                {t('receivable.editPayment')}
-                              </Button>
-                              <Popconfirm
-                                title={t('receivable.deletePaymentConfirm')}
-                                onConfirm={() => handleDeletePaymentConfirm(record.id)}
-                              >
-                                <Button type="link" size="small" danger icon={<DeleteOutlined />} />
-                              </Popconfirm>
-                            </Space>
-                          )
-                        }
-                      ]
-                    : [])
-                ]}
+                suffix={getBalanceTag(customerDetails.summary?.balance)}
               />
             </div>
 
-            <div>
-              <Title level={5}>
-                {t('receivable.uninvoicedDetails')}
-                <Button
-                  type="default"
-                  size="small"
-                  style={{ marginLeft: 16 }}
-                  onClick={() => setInvoicedModalVisible(true)}
-                >
-                  {t('receivable.viewInvoicedDetails')}
-                </Button>
-              </Title>
-              <ResponsiveTable<ReceivableOutboundRecord>
-                size="small"
-                dataSource={customerDetails.outbound_records?.data ?? []}
-                rowKey="id"
-                pagination={{
-                  ...outboundPagination,
-                  showSizeChanger: false,
-                  size: 'small',
-                  onChange: handleOutboundPageChange,
-                  showTotal: (total, range) => `${range[0]}-${range[1]} / ${total}`
-                }}
-                scroll={{ y: 200 }}
-                columns={[
-                  {
-                    title: t('receivable.outboundDate'),
-                    dataIndex: 'outbound_date',
-                    width: 100
-                  },
-                  {
-                    title: t('receivable.productModel'),
-                    dataIndex: 'product_model',
-                    width: 120
-                  },
-                  {
-                    title: t('receivable.quantity'),
-                    dataIndex: 'quantity',
-                    width: 80,
-                    align: 'right'
-                  },
-                  {
-                    title: t('receivable.unitPrice'),
-                    dataIndex: 'unit_price',
-                    width: 100,
-                    align: 'right',
-                    render: (value) => formatCurrency(value)
-                  },
-                  {
-                    title: t('receivable.totalPrice'),
-                    dataIndex: 'total_price',
-                    width: 100,
-                    align: 'right',
-                    render: (value) => formatCurrency(value)
-                  },
-                  {
-                    title: t('receivable.orderNumber'),
-                    dataIndex: 'order_number',
-                    width: 120,
-                    ellipsis: true
-                  },
-                  {
-                    title: t('receivable.remark'),
-                    dataIndex: 'remark',
-                    ellipsis: true
-                  }
-                ]}
-              />
-            </div>
+            <Tabs defaultActiveKey="payments" activeKey={detailsTab} onChange={setDetailsTab} items={detailsTabs} />
           </div>
         ) : null}
       </Modal>
-
-      <InvoicedModal
-        visible={invoicedModalVisible}
-        customerCode={selectedCustomer?.customer_code ?? null}
-        customerName={selectedCustomer?.customer_short_name ?? null}
-        onCancel={() => setInvoicedModalVisible(false)}
-        apiInstance={apiInstance}
-        canWrite={canWrite}
-      />
     </>
   );
 };
