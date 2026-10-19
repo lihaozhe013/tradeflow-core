@@ -221,13 +221,6 @@ const PayableTable: FC<PayableTableProps> = ({
       sortOrder: getColumnSortOrder('supplier_short_name')
     },
     {
-      title: t('payable.supplierFullName'),
-      dataIndex: 'supplier_full_name',
-      key: 'supplier_full_name',
-      width: 200,
-      ellipsis: true
-    },
-    {
       title: t('payable.totalPayable'),
       dataIndex: 'total_payable',
       key: 'total_payable',
@@ -264,13 +257,6 @@ const PayableTable: FC<PayableTableProps> = ({
       width: 120,
       sorter: true,
       sortOrder: getColumnSortOrder('last_payment_date'),
-      render: (value) => value ?? '-'
-    },
-    {
-      title: t('payable.lastPaymentMethod'),
-      dataIndex: 'last_payment_method',
-      key: 'last_payment_method',
-      width: 100,
       render: (value) => value ?? '-'
     },
     {
@@ -349,7 +335,7 @@ const PayableTable: FC<PayableTableProps> = ({
         loading={loading}
         pagination={tablePagination}
         onChange={onTableChange}
-        scroll={{ x: 1200 }}
+        scroll={{ x: 960 }}
         size="medium"
       />
 

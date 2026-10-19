@@ -225,13 +225,6 @@ const ReceivableTable: FC<ReceivableTableProps> = ({
       sortOrder: getColumnSortOrder('customer_short_name')
     },
     {
-      title: t('receivable.customerFullName'),
-      dataIndex: 'customer_full_name',
-      key: 'customer_full_name',
-      width: 200,
-      ellipsis: true
-    },
-    {
       title: t('receivable.totalReceivable'),
       dataIndex: 'total_receivable',
       key: 'total_receivable',
@@ -268,13 +261,6 @@ const ReceivableTable: FC<ReceivableTableProps> = ({
       width: 120,
       sorter: true,
       sortOrder: getColumnSortOrder('last_payment_date'),
-      render: (value) => value ?? '-'
-    },
-    {
-      title: t('receivable.lastPaymentMethod'),
-      dataIndex: 'last_payment_method',
-      key: 'last_payment_method',
-      width: 100,
       render: (value) => value ?? '-'
     },
     {
@@ -357,7 +343,7 @@ const ReceivableTable: FC<ReceivableTableProps> = ({
         loading={loading}
         pagination={tablePagination}
         onChange={onTableChange}
-        scroll={{ x: 1200 }}
+        scroll={{ x: 960 }}
         size="medium"
       />
 
