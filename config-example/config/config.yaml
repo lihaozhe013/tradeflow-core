@@ -2,7 +2,7 @@ currency_unit_symbol: '$'
 pagination_limit: 20
 database:
   type: postgresql
-  host: host.docker.internal
+  host: 127.0.0.1
   port: 5432
   user: postgres
   password: postgres
