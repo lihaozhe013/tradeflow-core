@@ -57,7 +57,7 @@ describe('Legacy settings import SQL', () => {
   it('imports all sections, preserves values and is idempotent', async () => {
     const values = legacyFixture();
     await prisma.systemSetting.deleteMany();
-    const sql = generateImportSql(values);
+    const sql = generateImportSql(values, { database: 'tradeflow_e2e' });
     expect(sql).not.toContain("O'Brien");
     await executeSql(sql);
     const first = await prisma.systemSetting.findMany({ orderBy: { section: 'asc' } });
@@ -70,15 +70,51 @@ describe('Legacy settings import SQL', () => {
     const values = legacyFixture();
     await prisma.systemSetting.deleteMany({ where: { section: 'general' } });
     const before = await prisma.systemSetting.findMany({ orderBy: { section: 'asc' } });
-    await expect(executeSql(generateImportSql(values))).rejects.toThrow('Existing settings differ');
+    await expect(
+      executeSql(generateImportSql(values, { database: 'tradeflow_e2e' }))
+    ).rejects.toThrow('Existing settings differ');
     expect(await prisma.systemSetting.findMany({ orderBy: { section: 'asc' } })).toEqual(before);
-    await executeSql(generateImportSql(values, true));
+    await executeSql(
+      generateImportSql(values, { database: 'tradeflow_e2e', replaceExisting: true })
+    );
     const row = await prisma.systemSetting.findUniqueOrThrow({ where: { section: 'general' } });
     expect(row.value).toEqual(values.general);
     expect(row.version).toBe(1);
     const about = await prisma.systemSetting.findUniqueOrThrow({ where: { section: 'about' } });
     expect(about.version).toBe(before.find((row) => row.section === 'about')!.version + 1);
   });
+  it('rejects the wrong database before dropping, creating, or changing settings', async () => {
+    const before = await prisma.systemSetting.findMany({ orderBy: { section: 'asc' } });
+    const sql = generateImportSql(legacyFixture(), {
+      database: 'not_tradeflow_e2e',
+      recreateTable: true
+    });
+    expect(sql.indexOf('$database_check$')).toBeLessThan(sql.indexOf('DROP TABLE'));
+    await expect(executeSql(sql)).rejects.toThrow('Wrong database');
+    expect(await prisma.systemSetting.findMany({ orderBy: { section: 'asc' } })).toEqual(before);
+  });
+  it('recreates only the settings table and imports all legacy values', async () => {
+    const users = await prisma.user.count();
+    const products = await prisma.product.count();
+    const values = legacyFixture();
+    await executeSql(generateImportSql(values, { database: 'tradeflow_e2e', recreateTable: true }));
+    const rows = await prisma.systemSetting.findMany();
+    expect(rows).toHaveLength(5);
+    for (const section of sections) {
+      expect(rows.find((row) => row.section === section)?.value).toEqual(values[section]);
+      expect(rows.find((row) => row.section === section)?.version).toBe(1);
+    }
+    expect(await prisma.user.count()).toBe(users);
+    expect(await prisma.product.count()).toBe(products);
+  });
+  it('requires a valid target database name and safely quotes its content', async () => {
+    expect(() => generateImportSql(legacyFixture(), { database: '' })).toThrow();
+    expect(() => generateImportSql(legacyFixture(), { database: 'a'.repeat(64) })).toThrow();
+    await expect(
+      executeSql(generateImportSql(legacyFixture(), { database: "O'Brien database" }))
+    ).rejects.toThrow('Wrong database');
+  });
+
   it('rejects ambiguous payment mappings rather than discarding entries', () => {
     expect(() =>
       convertLegacy(

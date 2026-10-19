@@ -8,14 +8,18 @@ async function main(): Promise<void> {
     options: {
       'source-dir': { type: 'string' },
       output: { type: 'string' },
+      database: { type: 'string' },
+      'recreate-table': { type: 'boolean', default: false },
       'replace-existing': { type: 'boolean', default: false }
     },
     strict: true
   });
-  if (!values['source-dir'] || !values.output)
+  if (!values['source-dir'] || !values.output || !values.database)
     throw new Error(
-      'Usage: bun run settings:export-legacy --source-dir <legacy-directory> --output <file.sql> [--replace-existing]'
+      'Usage: bun run settings:export-legacy --source-dir <legacy-directory> --output <file.sql> --database <database-name> [--replace-existing | --recreate-table]'
     );
+  if (values['replace-existing'] && values['recreate-table'])
+    throw new Error('Choose either --replace-existing or --recreate-table.');
   const source = path.resolve(values['source-dir']);
   const read = async (name: string): Promise<unknown> =>
     JSON.parse(await readFile(path.join(source, name), 'utf8')) as unknown;
@@ -27,7 +31,11 @@ async function main(): Promise<void> {
   const settings = convertLegacy(frontend, about, exports);
   await writeFile(
     path.resolve(values.output),
-    generateImportSql(settings, values['replace-existing']),
+    generateImportSql(settings, {
+      database: values.database,
+      replaceExisting: values['replace-existing'],
+      recreateTable: values['recreate-table']
+    }),
     { mode: 0o600, flag: 'wx' }
   );
   console.info(

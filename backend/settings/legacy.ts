@@ -45,10 +45,31 @@ function sqlString(value: string): string {
   // Hex encoding keeps arbitrary user text outside SQL and psql command syntax.
   return `convert_from(decode('${Buffer.from(value, 'utf8').toString('hex')}', 'hex'), 'UTF8')`;
 }
-export function generateImportSql(values: SettingValues, replaceExisting = false): string {
+export interface ImportSqlOptions {
+  database: string;
+  replaceExisting?: boolean;
+  recreateTable?: boolean;
+}
+export function generateImportSql(values: SettingValues, options: ImportSqlOptions): string {
+  const database = z
+    .string()
+    .min(1)
+    .refine(
+      (value) => !value.includes('\0') && Buffer.byteLength(value, 'utf8') <= 63,
+      'Use a valid PostgreSQL database name.'
+    )
+    .parse(options.database);
   return `\\set ON_ERROR_STOP on
 BEGIN;
+DO $database_check$
+BEGIN
+  IF current_database() IS DISTINCT FROM ${sqlString(database)} THEN
+    RAISE EXCEPTION 'Wrong database: connected to %, expected %. Connect to the application database before importing.', current_database(), ${sqlString(database)};
+  END IF;
+END
+$database_check$;
 SELECT pg_advisory_xact_lock(hashtext('tradeflow-core:schema-bootstrap:public'));
+${options.recreateTable ? 'DROP TABLE IF EXISTS public.system_settings;' : ''}
 ${settingsTableSql}
 LOCK TABLE public.system_settings IN EXCLUSIVE MODE;
 ${sections
@@ -58,7 +79,7 @@ ${sections
 DECLARE incoming JSONB := ${payload};
 BEGIN
   IF EXISTS (SELECT 1 FROM public.system_settings WHERE section = '${section}' AND value IS DISTINCT FROM incoming) THEN
-    ${replaceExisting ? `UPDATE public.system_settings SET value = incoming, version = version + 1, updated_at = CURRENT_TIMESTAMP, updated_by = 'legacy-import' WHERE section = '${section}';` : `RAISE EXCEPTION 'Existing settings differ for ${section}; generate SQL with --replace-existing to replace them.';`}
+    ${options.replaceExisting ? `UPDATE public.system_settings SET value = incoming, version = version + 1, updated_at = CURRENT_TIMESTAMP, updated_by = 'legacy-import' WHERE section = '${section}';` : `RAISE EXCEPTION 'Existing settings differ for ${section}; generate SQL with --replace-existing to replace them.';`}
   ELSE
     INSERT INTO public.system_settings(section, value, updated_by) VALUES ('${section}', incoming, 'legacy-import') ON CONFLICT (section) DO NOTHING;
   END IF;
@@ -67,6 +88,6 @@ $import_settings$;`;
   })
   .join('\n')}
 COMMIT;
-SELECT section, version, updated_at, updated_by FROM public.system_settings ORDER BY section;
+SELECT current_database() AS database, section, version, updated_at, updated_by FROM public.system_settings ORDER BY section;
 `;
 }

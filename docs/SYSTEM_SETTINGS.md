@@ -40,7 +40,7 @@ removing it from deployment build inputs. Generate SQL locally using Bun; no dat
 database credential is needed for generation:
 
 ```sh
-bun run settings:export-legacy --source-dir /absolute/path/to/legacy-build-config --output /absolute/path/to/import-system-settings.sql
+bun run settings:export-legacy --source-dir /absolute/path/to/legacy-build-config --output /absolute/path/to/import-system-settings.sql --database DATABASE_NAME
 ```
 
 Generation validates every section and preserves configured labels, Unicode, template column order,
@@ -51,8 +51,15 @@ control.
 Import before starting the new version. In a psql session connected to the intended database:
 
 ```sql
+\connect DATABASE_NAME
+SELECT current_database();
 \i /absolute/path/to/import-system-settings.sql
 ```
+
+The required `--database` argument binds the SQL to the application database named in runtime
+`config.yaml` (`database.dbName`). A default `postgres=#` prompt normally means the maintenance
+database, which is not the business database. The script refuses a mismatched connection before any
+DDL or data changes and includes the database name in its result summary.
 
 The script enables `ON_ERROR_STOP`, takes the schema bootstrap advisory lock, creates only the
 settings table if needed, and imports all five sections in one transaction. Identical existing
@@ -63,7 +70,7 @@ If the new version has already initialized defaults, or replacement is intention
 separate replacement script:
 
 ```sh
-bun run settings:export-legacy --source-dir /absolute/path/to/legacy-build-config --output /absolute/path/to/replace-system-settings.sql --replace-existing
+bun run settings:export-legacy --source-dir /absolute/path/to/legacy-build-config --output /absolute/path/to/replace-system-settings.sql --database DATABASE_NAME --replace-existing
 ```
 
 Before replacing customized settings, back up the table:
@@ -83,3 +90,28 @@ when their window regains focus. An already-open business form retains its enter
 For rollback, stop the new application before restoring table data from the backup. The schema
 addition does not alter business tables. Reverting to an older application version also requires its
 original build-config files, retained in the deployment archive.
+
+## Recreate the settings table from legacy configuration
+
+To deliberately discard current system settings and restore all five legacy sections, generate:
+
+```sh
+bun run settings:export-legacy --source-dir /absolute/path/to/legacy-build-config --output /absolute/path/to/restore-system-settings.sql --database DATABASE_NAME --recreate-table
+```
+
+Connect psql to `DATABASE_NAME` before including the SQL file. The database guard runs before
+`DROP TABLE IF EXISTS public.system_settings`. Only that table is dropped, without `CASCADE`, and
+its recreation and import are in the same transaction. Business tables, accounts, and audit logs are
+preserved. A failed import rolls back the table replacement. Recreated rows start at version 1;
+refresh all open settings editor pages afterward. This mode cannot be combined with
+`--replace-existing`.
+
+After import, verify the target database and effective currency:
+
+```sql
+SELECT current_database(), value->>'currency_unit_symbol' AS currency
+FROM public.system_settings WHERE section = 'general';
+```
+
+If an earlier script was imported into `postgres`, leave that unrelated table alone and import into
+the actual application database. The application never reads settings across database boundaries.
