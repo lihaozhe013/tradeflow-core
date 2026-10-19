@@ -1,3 +1,4 @@
+import { useRuntimeConfig } from '@/config/runtime';
 import ResponsiveTable from '@/components/ResponsiveTable';
 import { useState, useCallback, useEffect, useMemo, type ChangeEvent, type FC } from 'react';
 import type { ColumnsType, TableProps } from 'antd/es/table';
@@ -6,7 +7,6 @@ import { SearchOutlined, ReloadOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useSimpleApi, useSimpleApiData } from '@/hooks/useSimpleApi';
 import { usePermissions } from '@/auth/usePermissions';
-import { currency_unit_symbol } from '@/config/types';
 
 const { Title } = Typography;
 
@@ -42,6 +42,7 @@ const Inventory: FC = () => {
   const [productFilter, setProductFilter] = useState('');
   const [pagination, setPagination] = useState<PaginationInfo>(DEFAULT_PAGINATION);
   const { t } = useTranslation();
+  const { currency_unit_symbol } = useRuntimeConfig();
   const { canWrite } = usePermissions();
 
   const { post, loading: actionLoading } = useSimpleApi();
@@ -221,24 +222,24 @@ const Inventory: FC = () => {
         </Row>
 
         <ResponsiveTable<InventoryItem>
-            columns={inventoryColumns}
-            dataSource={inventoryData}
-            rowKey="product_model"
-            loading={loading}
-            onChange={handleTableChange}
-            pagination={{
-              current: pagination.current,
-              pageSize: pagination.pageSize,
-              total: inventoryResponse?.pagination?.total ?? 0,
-              showQuickJumper: true,
-              showTotal: (total, range) =>
-                t('inventory.paginationTotal', {
-                  start: range[0],
-                  end: range[1],
-                  total
-                })
-            }}
-            scroll={{ x: 600 }}
+          columns={inventoryColumns}
+          dataSource={inventoryData}
+          rowKey="product_model"
+          loading={loading}
+          onChange={handleTableChange}
+          pagination={{
+            current: pagination.current,
+            pageSize: pagination.pageSize,
+            total: inventoryResponse?.pagination?.total ?? 0,
+            showQuickJumper: true,
+            showTotal: (total, range) =>
+              t('inventory.paginationTotal', {
+                start: range[0],
+                end: range[1],
+                total
+              })
+          }}
+          scroll={{ x: 600 }}
         />
       </Card>
     </div>

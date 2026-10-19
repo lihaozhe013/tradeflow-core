@@ -18,14 +18,14 @@ function About() {
       slogan: ''
     },
     system: {
-      version: '0.1.0',
-      releaseDate: '2025-01-01',
-      techStack: 'React + Node.js + SQLite',
+      version: '',
+      releaseDate: '',
+      techStack: '',
       team: ''
     },
     contact: {
-      email: 'example@example.com',
-      phone: '+1 xxx-xxx-xxxx',
+      email: '',
+      phone: '',
       address: ''
     }
   });
@@ -75,17 +75,17 @@ function About() {
               <Col xs={24} md={12}>
                 <Text strong>{t('about.systemVersion')}: </Text>
                 <Text>
-                  {aboutData?.system?.version ?? '0.1.0'}
+                  {aboutData?.system?.version ?? ''}
                   <Text type="secondary"> ({__COMMIT_HASH__})</Text>
                 </Text>
               </Col>
               <Col xs={24} md={12}>
                 <Text strong>{t('about.releaseDate')}: </Text>
-                <Text>{aboutData?.system?.releaseDate ?? '2025-01-01'}</Text>
+                <Text>{aboutData?.system?.releaseDate ?? ''}</Text>
               </Col>
               <Col xs={24} md={12}>
                 <Text strong>{t('about.techStack')}: </Text>
-                <Text>{aboutData?.system?.techStack ?? 'React + Node.js + SQLite'}</Text>
+                <Text>{aboutData?.system?.techStack ?? ''}</Text>
               </Col>
               <Col xs={24} md={12}>
                 <Text strong>{t('about.development')}: </Text>
@@ -100,10 +100,10 @@ function About() {
             </Title>
             <Paragraph style={{ fontSize: '16px', lineHeight: '1.8', color: '#555' }}>
               <Text strong>{t('about.email')}: </Text>
-              {aboutData?.contact?.email ?? 'example@example.com'}
+              {aboutData?.contact?.email ?? ''}
               <br />
               <Text strong>{t('about.phone')}: </Text>
-              {aboutData?.contact?.phone ?? '+1 xxx-xxx-xxxx'}
+              {aboutData?.contact?.phone ?? ''}
               <br />
               <Text strong>{t('about.address')}: </Text>
               {aboutData?.contact?.address ?? t('about.defaultAddress')}

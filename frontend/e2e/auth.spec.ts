@@ -35,8 +35,7 @@ test('loads every application page for an editor and supports logout', async ({ 
     ['analysis', 'Data Analysis'],
     ['export', 'Base Info'],
     ['audit', 'Audit Log'],
-    ['profile', 'Profile Settings'],
-    ['about', 'About Us']
+    ['profile', 'Profile Settings']
   ] as const;
 
   for (const [route, pageText] of pages) {
@@ -64,7 +63,9 @@ test('enforces reader, editor, and superuser page and action access', async ({ p
   await expect(page.getByRole('heading', { name: 'Partners' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Add Partner' })).toHaveCount(0);
   await page.getByRole('menuitem', { name: 'Management' }).click();
-  await expect(page.locator('.app-sidebar').getByRole('menuitem', { name: 'User Management' })).toHaveCount(0);
+  await expect(
+    page.locator('.app-sidebar').getByRole('menuitem', { name: 'User Management' })
+  ).toHaveCount(0);
   await page.getByRole('button', { name: /Test reader/i }).click();
   await page.getByRole('menuitem', { name: 'Profile Settings' }).click();
   await expect(page).toHaveURL(/#\/profile$/);
@@ -78,7 +79,9 @@ test('enforces reader, editor, and superuser page and action access', async ({ p
   await page.goto('/#/partners');
   await expect(page.getByRole('button', { name: 'Add Partner' })).toBeVisible();
   await page.getByRole('menuitem', { name: 'Management' }).click();
-  await expect(page.locator('.app-sidebar').getByRole('menuitem', { name: 'User Management' })).toHaveCount(0);
+  await expect(
+    page.locator('.app-sidebar').getByRole('menuitem', { name: 'User Management' })
+  ).toHaveCount(0);
   await page.goto('/#/users');
   await expect(page.getByText('Insufficient Permissions', { exact: true })).toBeVisible();
 
@@ -86,7 +89,9 @@ test('enforces reader, editor, and superuser page and action access', async ({ p
   await logInAs(page, 'superuser');
   await expect(page.getByRole('menuitem', { name: 'Overview' })).toBeVisible();
   await page.getByRole('menuitem', { name: 'Management' }).click();
-  await expect(page.locator('.app-sidebar').getByRole('menuitem', { name: 'User Management' })).toBeVisible();
+  await expect(
+    page.locator('.app-sidebar').getByRole('menuitem', { name: 'User Management' })
+  ).toBeVisible();
   await page.goto('/#/users');
   await expect(page.getByRole('heading', { name: 'User Management' })).toBeVisible();
   await page.goto('/#/audit');

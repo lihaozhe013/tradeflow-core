@@ -20,6 +20,7 @@ import receivableRoutes from '@/routes/receivable';
 import payableRoutes from '@/routes/payable';
 import exportRoutes from '@/routes/export';
 import analysisRoutes from '@/routes/analysis/analysis';
+import settingsRoutes from '@/routes/settings';
 import aboutRoutes from '@/routes/about';
 import authRoutes from '@/routes/auth';
 import usersRoutes from '@/routes/users';
@@ -102,7 +103,8 @@ export function createApp(mcpSettings: McpConfig = getMcpSettings()): Express {
   app.use('/api/payable', editorPageAccess, payableRoutes);
   app.use('/api/export', editorPageAccess, exportRoutes);
   app.use('/api/analysis', editorPageAccess, analysisRoutes);
-  app.use('/api/about', aboutRoutes);
+  app.use('/api/settings', settingsRoutes);
+  app.use('/api/about', authorize(['superuser']), aboutRoutes);
   app.use('/api/users', usersRoutes);
   app.use('/api/audit', auditRoutes);
 

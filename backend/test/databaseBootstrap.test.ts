@@ -9,6 +9,7 @@ import {
 import type { DatabaseConfig } from '@/utils/databaseConnection';
 import { config } from '@/utils/paths';
 import { assertTestDatabaseConfig } from '@/test/testDatabaseSafety';
+import generatedManifest from '@/prisma/bootstrap/generated/schema-manifest.json';
 
 interface FakeState {
   databaseExists: boolean;
@@ -189,8 +190,8 @@ describe('initializeDatabase', () => {
 
     expect(state.queries).toContain('CREATE DATABASE "trade""flow"');
     expect(state.configs.every((pool) => pool.password === 'test-password')).toBe(true);
-    expect(result.tablesCreated).toBe(15);
-    expect(result.indexesAdded).toBe(7);
+    expect(result.tablesCreated).toBe(generatedManifest.tables.length);
+    expect(result.indexesAdded).toBe(generatedManifest.indexes.length);
     expect(result.constraintsAdded).toBe(7);
     expect(state.queries).toContain('SELECT pg_advisory_lock(hashtext($1))');
     expect(state.queries).toContain('SELECT pg_advisory_xact_lock(hashtext($1))');

@@ -1,3 +1,4 @@
+import { useRuntimeConfig } from '@/config/runtime';
 import React from 'react';
 import { Row, Col, Card, Statistic } from 'antd';
 import { useTranslation } from 'react-i18next';
@@ -12,6 +13,7 @@ interface AnalysisStatisticsProps {
 
 const AnalysisStatistics: React.FC<AnalysisStatisticsProps> = ({ data, loading, analysisType }) => {
   const { t } = useTranslation();
+  const { currency_unit_symbol } = useRuntimeConfig();
 
   if (!data) return null;
 
@@ -24,7 +26,7 @@ const AnalysisStatistics: React.FC<AnalysisStatisticsProps> = ({ data, loading, 
               title={t('analysis.purchaseAmount') || 'Total Purchase Amount'}
               value={data.purchase_amount ?? 0}
               precision={2}
-              prefix="¥"
+              prefix={currency_unit_symbol}
             />
           </Card>
         </Col>
@@ -41,7 +43,7 @@ const AnalysisStatistics: React.FC<AnalysisStatisticsProps> = ({ data, loading, 
             title={t('analysis.salesAmount')}
             value={data.sales_amount ?? 0}
             precision={2}
-            prefix="¥"
+            prefix={currency_unit_symbol}
             styles={{
               content: {
                 color: (data.sales_amount ?? 0) >= 0 ? '#3f8600' : '#cf1322'
@@ -56,7 +58,7 @@ const AnalysisStatistics: React.FC<AnalysisStatisticsProps> = ({ data, loading, 
             title={t('analysis.costAmount')}
             value={data.cost_amount ?? 0}
             precision={2}
-            prefix="¥"
+            prefix={currency_unit_symbol}
           />
         </Card>
       </Col>
@@ -74,7 +76,7 @@ const AnalysisStatistics: React.FC<AnalysisStatisticsProps> = ({ data, loading, 
             prefix={
               <>
                 {(data.profit_amount ?? 0) >= 0 ? <ArrowUpOutlined /> : <ArrowDownOutlined />}
-                <span style={{ marginLeft: 4 }}>¥</span>
+                <span style={{ marginLeft: 4 }}>{currency_unit_symbol}</span>
               </>
             }
           />

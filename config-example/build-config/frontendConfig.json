@@ -8,37 +8,6 @@
     },
     "tokenExpiresInHours": 12
   },
-  "currency_unit_symbol": "$",
-  "paymentMethods": {
-    "config": {
-      "bank_acceptance": {
-        "code": "BANK_ACCEPTANCE",
-        "label": "Banker's acceptance"
-      },
-      "bank_transfer": {
-        "code": "BANK_TRANSFER",
-        "label": "E-Transfer"
-      },
-      "cash": {
-        "code": "CASH",
-        "label": "Cash"
-      },
-      "check": {
-        "code": "CHECK",
-        "label": "Cheque"
-      },
-      "other": {
-        "code": "OTHER",
-        "label": "Other"
-      }
-    },
-    "default": "E-Transfer",
-    "list": ["Cash", "E-Transfer", "Cheque", "Banker's acceptance", "Other"]
-  },
-  "productCategories": {
-    "default": "Other",
-    "list": ["category 1", "category 2", "category 3", "Other"]
-  },
   "server": {
     "url": "http://localhost:8000"
   }

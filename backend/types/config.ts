@@ -63,7 +63,6 @@ export interface McpConfig {
  * AppConfig Interface
  */
 export interface AppConfig {
-  currency_unit_symbol?: string;
   pagination_limit?: number;
   database?: {
     type?: 'sqlite' | 'postgresql';

@@ -1,6 +1,6 @@
 import * as XLSX from 'xlsx';
 import ExportUtils from '@/routes/export/utils/exportUtils';
-import { TEMPLATES } from '@/routes/export/utils/exportTemplates';
+import type { ExportTemplates } from '@/settings/schema';
 import { getCustomerAnalysisData, getProductAnalysisData } from './analysisQueries';
 
 /**
@@ -53,7 +53,8 @@ function getUniqueSheetName(workbook: XLSX.WorkBook, name: string): string {
  * Export advanced analysis data
  */
 export async function generateAdvancedAnalysisExcel(
-  options: { exportType?: string; startDate?: string; endDate?: string } = {}
+  options: { exportType?: string; startDate?: string; endDate?: string } = {},
+  TEMPLATES: ExportTemplates
 ): Promise<Buffer> {
   const { exportType, startDate, endDate } = options;
 
@@ -86,7 +87,7 @@ export async function generateAdvancedAnalysisExcel(
       );
       const sheetName = TEMPLATES.analysis_customer_summary.sheetName || 'Summary';
       const safeSummarySheetName = getUniqueSheetName(workbook, sheetName);
-      XLSX.utils.book_append_sheet(workbook, summaryWorksheet, safeSummarySheetName);
+      ExportUtils.appendWorksheet(workbook, summaryWorksheet, safeSummarySheetName);
     }
 
     // 2. Create Detail sheets per customer
@@ -114,9 +115,9 @@ export async function generateAdvancedAnalysisExcel(
           );
           const detailSheetName = getUniqueSheetName(
             workbook,
-            `${customer.customer_name}-${detailLabels.detail_suffix || 'Details'}`
+            `${customer.customer_name}-${detailLabels['detail_suffix'] || 'Details'}`
           );
-          XLSX.utils.book_append_sheet(workbook, detailWorksheet, detailSheetName);
+          ExportUtils.appendWorksheet(workbook, detailWorksheet, detailSheetName);
         }
       }
     }
@@ -144,7 +145,7 @@ export async function generateAdvancedAnalysisExcel(
       );
       const sheetName = TEMPLATES.analysis_product_summary.sheetName || 'Summary';
       const safeSummarySheetName = getUniqueSheetName(workbook, sheetName);
-      XLSX.utils.book_append_sheet(workbook, summaryWorksheet, safeSummarySheetName);
+      ExportUtils.appendWorksheet(workbook, summaryWorksheet, safeSummarySheetName);
     }
 
     // 2. Create Detail sheets per product
@@ -173,9 +174,9 @@ export async function generateAdvancedAnalysisExcel(
           );
           const detailSheetName = getUniqueSheetName(
             workbook,
-            `${product.product_model}-${detailLabels.detail_suffix || 'Details'}`
+            `${product.product_model}-${detailLabels['detail_suffix'] || 'Details'}`
           );
-          XLSX.utils.book_append_sheet(workbook, detailWorksheet, detailSheetName);
+          ExportUtils.appendWorksheet(workbook, detailWorksheet, detailSheetName);
         }
       }
     }

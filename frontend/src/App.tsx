@@ -1,3 +1,5 @@
+import Settings from '@/pages/Settings';
+import { RuntimeSettingsProvider } from '@/config/runtime';
 import React, { useEffect, useMemo, useState } from 'react';
 import { HashRouter as Router, Routes, Route, Link, Navigate, useLocation } from 'react-router-dom';
 import type { Location } from 'react-router-dom';
@@ -237,7 +239,8 @@ type MenuKey =
   | 'audit'
   | 'mcp-connections'
   | 'users'
-  | 'about';
+  | 'about'
+  | 'settings';
 
 interface AppContentInnerProps {
   readonly location: Location;
@@ -252,10 +255,12 @@ function AppContentInner({ location, t }: AppContentInnerProps): React.ReactElem
   const screens = Grid.useBreakpoint();
   const isMobile = !screens.md;
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  const [isWideViewport, setIsWideViewport] = useState(() =>
-    window.matchMedia('(min-width: 1440px)').matches
+  const [isWideViewport, setIsWideViewport] = useState(
+    () => window.matchMedia('(min-width: 1440px)').matches
   );
-  const [collapsed, setCollapsed] = useState(() => !window.matchMedia('(min-width: 1440px)').matches);
+  const [collapsed, setCollapsed] = useState(
+    () => !window.matchMedia('(min-width: 1440px)').matches
+  );
 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(min-width: 1440px)');
@@ -285,6 +290,7 @@ function AppContentInner({ location, t }: AppContentInnerProps): React.ReactElem
     if (path === '/audit') return 'audit';
     if (path === '/mcp-connections') return 'mcp-connections';
     if (path === '/users') return 'users';
+    if (path === '/settings') return 'settings';
     if (path === '/about') return 'about';
     return 'overview';
   };
@@ -307,7 +313,12 @@ function AppContentInner({ location, t }: AppContentInnerProps): React.ReactElem
     ];
     const administrationItems = [
       linkItem('audit', '/audit', t('nav.audit')),
-      ...(canManageUsers ? [linkItem('users', '/users', t('nav.users'))] : []),
+      ...(canManageUsers
+        ? [
+            linkItem('users', '/users', t('nav.users')),
+            linkItem('settings', '/settings', t('settings.title'))
+          ]
+        : []),
       linkItem('mcp-connections', '/mcp-connections', t('nav.mcpConnections'))
     ];
 
@@ -354,24 +365,38 @@ function AppContentInner({ location, t }: AppContentInnerProps): React.ReactElem
         label: t('nav.administration'),
         children: administrationItems
       },
-      {
-        key: 'about',
-        icon: <InfoCircleOutlined />,
-        label: <Link to="/about">{t('about.title')}</Link>
-      }
+      ...(canManageUsers
+        ? [
+            {
+              key: 'about',
+              icon: <InfoCircleOutlined />,
+              label: <Link to="/about">{t('about.title')}</Link>
+            }
+          ]
+        : [])
     ];
   }, [canAccessRestrictedPages, canManageUsers, t]);
 
   const selectedKey = location.pathname === '/profile' ? '' : getSelectedKey();
-  const openGroupKey = selectedKey === 'inbound' || selectedKey === 'outbound' || selectedKey === 'transaction-drafts' || selectedKey === 'inventory'
-    ? 'operations'
-    : selectedKey === 'partners' || selectedKey === 'products' || selectedKey === 'product-prices'
-      ? 'master-data'
-      : selectedKey === 'receivable' || selectedKey === 'payable' || selectedKey === 'analysis' || selectedKey === 'export'
-        ? 'finance'
-        : selectedKey === 'audit' || selectedKey === 'users' || selectedKey === 'mcp-connections'
-          ? 'administration'
-          : '';
+  const openGroupKey =
+    selectedKey === 'inbound' ||
+    selectedKey === 'outbound' ||
+    selectedKey === 'transaction-drafts' ||
+    selectedKey === 'inventory'
+      ? 'operations'
+      : selectedKey === 'partners' || selectedKey === 'products' || selectedKey === 'product-prices'
+        ? 'master-data'
+        : selectedKey === 'receivable' ||
+            selectedKey === 'payable' ||
+            selectedKey === 'analysis' ||
+            selectedKey === 'export'
+          ? 'finance'
+          : selectedKey === 'audit' ||
+              selectedKey === 'settings' ||
+              selectedKey === 'users' ||
+              selectedKey === 'mcp-connections'
+            ? 'administration'
+            : '';
   const [openKeys, setOpenKeys] = useState<string[]>(openGroupKey ? [openGroupKey] : []);
   useEffect(() => {
     if (openGroupKey) setOpenKeys([openGroupKey]);
@@ -392,11 +417,13 @@ function AppContentInner({ location, t }: AppContentInnerProps): React.ReactElem
     audit: 'nav.audit',
     users: 'nav.users',
     'mcp-connections': 'nav.mcpConnections',
+    settings: 'settings.title',
     about: 'about.title'
   };
-  const pageTitle = location.pathname === '/profile'
-    ? t('users.profileTitle')
-    : t(selectedLabelKey[selectedKey as MenuKey] ?? 'nav.inbound');
+  const pageTitle =
+    location.pathname === '/profile'
+      ? t('users.profileTitle')
+      : t(selectedLabelKey[selectedKey as MenuKey] ?? 'nav.inbound');
 
   const navigation = (
     <Menu
@@ -421,7 +448,7 @@ function AppContentInner({ location, t }: AppContentInnerProps): React.ReactElem
           collapsed={collapsed}
           trigger={null}
         >
-          <Link to="/about" className={`app-brand${collapsed ? ' is-collapsed' : ''}`}>
+          <Link to="/" className={`app-brand${collapsed ? ' is-collapsed' : ''}`}>
             <img src="/logo.svg" alt={t('common.logoAlt', { defaultValue: 'Tradeflow logo' })} />
             {!collapsed && <span>TradeFlow</span>}
           </Link>
@@ -435,10 +462,16 @@ function AppContentInner({ location, t }: AppContentInnerProps): React.ReactElem
               type="text"
               className="navigation-toggle"
               aria-label={isMobile ? t('nav.openNavigation') : t('nav.toggleNavigation')}
-              icon={isMobile ? <MenuOutlined /> : collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-              onClick={() =>
-                isMobile ? setMobileNavOpen(true) : setCollapsed((value) => !value)
+              icon={
+                isMobile ? (
+                  <MenuOutlined />
+                ) : collapsed ? (
+                  <MenuUnfoldOutlined />
+                ) : (
+                  <MenuFoldOutlined />
+                )
               }
+              onClick={() => (isMobile ? setMobileNavOpen(true) : setCollapsed((value) => !value))}
             />
             {isMobile && <span className="mobile-page-title">{pageTitle}</span>}
           </div>
@@ -453,66 +486,81 @@ function AppContentInner({ location, t }: AppContentInnerProps): React.ReactElem
           <div className="app-page-container">
             <ErrorBoundary>
               <Routes>
-              <Route
-                path="/overview"
-                element={
-                  <ProtectedRoute requireRole="editor">
-                    <Overview />
-                  </ProtectedRoute>
-                }
-              />
-              <Route path="/inbound" element={<Inbound />} />
-              <Route path="/outbound" element={<Outbound />} />
-              <Route path="/transaction-drafts" element={<TransactionDrafts />} />
-              <Route path="/inventory" element={<Inventory />} />
-              <Route path="/partners" element={<Partners />} />
-              <Route path="/products" element={<Products />} />
-              <Route path="/product-prices" element={<ProductPrices />} />
-              <Route
-                path="/receivable"
-                element={
-                  <ProtectedRoute requireRole="editor">
-                    <Receivable />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/payable"
-                element={
-                  <ProtectedRoute requireRole="editor">
-                    <Payable />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/analysis"
-                element={
-                  <ProtectedRoute requireRole="editor">
-                    <Analysis />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/export"
-                element={
-                  <ProtectedRoute requireRole="editor">
-                    <Export />
-                  </ProtectedRoute>
-                }
-              />
-              <Route path="/audit" element={<Audit />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route
-                path="/users"
-                element={
-                  <ProtectedRoute requireRole="superuser">
-                    <Users />
-                  </ProtectedRoute>
-                }
-              />
-              <Route path="/mcp-connections" element={<McpConnections />} />
-              <Route path="/about" element={<About />} />
-              <Route path="*" element={<HomeRedirect />} />
+                <Route
+                  path="/overview"
+                  element={
+                    <ProtectedRoute requireRole="editor">
+                      <Overview />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route path="/inbound" element={<Inbound />} />
+                <Route path="/outbound" element={<Outbound />} />
+                <Route path="/transaction-drafts" element={<TransactionDrafts />} />
+                <Route path="/inventory" element={<Inventory />} />
+                <Route path="/partners" element={<Partners />} />
+                <Route path="/products" element={<Products />} />
+                <Route path="/product-prices" element={<ProductPrices />} />
+                <Route
+                  path="/receivable"
+                  element={
+                    <ProtectedRoute requireRole="editor">
+                      <Receivable />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/payable"
+                  element={
+                    <ProtectedRoute requireRole="editor">
+                      <Payable />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/analysis"
+                  element={
+                    <ProtectedRoute requireRole="editor">
+                      <Analysis />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/export"
+                  element={
+                    <ProtectedRoute requireRole="editor">
+                      <Export />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route path="/audit" element={<Audit />} />
+                <Route path="/profile" element={<Profile />} />
+                <Route
+                  path="/users"
+                  element={
+                    <ProtectedRoute requireRole="superuser">
+                      <Users />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route path="/mcp-connections" element={<McpConnections />} />
+                <Route
+                  path="/settings"
+                  element={
+                    <ProtectedRoute requireRole="superuser">
+                      <Settings />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/about"
+                  element={
+                    <ProtectedRoute requireRole="superuser">
+                      <About />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route path="*" element={<HomeRedirect />} />
               </Routes>
             </ErrorBoundary>
           </div>
@@ -520,7 +568,7 @@ function AppContentInner({ location, t }: AppContentInnerProps): React.ReactElem
       </Layout>
       <Drawer
         title={
-          <Link to="/about" className="app-brand" onClick={() => setMobileNavOpen(false)}>
+          <Link to="/" className="app-brand" onClick={() => setMobileNavOpen(false)}>
             <img src="/logo.svg" alt={t('common.logoAlt', { defaultValue: 'Tradeflow logo' })} />
             <span>TradeFlow</span>
           </Link>
@@ -556,7 +604,9 @@ function App(): React.ReactElement {
             path="*"
             element={
               <ProtectedRoute>
-                <AppContent />
+                <RuntimeSettingsProvider>
+                  <AppContent />
+                </RuntimeSettingsProvider>
               </ProtectedRoute>
             }
           />

@@ -33,7 +33,8 @@
     "type-check:frontend": "bun run --cwd frontend type-check",
     "desktop:dev": "bun run --cwd desktop dev",
     "desktop:build": "bun run --cwd desktop build",
-    "desktop:test": "bun run --cwd desktop test"
+    "desktop:test": "bun run --cwd desktop test",
+    "settings:export-legacy": "bun backend/scripts/exportLegacySettings.ts"
   },
   "devDependencies": {
     "@babel/parser": "8.0.7"

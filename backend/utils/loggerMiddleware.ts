@@ -25,6 +25,7 @@ const SENSITIVE_KEYS = [
 ];
 
 function shouldSkipLogging(req: Request): boolean {
+  if (req.originalUrl.split('?')[0]?.startsWith('/api/settings')) return true;
   if (req.originalUrl.split('?')[0]?.startsWith('/api/transaction-drafts')) return true;
   if (req.originalUrl.split('?')[0] === '/api/mcp' || req.originalUrl.startsWith('/api/mcp/'))
     return true;

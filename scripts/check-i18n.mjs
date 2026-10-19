@@ -92,7 +92,10 @@ function memberPaths(node) {
 function scanSource({ path: file, source }) {
   let ast;
   try {
-    ast = parse(source, { sourceType: 'module', plugins: ['typescript', 'jsx'] });
+    ast = parse(source, {
+      sourceType: 'module',
+      plugins: /\.[jt]sx$/.test(file) ? ['typescript', 'jsx'] : ['typescript']
+    });
   } catch (error) {
     throw new Error(`${file}: ${error.message}`);
   }

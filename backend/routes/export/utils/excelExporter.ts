@@ -1,3 +1,4 @@
+import { readExportTemplates } from '@/settings/service';
 import type {
   BasicDataFilters,
   TransactionFilters,
@@ -35,12 +36,12 @@ import { generateInventoryExcel } from '@/routes/export/utils/inventoryExporter'
 
 export async function exportBaseInfo(options: BasicDataFilters = {}): Promise<Buffer> {
   const data = await getBaseInfoData(options.tables || '123');
-  return generateBaseInfoExcel(data, options);
+  return generateBaseInfoExcel(data, options, await readExportTemplates());
 }
 
 export async function exportInboundOutbound(options: TransactionFilters = {}): Promise<Buffer> {
   const data = await getInboundOutboundData(options);
-  return generateTransactionExcel(data, options);
+  return generateTransactionExcel(data, options, await readExportTemplates());
 }
 
 export async function exportReceivablePayable(
@@ -71,24 +72,24 @@ export async function exportReceivablePayable(
     payable_details: await getPayableDetails({ outboundFrom, outboundTo }),
     payable_payments: await getPayablePayments({ paymentFrom, paymentTo })
   };
-  return generateFinancialExcel(data); // Use "data" directly, assuming type compatibility will be checked
+  return generateFinancialExcel(data, await readExportTemplates()); // Use "data" directly, assuming type compatibility will be checked
 }
 
 export async function exportStatement(options: TransactionFilters = {}): Promise<Buffer> {
   const data = await getInboundOutboundData(options);
-  return generateStatementExcel(data, options);
+  return generateStatementExcel(data, options, await readExportTemplates());
 }
 
 export async function exportAnalysis(options: AnalysisExportOptions): Promise<Buffer> {
   // Purely formatting provided data
-  return generateAnalysisExcel(options);
+  return generateAnalysisExcel(options, await readExportTemplates());
 }
 
 export async function exportAdvancedAnalysis(
   options: { exportType?: string; startDate?: string; endDate?: string } = {}
 ): Promise<Buffer> {
   // Fetches data internally via analysisQueries and formats
-  return await generateAdvancedAnalysisExcel(options);
+  return await generateAdvancedAnalysisExcel(options, await readExportTemplates());
 }
 
 export async function exportInvoice(options: InvoiceFilters): Promise<Buffer> {
@@ -97,7 +98,7 @@ export async function exportInvoice(options: InvoiceFilters): Promise<Buffer> {
 
   if (partnerCode.toLowerCase() === 'all') {
     const dataMap = await getAllInvoiceData({ dateFrom, dateTo });
-    return generateMultiInvoiceExcel(dataMap);
+    return generateMultiInvoiceExcel(dataMap, await readExportTemplates());
   }
 
   const data = await getInvoiceData({
@@ -105,10 +106,10 @@ export async function exportInvoice(options: InvoiceFilters): Promise<Buffer> {
     dateFrom,
     dateTo
   });
-  return generateInvoiceExcel(data);
+  return generateInvoiceExcel(data, await readExportTemplates());
 }
 
 export async function exportInventory(): Promise<Buffer> {
   const data = await getInventoryData();
-  return generateInventoryExcel(data);
+  return generateInventoryExcel(data, await readExportTemplates());
 }

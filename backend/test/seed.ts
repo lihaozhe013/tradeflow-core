@@ -1,3 +1,4 @@
+import { initializeSettings } from '@/settings/service';
 import { prisma } from '@/prismaClient';
 import { hashPassword } from '@/utils/auth';
 import { inventoryService } from '@/utils/inventoryService';
@@ -73,7 +74,7 @@ export function truncateAll(): Promise<number> {
   return prisma.$executeRawUnsafe(`
     TRUNCATE TABLE "users", "partners", "products", "inbound_records", "outbound_records",
       "inventory", "inventory_ledger", "product_prices", "receivable_payments",
-      "payable_payments", "system_logs", "overview_snapshots", "invoice_snapshots" RESTART IDENTITY CASCADE
+      "payable_payments", "system_settings", "system_logs", "overview_snapshots", "invoice_snapshots" RESTART IDENTITY CASCADE
   `);
 }
 
@@ -332,6 +333,7 @@ export interface SeedResult {
 
 export async function seedDatabase(): Promise<SeedResult> {
   await truncateAll();
+  await initializeSettings();
 
   const passwordHash = await hashPassword(SEEDED_PASSWORD);
   const manualPasswordHash = await hashPassword(MANUAL_PASSWORD);

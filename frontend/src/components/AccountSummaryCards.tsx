@@ -1,8 +1,8 @@
+import { useRuntimeConfig } from '@/config/runtime';
 import { Card, Col, Progress, Row, Statistic, Tooltip, Typography } from 'antd';
 import { InfoCircleOutlined } from '@ant-design/icons';
 import type { FC } from 'react';
 import { useTranslation } from 'react-i18next';
-import { currency_unit_symbol } from '@/config/types';
 
 const { Text } = Typography;
 
@@ -33,6 +33,7 @@ const COLORS = {
  */
 const AccountSummaryCards: FC<AccountSummaryCardsProps> = ({ kind, summary }) => {
   const { t } = useTranslation();
+  const { currency_unit_symbol } = useRuntimeConfig();
   const prefix = kind === 'payable' ? 'payable' : 'receivable';
   const key = (name: string): string => `${prefix}.${name}`;
 

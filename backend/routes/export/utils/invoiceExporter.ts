@@ -1,20 +1,23 @@
 import * as XLSX from 'xlsx';
 import ExportUtils from '@/routes/export/utils/exportUtils';
-import { TEMPLATES } from '@/routes/export/utils/exportTemplates';
+import type { ExportTemplates } from '@/settings/schema';
 import type { InvoiceItemDto } from '@/routes/export/utils/types';
 
-export function generateInvoiceExcel(data: InvoiceItemDto[]): Buffer {
+export function generateInvoiceExcel(data: InvoiceItemDto[], TEMPLATES: ExportTemplates): Buffer {
   const template = TEMPLATES.invoice;
   const workbook = XLSX.utils.book_new();
   const worksheet = ExportUtils.createWorksheet(data || [], template);
-  XLSX.utils.book_append_sheet(workbook, worksheet, template.sheetName);
+  ExportUtils.appendWorksheet(workbook, worksheet, ExportUtils.safeSheetName(template.sheetName));
   return XLSX.write(workbook, {
     type: 'buffer',
     bookType: 'xlsx'
   }) as unknown as Buffer;
 }
 
-export function generateMultiInvoiceExcel(dataMap: Record<string, InvoiceItemDto[]>): Buffer {
+export function generateMultiInvoiceExcel(
+  dataMap: Record<string, InvoiceItemDto[]>,
+  TEMPLATES: ExportTemplates
+): Buffer {
   const template = TEMPLATES.invoice;
   const workbook = XLSX.utils.book_new();
 
@@ -33,13 +36,13 @@ export function generateMultiInvoiceExcel(dataMap: Record<string, InvoiceItemDto
       idx++;
     }
 
-    XLSX.utils.book_append_sheet(workbook, worksheet, finalSheetName);
+    ExportUtils.appendWorksheet(workbook, worksheet, finalSheetName);
   }
 
   // If no sheets were added, add an empty sheet to prevent errors
   if (workbook.SheetNames.length === 0) {
     const worksheet = ExportUtils.createWorksheet([], template);
-    XLSX.utils.book_append_sheet(workbook, worksheet, template.sheetName);
+    ExportUtils.appendWorksheet(workbook, worksheet, ExportUtils.safeSheetName(template.sheetName));
   }
 
   return XLSX.write(workbook, {

@@ -14,7 +14,8 @@ import {
   calculateSalesData
 } from '@/routes/analysis/utils';
 import decimalCalc from '@/utils/decimalCalculator';
-import { config, currency_unit_symbol } from '@/utils/paths';
+import { config } from '@/utils/paths';
+import { readRuntimeSettings } from '@/settings/service';
 import { logger } from '@/utils/logger';
 import {
   getAccountDetails,
@@ -75,7 +76,10 @@ function registerReadTool<TArgs extends Record<string, unknown>>(
 
     try {
       const parameters = rawArgs as TArgs;
-      const data = await withMcpReadOnlyTransaction((db) => handler(parameters, db));
+      const { data, currency_unit_symbol } = await withMcpReadOnlyTransaction(async (db) => ({
+        data: await handler(parameters, db),
+        currency_unit_symbol: (await readRuntimeSettings(db)).currency_unit_symbol
+      }));
       const result = {
         data,
         query_meta: {

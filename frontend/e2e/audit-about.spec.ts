@@ -50,7 +50,7 @@ test('audit log filters, resets, paginates, and scopes username search to superu
 });
 
 test('about page renders system, company, and contact information', async ({ page }) => {
-  await logInAs(page, 'reader');
+  await logInAs(page, 'superuser');
   await page.goto('/#/about');
   const aboutData = await apiRequest<{ company?: { name?: string } }>(page, 'GET', '/about');
   await expect(page.getByRole('heading', { name: 'About Us' })).toBeVisible();

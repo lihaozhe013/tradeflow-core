@@ -1,3 +1,4 @@
+import { useRuntimeConfig } from '@/config/runtime';
 import ResponsiveTable from '@/components/ResponsiveTable';
 import InvoicedSnapshotPanel from '@/components/InvoicedSnapshotPanel';
 import { useState, useEffect, type FC, type ReactNode } from 'react';
@@ -22,7 +23,6 @@ import type { ColumnsType, TablePaginationConfig } from 'antd/es/table';
 import type { TableProps } from 'antd/es/table';
 import type { SortOrder } from 'antd/es/table/interface';
 import { PlusOutlined, EyeOutlined, DeleteOutlined } from '@ant-design/icons';
-import { currency_unit_symbol } from '@/config/types';
 import type { UseSimpleApiReturn } from '@/hooks/types';
 import type {
   PaginationState,
@@ -63,7 +63,10 @@ const DEFAULT_MODAL_PAGINATION: ModalPaginationState = {
   total: 0
 };
 
-const formatCurrency = (amount: number | null | undefined): string => {
+const formatCurrency = (
+  currency_unit_symbol: string,
+  amount: number | null | undefined
+): string => {
   if (amount === null || amount === undefined || Number.isNaN(Number(amount))) {
     return `${currency_unit_symbol}0.00`;
   }
@@ -88,6 +91,7 @@ const ReceivableTable: FC<ReceivableTableProps> = ({
   canWrite
 }) => {
   const { t } = useTranslation();
+  const { currency_unit_symbol } = useRuntimeConfig();
   const [detailsVisible, setDetailsVisible] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<ReceivableRecord | null>(null);
   const [customerDetails, setCustomerDetails] = useState<ReceivableDetailResponse | null>(null);
@@ -102,14 +106,16 @@ const ReceivableTable: FC<ReceivableTableProps> = ({
     const numeric = Number(balance ?? 0);
     if (numeric > 0) {
       return (
-        <Tag color="volcano">{t('receivable.unpaid', { amount: formatCurrency(numeric) })}</Tag>
+        <Tag color="volcano">
+          {t('receivable.unpaid', { amount: formatCurrency(currency_unit_symbol, numeric) })}
+        </Tag>
       );
     }
     if (numeric < 0) {
       return (
         <Tag color="green">
           {t('receivable.overpaid', {
-            amount: formatCurrency(Math.abs(numeric))
+            amount: formatCurrency(currency_unit_symbol, Math.abs(numeric))
           })}
         </Tag>
       );
@@ -259,7 +265,7 @@ const ReceivableTable: FC<ReceivableTableProps> = ({
       align: 'right',
       sorter: true,
       sortOrder: getColumnSortOrder('total_receivable'),
-      render: (value) => formatCurrency(value)
+      render: (value) => formatCurrency(currency_unit_symbol, value)
     },
     {
       title: t('receivable.totalPaid'),
@@ -269,7 +275,7 @@ const ReceivableTable: FC<ReceivableTableProps> = ({
       align: 'right',
       sorter: true,
       sortOrder: getColumnSortOrder('total_paid'),
-      render: (value) => formatCurrency(value)
+      render: (value) => formatCurrency(currency_unit_symbol, value)
     },
     {
       title: t('receivable.balance'),
@@ -352,7 +358,7 @@ const ReceivableTable: FC<ReceivableTableProps> = ({
             {
               title: t('receivable.paymentAmount'),
               dataIndex: 'amount',
-              render: (value) => formatCurrency(value)
+              render: (value) => formatCurrency(currency_unit_symbol, value)
             },
             { title: t('receivable.paymentDate'), dataIndex: 'pay_date' },
             {
@@ -435,14 +441,14 @@ const ReceivableTable: FC<ReceivableTableProps> = ({
               dataIndex: 'unit_price',
               width: 100,
               align: 'right',
-              render: (value) => formatCurrency(value)
+              render: (value) => formatCurrency(currency_unit_symbol, value)
             },
             {
               title: t('receivable.totalPrice'),
               dataIndex: 'total_price',
               width: 100,
               align: 'right',
-              render: (value) => formatCurrency(value)
+              render: (value) => formatCurrency(currency_unit_symbol, value)
             },
             {
               title: t('receivable.orderNumber'),
@@ -586,7 +592,12 @@ const ReceivableTable: FC<ReceivableTableProps> = ({
               />
             </div>
 
-            <Tabs defaultActiveKey="payments" activeKey={detailsTab} onChange={setDetailsTab} items={detailsTabs} />
+            <Tabs
+              defaultActiveKey="payments"
+              activeKey={detailsTab}
+              onChange={setDetailsTab}
+              items={detailsTabs}
+            />
           </div>
         ) : null}
       </Modal>

@@ -1,0 +1,211 @@
+.settings-page {
+  max-width: 1240px;
+  margin-inline: auto;
+}
+.settings-page-heading,
+.settings-section-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+.settings-page-heading {
+  margin-bottom: 16px;
+}
+.settings-page-heading h2,
+.settings-section-heading h3 {
+  margin-top: 0;
+}
+.settings-layout {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+.settings-navigation {
+  position: sticky;
+  top: 84px;
+}
+.settings-navigation .ant-menu {
+  border-inline-end: 0 !important;
+}
+.settings-editor {
+  min-width: 0;
+}
+.settings-field-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 24px;
+}
+.settings-list {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.settings-list-card {
+  background: #fafbfd;
+}
+.settings-list-row,
+.settings-category-row,
+.settings-export-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.settings-list-row > .ant-form-item,
+.settings-category-row > .ant-form-item,
+.settings-column-label {
+  flex: 1;
+  min-width: 0;
+}
+.settings-list-row .ant-form-item {
+  margin-bottom: 8px;
+}
+.settings-category-row,
+.settings-export-row {
+  padding: 12px 16px;
+  border: 1px solid var(--app-border);
+  border-radius: 8px;
+}
+.settings-category-row .ant-form-item,
+.settings-export-row .ant-form-item {
+  margin-bottom: 0;
+}
+.settings-export-row > .ant-form-item {
+  flex: 0 0 auto;
+}
+.settings-export-row .settings-column-label > .ant-typography {
+  font-size: 11px;
+}
+.settings-history-notice,
+.settings-template-labels {
+  margin-top: 24px;
+}
+.settings-error {
+  margin-bottom: 24px;
+}
+.settings-currency-preview {
+  padding: 16px 24px;
+  margin-bottom: 24px;
+  border-radius: 8px;
+  background: #f4f8ff;
+}
+.settings-currency-preview h2 {
+  margin: 8px 0 0;
+  font-variant-numeric: tabular-nums;
+}
+.settings-save-bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 0 0;
+  margin-top: 32px;
+  border-top: 1px solid var(--app-border);
+  background: var(--app-surface);
+}
+.settings-save-bar > .ant-typography {
+  font-size: 12px;
+}
+.settings-sheet-preview {
+  overflow: hidden;
+  padding: 12px;
+  border: 1px solid var(--app-border);
+  border-radius: 8px;
+}
+.settings-sheet-preview > .ant-typography {
+  display: block;
+  margin-top: 12px;
+  font-size: 12px;
+}
+.settings-add-column {
+  width: 100%;
+  max-width: 320px;
+}
+.settings-about-preview {
+  background: #fafbfd;
+}
+.settings-description-preview {
+  white-space: pre-wrap;
+}
+.settings-dirty-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-left: 8px;
+  vertical-align: middle;
+  border-radius: 50%;
+  background: #ad6800;
+}
+.settings-loading {
+  padding: 64px 24px;
+  text-align: center;
+}
+@media (max-width: 900px) {
+  .settings-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+  .settings-navigation {
+    position: static;
+  }
+  .settings-navigation .ant-menu {
+    display: flex;
+    flex-wrap: wrap;
+  }
+  .settings-navigation .ant-menu-item {
+    width: auto;
+    flex: 1 0 auto;
+  }
+}
+@media (max-width: 600px) {
+  .settings-page-heading,
+  .settings-section-heading {
+    flex-wrap: wrap;
+  }
+  .settings-field-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .settings-list-row,
+  .settings-category-row,
+  .settings-export-row {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .settings-list-row > .ant-form-item,
+  .settings-category-row > .ant-form-item {
+    flex-basis: 100%;
+  }
+  .settings-save-bar {
+    align-items: stretch;
+    flex-direction: column;
+    padding-bottom: 12px;
+  }
+  .settings-save-bar > .ant-space {
+    justify-content: flex-end;
+  }
+  .settings-export-row .settings-column-label {
+    flex-basis: calc(100% - 48px);
+  }
+  .settings-navigation .ant-menu-item {
+    font-size: 13px;
+    padding-inline: 12px;
+  }
+}
+
+.settings-editor input,
+.settings-editor textarea,
+.settings-editor button,
+.settings-editor .ant-select {
+  scroll-margin-block: 120px;
+}
+.settings-save-bar {
+  padding-bottom: 8px;
+}
+
+.settings-page .ant-typography-secondary {
+  color: var(--app-muted);
+}
