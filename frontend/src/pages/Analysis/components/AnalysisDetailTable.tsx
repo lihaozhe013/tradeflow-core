@@ -1,3 +1,4 @@
+import { useRuntimeConfig } from '@/config/runtime';
 import ResponsiveTable from '@/components/ResponsiveTable';
 import React from 'react';
 import { Card } from 'antd';
@@ -22,6 +23,7 @@ const AnalysisDetailTable: React.FC<AnalysisDetailTableProps> = ({
   analysisType
 }) => {
   const { t } = useTranslation();
+  const { currency_unit_symbol } = useRuntimeConfig();
 
   // Helper to get partner name
   const getPartnerName = (code: string) => {
@@ -60,7 +62,7 @@ const AnalysisDetailTable: React.FC<AnalysisDetailTableProps> = ({
           title: t('analysis.purchaseAmount') || 'Purchase Amount',
           dataIndex: 'purchase_amount',
           key: 'purchase_amount',
-          render: (val: number) => `¥${val?.toFixed(2) || '0.00'}`,
+          render: (val: number) => `${currency_unit_symbol}${val?.toFixed(2) || '0.00'}`,
           sorter: (a: DetailItem, b: DetailItem) =>
             (a.purchase_amount ?? 0) - (b.purchase_amount ?? 0)
         }
@@ -74,14 +76,14 @@ const AnalysisDetailTable: React.FC<AnalysisDetailTableProps> = ({
         title: t('analysis.salesAmount'),
         dataIndex: 'sales_amount',
         key: 'sales_amount',
-        render: (val: number) => `¥${val?.toFixed(2) || '0.00'}`,
+        render: (val: number) => `${currency_unit_symbol}${val?.toFixed(2) || '0.00'}`,
         sorter: (a: DetailItem, b: DetailItem) => (a.sales_amount ?? 0) - (b.sales_amount ?? 0)
       },
       {
         title: t('analysis.cost'),
         dataIndex: 'cost_amount',
         key: 'cost_amount',
-        render: (val: number) => `¥${val?.toFixed(2) || '0.00'}`,
+        render: (val: number) => `${currency_unit_symbol}${val?.toFixed(2) || '0.00'}`,
         sorter: (a: DetailItem, b: DetailItem) => (a.cost_amount ?? 0) - (b.cost_amount ?? 0)
       },
       {
@@ -90,7 +92,8 @@ const AnalysisDetailTable: React.FC<AnalysisDetailTableProps> = ({
         key: 'profit_amount',
         render: (val: number) => (
           <span style={{ color: (val || 0) >= 0 ? '#3f8600' : '#cf1322' }}>
-            ¥{val?.toFixed(2) || '0.00'}
+            {currency_unit_symbol}
+            {val?.toFixed(2) || '0.00'}
           </span>
         ),
         sorter: (a: DetailItem, b: DetailItem) => (a.profit_amount ?? 0) - (b.profit_amount ?? 0)

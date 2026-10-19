@@ -1,10 +1,9 @@
+import { useRuntimeConfig, withHistoricalOption } from '@/config/runtime';
 import { useMemo, useState, type FC } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Modal, Form, Input, InputNumber, DatePicker, Select, Typography, Row, Col } from 'antd';
-import { currency_unit_symbol } from '@/config/types';
 import type { FormInstance } from 'antd/es/form';
 import type { DefaultOptionType } from 'antd/es/select';
-import { PAYMENT_METHODS, DEFAULT_PAYMENT_METHOD } from '@/config';
 import type {
   PayablePaymentFormValues,
   PayablePaymentRecord,
@@ -25,7 +24,10 @@ interface PayableModalProps {
   readonly onCancel: () => void;
 }
 
-const formatCurrency = (amount: number | null | undefined): string => {
+const formatCurrency = (
+  currency_unit_symbol: string,
+  amount: number | null | undefined
+): string => {
   if (amount === null || amount === undefined || Number.isNaN(Number(amount))) {
     return `${currency_unit_symbol}0.00`;
   }
@@ -45,6 +47,10 @@ const PayableModal: FC<PayableModalProps> = ({
   onCancel
 }) => {
   const { t } = useTranslation();
+  const {
+    currency_unit_symbol,
+    paymentMethods: { list: PAYMENT_METHODS, default: DEFAULT_PAYMENT_METHOD }
+  } = useRuntimeConfig();
   const [submitting, setSubmitting] = useState(false);
   const amount = Form.useWatch('amount', form);
 
@@ -113,11 +119,8 @@ const PayableModal: FC<PayableModalProps> = ({
           <Text type="secondary">({selectedSupplier.supplier_code})</Text>
           <span style={{ flex: 1 }} />
           <Text type="secondary">{t('payable.balance')}:</Text>
-          <Text
-            strong
-            style={{ color: currentBalance > 0 ? '#cf1322' : '#3f8600' }}
-          >
-            {formatCurrency(Math.abs(currentBalance))}
+          <Text strong style={{ color: currentBalance > 0 ? '#cf1322' : '#3f8600' }}>
+            {formatCurrency(currency_unit_symbol, Math.abs(currentBalance))}
           </Text>
           {currentBalance < 0 && <Text type="success">({t('payable.overpaidShort')})</Text>}
         </div>
@@ -197,13 +200,13 @@ const PayableModal: FC<PayableModalProps> = ({
             {balanceAfterPayment >= 0 ? (
               <Text type="secondary">
                 {t('payable.remainingBalanceAfter', {
-                  amount: formatCurrency(balanceAfterPayment)
+                  amount: formatCurrency(currency_unit_symbol, balanceAfterPayment)
                 })}
               </Text>
             ) : (
               <Text type="warning">
                 {t('payable.overpaid', {
-                  amount: formatCurrency(Math.abs(balanceAfterPayment))
+                  amount: formatCurrency(currency_unit_symbol, Math.abs(balanceAfterPayment))
                 })}
               </Text>
             )}
@@ -222,10 +225,7 @@ const PayableModal: FC<PayableModalProps> = ({
         >
           <Select
             placeholder={t('payable.selectMethod') ?? ''}
-            options={PAYMENT_METHODS.map((method) => ({
-              value: method,
-              label: method
-            }))}
+            options={withHistoricalOption(PAYMENT_METHODS, editingPayment?.pay_method)}
           />
         </Form.Item>
 

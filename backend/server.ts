@@ -31,6 +31,8 @@ async function startServer(): Promise<void> {
       );
     }
 
+    const { initializeSettings } = await import('@/settings/service');
+    await initializeSettings();
     const app = createApp();
     const server = app.listen(PORT, () => {
       logger.info('Server Start Complete!', {

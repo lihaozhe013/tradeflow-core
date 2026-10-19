@@ -43,6 +43,16 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
   });
 });
 
+router.get('/categories', async (_req, res) => {
+  const rows = await prisma.product.findMany({
+    select: { category: true },
+    distinct: ['category'],
+    where: { category: { not: null } },
+    orderBy: { category: 'asc' }
+  });
+  res.json({ data: rows.map((row) => row.category).filter(Boolean) });
+});
+
 /**
  * POST /api/products
  */

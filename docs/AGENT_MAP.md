@@ -11,6 +11,7 @@ Avoid maintaining route inventories or copied data flows here.
 | Analysis or spreadsheet export             | `backend/routes/analysis/`, `backend/routes/export/`                                           |
 | Browser routes and permissions             | `frontend/src/App.tsx`, `frontend/src/auth/`                                                   |
 | Browser API calls and localized text       | `frontend/src/utils/request.ts`, `frontend/src/hooks/`, `frontend/src/i18n/locales/`           |
+| Business settings and legacy import        | `backend/settings/`, `frontend/src/pages/Settings/`, `docs/SYSTEM_SETTINGS.md`                 |
 | Runtime configuration and build inputs     | `backend/utils/paths.ts`, `config-example/`, `build-config/`, `scripts/build/`                 |
 | Read-only MCP and account connections      | `backend/mcp/`, `backend/services/readService.ts`, `docs/MCP.md`                               |
 | Desktop agent installation and diagnostics | `desktop/core/`, `desktop/src-tauri/`, `desktop/src/`, `docs/DESKTOP_CONNECT.md`               |

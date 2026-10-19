@@ -1,3 +1,4 @@
+import { useRuntimeConfig } from '@/config/runtime';
 import ResponsiveTable from '@/components/ResponsiveTable';
 import { Button, Space, Popconfirm } from 'antd';
 import type { ColumnsType, TablePaginationConfig } from 'antd/es/table';
@@ -7,7 +8,6 @@ import { EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import type { FC, Key, Dispatch, SetStateAction } from 'react';
 import type { OutboundRecord, Partner, Product } from '../types';
-import { currency_unit_symbol } from '@/config/types';
 interface OutboundTableProps {
   readonly outboundRecords: OutboundRecord[];
   readonly loading: boolean;
@@ -36,6 +36,7 @@ const OutboundTable: FC<OutboundTableProps> = ({
   pagination
 }) => {
   const { t } = useTranslation();
+  const { currency_unit_symbol } = useRuntimeConfig();
   const columns: ColumnsType<OutboundRecord> = [
     {
       title: t('outbound.id'),
@@ -150,18 +151,18 @@ const OutboundTable: FC<OutboundTableProps> = ({
 
   return (
     <ResponsiveTable
-        mobileTitleKey="product_model"
-        mobileSubtitleKey={null}
-        mobileSummaryKeys={['quantity', 'total_price']}
-        mobileCardVariant="summary"
-        columns={columns}
-        dataSource={outboundRecords}
-        rowKey="id"
-        loading={loading}
-        rowSelection={canWrite ? rowSelection : undefined}
-        onChange={onTableChange}
-        pagination={pagination}
-        scroll={{ x: 1320 }}
+      mobileTitleKey="product_model"
+      mobileSubtitleKey={null}
+      mobileSummaryKeys={['quantity', 'total_price']}
+      mobileCardVariant="summary"
+      columns={columns}
+      dataSource={outboundRecords}
+      rowKey="id"
+      loading={loading}
+      rowSelection={canWrite ? rowSelection : undefined}
+      onChange={onTableChange}
+      pagination={pagination}
+      scroll={{ x: 1320 }}
     />
   );
 };

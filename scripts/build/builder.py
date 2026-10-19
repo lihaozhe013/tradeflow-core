@@ -9,7 +9,8 @@ def build(base_dir):
     builder = DirectoryManager()
 
     # check if config files exists
-    builder.check_exists(build_config_dir)
+    builder.check_exists(build_config_dir / 'frontendConfig.json')
+    builder.check_exists(build_config_dir / 'logo.svg')
 
     # clean old distributions
     builder.delete(dist_dir)

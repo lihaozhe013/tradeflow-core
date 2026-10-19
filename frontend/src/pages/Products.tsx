@@ -1,11 +1,25 @@
+import { useRuntimeConfig, withHistoricalOption } from '@/config/runtime';
 import ResponsiveTable from '@/components/ResponsiveTable';
 import { useState, useEffect, useCallback, type FC } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ColumnsType, TableProps } from 'antd/es/table';
 import type { FormProps } from 'antd';
-import { Button, Modal, Form, Input, Select, Space, message, Popconfirm, Card, Typography, Row, Col, Divider } from 'antd';
+import {
+  Button,
+  Modal,
+  Form,
+  Input,
+  Select,
+  Space,
+  message,
+  Popconfirm,
+  Card,
+  Typography,
+  Row,
+  Col,
+  Divider
+} from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
-import { PRODUCT_CATEGORIES } from '@/config';
 import { useSimpleApi } from '@/hooks/useSimpleApi';
 import { usePermissions } from '@/auth/usePermissions';
 
@@ -54,6 +68,7 @@ const DEFAULT_PAGINATION: PaginationInfo = {
 };
 
 const Products: FC = () => {
+  const [historicalCategories, setHistoricalCategories] = useState<string[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingProduct, setEditingProduct] = useState<ProductItem | null>(null);
   const [form] = Form.useForm<ProductFormValues>();
@@ -63,6 +78,9 @@ const Products: FC = () => {
   const [pagination, setPagination] = useState<PaginationInfo>(DEFAULT_PAGINATION);
   const [filters, setFilters] = useState<ProductFilters>({});
   const { t } = useTranslation();
+  const {
+    productCategories: { list: PRODUCT_CATEGORIES, default: DEFAULT_PRODUCT_CATEGORY }
+  } = useRuntimeConfig();
   const { canWrite } = usePermissions();
 
   const { get, post, put, request } = useSimpleApi();
@@ -94,12 +112,18 @@ const Products: FC = () => {
   useEffect(() => {
     fetchProducts(1);
   }, [fetchProducts]);
+  useEffect(() => {
+    void get<{ data: string[] }>('/products/categories')
+      .then((response) => setHistoricalCategories(response.data))
+      .catch(() => undefined);
+  }, [get]);
   const productOptions = products;
 
   const handleAdd = (): void => {
     if (!canWrite) return;
     setEditingProduct(null);
     form.resetFields();
+    form.setFieldsValue({ category: DEFAULT_PRODUCT_CATEGORY });
     setModalVisible(true);
   };
 
@@ -266,10 +290,12 @@ const Products: FC = () => {
               showSearch
               allowClear
               placeholder={t('products.selectCategory')}
-              options={PRODUCT_CATEGORIES.map((name) => ({
-                value: name,
-                label: name
-              }))}
+              options={[...new Set([...PRODUCT_CATEGORIES, ...historicalCategories])].map(
+                (name) => ({
+                  value: name,
+                  label: name
+                })
+              )}
               filterOption={(input, option) => {
                 const label = typeof option?.label === 'string' ? option.label : '';
                 return label.toLowerCase().includes(input.toLowerCase());
@@ -286,24 +312,24 @@ const Products: FC = () => {
         <Divider />
 
         <ResponsiveTable<ProductItem>
-            columns={columns}
-            dataSource={products}
-            rowKey="code"
-            loading={loading}
-            onChange={handleTableChange}
-            pagination={{
-              current: pagination.current,
-              pageSize: pagination.pageSize,
-              total: pagination.total,
-              showQuickJumper: true,
-              showTotal: (total, range) =>
-                t('products.paginationTotal', {
-                  start: range[0],
-                  end: range[1],
-                  total
-                })
-            }}
-            scroll={{ x: 900 }}
+          columns={columns}
+          dataSource={products}
+          rowKey="code"
+          loading={loading}
+          onChange={handleTableChange}
+          pagination={{
+            current: pagination.current,
+            pageSize: pagination.pageSize,
+            total: pagination.total,
+            showQuickJumper: true,
+            showTotal: (total, range) =>
+              t('products.paginationTotal', {
+                start: range[0],
+                end: range[1],
+                total
+              })
+          }}
+          scroll={{ x: 900 }}
         />
       </Card>
 
@@ -358,10 +384,7 @@ const Products: FC = () => {
                 showSearch
                 allowClear
                 placeholder={t('products.selectCategory')}
-                options={PRODUCT_CATEGORIES.map((name) => ({
-                  value: name,
-                  label: name
-                }))}
+                options={withHistoricalOption(PRODUCT_CATEGORIES, editingProduct?.category)}
                 filterOption={(input, option) => {
                   const label = typeof option?.label === 'string' ? option.label : '';
                   return label.toLowerCase().includes(input.toLowerCase());

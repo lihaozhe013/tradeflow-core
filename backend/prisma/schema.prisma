@@ -233,3 +233,13 @@ model SystemLog {
 
   @@map("system_logs")
 }
+
+model SystemSetting {
+  section   String   @id
+  value     Json
+  version   Int      @default(1)
+  updatedAt DateTime @default(now()) @map("updated_at")
+  updatedBy String?  @map("updated_by")
+
+  @@map("system_settings")
+}

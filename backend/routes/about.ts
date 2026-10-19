@@ -1,13 +1,8 @@
-import express, { type Router, type Request, type Response } from 'express';
-import aboutData from '@/../build-config/about.json';
-
-const router: Router = express.Router();
-
-/**
- * GET /api/about
- */
-router.get('/', (_req: Request, res: Response): void => {
-  res.json(aboutData);
+import { Router } from 'express';
+import { readSetting } from '@/settings/service';
+const router = Router();
+router.get('/', async (_req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  res.json(await readSetting('about'));
 });
-
 export default router;

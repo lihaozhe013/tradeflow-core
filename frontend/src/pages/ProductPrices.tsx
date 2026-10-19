@@ -1,3 +1,4 @@
+import { useRuntimeConfig } from '@/config/runtime';
 import ResponsiveTable from '@/components/ResponsiveTable';
 import { useState, useCallback, useEffect, type FC } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -6,8 +7,23 @@ import type { FormProps } from 'antd';
 import type { AutoCompleteProps } from 'antd/es/auto-complete';
 import type { SelectProps } from 'antd/es/select';
 import type { Dayjs } from 'dayjs';
-import { currency_unit_symbol } from '@/config/types';
-import { Button, Modal, Form, Select, DatePicker, InputNumber, Space, message, Popconfirm, Card, Typography, Row, Col, Divider, AutoComplete } from 'antd';
+import {
+  Button,
+  Modal,
+  Form,
+  Select,
+  DatePicker,
+  InputNumber,
+  Space,
+  message,
+  Popconfirm,
+  Card,
+  Typography,
+  Row,
+  Col,
+  Divider,
+  AutoComplete
+} from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { useSimpleApi, useSimpleApiData } from '@/hooks/useSimpleApi';
@@ -81,6 +97,7 @@ const ProductPrices: FC = () => {
   const [form] = Form.useForm<ProductPriceFormValues>();
   const [filterForm] = Form.useForm<ProductPriceFilters>();
   const { t } = useTranslation();
+  const { currency_unit_symbol } = useRuntimeConfig();
   const { canWrite } = usePermissions();
 
   const [filters, setFilters] = useState<FilterState>({});
@@ -423,24 +440,24 @@ const ProductPrices: FC = () => {
         <Divider />
 
         <ResponsiveTable<ProductPriceItem>
-            columns={columns}
-            dataSource={productPrices}
-            rowKey="id"
-            loading={loading}
-            onChange={handleTableChange}
-            pagination={{
-              current: pagination.current,
-              pageSize: pagination.pageSize,
-              total: productPricesResponse?.pagination?.total ?? 0,
-              showQuickJumper: true,
-              showTotal: (total, range) =>
-                t('productPrices.paginationTotal', {
-                  start: range[0],
-                  end: range[1],
-                  total
-                })
-            }}
-            scroll={{ x: 800 }}
+          columns={columns}
+          dataSource={productPrices}
+          rowKey="id"
+          loading={loading}
+          onChange={handleTableChange}
+          pagination={{
+            current: pagination.current,
+            pageSize: pagination.pageSize,
+            total: productPricesResponse?.pagination?.total ?? 0,
+            showQuickJumper: true,
+            showTotal: (total, range) =>
+              t('productPrices.paginationTotal', {
+                start: range[0],
+                end: range[1],
+                total
+              })
+          }}
+          scroll={{ x: 800 }}
         />
       </Card>
 

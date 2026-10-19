@@ -1,2 +1,2 @@
-import TEMPLATES from '@/../build-config/exportConfig.json';
-export { TEMPLATES };
+export { readExportTemplates } from '@/settings/service';
+export type { ExportTemplates } from '@/settings/schema';

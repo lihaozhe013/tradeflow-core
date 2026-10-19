@@ -1,9 +1,12 @@
 import * as XLSX from 'xlsx';
 import ExportUtils from '@/routes/export/utils/exportUtils';
-import { TEMPLATES } from '@/routes/export/utils/exportTemplates';
+import type { ExportTemplates } from '@/settings/schema';
 import type { InventoryExportRow } from '@/routes/export/utils/inventoryQueries';
 
-export function generateInventoryExcel(data: InventoryExportRow[]): Buffer {
+export function generateInventoryExcel(
+  data: InventoryExportRow[],
+  TEMPLATES: ExportTemplates
+): Buffer {
   const workbook = XLSX.utils.book_new();
   const template = TEMPLATES.inventory;
 
@@ -12,7 +15,7 @@ export function generateInventoryExcel(data: InventoryExportRow[]): Buffer {
   }
 
   const worksheet = ExportUtils.createWorksheet(data, template);
-  XLSX.utils.book_append_sheet(workbook, worksheet, template.sheetName);
+  ExportUtils.appendWorksheet(workbook, worksheet, ExportUtils.safeSheetName(template.sheetName));
 
   return XLSX.write(workbook, {
     type: 'buffer',

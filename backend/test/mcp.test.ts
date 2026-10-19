@@ -8,6 +8,7 @@ import { hashMcpToken } from '@/mcp/credentials';
 import { withMcpReadOnlyTransaction } from '@/mcp/server';
 import { MCP_STAGING_TOOL_NAMES, READ_MCP_TOOL_NAMES } from '@/mcp/tools';
 import { prisma } from '@/prismaClient';
+import type { Prisma } from '@/prisma/client';
 import type { McpConfig, McpToolName } from '@/types/config';
 import { authAgent } from '@/test/helpers/request';
 
@@ -117,7 +118,8 @@ describe('TradeFlow MCP', () => {
     const stagingServer = createServer(stagingApp);
     await new Promise<void>((resolve) => stagingServer.listen(0, '127.0.0.1', resolve));
     const address = stagingServer.address();
-    if (!address || typeof address === 'string') throw new Error('MCP staging server did not start');
+    if (!address || typeof address === 'string')
+      throw new Error('MCP staging server did not start');
     const endpointUrl = `http://127.0.0.1:${address.port}/mcp`;
     const stagedClient = {
       client: new Client({ name: 'staging-write-test', version: '1' }),
@@ -175,13 +177,37 @@ describe('TradeFlow MCP', () => {
     } finally {
       if (draftId) {
         await prisma.transactionDraft.deleteMany({ where: { id: draftId } });
-        await prisma.systemLog.deleteMany({ where: { resource: `/transaction-drafts/${draftId}` } });
+        await prisma.systemLog.deleteMany({
+          where: { resource: `/transaction-drafts/${draftId}` }
+        });
       }
       await stagedClient.client.close();
       await isolatedClient.client.close();
       await new Promise<void>((resolve, reject) =>
         stagingServer.close((error) => (error ? reject(error) : resolve()))
       );
+    }
+  });
+
+  it('uses the current database currency without restarting the MCP server', async () => {
+    const original = await prisma.systemSetting.findUniqueOrThrow({
+      where: { section: 'general' }
+    });
+    try {
+      await prisma.systemSetting.update({
+        where: { section: 'general' },
+        data: { value: { currency_unit_symbol: 'CHF' } }
+      });
+      const result = await client.callTool({ name: 'get_inventory', arguments: {} });
+      expect(result.isError).not.toBe(true);
+      expect(result.structuredContent).toMatchObject({
+        query_meta: { currency_unit_symbol: 'CHF' }
+      });
+    } finally {
+      await prisma.systemSetting.update({
+        where: { section: 'general' },
+        data: { value: original.value as Prisma.InputJsonValue }
+      });
     }
   });
 

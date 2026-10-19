@@ -1,6 +1,6 @@
 import * as XLSX from 'xlsx';
 
-export type ExportColumn = { key: string; label: string };
+export type ExportColumn = { key: string; label: string; visible?: boolean };
 export type ExportTemplate = { sheetName: string; columns: ExportColumn[] };
 
 /**
@@ -25,9 +25,10 @@ export function generateFilename(exportType: string): string {
  */
 export function createWorksheet(data: unknown[], template: ExportTemplate) {
   // Create headers
-  const headers = template.columns.map((col) => col.label);
+  const columns = template.columns.filter((column) => column.visible !== false);
+  const headers = columns.map((col) => col.label);
   const dataRows = data.map((item) =>
-    template.columns.map((col) => {
+    columns.map((col) => {
       const row = item as Record<string, unknown>;
       // Handle nested properties if key contains dot
       if (col.key.includes('.')) {
@@ -45,13 +46,40 @@ export function createWorksheet(data: unknown[], template: ExportTemplate) {
   const worksheet = XLSX.utils.aoa_to_sheet(wsData);
 
   // Set column widths
-  const colWidths = template.columns.map(() => ({ wch: 15 }));
+  const colWidths = columns.map(() => ({ wch: 15 }));
   worksheet['!cols'] = colWidths;
 
   return worksheet;
 }
 
+export function safeSheetName(name: string): string {
+  return (
+    name
+      .replace(/[[\]*?:/\\]/g, '_')
+      .replace(/^'+|'+$/g, '')
+      .slice(0, 31) || 'Sheet'
+  );
+}
+
+export function appendWorksheet(
+  workbook: XLSX.WorkBook,
+  worksheet: XLSX.WorkSheet,
+  name: string
+): void {
+  const base = safeSheetName(name);
+  const used = new Set(workbook.SheetNames.map((value) => value.toLowerCase()));
+  let candidate = base;
+  let count = 1;
+  while (used.has(candidate.toLowerCase())) {
+    const suffix = `_${count++}`;
+    candidate = base.slice(0, 31 - suffix.length) + suffix;
+  }
+  XLSX.utils.book_append_sheet(workbook, worksheet, candidate);
+}
+
 export default {
+  appendWorksheet,
+  safeSheetName,
   generateFilename,
   createWorksheet
 };

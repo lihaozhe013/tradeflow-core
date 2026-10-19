@@ -1,0 +1,764 @@
+export const DEFAULT_SETTINGS = {
+  general: {
+    currency_unit_symbol: '$'
+  },
+  'payment-methods': {
+    items: [
+      {
+        key: 'cash',
+        code: 'CASH',
+        label: 'Cash'
+      },
+      {
+        key: 'bank_transfer',
+        code: 'BANK_TRANSFER',
+        label: 'E-Transfer'
+      },
+      {
+        key: 'check',
+        code: 'CHECK',
+        label: 'Cheque'
+      },
+      {
+        key: 'bank_acceptance',
+        code: 'BANK_ACCEPTANCE',
+        label: "Banker's acceptance"
+      },
+      {
+        key: 'other',
+        code: 'OTHER',
+        label: 'Other'
+      }
+    ],
+    defaultCode: 'BANK_TRANSFER'
+  },
+  'product-categories': {
+    default: 'Other',
+    list: ['category 1', 'category 2', 'category 3', 'Other']
+  },
+  about: {
+    company: {
+      description: '',
+      name: '',
+      slogan: ''
+    },
+    contact: {
+      address: '',
+      email: '',
+      phone: ''
+    },
+    lastUpdated: '2026-10-10T10:30:00.000Z',
+    system: {
+      releaseDate: '2026-10-10',
+      team: '',
+      techStack: 'Bun',
+      version: '1.0.0'
+    },
+    title: 'About Us'
+  },
+  'export-templates': {
+    analysis_customer_detail: {
+      columns: [
+        {
+          key: 'product_model',
+          label: 'Product Model'
+        },
+        {
+          key: 'quantity',
+          label: 'Quantity'
+        },
+        {
+          key: 'sales_amount',
+          label: 'Sales Amount'
+        },
+        {
+          key: 'cost_amount',
+          label: 'Cost'
+        },
+        {
+          key: 'profit_amount',
+          label: 'Profit'
+        },
+        {
+          key: 'profit_rate',
+          label: 'Profit Margin (%)'
+        }
+      ],
+      labels: {
+        detail_suffix: 'Details',
+        summary_suffix: 'Summary'
+      },
+      sheetName: 'Product Sales Detail'
+    },
+    analysis_customer_summary: {
+      columns: [
+        {
+          key: 'customer_code',
+          label: 'Customer Code'
+        },
+        {
+          key: 'customer_name',
+          label: 'Customer Name'
+        },
+        {
+          key: 'sales_amount',
+          label: 'Sales Amount'
+        },
+        {
+          key: 'cost_amount',
+          label: 'Cost'
+        },
+        {
+          key: 'profit_amount',
+          label: 'Profit'
+        },
+        {
+          key: 'profit_rate',
+          label: 'Profit Margin (%)'
+        }
+      ],
+      labels: {
+        detail_suffix: 'Details',
+        summary_suffix: 'Summary'
+      },
+      sheetName: 'Customer Sales Summary'
+    },
+    analysis_detail: {
+      columns: [
+        {
+          key: 'customer_code',
+          label: 'Customer Code'
+        },
+        {
+          key: 'customer_name',
+          label: 'Customer Name'
+        },
+        {
+          key: 'product_model',
+          label: 'Product Model'
+        },
+        {
+          key: 'quantity',
+          label: 'Quantity'
+        },
+        {
+          key: 'sales_amount',
+          label: 'Sales Amount'
+        },
+        {
+          key: 'cost_amount',
+          label: 'Cost'
+        },
+        {
+          key: 'profit_amount',
+          label: 'Profit'
+        },
+        {
+          key: 'profit_rate',
+          label: 'Profit Margin (%)'
+        }
+      ],
+      sheetName: 'Detailed Analysis'
+    },
+    analysis_detail_by_customer: {
+      columns: [
+        {
+          key: 'customer_code',
+          label: 'Customer Code'
+        },
+        {
+          key: 'customer_name',
+          label: 'Customer Name'
+        },
+        {
+          key: 'sales_amount',
+          label: 'Sales Amount'
+        },
+        {
+          key: 'cost_amount',
+          label: 'Cost'
+        },
+        {
+          key: 'profit_amount',
+          label: 'Profit'
+        },
+        {
+          key: 'profit_rate',
+          label: 'Profit Margin (%)'
+        }
+      ],
+      sheetName: 'Customer Analysis'
+    },
+    analysis_detail_by_product: {
+      columns: [
+        {
+          key: 'product_model',
+          label: 'Product Model'
+        },
+        {
+          key: 'quantity',
+          label: 'Quantity'
+        },
+        {
+          key: 'sales_amount',
+          label: 'Sales Amount'
+        },
+        {
+          key: 'cost_amount',
+          label: 'Cost'
+        },
+        {
+          key: 'profit_amount',
+          label: 'Profit'
+        },
+        {
+          key: 'profit_rate',
+          label: 'Profit Margin (%)'
+        }
+      ],
+      sheetName: 'Product Analysis'
+    },
+    analysis_product_detail: {
+      columns: [
+        {
+          key: 'customer_code',
+          label: 'Customer Code'
+        },
+        {
+          key: 'customer_name',
+          label: 'Customer Name'
+        },
+        {
+          key: 'sales_amount',
+          label: 'Sales Amount'
+        },
+        {
+          key: 'cost_amount',
+          label: 'Cost'
+        },
+        {
+          key: 'profit_amount',
+          label: 'Profit'
+        },
+        {
+          key: 'profit_rate',
+          label: 'Profit Margin (%)'
+        }
+      ],
+      labels: {
+        detail_suffix: 'Details',
+        summary_suffix: 'Summary'
+      },
+      sheetName: 'Customer Sales Detail'
+    },
+    analysis_product_summary: {
+      columns: [
+        {
+          key: 'product_model',
+          label: 'Product Model'
+        },
+        {
+          key: 'quantity',
+          label: 'Quantity'
+        },
+        {
+          key: 'sales_amount',
+          label: 'Sales Amount'
+        },
+        {
+          key: 'cost_amount',
+          label: 'Cost'
+        },
+        {
+          key: 'profit_amount',
+          label: 'Profit'
+        },
+        {
+          key: 'profit_rate',
+          label: 'Profit Margin (%)'
+        }
+      ],
+      labels: {
+        detail_suffix: 'Details',
+        summary_suffix: 'Summary'
+      },
+      sheetName: 'Product Sales Summary'
+    },
+    analysis_summary: {
+      columns: [
+        {
+          key: 'metric_name',
+          label: 'Analysis Item'
+        },
+        {
+          key: 'amount',
+          label: 'Amount'
+        },
+        {
+          key: 'remark',
+          label: 'Remark'
+        }
+      ],
+      labels: {
+        all: 'All',
+        calculation_method: 'Calculated using weighted average cost method',
+        cost_amount: 'Cost Amount',
+        customer_filter: 'Customer Filter',
+        last_updated: 'Last Updated',
+        product_filter: 'Product Filter',
+        profit_amount: 'Profit Amount',
+        profit_rate: 'Profit Margin',
+        sales_amount: 'Sales Amount',
+        time_period: 'Time Period'
+      },
+      sheetName: 'Analysis Summary'
+    },
+    inbound: {
+      columns: [
+        {
+          key: 'inbound_date',
+          label: 'Inbound Date'
+        },
+        {
+          key: 'supplier_code',
+          label: 'Supplier Code'
+        },
+        {
+          key: 'supplier_short_name',
+          label: 'Supplier Short Name'
+        },
+        {
+          key: 'product_code',
+          label: 'Product Code'
+        },
+        {
+          key: 'product_model',
+          label: 'Product Model'
+        },
+        {
+          key: 'quantity',
+          label: 'Quantity'
+        },
+        {
+          key: 'unit_price',
+          label: 'Unit Price'
+        },
+        {
+          key: 'total_price',
+          label: 'Total Price'
+        }
+      ],
+      sheetName: 'Inbound Records'
+    },
+    inbound_statement: {
+      columns: [
+        {
+          key: 'inbound_date',
+          label: 'Inbound Date'
+        },
+        {
+          key: 'order_number',
+          label: 'Order Number'
+        },
+        {
+          key: 'supplier_full_name',
+          label: 'Supplier Full Name'
+        },
+        {
+          key: 'product_model',
+          label: 'Product Model'
+        },
+        {
+          key: 'quantity',
+          label: 'Quantity'
+        },
+        {
+          key: 'unit_price',
+          label: 'Unit Price'
+        },
+        {
+          key: 'total_price',
+          label: 'Total Price'
+        },
+        {
+          key: 'invoice_number',
+          label: 'Invoice Number'
+        }
+      ],
+      sheetName: 'Inbound Records'
+    },
+    inventory: {
+      columns: [
+        {
+          key: 'product_model',
+          label: 'Product Model'
+        },
+        {
+          key: 'quantity',
+          label: 'Quantity'
+        },
+        {
+          key: 'unit_cost',
+          label: 'Estimated Unit Cost'
+        },
+        {
+          key: 'total_value',
+          label: 'Total Value'
+        }
+      ],
+      sheetName: 'Inventory Data'
+    },
+    invoice: {
+      columns: [
+        {
+          key: 'product_model',
+          label: 'Product Model'
+        },
+        {
+          key: 'quantity',
+          label: 'Quantity'
+        },
+        {
+          key: 'unit_price',
+          label: 'Unit Price'
+        },
+        {
+          key: 'total_price',
+          label: 'Total Price'
+        }
+      ],
+      sheetName: 'Invoice Details'
+    },
+    outbound: {
+      columns: [
+        {
+          key: 'outbound_date',
+          label: 'Outbound Date'
+        },
+        {
+          key: 'invoice_number',
+          label: 'Invoice Number'
+        },
+        {
+          key: 'customer_code',
+          label: 'Customer Code'
+        },
+        {
+          key: 'customer_short_name',
+          label: 'Customer Short Name'
+        },
+        {
+          key: 'product_code',
+          label: 'Product Code'
+        },
+        {
+          key: 'product_model',
+          label: 'Product Model'
+        },
+        {
+          key: 'quantity',
+          label: 'Quantity'
+        },
+        {
+          key: 'unit_price',
+          label: 'Unit Price'
+        },
+        {
+          key: 'total_price',
+          label: 'Total Price'
+        },
+        {
+          key: 'order_number',
+          label: 'Order Number'
+        }
+      ],
+      sheetName: 'Outbound Records'
+    },
+    outbound_statement: {
+      columns: [
+        {
+          key: 'outbound_date',
+          label: 'Outbound Date'
+        },
+        {
+          key: 'order_number',
+          label: 'Order Number'
+        },
+        {
+          key: 'customer_full_name',
+          label: 'Customer Full Name'
+        },
+        {
+          key: 'product_model',
+          label: 'Product Model'
+        },
+        {
+          key: 'quantity',
+          label: 'Quantity'
+        },
+        {
+          key: 'unit_price',
+          label: 'Unit Price'
+        },
+        {
+          key: 'total_price',
+          label: 'Total Price'
+        },
+        {
+          key: 'invoice_number',
+          label: 'Invoice Number'
+        }
+      ],
+      sheetName: 'Outbound Records'
+    },
+    partners: {
+      columns: [
+        {
+          key: 'code',
+          label: 'Code'
+        },
+        {
+          key: 'short_name',
+          label: 'Short Name'
+        },
+        {
+          key: 'full_name',
+          label: 'Full Name'
+        },
+        {
+          key: 'type_name',
+          label: 'Type'
+        },
+        {
+          key: 'address',
+          label: 'Address'
+        },
+        {
+          key: 'contact_person',
+          label: 'Contact Person'
+        },
+        {
+          key: 'contact_phone',
+          label: 'Contact Phone'
+        }
+      ],
+      sheetName: 'Suppliers and Customers'
+    },
+    payable_details: {
+      columns: [
+        {
+          key: 'record_id',
+          label: 'Inbound Record ID'
+        },
+        {
+          key: 'supplier_short_name',
+          label: 'Supplier Short Name'
+        },
+        {
+          key: 'product_model',
+          label: 'Product Model'
+        },
+        {
+          key: 'total_price',
+          label: 'Total Price'
+        },
+        {
+          key: 'inbound_date',
+          label: 'Inbound Date'
+        },
+        {
+          key: 'remark',
+          label: 'Remark'
+        }
+      ],
+      sheetName: 'Payable Details'
+    },
+    payable_payments: {
+      columns: [
+        {
+          key: 'id',
+          label: 'Payment ID'
+        },
+        {
+          key: 'supplier_code',
+          label: 'Supplier Code'
+        },
+        {
+          key: 'amount',
+          label: 'Payment Amount'
+        },
+        {
+          key: 'pay_date',
+          label: 'Payment Date'
+        },
+        {
+          key: 'pay_method',
+          label: 'Payment Method'
+        },
+        {
+          key: 'remark',
+          label: 'Remark'
+        }
+      ],
+      sheetName: 'Payable Payments'
+    },
+    payable_summary: {
+      columns: [
+        {
+          key: 'supplier_full_name',
+          label: 'Supplier Full Name'
+        },
+        {
+          key: 'total_purchases',
+          label: 'Total Purchases'
+        },
+        {
+          key: 'total_payments',
+          label: 'Total Payments'
+        },
+        {
+          key: 'balance',
+          label: 'Balance'
+        }
+      ],
+      sheetName: 'Payable Summary'
+    },
+    prices: {
+      columns: [
+        {
+          key: 'partner_short_name',
+          label: 'Partner Short Name'
+        },
+        {
+          key: 'product_model',
+          label: 'Product Model'
+        },
+        {
+          key: 'effective_date',
+          label: 'Effective Date'
+        },
+        {
+          key: 'expiry_date',
+          label: 'Expiry Date'
+        },
+        {
+          key: 'unit_price',
+          label: 'Unit Price'
+        }
+      ],
+      sheetName: 'Product Prices'
+    },
+    products: {
+      columns: [
+        {
+          key: 'code',
+          label: 'Code'
+        },
+        {
+          key: 'category',
+          label: 'Category'
+        },
+        {
+          key: 'product_model',
+          label: 'Product Model'
+        },
+        {
+          key: 'remark',
+          label: 'Remark'
+        }
+      ],
+      sheetName: 'Product Info'
+    },
+    receivable_details: {
+      columns: [
+        {
+          key: 'record_id',
+          label: 'Outbound Record ID'
+        },
+        {
+          key: 'customer_code',
+          label: 'Customer Code'
+        },
+        {
+          key: 'customer_short_name',
+          label: 'Customer Short Name'
+        },
+        {
+          key: 'product_model',
+          label: 'Product Model'
+        },
+        {
+          key: 'total_price',
+          label: 'Total Price'
+        },
+        {
+          key: 'outbound_date',
+          label: 'Outbound Date'
+        },
+        {
+          key: 'remark',
+          label: 'Remark'
+        }
+      ],
+      sheetName: 'Receivable Details'
+    },
+    receivable_payments: {
+      columns: [
+        {
+          key: 'id',
+          label: 'Payment ID'
+        },
+        {
+          key: 'customer_code',
+          label: 'Customer Code'
+        },
+        {
+          key: 'amount',
+          label: 'Payment Amount'
+        },
+        {
+          key: 'pay_date',
+          label: 'Payment Date'
+        },
+        {
+          key: 'pay_method',
+          label: 'Payment Method'
+        },
+        {
+          key: 'remark',
+          label: 'Remark'
+        }
+      ],
+      sheetName: 'Receivable Payments'
+    },
+    receivable_summary: {
+      columns: [
+        {
+          key: 'customer_code',
+          label: 'Customer Code'
+        },
+        {
+          key: 'customer_short_name',
+          label: 'Customer Short Name'
+        },
+        {
+          key: 'customer_full_name',
+          label: 'Customer Full Name'
+        },
+        {
+          key: 'total_sales',
+          label: 'Total Sales'
+        },
+        {
+          key: 'total_payments',
+          label: 'Total Payments'
+        },
+        {
+          key: 'balance',
+          label: 'Balance'
+        }
+      ],
+      sheetName: 'Receivable Summary'
+    }
+  }
+} as const;

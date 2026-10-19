@@ -1,3 +1,4 @@
+import { useRuntimeConfig } from '@/config/runtime';
 import { useTranslation } from 'react-i18next';
 import {
   Modal,
@@ -15,7 +16,6 @@ import type { FC, Dispatch, SetStateAction } from 'react';
 import type { FormInstance } from 'antd/es/form';
 import type { RadioChangeEvent } from 'antd/es/radio';
 import type { DefaultOptionType } from 'antd/es/select';
-import { currency_unit_symbol } from '@/config/types';
 import type { Dayjs } from 'dayjs';
 import type { OutboundFormValues, OutboundRecord, Partner, Product } from '../types';
 
@@ -62,6 +62,7 @@ const OutboundModal: FC<OutboundModalProps> = ({
   onPriceOrQuantityChange
 }) => {
   const { t } = useTranslation();
+  const { currency_unit_symbol } = useRuntimeConfig();
 
   const handleManualPriceChange = (event: RadioChangeEvent): void => {
     const isManual = Boolean(event.target.value);

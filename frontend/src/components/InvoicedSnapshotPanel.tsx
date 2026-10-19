@@ -1,10 +1,10 @@
+import { useRuntimeConfig } from '@/config/runtime';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Alert, Button, Typography, message } from 'antd';
 import { ReloadOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import ResponsiveTable from '@/components/ResponsiveTable';
 import { apiRequest, RequestError } from '@/utils/request';
-import { currency_unit_symbol } from '@/config/types';
 import type { ColumnsType } from 'antd/es/table';
 import type { InvoicedRecord, InvoicedRecordsResponse } from '@/pages/Receivable/types';
 
@@ -22,6 +22,7 @@ const PAGE_SIZE = 10;
  */
 export default function InvoicedSnapshotPanel({ direction, partnerCode, canWrite }: Props) {
   const { t } = useTranslation();
+  const { currency_unit_symbol } = useRuntimeConfig();
   const [data, setData] = useState<InvoicedRecord[]>([]);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);

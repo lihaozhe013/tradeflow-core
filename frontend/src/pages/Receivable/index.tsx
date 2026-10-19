@@ -1,3 +1,4 @@
+import { useRuntimeConfig } from '@/config/runtime';
 import { useState, useEffect, useCallback, useMemo, type FC } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, Form, message, Card, Typography, Row, Col, Divider } from 'antd';
@@ -43,6 +44,7 @@ const toApiSortOrder = (order?: TableSortOrder): 'asc' | 'desc' => {
 
 const Receivable: FC = () => {
   const { t } = useTranslation();
+  const { paymentMethods } = useRuntimeConfig();
   const { canWrite } = usePermissions();
   const [receivableRecords, setReceivableRecords] = useState<ReceivableRecord[]>([]);
   const [loading, setLoading] = useState(false);
@@ -158,7 +160,7 @@ const Receivable: FC = () => {
       customer_code: customerRecord.customer_code,
       pay_date: null,
       amount: undefined,
-      pay_method: undefined,
+      pay_method: paymentMethods.default,
       remark: undefined
     });
   };
