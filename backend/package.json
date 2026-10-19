@@ -9,6 +9,8 @@
     "prisma:generate": "prisma generate --no-hints && bun ./scripts/generateSchemaManifest.ts",
     "dev": "bun run prisma:generate && tsx watch server.ts",
     "dev:debug": "bun run prisma:generate && tsx watch --inspect server.ts",
+    "dev:reset": "bun run prisma:generate && tsx scripts/seedDevDatabase.ts && tsx watch server.ts",
+    "db:reset": "tsx scripts/seedDevDatabase.ts",
     "lint": "eslint .",
     "test": "vitest run",
     "typecheck": "tsc --noEmit -p tsconfig.check.json",

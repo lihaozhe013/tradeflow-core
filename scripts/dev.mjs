@@ -8,9 +8,11 @@ const rootDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const debugLogPath = resolve(rootDir, 'debug.log');
 const isWindows = process.platform === 'win32';
 const bun = 'bun';
+const resetRequested = process.argv.includes('--reset');
+const backendScript = resetRequested ? 'dev:reset' : 'dev';
 const services = [
-  { name: 'backend', directory: 'backend' },
-  { name: 'frontend', directory: 'frontend' }
+  { name: 'backend', directory: 'backend', script: backendScript },
+  { name: 'frontend', directory: 'frontend', script: 'dev' }
 ];
 
 const children = new Map();
@@ -175,7 +177,7 @@ function startService(service) {
     stdio: ['inherit', 'pipe', 'pipe']
   };
 
-  const child = spawn(bun, ['run', 'dev'], options);
+  const child = spawn(bun, ['run', service.script], options);
 
   children.set(service.name, child);
   attachOutput(service.name, 'stdout', child.stdout, process.stdout);
@@ -214,7 +216,10 @@ function handleSignal(signal) {
 }
 
 openDebugLog();
-writeSystemLine(`Starting development services. Logs: ${debugLogPath}`);
+writeSystemLine(
+  `Starting development services${resetRequested ? ' with a database reset' : ''}. ` +
+    `Logs: ${debugLogPath}`
+);
 
 for (const service of services) {
   startService(service);

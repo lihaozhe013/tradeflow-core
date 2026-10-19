@@ -17,7 +17,9 @@
   "scripts": {
     "build": "uv run build.py",
     "dev": "node scripts/dev.mjs",
+    "dev:reset": "node scripts/dev.mjs --reset",
     "dev:backend": "bun run --cwd backend dev",
+    "db:reset": "bun run --cwd backend db:reset",
     "dev:frontend": "bun run --cwd frontend dev",
     "format": "prettier --write .",
     "install:all": "bun install && bun run --cwd backend prisma:generate",
