@@ -407,89 +407,53 @@ test('inventory filters, sorts, paginates, and recalculates through the UI', asy
   }
 });
 
-test('overview refreshes analytics, opens stock details, and exposes quick stock routes', async ({
-  page
-}) => {
+test('dashboard refreshes, preserves periods, and opens inventory details', async ({ page }) => {
   await page.goto('/#/overview');
-  await expect(page.getByRole('heading', { name: 'Overview', exact: true })).toBeVisible();
-  const monthlyCard = page.locator('.ant-card').filter({ hasText: 'Monthly Inventory Change' });
-  const refreshResponse = page.waitForResponse(
-    (response) =>
-      response.url().endsWith('/api/overview/stats') && response.request().method() === 'POST'
-  );
-  await page.getByRole('button', { name: 'Refresh Data' }).click();
-  expect((await refreshResponse).ok()).toBeTruthy();
-  await expect(page.getByRole('button', { name: 'Refresh Data' })).toBeEnabled();
-  await expect(monthlyCard.getByText('Current Inventory', { exact: true })).toBeVisible();
-  await monthlyCard.getByRole('combobox').click();
-  await page.locator('.ant-select-item-option').nth(1).click();
-  await expect(monthlyCard.getByText('Monthly Change', { exact: true })).toBeVisible();
-  await page.getByRole('button', { name: 'View Details' }).click();
-  const outOfStockDialog = page.getByRole('dialog');
-  await expect(outOfStockDialog).toBeVisible();
-  await outOfStockDialog.locator('button.ant-modal-close').click();
-
-  await page.getByRole('button', { name: 'Quick Inbound' }).click();
-  await expect(page).toHaveURL(/#\/inbound$/);
-  await page.goto('/#/overview');
-  await page.getByRole('button', { name: 'Quick Outbound' }).click();
-  await expect(page).toHaveURL(/#\/outbound$/);
+  await expect(page.getByRole('heading', { name: 'Business overview', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Refresh data', exact: true }).click();
+  await expect(page.getByText('Net sales', { exact: true }).first()).toBeVisible();
+  await page.getByText('Last 30 days', { exact: true }).click();
+  await expect(page).toHaveURL(/period=30/);
+  await page.getByRole('button', { name: /Negative inventory/ }).click();
+  await expect(page.getByRole('dialog')).toBeVisible();
+  await page.getByRole('button', { name: 'Close', exact: true }).click();
+  await page.getByRole('button', { name: 'View analysis' }).click();
+  await expect(page).toHaveURL(/start_date=/);
+  await page.goBack();
+  await expect(page).toHaveURL(/period=30/);
 });
 
-test('overview keeps saved results and actions available after a failed refresh', async ({
-  page
-}) => {
-  await apiRequest(page, 'POST', '/overview/stats', {});
+test('dashboard retains saved results after refresh failure', async ({ page }) => {
+  await apiRequest(page, 'POST', '/overview/dashboard', {});
   await page.goto('/#/overview');
-  await expect(page.getByText('Total Sales', { exact: true })).toBeVisible();
-  const savedTime = await page.getByText('Last refreshed:', { exact: false }).textContent();
-  await page.route('**/api/overview/stats', (route) =>
+  await expect(page.getByText('Net sales', { exact: true }).first()).toBeVisible();
+  await page.route('**/api/overview/dashboard', (route) =>
     route.request().method() === 'POST'
       ? route.fulfill({ status: 500, contentType: 'application/json', body: '{}' })
       : route.continue()
   );
-  await page.getByRole('button', { name: 'Refresh Data' }).click();
+  await page.getByRole('button', { name: 'Refresh data', exact: true }).click();
   await expect(page.locator('.ant-alert-error')).toBeVisible();
-  await expect(page.getByText('Total Sales', { exact: true })).toBeVisible();
-  await expect(page.getByText('Last refreshed:', { exact: false })).toHaveText(savedTime!);
-  await expect(page.getByRole('button', { name: 'Refresh Data' })).toBeEnabled();
-  await expect(page.getByRole('button', { name: 'Quick Inbound' })).toBeVisible();
+  await expect(page.getByText('Net sales', { exact: true }).first()).toBeVisible();
 });
 
-test('overview requires an explicit refresh when no snapshot exists', async ({ page }) => {
+test('dashboard reads do not generate a missing snapshot', async ({ page }) => {
   const mutations: string[] = [];
   page.on('request', (request) => {
     if (request.method() === 'POST' && request.url().includes('/overview/'))
       mutations.push(request.url());
   });
-  await page.route('**/api/overview/stats', (route) =>
-    route.request().method() === 'GET'
-      ? route.fulfill({
-          status: 503,
-          contentType: 'application/json',
-          body: JSON.stringify({ code: 'SNAPSHOT_NOT_READY' })
-        })
-      : route.continue()
+  await page.route('**/api/overview/dashboard', (route) =>
+    route.fulfill({
+      status: 503,
+      contentType: 'application/json',
+      body: JSON.stringify({ code: 'SNAPSHOT_NOT_READY' })
+    })
   );
   await page.goto('/#/overview');
   await page.reload();
-  await expect(page.getByText('Data has not been generated.', { exact: false })).toBeVisible();
+  await expect(page.getByText('Statistics are being prepared.', { exact: false })).toBeVisible();
   expect(mutations).toHaveLength(0);
-  await page.getByRole('button', { name: 'Refresh Data' }).click();
-  await expect(page.getByText('Total Sales', { exact: true })).toBeVisible();
-  expect(mutations).toHaveLength(1);
-  const subrequests: string[] = [];
-  page.on('request', (request) => {
-    if (/top-sales-products|monthly-inventory-change/.test(request.url()))
-      subrequests.push(request.url());
-  });
-  await page
-    .locator('.ant-card')
-    .filter({ hasText: 'Monthly Inventory Change' })
-    .getByRole('combobox')
-    .click();
-  await page.locator('.ant-select-item-option').nth(1).click();
-  expect(subrequests).toHaveLength(0);
 });
 
 test.describe('mobile inbound records', () => {
@@ -661,4 +625,26 @@ test('mobile inventory cards support sorting and pagination', async ({ page }) =
   await expect(nextPage).toBeEnabled();
   await nextPage.click();
   await expect(page.locator('.responsive-record-pagination')).toContainText('21-40 of');
+});
+
+test('dashboard adapts to all target widths and opens new transactions', async ({
+  page
+}, testInfo) => {
+  await apiRequest(page, 'POST', '/overview/dashboard', {});
+  await page.goto('/#/overview');
+  await expect(page.getByText('Net sales', { exact: true }).first()).toBeVisible();
+  for (const width of [375, 768, 1024, 1440]) {
+    await page.setViewportSize({ width, height: 1000 });
+    const overflowing = await page
+      .locator('.business-dashboard')
+      .evaluate((element) => element.scrollWidth > element.clientWidth);
+    expect(overflowing).toBe(false);
+    await page.screenshot({
+      path: testInfo.outputPath('dashboard-' + width + '.png'),
+      fullPage: true
+    });
+  }
+  await page.getByRole('button', { name: 'New transaction' }).click();
+  await page.getByText('Quick Inbound', { exact: true }).click();
+  await expect(page.getByRole('dialog')).toBeVisible();
 });

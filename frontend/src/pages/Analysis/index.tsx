@@ -1,3 +1,4 @@
+import { useSearchParams } from 'react-router-dom';
 import React, { useState, useEffect } from 'react';
 import { Card, Spin, Divider, message, Typography } from 'antd';
 import { useTranslation } from 'react-i18next';
@@ -18,6 +19,13 @@ import { usePermissions } from '@/auth/usePermissions';
 
 const Analysis: React.FC = () => {
   const { t } = useTranslation();
+  const [entryParams] = useSearchParams();
+  const entryDate = (key: string, fallback: Dayjs) => {
+    const value = entryParams.get(key);
+    return value && /^\d{4}-\d{2}-\d{2}$/.test(value) && dayjs(value).isValid()
+      ? dayjs(value)
+      : fallback;
+  };
   const { canUseReaderPost } = usePermissions();
 
   // Custom Hooks
@@ -39,11 +47,15 @@ const Analysis: React.FC = () => {
 
   // Filters
   const [dateRange, setDateRange] = useState<[Dayjs, Dayjs]>([
-    dayjs().subtract(1, 'month').startOf('month'),
-    dayjs().subtract(1, 'month').endOf('month')
+    entryDate('start_date', dayjs().subtract(1, 'month').startOf('month')),
+    entryDate('end_date', dayjs().subtract(1, 'month').endOf('month'))
   ]);
-  const [selectedPartner, setSelectedPartner] = useState<string | null>('All');
-  const [selectedProduct, setSelectedProduct] = useState<string | null>('All');
+  const [selectedPartner, setSelectedPartner] = useState<string | null>(
+    entryParams.get('customer_code') ?? 'All'
+  );
+  const [selectedProduct, setSelectedProduct] = useState<string | null>(
+    entryParams.get('product_model') ?? 'All'
+  );
   const [analysisType, setAnalysisType] = useState<AnalysisType>('outbound');
 
   // init

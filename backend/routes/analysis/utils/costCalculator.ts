@@ -7,13 +7,13 @@ import decimalCalc from '@/utils/decimalCalculator';
  * This provides much more accurate profit analysis than global weighted average.
  */
 
-export async function calculateFilteredSoldGoodsCost(
+export async function calculateSoldGoodsAllocations(
   startDate: string,
   endDate: string,
   customerCode: string | null | undefined,
   productModel: string | null | undefined,
   db: DbClient | Prisma.TransactionClient = prisma
-): Promise<number> {
+) {
   // 1. Fetch all INBOUND records (Supply) - Sorted Oldest First
   // We need 'all' history to trace the FIFO queue correctly.
   const inboundWhere: Prisma.InboundRecordWhereInput = {
@@ -90,7 +90,7 @@ export async function calculateFilteredSoldGoodsCost(
     });
   }
 
-  let totalPeriodCost = decimalCalc.decimal(0);
+  const allocations: { id: number; cost: number }[] = [];
 
   // Process outbound in chronological order
   for (const outRecord of allOutbound) {
@@ -136,9 +136,28 @@ export async function calculateFilteredSoldGoodsCost(
     }
 
     if (isTargetRecord) {
-      totalPeriodCost = decimalCalc.add(totalPeriodCost, currentRecordCost);
+      allocations.push({ id: outRecord.id, cost: currentRecordCost.toNumber() });
     }
   }
-  const finalResult = decimalCalc.toDbNumber(totalPeriodCost, 2);
-  return finalResult;
+  return allocations;
+}
+
+export async function calculateFilteredSoldGoodsCost(
+  startDate: string,
+  endDate: string,
+  customerCode: string | null | undefined,
+  productModel: string | null | undefined,
+  db: DbClient | Prisma.TransactionClient = prisma
+): Promise<number> {
+  const allocations = await calculateSoldGoodsAllocations(
+    startDate,
+    endDate,
+    customerCode,
+    productModel,
+    db
+  );
+  return decimalCalc.toDbNumber(
+    allocations.reduce((sum, row) => sum.add(row.cost), decimalCalc.decimal(0)),
+    2
+  );
 }

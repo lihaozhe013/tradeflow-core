@@ -1,3 +1,4 @@
+import { useSearchParams } from 'react-router-dom';
 import { useState, useEffect, useCallback, useMemo, type FC, type Key } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, Form, message, Card, Typography, Row, Col, Divider } from 'antd';
@@ -40,9 +41,12 @@ const DEFAULT_PAGINATION: PaginationState = {
 const Inbound: FC = () => {
   const { t } = useTranslation();
   const { canWrite } = usePermissions();
+  const [entryParams] = useSearchParams();
   const [inboundRecords, setInboundRecords] = useState<InboundRecord[]>([]);
   const [loading, setLoading] = useState(false);
-  const [modalVisible, setModalVisible] = useState(false);
+  const [modalVisible, setModalVisible] = useState(
+    () => canWrite && entryParams.get('create') === '1'
+  );
   const [batchModalVisible, setBatchModalVisible] = useState(false);
   const [editingRecord, setEditingRecord] = useState<InboundRecord | null>(null);
   const [form] = Form.useForm<InboundFormValues>();
@@ -158,6 +162,14 @@ const Inbound: FC = () => {
     });
     setModalVisible(true);
   };
+
+  useEffect(() => {
+    if (canWrite && entryParams.get('create') === '1') {
+      handleAdd();
+    }
+    // This entry action runs once when the destination is mounted.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleEdit = (record: InboundRecord): void => {
     if (!canWrite) return;

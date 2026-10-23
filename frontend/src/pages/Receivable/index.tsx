@@ -1,3 +1,4 @@
+import { useSearchParams } from 'react-router-dom';
 import { useRuntimeConfig } from '@/config/runtime';
 import { useState, useEffect, useCallback, useMemo, type FC } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -44,6 +45,7 @@ const toApiSortOrder = (order?: TableSortOrder): 'asc' | 'desc' => {
 
 const Receivable: FC = () => {
   const { t } = useTranslation();
+  const [entryParams] = useSearchParams();
   const { paymentMethods } = useRuntimeConfig();
   const { canWrite } = usePermissions();
   const [receivableRecords, setReceivableRecords] = useState<ReceivableRecord[]>([]);
@@ -53,7 +55,9 @@ const Receivable: FC = () => {
   const [selectedCustomer, setSelectedCustomer] = useState<ReceivableRecord | null>(null);
   const [form] = Form.useForm<ReceivablePaymentFormValues>();
   const [pagination, setPagination] = useState<PaginationState>(DEFAULT_PAGINATION);
-  const [filters, setFilters] = useState<ReceivableFilters>({});
+  const [filters, setFilters] = useState<ReceivableFilters>(() => ({
+    customer_short_name: entryParams.get('customer_short_name') ?? ''
+  }));
   const [summary, setSummary] = useState<AccountSummary | null>(null);
   const [sorter, setSorter] = useState<ReceivableSorterState>({
     field: 'balance',

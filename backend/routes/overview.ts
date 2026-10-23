@@ -1,3 +1,4 @@
+import { getDashboard, refreshDashboard } from '@/services/dashboardService';
 import express, { type Router } from 'express';
 import { getOverviewSnapshot, refreshOverviewSnapshot } from '@/services/overviewSnapshotService';
 import { SnapshotError } from '@/services/snapshotRefresh';
@@ -15,6 +16,15 @@ async function requireSnapshot() {
   }
   return snapshot;
 }
+
+router.get('/dashboard', async (_req, res) => {
+  const data = await getDashboard();
+  if (!data) throw new SnapshotError(503, 'SNAPSHOT_NOT_READY', 'Dashboard is not ready.');
+  res.json(data);
+});
+router.post('/dashboard', async (_req, res) => {
+  res.json(await refreshDashboard());
+});
 
 router.get('/stats', async (_req, res) => {
   res.json(await requireSnapshot());

@@ -1,3 +1,4 @@
+import { useSearchParams } from 'react-router-dom';
 import { useRuntimeConfig } from '@/config/runtime';
 import { useState, useEffect, useCallback, useMemo, type FC } from 'react';
 import { Button, Form, message, Card, Typography, Row, Col, Divider } from 'antd';
@@ -44,6 +45,7 @@ const toApiSortOrder = (order?: TableSortOrder): 'asc' | 'desc' => {
 
 const Payable: FC = () => {
   const { t } = useTranslation();
+  const [entryParams] = useSearchParams();
   const { paymentMethods } = useRuntimeConfig();
   const { canWrite } = usePermissions();
   const [payableRecords, setPayableRecords] = useState<PayableRecord[]>([]);
@@ -53,7 +55,9 @@ const Payable: FC = () => {
   const [selectedSupplier, setSelectedSupplier] = useState<PayableRecord | null>(null);
   const [form] = Form.useForm<PayablePaymentFormValues>();
   const [pagination, setPagination] = useState<PaginationState>(DEFAULT_PAGINATION);
-  const [filters, setFilters] = useState<PayableFilters>({});
+  const [filters, setFilters] = useState<PayableFilters>(() => ({
+    supplier_short_name: entryParams.get('supplier_short_name') ?? ''
+  }));
   const [summary, setSummary] = useState<AccountSummary | null>(null);
   const [sorter, setSorter] = useState<PayableSorterState>({
     field: 'balance',

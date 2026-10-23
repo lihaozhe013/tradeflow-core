@@ -1,3 +1,4 @@
+import { useSearchParams } from 'react-router-dom';
 import { useRuntimeConfig } from '@/config/runtime';
 import ResponsiveTable from '@/components/ResponsiveTable';
 import { useState, useCallback, useEffect, useMemo, type ChangeEvent, type FC } from 'react';
@@ -39,7 +40,8 @@ const DEFAULT_PAGINATION: PaginationInfo = {
 };
 
 const Inventory: FC = () => {
-  const [productFilter, setProductFilter] = useState('');
+  const [entryParams] = useSearchParams();
+  const [productFilter, setProductFilter] = useState(() => entryParams.get('product_model') ?? '');
   const [pagination, setPagination] = useState<PaginationInfo>(DEFAULT_PAGINATION);
   const { t } = useTranslation();
   const { currency_unit_symbol } = useRuntimeConfig();

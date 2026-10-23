@@ -35,6 +35,24 @@ async function startServer(): Promise<void> {
     await initializeSettings();
     const app = createApp();
     const server = app.listen(PORT, () => {
+      if (process.env['NODE_ENV'] !== 'test') {
+        void import('@/services/dashboardScheduler').then(({ startDashboardScheduler }) => {
+          const stop = startDashboardScheduler();
+          server.once('close', stop);
+          process.once('SIGTERM', () => {
+            stop();
+            server.close(() => {
+              void disconnectClients?.();
+            });
+          });
+          process.once('SIGINT', () => {
+            stop();
+            server.close(() => {
+              void disconnectClients?.();
+            });
+          });
+        });
+      }
       logger.info('Server Start Complete!', {
         port: PORT,
         environment: process.env['NODE_ENV'] || 'development',

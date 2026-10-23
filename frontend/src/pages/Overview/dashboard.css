@@ -1,0 +1,313 @@
+.business-dashboard {
+  display: grid;
+  gap: 20px;
+  color: #172033;
+}
+.business-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+.business-header h2 {
+  margin: 6px 0 !important;
+  font-size: 28px;
+}
+.business-eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: #667085;
+}
+.business-actions {
+  display: flex;
+  gap: 10px;
+}
+.business-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.business-timestamp {
+  display: grid;
+  gap: 3px;
+  text-align: right;
+  font-size: 12px;
+  color: #667085;
+}
+.business-range {
+  font-size: 13px;
+  color: #475467;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.business-range span {
+  color: #667085;
+}
+.business-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+.business-metric .ant-card-body {
+  padding: 22px;
+}
+.business-metric-label {
+  font-size: 13px;
+  color: #475467;
+}
+.business-value {
+  font-size: clamp(20px, 1.8vw, 30px);
+  font-weight: 650;
+  letter-spacing: -0.035em;
+  margin: 12px 0;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.metric-sales {
+  border-top: 3px solid #1677ff !important;
+}
+.business-delta {
+  font-size: 13px;
+  font-weight: 600;
+}
+.business-delta span {
+  font-size: 12px;
+  font-weight: 400;
+  color: #667085;
+}
+.business-metric-foot {
+  border-top: 1px solid #edf0f4;
+  margin-top: 16px;
+  padding-top: 12px;
+  color: #667085;
+  font-size: 12px;
+}
+.business-main-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 20px;
+}
+.business-bottom-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+.business-note {
+  color: #667085;
+  font-size: 12px;
+  margin: 0 0 16px;
+  line-height: 1.6;
+}
+.business-chart {
+  height: 270px;
+  min-width: 0;
+}
+.business-chart-legend {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  font-size: 12px;
+  color: #475467;
+}
+.business-chart-legend > span:first-child {
+  color: #1677ff;
+}
+.business-attention {
+  display: grid;
+  gap: 8px;
+}
+.business-attention button,
+.business-ranking button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid #edf0f4;
+  background: transparent;
+  text-align: left;
+  padding: 15px 0;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+}
+.business-attention button:hover,
+.business-ranking button:hover {
+  background: #f8fafc;
+}
+.business-attention button > span:first-child {
+  flex: 1;
+  font-size: 13px;
+}
+.business-attention strong {
+  font-size: 24px;
+  font-variant-numeric: tabular-nums;
+}
+.business-attention .anticon,
+.business-ranking .anticon {
+  color: #667085;
+}
+.business-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  margin-right: 9px;
+  background: #d97706;
+}
+.business-dot.negative {
+  background: #dc2626;
+}
+.business-attention-note {
+  margin-top: 20px;
+}
+.business-funds {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+.business-funds > div {
+  display: grid;
+  gap: 8px;
+}
+.business-funds span,
+.business-funds small {
+  font-size: 12px;
+  color: #667085;
+}
+.business-funds strong {
+  font-size: 22px;
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+}
+.business-ranking {
+  margin-top: 8px;
+}
+.business-ranking strong {
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.business-rank-name {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.business-rank-number {
+  font-size: 12px;
+  color: #667085;
+}
+.business-ranking small {
+  display: block;
+  text-align: right;
+  color: #667085;
+  font-size: 11px;
+  margin-top: 4px;
+}
+.business-bar {
+  height: 4px;
+  background: #f1f5f9;
+  margin-top: 9px;
+  border-radius: 3px;
+}
+.business-bar span {
+  display: block;
+  height: 100%;
+  background: #93baff;
+  border-radius: 3px;
+}
+.business-dashboard button:focus-visible {
+  outline: 2px solid #1677ff;
+  outline-offset: 3px;
+}
+.business-dashboard .ant-card-head-title {
+  white-space: normal;
+}
+.business-dashboard .ant-card-extra {
+  min-width: 0;
+}
+.business-dashboard section > * {
+  min-width: 0;
+}
+@media (max-width: 1100px) {
+  .business-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .business-main-grid {
+    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+  }
+  .business-bottom-grid {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 767px) {
+  .business-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .business-main-grid,
+  .business-bottom-grid {
+    grid-template-columns: 1fr;
+  }
+  .business-actions {
+    width: 100%;
+  }
+  .business-timestamp {
+    text-align: left;
+  }
+  .business-dashboard {
+    gap: 16px;
+  }
+  .business-metrics {
+    gap: 10px;
+  }
+  .business-metric .ant-card-body {
+    padding: 14px;
+  }
+  .business-value {
+    font-size: 21px;
+  }
+  .business-chart {
+    height: 230px;
+  }
+  .business-dashboard .ant-card-head {
+    padding: 12px 16px;
+  }
+  .business-dashboard .ant-card-body {
+    padding: 16px;
+  }
+  .business-dashboard .ant-card-head-wrapper {
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .business-chart-legend {
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 767px) {
+  .business-toolbar > .ant-segmented {
+    width: 100%;
+  }
+  .business-toolbar > .ant-segmented .ant-segmented-group {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 480px) {
+  .business-funds {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .business-funds strong {
+    overflow-wrap: normal;
+  }
+}

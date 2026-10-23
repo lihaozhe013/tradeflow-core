@@ -1,8 +1,9 @@
 # Database snapshots
 
-Overview statistics and receivable/payable invoiced summaries are stored in PostgreSQL. Opening or
-reloading a page reads the last saved result. Only an explicit refresh recalculates and replaces it.
-Business record changes do not automatically invalidate or regenerate snapshots.
+Legacy overview statistics and receivable/payable invoiced summaries are stored in PostgreSQL.
+Opening or reloading a page reads the last saved result. Only an explicit refresh recalculates and
+replaces it. Business record changes do not automatically invalidate or regenerate snapshots. The
+business dashboard uses a separate snapshot with daily automatic refresh, as described below.
 
 `overview_snapshots` stores one complete overview under `global`. `invoice_snapshots` stores one
 result per direction and partner code. Both keep JSONB data and the last successful refresh time,
@@ -28,7 +29,7 @@ recalculation behavior, including the live inventory cost estimate.
    snapshot tables and their constraints before accepting requests. Existing business tables are not
    rebuilt.
 2. Start the new backend. Legacy JSON results are not imported. Users must explicitly refresh each
-   desired scope the first time. No background or startup generation occurs.
+   desired scope the first time. No background or startup generation occurs for these legacy scopes.
 3. From the runtime working directory, run the source helper with
    `bun run <absolute-path-to-backend>/scripts/cleanupLegacySnapshots.ts`. It removes only
    `overview-stats.json` and `invoice-cache.json` from the resolved legacy cache locations, and
@@ -40,3 +41,14 @@ preserve valid login tokens. Do not delete the entire `cache/` directory.
 
 For validation, use `bun run test`, which prepares only the isolated `tradeflow_e2e` database. The
 test reset includes the snapshot tables, so earlier results cannot leak between suite runs.
+
+## Business dashboard
+
+The business dashboard uses GET/POST `/api/overview/dashboard` and the independent `dashboard:v1`
+overview snapshot. Legacy overview endpoints retain their original behavior. The backend checks
+every minute and refreshes this snapshot 24 hours after the last successful refresh. Startup fills a
+missing or overdue snapshot without blocking HTTP startup. Failed attempts preserve the saved
+snapshot and retry after five minutes. Tests disable startup scheduling. Business date windows use
+Asia/Shanghai; saved timestamps use UTC. The browser periodically reads saved data while visible,
+without triggering recalculation. Attention counts are snapshots; transaction detail pages show the
+current state.
