@@ -1,4 +1,8 @@
 .business-dashboard {
+  --dashboard-sales: #2563eb;
+  --dashboard-profit: #0f7b62;
+  --dashboard-violet: #7c3aed;
+  --dashboard-amber: #a15c07;
   display: grid;
   gap: 20px;
   color: #172033;
@@ -68,8 +72,131 @@
   font-variant-numeric: tabular-nums;
   overflow-wrap: anywhere;
 }
+.business-dashboard .ant-card.business-metric {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--metric-border);
+  background: linear-gradient(155deg, var(--metric-tint), #fff 68%);
+  box-shadow: 0 3px 12px var(--metric-shadow);
+}
+.business-metric::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 4px;
+  background: linear-gradient(90deg, var(--metric-accent), var(--metric-highlight));
+}
 .metric-sales {
-  border-top: 3px solid #1677ff !important;
+  --metric-accent: var(--dashboard-sales);
+  --metric-highlight: #67b6ff;
+  --metric-tint: #eaf2ff;
+  --metric-border: #d6e4ff;
+  --metric-shadow: #2563eb0a;
+}
+.metric-profit {
+  --metric-accent: var(--dashboard-profit);
+  --metric-highlight: #5cdbb2;
+  --metric-tint: #e8f8f1;
+  --metric-border: #caeade;
+  --metric-shadow: #0f7b620a;
+}
+.metric-margin {
+  --metric-accent: var(--dashboard-violet);
+  --metric-highlight: #bd9aff;
+  --metric-tint: #f2ebff;
+  --metric-border: #e5d8fa;
+  --metric-shadow: #7c3aed0a;
+}
+.metric-purchase {
+  --metric-accent: var(--dashboard-amber);
+  --metric-highlight: #f7c45d;
+  --metric-tint: #fff5e4;
+  --metric-border: #f1dfbb;
+  --metric-shadow: #a15c070a;
+}
+.business-metric-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 34px;
+}
+.business-metric-symbol {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 34px;
+  height: 34px;
+  border-radius: 10px;
+  color: var(--metric-accent);
+  background: var(--metric-tint);
+  border: 1px solid var(--metric-border);
+  font-size: 18px;
+}
+.panel-trend {
+  --panel-accent: var(--dashboard-sales);
+  --panel-tint: #edf4ff;
+}
+.panel-attention {
+  --panel-accent: var(--dashboard-amber);
+  --panel-tint: #fff6e6;
+}
+.panel-funds {
+  --panel-accent: var(--dashboard-violet);
+  --panel-tint: #f4efff;
+}
+.panel-contribution {
+  --panel-accent: var(--dashboard-profit);
+  --panel-tint: #edf9f4;
+}
+.business-dashboard .business-panel > .ant-card-head {
+  background: linear-gradient(100deg, var(--panel-tint), #fff 80%);
+  border-top: 2px solid var(--panel-accent);
+  border-radius: 12px 12px 0 0;
+}
+.business-panel-heading {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.business-panel-heading > .anticon {
+  color: var(--panel-accent);
+  padding: 7px;
+  border-radius: 9px;
+  background: var(--panel-tint);
+  font-size: 18px;
+}
+.business-funds > .business-fund-summary {
+  padding: 14px;
+  border-radius: 10px;
+  border: 1px solid #dcdff7;
+  background: #f4f4ff;
+}
+.business-funds > .fund-payable {
+  background: #fff8ec;
+  border-color: #f1dfbb;
+}
+.contribution-ranking button:nth-child(5n + 1) {
+  --rank-color: #2563eb;
+}
+.contribution-ranking button:nth-child(5n + 2) {
+  --rank-color: #0f7b62;
+}
+.contribution-ranking button:nth-child(5n + 3) {
+  --rank-color: #7c3aed;
+}
+.contribution-ranking button:nth-child(5n + 4) {
+  --rank-color: #a15c07;
+}
+.contribution-ranking button:nth-child(5n) {
+  --rank-color: #5272a3;
+}
+.contribution-ranking .business-rank-number {
+  color: var(--rank-color);
+  font-weight: 600;
+}
+.contribution-ranking .business-bar span {
+  background: var(--rank-color);
 }
 .business-delta {
   font-size: 13px;
@@ -116,7 +243,10 @@
   color: #475467;
 }
 .business-chart-legend > span:first-child {
-  color: #1677ff;
+  color: var(--dashboard-sales);
+}
+.business-chart-legend > span:nth-child(2) {
+  color: var(--dashboard-profit);
 }
 .business-attention {
   display: grid;
@@ -309,5 +439,24 @@
   }
   .business-funds strong {
     overflow-wrap: normal;
+  }
+}
+
+.business-metric .business-metric-foot {
+  border-top-color: var(--metric-border);
+}
+@media (max-width: 767px) {
+  .business-metric-label {
+    align-items: flex-start;
+    min-height: 44px;
+  }
+  .business-metric-symbol {
+    flex-basis: 28px;
+    height: 28px;
+    border-radius: 8px;
+    font-size: 15px;
+  }
+  .business-funds strong {
+    font-size: 20px;
   }
 }

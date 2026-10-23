@@ -11,7 +11,19 @@ import {
   Table,
   Typography
 } from 'antd';
-import { PlusOutlined, ReloadOutlined, ArrowRightOutlined } from '@ant-design/icons';
+import {
+  PlusOutlined,
+  ReloadOutlined,
+  ArrowRightOutlined,
+  BarChartOutlined,
+  RiseOutlined,
+  PercentageOutlined,
+  ShoppingCartOutlined,
+  LineChartOutlined,
+  BellOutlined,
+  WalletOutlined,
+  TrophyOutlined
+} from '@ant-design/icons';
 import {
   CartesianGrid,
   Line,
@@ -321,7 +333,20 @@ export default function Overview() {
           <section className="business-metrics" aria-label={label('metrics')}>
             {(['sales', 'profit', 'margin', 'purchase'] as const).map((key, index) => (
               <Card key={key} className={'business-metric metric-' + key}>
-                <div className="business-metric-label">{label(key)}</div>
+                <div className="business-metric-label">
+                  <span>{label(key)}</span>
+                  <span className="business-metric-symbol" aria-hidden="true">
+                    {index === 0 ? (
+                      <BarChartOutlined />
+                    ) : index === 1 ? (
+                      <RiseOutlined />
+                    ) : index === 2 ? (
+                      <PercentageOutlined />
+                    ) : (
+                      <ShoppingCartOutlined />
+                    )}
+                  </span>
+                </div>
                 <div className="business-value">
                   {period.metrics[key] === null
                     ? '—'
@@ -347,7 +372,13 @@ export default function Overview() {
           </section>
           <section className="business-main-grid">
             <Card
-              title={label('trend')}
+              className="business-panel panel-trend"
+              title={
+                <span className="business-panel-heading">
+                  <LineChartOutlined aria-hidden="true" />
+                  {label('trend')}
+                </span>
+              }
               extra={
                 <Button type="link" onClick={() => analysis()}>
                   {label('analysis')} <ArrowRightOutlined aria-hidden="true" />
@@ -380,7 +411,7 @@ export default function Overview() {
                       name={label('sales')}
                       type="monotone"
                       dataKey="sales"
-                      stroke="#1677ff"
+                      stroke="var(--dashboard-sales)"
                       strokeWidth={2.5}
                       dot={false}
                       isAnimationActive={false}
@@ -389,7 +420,7 @@ export default function Overview() {
                       name={label('profit')}
                       type="monotone"
                       dataKey="profit"
-                      stroke="#64748b"
+                      stroke="var(--dashboard-profit)"
                       strokeWidth={2}
                       dot={false}
                       isAnimationActive={false}
@@ -429,7 +460,15 @@ export default function Overview() {
                 />
               )}
             </Card>
-            <Card title={label('attention')}>
+            <Card
+              className="business-panel panel-attention"
+              title={
+                <span className="business-panel-heading">
+                  <BellOutlined aria-hidden="true" />
+                  {label('attention')}
+                </span>
+              }
+            >
               <p className="business-note">{label('snapshotNote')}</p>
               <div className="business-attention">
                 {data.attention.review_enabled &&
@@ -460,11 +499,19 @@ export default function Overview() {
             </Card>
           </section>
           <section className="business-bottom-grid">
-            <Card title={label('funds')}>
+            <Card
+              className="business-panel panel-funds"
+              title={
+                <span className="business-panel-heading">
+                  <WalletOutlined aria-hidden="true" />
+                  {label('funds')}
+                </span>
+              }
+            >
               <p className="business-note">{label('snapshotNote')}</p>
               <div className="business-funds">
                 {(['receivable', 'payable'] as const).map((kind) => (
-                  <div key={kind}>
+                  <div key={kind} className={'business-fund-summary fund-' + kind}>
                     <span>{label(kind)}</span>
                     <strong>{amount(data.funds[kind])}</strong>
                     <small>
@@ -511,7 +558,13 @@ export default function Overview() {
               </div>
             </Card>
             <Card
-              title={label('contribution')}
+              className="business-panel panel-contribution"
+              title={
+                <span className="business-panel-heading">
+                  <TrophyOutlined aria-hidden="true" />
+                  {label('contribution')}
+                </span>
+              }
               extra={
                 <Segmented
                   value={rankTab}
