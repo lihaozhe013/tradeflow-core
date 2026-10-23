@@ -2,7 +2,7 @@
 .login-container {
   min-height: 100vh;
   min-height: 100dvh;
-  background: #f4f6f9;
+  background: linear-gradient(180deg, #f6f8fb 0%, #eef2f7 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -71,7 +71,7 @@
 
 .login-loading {
   text-align: center;
-  color: white;
+  color: #475467;
 }
 
 .login-loading p {

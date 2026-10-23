@@ -2,15 +2,16 @@ import { useSearchParams } from 'react-router-dom';
 import { useRuntimeConfig } from '@/config/runtime';
 import { useState, useEffect, useCallback, useMemo, type FC } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Form, message, Card, Typography, Row, Col, Divider } from 'antd';
+import { Button, Form, message } from 'antd';
 import type { TableProps } from 'antd/es/table';
 import type { SorterResult } from 'antd/es/table/interface';
-import { ReloadOutlined } from '@ant-design/icons';
+import { WalletOutlined, ReloadOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { useSimpleApi, useSimpleApiData } from '@/hooks/useSimpleApi';
 import { usePermissions } from '@/auth/usePermissions';
 import type { UseSimpleApiReturn } from '@/hooks/types';
 import AccountSummaryCards from '@/components/AccountSummaryCards';
+import PageHeader from '@/components/page/PageHeader';
 import type { AccountSummary } from '@/components/AccountSummaryCards';
 import ReceivableTable from '@/pages/Receivable/components/ReceivableTable';
 import ReceivableModal from '@/pages/Receivable/components/ReceivableModal';
@@ -27,8 +28,6 @@ import type {
   ReceivableSorterState,
   TableSortOrder
 } from './types';
-
-const { Title } = Typography;
 
 const DEFAULT_PAGINATION: PaginationState = {
   current: 1,
@@ -231,32 +230,22 @@ const Receivable: FC = () => {
   };
 
   return (
-    <div>
-      <Card>
-        <Row justify="space-between" align="middle" style={{ marginBottom: 16 }}>
-          <Col>
-            <Title level={2} style={{ margin: 0 }}>
-              {t('receivable.title')}
-            </Title>
-          </Col>
-          <Col>
-            <Button
-              type="primary"
-              icon={<ReloadOutlined />}
-              onClick={handleRefresh}
-              style={{ marginRight: 8 }}
-            >
-              {t('receivable.refresh')}
-            </Button>
-          </Col>
-        </Row>
+    <div className="page tone-blue">
+      <PageHeader
+        eyebrow={t('nav.finance')}
+        title={t('receivable.title')}
+        description={t('receivable.subtitle')}
+        icon={<WalletOutlined />}
+        actions={
+          <Button size="large" type="primary" icon={<ReloadOutlined />} onClick={handleRefresh}>
+            {t('receivable.refresh')}
+          </Button>
+        }
+      />
 
-        <Divider />
+      <AccountSummaryCards kind="receivable" summary={summary} />
 
-        <div style={{ marginBottom: 16 }}>
-          <AccountSummaryCards kind="receivable" summary={summary} />
-        </div>
-
+      <section className="page-card">
         <ReceivableTable
           data={receivableRecords}
           loading={loading}
@@ -271,9 +260,10 @@ const Receivable: FC = () => {
           apiInstance={apiInstance as UseSimpleApiReturn}
           canWrite={canWrite}
         />
+      </section>
 
-        {canWrite && (
-          <ReceivableModal
+      {canWrite && (
+        <ReceivableModal
             visible={modalVisible}
             editingPayment={editingPayment}
             selectedCustomer={selectedCustomer}
@@ -281,9 +271,8 @@ const Receivable: FC = () => {
             form={form}
             onSave={handleSavePayment}
             onCancel={() => setModalVisible(false)}
-          />
-        )}
-      </Card>
+        />
+      )}
     </div>
   );
 };

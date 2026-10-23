@@ -118,6 +118,7 @@ const LoginPage: React.FC = () => {
               <Input
                 prefix={<UserOutlined />}
                 placeholder={t('auth.username')}
+                aria-label={t('auth.username')}
                 onChange={handleUsernameChange}
                 autoComplete="username"
               />
@@ -135,6 +136,7 @@ const LoginPage: React.FC = () => {
               <Input.Password
                 prefix={<LockOutlined />}
                 placeholder={t('auth.password')}
+                aria-label={t('auth.password')}
                 autoComplete="current-password"
               />
             </Form.Item>

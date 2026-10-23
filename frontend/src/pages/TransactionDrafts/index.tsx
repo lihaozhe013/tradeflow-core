@@ -1,10 +1,28 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, AutoComplete, Button, Card, DatePicker, Descriptions, Form, Input, InputNumber, Modal, Row, Select, Space, Tag, message } from 'antd';
+import {
+  Alert,
+  AutoComplete,
+  Button,
+  DatePicker,
+  Descriptions,
+  Form,
+  Input,
+  InputNumber,
+  Modal,
+  Row,
+  Select,
+  Space,
+  Tag,
+  message
+} from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs, { type Dayjs } from 'dayjs';
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { ProfileOutlined, SearchOutlined } from '@ant-design/icons';
 import ResponsiveTable from '@/components/ResponsiveTable';
+import PageHeader from '@/components/page/PageHeader';
+import PageListBar from '@/components/page/PageListBar';
 import { usePermissions } from '@/auth/usePermissions';
 import { apiRequest } from '@/utils/request';
 
@@ -388,31 +406,101 @@ export default function TransactionDrafts(): React.ReactElement {
   const activeProduct = products.find((product) => product.code === detail?.product_code);
 
   return (
-    <Card title={<h2 style={{ margin: 0, fontSize: 18 }}>{t('transactionDrafts.title')}</h2>}>
-      <Space orientation="vertical" size="middle" style={{ width: '100%' }}>
-        <Space wrap>
-          <Select value={direction} onChange={setActiveDirection} options={[
-            { value: 'inbound', label: t('transactionDrafts.inbound') },
-            { value: 'outbound', label: t('transactionDrafts.outbound') }
-          ]} />
-          <Select value={status} onChange={(value: Status | '') => { setStatus(value); setPage(1); }} options={statusOptions} style={{ minWidth: 150 }} />
-          <Input value={requestIdFilter} onChange={(event) => setRequestIdFilter(event.target.value)} placeholder={t('transactionDrafts.batch')} allowClear style={{ width: 170 }} />
-          <Input value={partnerFilter} onChange={(event) => setPartnerFilter(event.target.value)} placeholder={t('transactionDrafts.partner')} allowClear style={{ width: 150 }} />
-          <Input value={productFilter} onChange={(event) => setProductFilter(event.target.value)} placeholder={t('transactionDrafts.product')} allowClear style={{ width: 150 }} />
-          <DatePicker.RangePicker value={dateRange} onChange={(value) => setDateRange(value ?? [null, null])} />
-          <Button onClick={() => { setPage(1); void load(); }}>{t('common.search')}</Button>
-          <Button onClick={() => void load()}>{t('common.refresh')}</Button>
-        </Space>
-        {reviewEnabled === false && <Alert type="info" showIcon title={t('transactionDrafts.loginRequiredNotice')} />}
-        {reviewEnabled === true && !canWrite && <Alert type="info" showIcon title={t('transactionDrafts.readerNotice')} />}
+    <div className="page tone-amber">
+      <PageHeader
+        eyebrow={t('nav.operations')}
+        title={t('transactionDrafts.title')}
+        description={t('transactionDrafts.subtitle')}
+        icon={<ProfileOutlined />}
+      />
+
+      {reviewEnabled === false && (
+        <Alert type="info" showIcon title={t('transactionDrafts.loginRequiredNotice')} />
+      )}
+      {reviewEnabled === true && !canWrite && (
+        <Alert type="info" showIcon title={t('transactionDrafts.readerNotice')} />
+      )}
+
+      <section className="page-card">
+        <div className="page-toolbar">
+          <div className="page-toolbar-row">
+            <Select
+              className="page-toolbar-field"
+              value={direction}
+              onChange={setActiveDirection}
+              options={[
+                { value: 'inbound', label: t('transactionDrafts.inbound') },
+                { value: 'outbound', label: t('transactionDrafts.outbound') }
+              ]}
+            />
+            <Select
+              className="page-toolbar-field"
+              value={status}
+              onChange={(value: Status | '') => {
+                setStatus(value);
+                setPage(1);
+              }}
+              options={statusOptions}
+            />
+            <Input
+              className="page-toolbar-field"
+              value={requestIdFilter}
+              onChange={(event) => setRequestIdFilter(event.target.value)}
+              placeholder={t('transactionDrafts.batch')}
+              allowClear
+            />
+            <Input
+              className="page-toolbar-field"
+              value={partnerFilter}
+              onChange={(event) => setPartnerFilter(event.target.value)}
+              placeholder={t('transactionDrafts.partner')}
+              allowClear
+            />
+            <Input
+              className="page-toolbar-field"
+              value={productFilter}
+              onChange={(event) => setProductFilter(event.target.value)}
+              placeholder={t('transactionDrafts.product')}
+              allowClear
+            />
+            <DatePicker.RangePicker
+              value={dateRange}
+              onChange={(value) => setDateRange(value ?? [null, null])}
+            />
+            <div className="page-toolbar-actions">
+              <Button
+                type="primary"
+                icon={<SearchOutlined />}
+                onClick={() => {
+                  setPage(1);
+                  void load();
+                }}
+              >
+                {t('common.search')}
+              </Button>
+              <Button type="text" onClick={() => void load()}>
+                {t('common.refresh')}
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        <PageListBar total={total} label={t('transactionDrafts.title')} />
+
         <ResponsiveTable<Draft>
           rowKey="id"
           columns={columns}
           dataSource={drafts}
           loading={loading}
-          pagination={{ current: page, pageSize: PAGE_SIZE, total, showSizeChanger: false, onChange: (next) => setPage(next) }}
+          pagination={{
+            current: page,
+            pageSize: PAGE_SIZE,
+            total,
+            showSizeChanger: false,
+            onChange: (next) => setPage(next)
+          }}
         />
-      </Space>
+      </section>
 
       <Modal
         title={detail ? t('transactionDrafts.reviewTitle', { id: detail.id.slice(0, 8) }) : t('transactionDrafts.reviewTitle', { id: '' })}
@@ -537,6 +625,6 @@ export default function TransactionDrafts(): React.ReactElement {
       >
         <Input.TextArea value={rejectReason} onChange={(event) => setRejectReason(event.target.value)} maxLength={2000} showCount rows={3} placeholder={t('transactionDrafts.rejectReason')} />
       </Modal>
-    </Card>
+    </div>
   );
 }

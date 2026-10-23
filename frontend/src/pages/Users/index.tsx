@@ -1,8 +1,9 @@
 import ResponsiveTable from '@/components/ResponsiveTable';
+import PageHeader from '@/components/page/PageHeader';
+import PageListBar from '@/components/page/PageListBar';
 import { useState, useCallback, useEffect, useRef } from 'react';
 import {
   Alert,
-  Card,
   Form,
   Input,
   Button,
@@ -12,10 +13,15 @@ import {
   Space,
   Popconfirm,
   message,
-  Switch,
-  Typography
+  Switch
 } from 'antd';
-import { EditOutlined, DeleteOutlined, KeyOutlined, PlusOutlined } from '@ant-design/icons';
+import {
+  DeleteOutlined,
+  EditOutlined,
+  KeyOutlined,
+  PlusOutlined,
+  TeamOutlined
+} from '@ant-design/icons';
 import type { ColumnsType, TablePaginationConfig } from 'antd/es/table';
 import { useTranslation } from 'react-i18next';
 import { useApi } from '@/hooks/useApi';
@@ -301,45 +307,42 @@ function Users(): React.ReactElement {
   ];
 
   return (
-    <Space orientation="vertical" style={{ width: '100%' }} size="large">
-      <div className="users-page-header">
-        <div>
-          <Typography.Title level={2}>{t('users.adminTitle')}</Typography.Title>
-          <Typography.Paragraph type="secondary">
-            {t('users.adminDescription')}
-          </Typography.Paragraph>
-        </div>
-        <Button type="primary" icon={<PlusOutlined />} onClick={handleOpenCreate}>
-          {t('users.createUser')}
-        </Button>
-      </div>
-
-      <Card
-        title={
-          <Space>
-            <span>{t('users.userList')}</span>
-            <Tag>{t('users.total', { count: total })}</Tag>
-          </Space>
+    <div className="page tone-violet">
+      <PageHeader
+        eyebrow={t('nav.administration')}
+        title={t('users.adminTitle')}
+        description={t('users.adminDescription')}
+        icon={<TeamOutlined />}
+        actions={
+          <Button size="large" type="primary" icon={<PlusOutlined />} onClick={handleOpenCreate}>
+            {t('users.createUser')}
+          </Button>
         }
-      >
+      />
+
+      <section className="page-card">
+        <PageListBar label={t('users.userList')} total={total} />
+
         {listError ? (
-          <Alert
-            type="error"
-            showIcon
-            title={t('users.loadFailed')}
-            action={
-              <Button
-                size="small"
-                onClick={() =>
-                  void fetchUsers(pagination.current || 1, pagination.pageSize || 20).catch(
-                    () => undefined
-                  )
-                }
-              >
-                {t('users.retry')}
-              </Button>
-            }
-          />
+          <div className="page-card--padded">
+            <Alert
+              type="error"
+              showIcon
+              title={t('users.loadFailed')}
+              action={
+                <Button
+                  size="small"
+                  onClick={() =>
+                    void fetchUsers(pagination.current || 1, pagination.pageSize || 20).catch(
+                      () => undefined
+                    )
+                  }
+                >
+                  {t('users.retry')}
+                </Button>
+              }
+            />
+          </div>
         ) : (
           <ResponsiveTable
             columns={columns}
@@ -351,7 +354,7 @@ function Users(): React.ReactElement {
             size="medium"
           />
         )}
-      </Card>
+      </section>
 
       <Modal
         title={t('users.createUserTitle')}
@@ -466,7 +469,7 @@ function Users(): React.ReactElement {
           </Form.Item>
         </Form>
       </Modal>
-    </Space>
+    </div>
   );
 }
 

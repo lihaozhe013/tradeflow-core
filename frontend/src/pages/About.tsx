@@ -1,8 +1,10 @@
-import { Card, Row, Col, Typography, Spin, Alert, Image } from 'antd';
+import PageHeader from '@/components/page/PageHeader';
+import { InfoCircleOutlined } from '@ant-design/icons';
+import { Row, Col, Typography, Spin, Alert, Image } from 'antd';
 import { useTranslation } from 'react-i18next';
 import { useSimpleApiData } from '@/hooks/useSimpleApi';
 
-const { Title, Paragraph, Text } = Typography;
+const { Text } = Typography;
 
 function About() {
   const { t } = useTranslation();
@@ -50,103 +52,101 @@ function About() {
     );
   }
 
+  const pageTitle = aboutData?.title || t('about.title');
+  const companyName = aboutData?.company?.name ?? t('about.companyProfile');
+
   return (
-    <div style={{ padding: '24px', background: '#fff', borderRadius: '8px' }}>
-      <Row gutter={[32, 32]} align="middle">
-        <Col xs={24} md={16}>
-          <Title level={1} style={{ color: '#1890ff', marginBottom: '24px' }}>
-            {aboutData?.title ?? t('about.title')}
-          </Title>
+    <div className="page tone-slate">
+      <PageHeader
+        eyebrow={t('nav.administration')}
+        title={pageTitle}
+        description={t('about.subtitle')}
+        icon={<InfoCircleOutlined />}
+      />
 
-          <div style={{ marginBottom: '32px' }}>
-            <Title level={3} style={{ color: '#333' }}>
-              {aboutData?.company?.name ?? t('about.companyProfile')}
-            </Title>
-            <Paragraph style={{ fontSize: '16px', lineHeight: '1.8', color: '#555' }}>
-              {aboutData?.company?.description ?? t('about.defaultDescription')}
-            </Paragraph>
-          </div>
+      <section className="page-card page-card--padded">
+        <Row gutter={[32, 32]} align="middle">
+          <Col xs={24} md={16}>
+            <div style={{ marginBottom: 28 }}>
+              {companyName !== pageTitle ? (
+                <h3 className="page-card-title">{companyName}</h3>
+              ) : null}
+              <p style={{ margin: '8px 0 0', color: '#475467', fontSize: 16, lineHeight: 1.8 }}>
+                {aboutData?.company?.description ?? t('about.defaultDescription')}
+              </p>
+            </div>
 
-          <div style={{ marginBottom: '32px' }}>
-            <Title level={3} style={{ color: '#333' }}>
-              {t('about.systemInfo')}
-            </Title>
-            <Row gutter={[16, 16]}>
-              <Col xs={24} md={12}>
-                <Text strong>{t('about.systemVersion')}: </Text>
-                <Text>
-                  {aboutData?.system?.version ?? ''}
-                  <Text type="secondary"> ({__COMMIT_HASH__})</Text>
-                </Text>
-              </Col>
-              <Col xs={24} md={12}>
-                <Text strong>{t('about.releaseDate')}: </Text>
-                <Text>{aboutData?.system?.releaseDate ?? ''}</Text>
-              </Col>
-              <Col xs={24} md={12}>
-                <Text strong>{t('about.techStack')}: </Text>
-                <Text>{aboutData?.system?.techStack ?? ''}</Text>
-              </Col>
-              <Col xs={24} md={12}>
-                <Text strong>{t('about.development')}: </Text>
-                <Text>{aboutData?.system?.team ?? t('about.devTeam')}</Text>
-              </Col>
-            </Row>
-          </div>
+            <div style={{ marginBottom: 28 }}>
+              <h3 className="page-card-title">{t('about.systemInfo')}</h3>
+              <Row gutter={[16, 12]} style={{ marginTop: 12 }}>
+                <Col xs={24} md={12}>
+                  <Text strong>{t('about.systemVersion')}: </Text>
+                  <Text>
+                    {aboutData?.system?.version ?? ''}
+                    <Text type="secondary"> ({__COMMIT_HASH__})</Text>
+                  </Text>
+                </Col>
+                <Col xs={24} md={12}>
+                  <Text strong>{t('about.releaseDate')}: </Text>
+                  <Text>{aboutData?.system?.releaseDate ?? ''}</Text>
+                </Col>
+                <Col xs={24} md={12}>
+                  <Text strong>{t('about.techStack')}: </Text>
+                  <Text>{aboutData?.system?.techStack ?? ''}</Text>
+                </Col>
+                <Col xs={24} md={12}>
+                  <Text strong>{t('about.development')}: </Text>
+                  <Text>{aboutData?.system?.team ?? t('about.devTeam')}</Text>
+                </Col>
+              </Row>
+            </div>
 
-          <div>
-            <Title level={3} style={{ color: '#333' }}>
-              {t('about.contact')}
-            </Title>
-            <Paragraph style={{ fontSize: '16px', lineHeight: '1.8', color: '#555' }}>
-              <Text strong>{t('about.email')}: </Text>
-              {aboutData?.contact?.email ?? ''}
-              <br />
-              <Text strong>{t('about.phone')}: </Text>
-              {aboutData?.contact?.phone ?? ''}
-              <br />
-              <Text strong>{t('about.address')}: </Text>
-              {aboutData?.contact?.address ?? t('about.defaultAddress')}
-            </Paragraph>
-          </div>
-        </Col>
+            <div>
+              <h3 className="page-card-title">{t('about.contact')}</h3>
+              <p style={{ margin: '8px 0 0', color: '#475467', fontSize: 16, lineHeight: 1.8 }}>
+                <Text strong>{t('about.email')}: </Text>
+                {aboutData?.contact?.email ?? ''}
+                <br />
+                <Text strong>{t('about.phone')}: </Text>
+                {aboutData?.contact?.phone ?? ''}
+                <br />
+                <Text strong>{t('about.address')}: </Text>
+                {aboutData?.contact?.address ?? t('about.defaultAddress')}
+              </p>
+            </div>
+          </Col>
 
-        <Col xs={24} md={8} style={{ textAlign: 'center' }}>
-          <Card
-            style={{
-              background:
-                'linear-gradient(135deg, rgba(223, 218, 215, 0.2) 0%, rgba(223, 218, 215, 0.2) 100%)',
-              border: 'none',
-              borderRadius: '12px',
-              padding: '20px'
-            }}
-          >
-            <Image
-              src="/logo.svg"
-              alt="Company Logo"
+          <Col xs={24} md={8} style={{ textAlign: 'center' }}>
+            <div
               style={{
-                width: '300px',
-                height: '300px',
-                objectFit: 'contain'
-              }}
-              preview={false}
-            />
-            <Title
-              level={4}
-              style={{
-                color: '#000000ff',
-                marginTop: '20px',
-                textAlign: 'center'
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                width: '100%',
+                maxWidth: 320,
+                margin: '0 auto',
+                padding: 20,
+                border: '1px solid var(--page-accent-border)',
+                borderRadius: 12,
+                background: 'var(--page-accent-tint)'
               }}
             >
-              {aboutData?.company?.name ?? t('about.systemName')}
-            </Title>
-            <Paragraph style={{ color: '#000000ff', textAlign: 'center' }}>
-              {aboutData?.company?.slogan ?? t('about.systemSlogan')}
-            </Paragraph>
-          </Card>
-        </Col>
-      </Row>
+              <Image
+                src="/logo.svg"
+                alt="Company Logo"
+                preview={false}
+                style={{ width: '100%', height: 'auto' }}
+              />
+              <h4 style={{ margin: '12px 0 0', fontWeight: 600 }}>
+                {aboutData?.company?.name ?? t('about.systemName')}
+              </h4>
+              <p style={{ margin: '4px 0 0', color: '#475467' }}>
+                {aboutData?.company?.slogan ?? t('about.systemSlogan')}
+              </p>
+            </div>
+          </Col>
+        </Row>
+      </section>
     </div>
   );
 }

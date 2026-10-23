@@ -17,7 +17,8 @@
     "systemSlogan": "Custom TradeFlow System",
     "systemVersion": "System Version",
     "techStack": "Tech Stack",
-    "title": "About Us"
+    "title": "About Us",
+    "subtitle": "Company profile, system information, and contact details."
   },
   "analysis": {
     "advancedExport": {
@@ -89,7 +90,8 @@
     "title": "Data Analysis",
     "to": "to",
     "totalRecords": "Total {{total}} records",
-    "type": "Type"
+    "type": "Type",
+    "subtitle": "Compare trade volume and margins across partners, products, and periods."
   },
   "audit": {
     "action": "Action",
@@ -103,7 +105,8 @@
     "searchUser": "Search by username",
     "title": "Audit Log",
     "total": "Total {{count}} records",
-    "username": "Username"
+    "username": "Username",
+    "subtitle": "Inspect recorded actions, request paths, and parameters."
   },
   "auth": {
     "back": "Back to previous page",
@@ -130,22 +133,27 @@
   },
   "common": {
     "add": "Add",
+    "activeFilters": "Active filters",
     "advancedFilters": "Advanced Filters",
     "cancel": "Cancel",
     "chinese": "中文",
+    "clearAll": "Clear all",
     "clearSelection": "Clear",
     "collapse": "Collapse",
     "confirm": "Confirm",
+    "dateRange": "Date range",
     "delete": "Delete",
     "edit": "Edit",
     "english": "English",
     "export": "Export",
     "followSystem": "Follow system",
     "moreDetails": "More details",
+    "moreFilters": "More filters",
     "noData": "No data",
     "korean": "한국어",
     "language": "Language",
     "logout": "Log Out",
+    "recordsHeading": "Records",
     "refresh": "Refresh",
     "reset": "Reset",
     "save": "Save",
@@ -153,6 +161,7 @@
     "selectRecord": "Select record {{record}}",
     "selectedCount": "{{count}} selected",
     "sortRecords": "Sort records",
+    "totalCount": "{{count}} total",
     "deleteFailed": "Delete failed",
     "deleteSuccess": "Deleted successfully",
     "logoAlt": "TradeFlow logo",
@@ -162,6 +171,7 @@
     "yes": "Yes"
   },
   "export": {
+    "title": "Data Export",
     "baseInfo": "Base Info",
     "dateRange": "Date Range",
     "emptyFile": "Exported file is empty, check filter or data.",
@@ -198,7 +208,8 @@
     "statement": "Statement Export",
     "statementTip": "Statements use custom format, different from complete record format",
     "success": "Export successful! File size: {{size}}KB, download started.",
-    "unknownError": "Unknown error"
+    "unknownError": "Unknown error",
+    "subtitle": "Generate statements and invoices, or jump into dataset exports."
   },
   "inbound": {
     "actions": "Actions",
@@ -248,6 +259,7 @@
     "selectProductModel": "Select Product Model",
     "selectSupplier": "Select Supplier",
     "startDate": "Start Date",
+    "subtitle": "Log supplier purchases and keep stock levels accurate.",
     "supplierCode": "Supplier Code",
     "supplierFullName": "Supplier Full Name",
     "supplierShortName": "Supplier Short Name",
@@ -281,7 +293,8 @@
     "title": "Inventory",
     "totalCostEstimate": "Total Cost Estimate",
     "fetchFailed": "Failed to fetch inventory data",
-    "refreshCacheFailed": "Failed to refresh the inventory cache"
+    "refreshCacheFailed": "Failed to refresh the inventory cache",
+    "subtitle": "Stock levels per product model, derived from recorded movements."
   },
   "nav": {
     "advanced": "Advanced",
@@ -382,7 +395,8 @@
       "unit_price_required": "Enter a valid unit price.",
       "date_required": "Choose the transaction date.",
       "invalid_direction": "Transaction direction is invalid."
-    }
+    },
+    "subtitle": "Review drafted trade rows before they become stock records."
   },
   "outbound": {
     "actions": "Actions",
@@ -433,6 +447,7 @@
     "selectProductModel": "Select Product Model",
     "selectSupplier": "Select Supplier",
     "startDate": "Start Date",
+    "subtitle": "Record customer shipments and track every stock movement.",
     "title": "Outbound",
     "totalPrice": "Total Price",
     "unitPrice": "Unit Price",
@@ -528,7 +543,8 @@
     "shortNameMax": "Short name cannot exceed 50 characters",
     "supplier": "Supplier",
     "title": "Partners",
-    "type": "Type"
+    "type": "Type",
+    "subtitle": "Manage suppliers and customers used across inbound and outbound records."
   },
   "payable": {
     "action": "Action",
@@ -593,7 +609,8 @@
     "uninvoicedDetails": "Uninvoiced Details",
     "unitPrice": "Unit Price",
     "unpaid": "Unpaid: {{amount}}",
-    "unsettledSuffix": "{{count}} unsettled"
+    "unsettledSuffix": "{{count}} unsettled",
+    "subtitle": "See outstanding supplier balances and record their payments."
   },
   "productPrices": {
     "actions": "Actions",
@@ -622,7 +639,8 @@
     "selectProductModel": "Select product model",
     "title": "Product Prices",
     "unitPrice": "Unit Price",
-    "unitPriceMin": "Unit price must be greater than or equal to 0"
+    "unitPriceMin": "Unit price must be greater than or equal to 0",
+    "subtitle": "Review partner-specific pricing and its effective dates."
   },
   "products": {
     "actions": "Actions",
@@ -647,7 +665,8 @@
     "remarkMax": "Description cannot exceed 500 characters",
     "saveFailed": "Save failed",
     "selectCategory": "Select category",
-    "title": "Products"
+    "title": "Products",
+    "subtitle": "Maintain product models, categories, and the details they carry."
   },
   "receivable": {
     "action": "Action",
@@ -712,7 +731,8 @@
     "uninvoicedDetails": "Uninvoiced Details",
     "unitPrice": "Unit Price",
     "unpaid": "Unpaid: {{amount}}",
-    "unsettledSuffix": "{{count}} unsettled"
+    "unsettledSuffix": "{{count}} unsettled",
+    "subtitle": "See outstanding customer balances and record their payments."
   },
   "users": {
     "actions": "Actions",
@@ -1011,7 +1031,8 @@
     "confirm": "Revoke {{count}} credential(s)? The Agent will need a new connection for subsequent calls.",
     "cancel": "Cancel",
     "result": "Revoked {{succeeded}} of {{total}} credentials",
-    "retry": "Retry failed items"
+    "retry": "Retry failed items",
+    "subtitle": "Review and revoke the credentials agents use to reach this system."
   },
   "snapshot": {
     "notReady": "Data has not been generated. Click Refresh Data to generate it.",

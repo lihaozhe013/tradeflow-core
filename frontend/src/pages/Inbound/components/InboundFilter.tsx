@@ -5,19 +5,22 @@ import {
   useState,
   type Dispatch,
   type FC,
+  type ReactNode,
   type SetStateAction
 } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Select, Button, Row, Col, Input } from 'antd';
+import { Button, Input, Select } from 'antd';
 import type { DefaultOptionType } from 'antd/es/select';
-import { DownOutlined, SearchOutlined, UpOutlined } from '@ant-design/icons';
+import { CloseOutlined, DownOutlined, SearchOutlined, UpOutlined } from '@ant-design/icons';
 import dayjs, { type Dayjs } from 'dayjs';
 import ResponsiveDateRange from '@/components/ResponsiveDateRange';
 import type { InboundFilters, Partner, Product } from '../types';
 
 const NUMBER_FILTER_DEBOUNCE_MS = 300;
+const ADVANCED_PANEL_ID = 'inbound-advanced-filters';
 
 type NumberFilterField = 'keyword' | 'order_number' | 'invoice_number' | 'receipt_number';
+type AdvancedNumberField = Exclude<NumberFilterField, 'keyword'>;
 
 interface InboundFilterProps {
   readonly filters: InboundFilters;
@@ -25,6 +28,13 @@ interface InboundFilterProps {
   readonly partners: Partner[];
   readonly products: Product[];
   readonly onFilter: () => void;
+}
+
+interface ActiveFilterChip {
+  readonly key: string;
+  readonly label: string;
+  readonly value: string;
+  readonly onClear: () => void;
 }
 
 const InboundFilter: FC<InboundFilterProps> = ({
@@ -104,94 +114,197 @@ const InboundFilter: FC<InboundFilterProps> = ({
   };
 
   const toggleAdvanced = (): void => {
-    if (advancedOpen) {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-      setOrderInput('');
-      setInvoiceInput('');
-      setReceiptInput('');
-      setFilters((prev) => ({
-        ...prev,
-        order_number: undefined,
-        invoice_number: undefined,
-        receipt_number: undefined,
-        dateRange: [null, null]
-      }));
-    }
     setAdvancedOpen((open) => !open);
   };
 
+  const clearAdvancedFilter = (field: AdvancedNumberField): void => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (field === 'order_number') setOrderInput('');
+    if (field === 'invoice_number') setInvoiceInput('');
+    if (field === 'receipt_number') setReceiptInput('');
+    commitNumberFilter(field, '');
+  };
+
+  const resetFilters = (): void => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    setOrderInput('');
+    setInvoiceInput('');
+    setReceiptInput('');
+    setFilters((prev) => ({
+      ...prev,
+      keyword: undefined,
+      supplier_short_name: undefined,
+      product_model: undefined,
+      order_number: undefined,
+      invoice_number: undefined,
+      receipt_number: undefined,
+      dateRange: [null, null]
+    }));
+  };
+
+  const activeFilters = useMemo<ActiveFilterChip[]>(() => {
+    const chips: ActiveFilterChip[] = [];
+    const [start, end] = filters.dateRange;
+
+    if (start || end) {
+      chips.push({
+        key: 'dateRange',
+        label: t('common.dateRange'),
+        value: `${start ?? '...'} - ${end ?? '...'}`,
+        onClear: () => setFilters((prev) => ({ ...prev, dateRange: [null, null] }))
+      });
+    }
+    if (filters.order_number) {
+      chips.push({
+        key: 'order_number',
+        label: t('inbound.orderNumber'),
+        value: filters.order_number,
+        onClear: () => clearAdvancedFilter('order_number')
+      });
+    }
+    if (filters.invoice_number) {
+      chips.push({
+        key: 'invoice_number',
+        label: t('inbound.invoiceNumber'),
+        value: filters.invoice_number,
+        onClear: () => clearAdvancedFilter('invoice_number')
+      });
+    }
+    if (filters.receipt_number) {
+      chips.push({
+        key: 'receipt_number',
+        label: t('inbound.receiptNumber'),
+        value: filters.receipt_number,
+        onClear: () => clearAdvancedFilter('receipt_number')
+      });
+    }
+
+    return chips;
+  }, [filters, t]);
+
+  const advancedField = (
+    label: string,
+    placeholder: string,
+    inputId: string,
+    value: string,
+    field: AdvancedNumberField,
+    setInput: Dispatch<SetStateAction<string>>
+  ): ReactNode => (
+    <div className="page-field">
+      <label className="page-field-label" htmlFor={inputId}>
+        {label}
+      </label>
+      <Input
+        id={inputId}
+        allowClear
+        placeholder={placeholder}
+        value={value}
+        onChange={(event) => handleNumberChange(field, event.target.value, setInput)}
+        onPressEnter={() => handleNumberPressEnter(field, value)}
+      />
+    </div>
+  );
+
   return (
-    <div style={{ marginBottom: 16 }}>
-      <Row gutter={16}>
-        <Col xs={24} md={8}>
-          <Input
-            allowClear
-            prefix={<SearchOutlined />}
-            placeholder={t('inbound.searchNumberPlaceholder')}
-            value={keywordInput}
-            onChange={(event) => handleNumberChange('keyword', event.target.value, setKeywordInput)}
-            onPressEnter={() => handleNumberPressEnter('keyword', keywordInput)}
-          />
-        </Col>
-        <Col xs={24} sm={12} md={5}>
-          <Select
-            allowClear
-            showSearch
-            placeholder={t('inbound.selectSupplier')}
-            style={{ width: '100%' }}
-            value={filters.supplier_short_name}
-            onChange={(value) =>
-              setFilters((prev) => ({
-                ...prev,
-                supplier_short_name: value ?? undefined
-              }))
-            }
-            options={partners.map((p) => ({
-              label: `${p.short_name}(${p.code})`,
-              value: p.short_name
-            }))}
-            filterOption={filterByLabel}
-          />
-        </Col>
-        <Col xs={24} sm={12} md={5}>
-          <Select
-            allowClear
-            showSearch
-            placeholder={t('inbound.selectProductModel')}
-            style={{ width: '100%' }}
-            value={filters.product_model}
-            onChange={(value) =>
-              setFilters((prev) => ({
-                ...prev,
-                product_model: value ?? undefined
-              }))
-            }
-            options={products.map((p) => ({
-              label: `${p.product_model}(${p.code})`,
-              value: p.product_model
-            }))}
-            filterOption={filterByLabel}
-          />
-        </Col>
-        <Col xs={12} md={2}>
+    <div className="page-toolbar">
+      <div className="page-toolbar-row">
+        <Input
+          className="page-toolbar-search"
+          allowClear
+          prefix={<SearchOutlined />}
+          placeholder={t('inbound.searchNumberPlaceholder')}
+          value={keywordInput}
+          onChange={(event) => handleNumberChange('keyword', event.target.value, setKeywordInput)}
+          onPressEnter={() => handleNumberPressEnter('keyword', keywordInput)}
+        />
+        <Select
+          className="page-toolbar-field"
+          allowClear
+          showSearch
+          placeholder={t('inbound.selectSupplier')}
+          value={filters.supplier_short_name}
+          onChange={(value) =>
+            setFilters((prev) => ({
+              ...prev,
+              supplier_short_name: value ?? undefined
+            }))
+          }
+          options={partners.map((p) => ({
+            label: `${p.short_name}(${p.code})`,
+            value: p.short_name
+          }))}
+          filterOption={filterByLabel}
+        />
+        <Select
+          className="page-toolbar-field"
+          allowClear
+          showSearch
+          placeholder={t('inbound.selectProductModel')}
+          value={filters.product_model}
+          onChange={(value) =>
+            setFilters((prev) => ({
+              ...prev,
+              product_model: value ?? undefined
+            }))
+          }
+          options={products.map((p) => ({
+            label: `${p.product_model}(${p.code})`,
+            value: p.product_model
+          }))}
+          filterOption={filterByLabel}
+        />
+        <div className="page-toolbar-actions">
           <Button type="primary" icon={<SearchOutlined />} onClick={onFilter}>
             {t('inbound.filter')}
           </Button>
-        </Col>
-        <Col xs={12} md={4} style={{ textAlign: 'right' }}>
+          <Button type="text" onClick={resetFilters}>
+            {t('common.reset')}
+          </Button>
           <Button
-            type="link"
+            type="text"
+            className="page-toolbar-toggle"
             icon={advancedOpen ? <UpOutlined /> : <DownOutlined />}
+            aria-expanded={advancedOpen}
+            aria-controls={ADVANCED_PANEL_ID}
             onClick={toggleAdvanced}
           >
             {advancedOpen ? t('common.collapse') : t('common.advancedFilters')}
           </Button>
-        </Col>
-      </Row>
-      {advancedOpen && (
-        <>
-          <Row gutter={16} style={{ marginTop: 12 }}>
-            <Col xs={24} sm={12} md={6}>
+        </div>
+      </div>
+
+      {!advancedOpen && activeFilters.length > 0 ? (
+        <div className="page-active-filters">
+          <span className="page-active-label">{t('common.activeFilters')}</span>
+          {activeFilters.map((chip) => (
+            <button
+              key={chip.key}
+              type="button"
+              className="page-filter-chip"
+              title={`${chip.label}: ${chip.value}`}
+              onClick={chip.onClear}
+            >
+              <span className="page-filter-chip-label">{chip.label}</span>
+              <span className="page-filter-chip-value">{chip.value}</span>
+              <CloseOutlined className="page-filter-chip-remove" aria-hidden="true" />
+            </button>
+          ))}
+          <button type="button" className="page-link-button" onClick={resetFilters}>
+            {t('common.clearAll')}
+          </button>
+        </div>
+      ) : null}
+
+      {advancedOpen ? (
+        <div className="page-advanced" id={ADVANCED_PANEL_ID}>
+          <div className="page-advanced-head">{t('common.moreFilters')}</div>
+          <div className="page-advanced-grid">
+            <div
+              className="page-field"
+              role="group"
+              aria-label={t('common.dateRange')}
+            >
+              <span className="page-field-label">{t('common.dateRange')}</span>
               <ResponsiveDateRange
                 value={rangeValue}
                 onChange={handleDateChange}
@@ -199,45 +312,34 @@ const InboundFilter: FC<InboundFilterProps> = ({
                 startPlaceholder={t('inbound.startDate')}
                 endPlaceholder={t('inbound.endDate')}
               />
-            </Col>
-          </Row>
-          <Row gutter={16} style={{ marginTop: 12 }}>
-            <Col xs={24} sm={12} md={6}>
-              <Input
-                allowClear
-                placeholder={t('inbound.inputOrderNumber')}
-                value={orderInput}
-                onChange={(event) =>
-                  handleNumberChange('order_number', event.target.value, setOrderInput)
-                }
-                onPressEnter={() => handleNumberPressEnter('order_number', orderInput)}
-              />
-            </Col>
-            <Col xs={24} sm={12} md={6}>
-              <Input
-                allowClear
-                placeholder={t('inbound.inputInvoiceNumber')}
-                value={invoiceInput}
-                onChange={(event) =>
-                  handleNumberChange('invoice_number', event.target.value, setInvoiceInput)
-                }
-                onPressEnter={() => handleNumberPressEnter('invoice_number', invoiceInput)}
-              />
-            </Col>
-            <Col xs={24} sm={12} md={6}>
-              <Input
-                allowClear
-                placeholder={t('inbound.inputReceiptNumber')}
-                value={receiptInput}
-                onChange={(event) =>
-                  handleNumberChange('receipt_number', event.target.value, setReceiptInput)
-                }
-                onPressEnter={() => handleNumberPressEnter('receipt_number', receiptInput)}
-              />
-            </Col>
-          </Row>
-        </>
-      )}
+            </div>
+            {advancedField(
+              t('inbound.orderNumber'),
+              t('inbound.inputOrderNumber'),
+              'inbound-filter-order-number',
+              orderInput,
+              'order_number',
+              setOrderInput
+            )}
+            {advancedField(
+              t('inbound.invoiceNumber'),
+              t('inbound.inputInvoiceNumber'),
+              'inbound-filter-invoice-number',
+              invoiceInput,
+              'invoice_number',
+              setInvoiceInput
+            )}
+            {advancedField(
+              t('inbound.receiptNumber'),
+              t('inbound.inputReceiptNumber'),
+              'inbound-filter-receipt-number',
+              receiptInput,
+              'receipt_number',
+              setReceiptInput
+            )}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 };

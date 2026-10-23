@@ -49,11 +49,13 @@ interface Context {
 export default function ExportButton({
   context,
   disabled,
-  buttonLabel
+  buttonLabel,
+  size
 }: {
   context: Context;
   disabled?: boolean;
   buttonLabel?: string;
+  size?: 'large' | 'middle' | 'small';
 }) {
   const { t } = useTranslation();
   const api = useSimpleApi();
@@ -156,7 +158,12 @@ export default function ExportButton({
   const visible = columns.filter((c) => c.visible);
   return (
     <>
-      <Button icon={<ExportOutlined aria-hidden="true" />} disabled={disabled} onClick={show}>
+      <Button
+        size={size}
+        icon={<ExportOutlined aria-hidden="true" />}
+        disabled={disabled}
+        onClick={show}
+      >
         {buttonLabel ?? label('export')}
       </Button>
       <Modal

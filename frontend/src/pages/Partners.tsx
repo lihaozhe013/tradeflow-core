@@ -1,29 +1,22 @@
 import ExportButton from '@/components/ExportButton';
 import ResponsiveTable from '@/components/ResponsiveTable';
+import PageHeader from '@/components/page/PageHeader';
+import PageListBar from '@/components/page/PageListBar';
 import { useState, useEffect, useCallback, type FC } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ColumnsType, TableProps } from 'antd/es/table';
 import type { FormProps } from 'antd';
+import { Button, Modal, Form, Input, Select, Space, message, Popconfirm } from 'antd';
 import {
-  Button,
-  Modal,
-  Form,
-  Input,
-  Select,
-  Space,
-  message,
-  Popconfirm,
-  Card,
-  Typography,
-  Row,
-  Col,
-  Divider
-} from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+  ContactsOutlined,
+  DeleteOutlined,
+  EditOutlined,
+  PlusOutlined,
+  SearchOutlined
+} from '@ant-design/icons';
 import { useSimpleApi } from '@/hooks/useSimpleApi';
 import { usePermissions } from '@/auth/usePermissions';
 
-const { Title } = Typography;
 const { Option } = Select;
 
 type PartnerItem = {
@@ -298,57 +291,74 @@ const Partners: FC = () => {
     fetchPartners(1, nextFilters);
   };
 
+  const handleReset = (): void => {
+    filterForm.resetFields();
+    setFilters({});
+    fetchPartners(1, {});
+  };
+
   return (
-    <div>
-      <Card>
-        <Row justify="space-between" align="middle" style={{ marginBottom: 16 }}>
-          <Col>
-            <Title level={2} style={{ margin: 0 }}>
-              {t('partners.title')}
-            </Title>
-          </Col>
-          {canWrite && (
-            <Col>
-              <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
+    <div className="page tone-violet">
+      <PageHeader
+        eyebrow={t('nav.masterData')}
+        title={t('partners.title')}
+        description={t('partners.subtitle')}
+        icon={<ContactsOutlined />}
+        actions={
+          <>
+            {hasPermission('editor') && (
+              <ExportButton
+                size="large"
+                disabled={loading}
+                context={{ source: 'partners', filters: { ...filters }, ids: exportKeys }}
+              />
+            )}
+            {canWrite && (
+              <Button size="large" type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
                 {t('partners.addPartner')}
               </Button>
-            </Col>
-          )}
-        </Row>
+            )}
+          </>
+        }
+      />
 
-        <Form<PartnerFilters> form={filterForm} layout="inline" style={{ marginBottom: 12 }}>
-          <Form.Item name="code" label={t('partners.code')} style={{ minWidth: 200 }}>
-            <Input allowClear placeholder={t('partners.inputCode')} />
-          </Form.Item>
-          <Form.Item name="short_name" label={t('partners.shortName')} style={{ minWidth: 220 }}>
-            <Input allowClear placeholder={t('partners.inputShortName')} />
-          </Form.Item>
-          <Form.Item name="full_name" label={t('partners.fullName')} style={{ minWidth: 240 }}>
-            <Input allowClear placeholder={t('partners.inputFullName')} />
-          </Form.Item>
-          <Form.Item name="type" label={t('partners.type')} style={{ minWidth: 180 }}>
-            <Select allowClear placeholder={t('partners.selectType')}>
-              <Option value={0}>{t('partners.supplier')}</Option>
-              <Option value={1}>{t('partners.customer')}</Option>
-            </Select>
-          </Form.Item>
-          <Form.Item>
-            <Button type="primary" onClick={handleFilter}>
-              {t('common.search')}
-            </Button>
-          </Form.Item>
-        </Form>
+      <section className="page-card">
+        <div className="page-toolbar">
+          <Form<PartnerFilters> form={filterForm} layout="inline" className="page-filter-form">
+            <Form.Item name="code" label={t('partners.code')}>
+              <Input allowClear placeholder={t('partners.inputCode')} />
+            </Form.Item>
+            <Form.Item name="short_name" label={t('partners.shortName')}>
+              <Input allowClear placeholder={t('partners.inputShortName')} />
+            </Form.Item>
+            <Form.Item name="full_name" label={t('partners.fullName')}>
+              <Input allowClear placeholder={t('partners.inputFullName')} />
+            </Form.Item>
+            <Form.Item name="type" label={t('partners.type')}>
+              <Select allowClear placeholder={t('partners.selectType')}>
+                <Option value={0}>{t('partners.supplier')}</Option>
+                <Option value={1}>{t('partners.customer')}</Option>
+              </Select>
+            </Form.Item>
+            <Form.Item className="page-filter-form-actions">
+              <Space>
+                <Button type="primary" icon={<SearchOutlined />} onClick={handleFilter}>
+                  {t('common.search')}
+                </Button>
+                <Button type="text" onClick={handleReset}>
+                  {t('common.reset')}
+                </Button>
+              </Space>
+            </Form.Item>
+          </Form>
+        </div>
 
-        <Divider />
+        <PageListBar
+          total={pagination.total}
+          selectedCount={exportKeys.length}
+          onClearSelection={() => setExportKeys([])}
+        />
 
-        {hasPermission('editor') && (
-          <div style={{ marginBottom: 12 }}>
-            <ExportButton
-              disabled={loading}
-              context={{ source: 'partners', filters: { ...filters }, ids: exportKeys }}
-            />
-          </div>
-        )}
         <ResponsiveTable<PartnerItem>
           rowSelection={
             hasPermission('editor')
@@ -379,7 +389,7 @@ const Partners: FC = () => {
           }}
           scroll={{ x: 900 }}
         />
-      </Card>
+      </section>
 
       {canWrite && (
         <Modal

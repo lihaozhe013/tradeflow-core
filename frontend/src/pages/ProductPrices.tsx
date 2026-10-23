@@ -1,6 +1,8 @@
 import ExportButton from '@/components/ExportButton';
 import { useRuntimeConfig } from '@/config/runtime';
 import ResponsiveTable from '@/components/ResponsiveTable';
+import PageHeader from '@/components/page/PageHeader';
+import PageListBar from '@/components/page/PageListBar';
 import { useState, useCallback, useEffect, type FC } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ColumnsType, TableProps } from 'antd/es/table';
@@ -18,19 +20,20 @@ import {
   Space,
   message,
   Popconfirm,
-  Card,
-  Typography,
+  AutoComplete,
   Row,
-  Col,
-  Divider,
-  AutoComplete
+  Col
 } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import {
+  DeleteOutlined,
+  DollarOutlined,
+  EditOutlined,
+  PlusOutlined,
+  SearchOutlined
+} from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { useSimpleApi, useSimpleApiData } from '@/hooks/useSimpleApi';
 import { usePermissions } from '@/auth/usePermissions';
-
-const { Title } = Typography;
 
 type PaginationInfo = {
   readonly current: number;
@@ -381,77 +384,86 @@ const ProductPrices: FC = () => {
     }
   };
 
+  const handleReset = (): void => {
+    filterForm.resetFields();
+    setFilters({});
+    setPagination((prev) => ({ ...prev, current: 1 }));
+  };
+
   return (
-    <div>
-      <Card>
-        <Row justify="space-between" align="middle" style={{ marginBottom: 16 }}>
-          <Col>
-            <Title level={2} style={{ margin: 0 }}>
-              {t('productPrices.title')}
-            </Title>
-          </Col>
-          {canWrite && (
-            <Col>
-              <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
+    <div className="page tone-amber">
+      <PageHeader
+        eyebrow={t('nav.masterData')}
+        title={t('productPrices.title')}
+        description={t('productPrices.subtitle')}
+        icon={<DollarOutlined />}
+        actions={
+          <>
+            {hasPermission('editor') && (
+              <ExportButton
+                size="large"
+                disabled={loading}
+                context={{ source: 'prices', filters: { ...filters }, ids: exportKeys }}
+              />
+            )}
+            {canWrite && (
+              <Button size="large" type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
                 {t('productPrices.addPrice')}
               </Button>
-            </Col>
-          )}
-        </Row>
+            )}
+          </>
+        }
+      />
 
-        <Form<ProductPriceFilters> form={filterForm} layout="inline" style={{ marginBottom: 12 }}>
-          <Form.Item
-            name="partner_short_name"
-            label={t('productPrices.partnerShortName')}
-            style={{ minWidth: 260 }}
-          >
-            <Select
-              allowClear
-              showSearch
-              placeholder={t('productPrices.selectPartner')}
-              options={partnerShortNameOptions}
-              filterOption={(input, option) => {
-                const label = typeof option?.label === 'string' ? option.label : '';
-                return label.toLowerCase().includes(input.toLowerCase());
-              }}
-            />
-          </Form.Item>
-          <Form.Item
-            name="product_model"
-            label={t('productPrices.productModel')}
-            style={{ minWidth: 260 }}
-          >
-            <Select
-              allowClear
-              showSearch
-              placeholder={t('productPrices.selectProductModel')}
-              options={productModelOptions}
-              filterOption={(input, option) => {
-                const label = typeof option?.label === 'string' ? option.label : '';
-                return label.toLowerCase().includes(input.toLowerCase());
-              }}
-            />
-          </Form.Item>
-          <Form.Item name="effective_date" label={t('productPrices.effectiveDate')}>
-            <DatePicker allowClear format="YYYY-MM-DD" />
-          </Form.Item>
-          <Form.Item>
-            <Button type="primary" onClick={handleFilter}>
-              {t('common.search') ?? 'Search'}
-            </Button>
-          </Form.Item>
-        </Form>
+      <section className="page-card">
+        <div className="page-toolbar">
+          <Form<ProductPriceFilters> form={filterForm} layout="inline" className="page-filter-form">
+            <Form.Item name="partner_short_name" label={t('productPrices.partnerShortName')}>
+              <Select
+                allowClear
+                showSearch
+                placeholder={t('productPrices.selectPartner')}
+                options={partnerShortNameOptions}
+                filterOption={(input, option) => {
+                  const label = typeof option?.label === 'string' ? option.label : '';
+                  return label.toLowerCase().includes(input.toLowerCase());
+                }}
+              />
+            </Form.Item>
+            <Form.Item name="product_model" label={t('productPrices.productModel')}>
+              <Select
+                allowClear
+                showSearch
+                placeholder={t('productPrices.selectProductModel')}
+                options={productModelOptions}
+                filterOption={(input, option) => {
+                  const label = typeof option?.label === 'string' ? option.label : '';
+                  return label.toLowerCase().includes(input.toLowerCase());
+                }}
+              />
+            </Form.Item>
+            <Form.Item name="effective_date" label={t('productPrices.effectiveDate')}>
+              <DatePicker allowClear format="YYYY-MM-DD" />
+            </Form.Item>
+            <Form.Item className="page-filter-form-actions">
+              <Space>
+                <Button type="primary" icon={<SearchOutlined />} onClick={handleFilter}>
+                  {t('common.search')}
+                </Button>
+                <Button type="text" onClick={handleReset}>
+                  {t('common.reset')}
+                </Button>
+              </Space>
+            </Form.Item>
+          </Form>
+        </div>
 
-        <Divider />
+        <PageListBar
+          total={productPricesResponse?.pagination?.total ?? 0}
+          selectedCount={exportKeys.length}
+          onClearSelection={() => setExportKeys([])}
+        />
 
-        {hasPermission('editor') && (
-          <div style={{ marginBottom: 12 }}>
-            <ExportButton
-              disabled={loading}
-              context={{ source: 'prices', filters: { ...filters }, ids: exportKeys }}
-            />
-          </div>
-        )}
         <ResponsiveTable<ProductPriceItem>
           rowSelection={
             hasPermission('editor')
@@ -482,7 +494,7 @@ const ProductPrices: FC = () => {
           }}
           scroll={{ x: 800 }}
         />
-      </Card>
+      </section>
 
       {canWrite && (
         <Modal

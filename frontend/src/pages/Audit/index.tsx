@@ -1,7 +1,9 @@
 import ResponsiveTable from '@/components/ResponsiveTable';
+import PageHeader from '@/components/page/PageHeader';
+import PageListBar from '@/components/page/PageListBar';
 import { useState, useCallback } from 'react';
-import { Card, Input, Button, Space, DatePicker, Tag, message } from 'antd';
-import { SearchOutlined, ReloadOutlined } from '@ant-design/icons';
+import { Input, Button, DatePicker, Tag, message } from 'antd';
+import { FileSearchOutlined, SearchOutlined } from '@ant-design/icons';
 import type { ColumnsType, TablePaginationConfig } from 'antd/es/table';
 import type { Dayjs } from 'dayjs';
 import { useTranslation } from 'react-i18next';
@@ -188,60 +190,81 @@ function Audit(): React.ReactElement {
   ];
 
   return (
-    <Card title={t('audit.title', { defaultValue: '审计日志' })}>
-      <Space style={{ marginBottom: 16 }} wrap>
-        {isSuperuser() && (
-          <Input
-            placeholder={t('audit.searchUser', {
-              defaultValue: '按用户名搜索'
-            })}
-            value={usernameFilter}
-            onChange={(e) => setUsernameFilter(e.target.value)}
-            style={{ width: 200 }}
-            onPressEnter={handleSearch}
-          />
-        )}
-        <Input
-          placeholder={t('audit.searchResource', {
-            defaultValue: '按请求路径搜索'
-          })}
-          value={resourceFilter}
-          onChange={(e) => setResourceFilter(e.target.value)}
-          style={{ width: 200 }}
-          onPressEnter={handleSearch}
-        />
-        <Input
-          placeholder={t('audit.searchParams', {
-            defaultValue: '按请求参数搜索'
-          })}
-          value={paramsFilter}
-          onChange={(e) => setParamsFilter(e.target.value)}
-          style={{ width: 200 }}
-          onPressEnter={handleSearch}
-        />
-        <RangePicker
-          value={dateRange as [Dayjs | null, Dayjs | null]}
-          onChange={(dates) => setDateRange(dates as [Dayjs | null, Dayjs | null])}
-        />
-        <Button type="primary" icon={<SearchOutlined />} onClick={handleSearch} loading={loading}>
-          {t('audit.search', { defaultValue: '查询' })}
-        </Button>
-        <Button icon={<ReloadOutlined />} onClick={handleReset}>
-          {t('common.reset', { defaultValue: '重置' })}
-        </Button>
-      </Space>
-
-      <ResponsiveTable
-        columns={columns}
-        dataSource={data}
-        rowKey="id"
-        pagination={pagination}
-        onChange={handleTableChange}
-        loading={loading}
-        size="medium"
-        scroll={{ x: 900 }}
+    <div className="page tone-slate">
+      <PageHeader
+        eyebrow={t('nav.administration')}
+        title={t('audit.title', { defaultValue: '审计日志' })}
+        description={t('audit.subtitle')}
+        icon={<FileSearchOutlined />}
       />
-    </Card>
+
+      <section className="page-card">
+        <div className="page-toolbar">
+          <div className="page-toolbar-row">
+            {isSuperuser() && (
+              <Input
+                className="page-toolbar-field"
+                placeholder={t('audit.searchUser', {
+                  defaultValue: '按用户名搜索'
+                })}
+                value={usernameFilter}
+                onChange={(e) => setUsernameFilter(e.target.value)}
+                onPressEnter={handleSearch}
+              />
+            )}
+            <Input
+              className="page-toolbar-search"
+              placeholder={t('audit.searchResource', {
+                defaultValue: '按请求路径搜索'
+              })}
+              value={resourceFilter}
+              onChange={(e) => setResourceFilter(e.target.value)}
+              onPressEnter={handleSearch}
+            />
+            <Input
+              className="page-toolbar-field"
+              placeholder={t('audit.searchParams', {
+                defaultValue: '按请求参数搜索'
+              })}
+              value={paramsFilter}
+              onChange={(e) => setParamsFilter(e.target.value)}
+              onPressEnter={handleSearch}
+            />
+            <RangePicker
+              className="page-toolbar-field"
+              value={dateRange as [Dayjs | null, Dayjs | null]}
+              onChange={(dates) => setDateRange(dates as [Dayjs | null, Dayjs | null])}
+            />
+            <div className="page-toolbar-actions">
+              <Button
+                type="primary"
+                icon={<SearchOutlined />}
+                onClick={handleSearch}
+                loading={loading}
+              >
+                {t('audit.search', { defaultValue: '查询' })}
+              </Button>
+              <Button type="text" onClick={handleReset}>
+                {t('common.reset', { defaultValue: '重置' })}
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        <PageListBar total={total} />
+
+        <ResponsiveTable
+          columns={columns}
+          dataSource={data}
+          rowKey="id"
+          pagination={pagination}
+          onChange={handleTableChange}
+          loading={loading}
+          size="medium"
+          scroll={{ x: 900 }}
+        />
+      </section>
+    </div>
   );
 }
 

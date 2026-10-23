@@ -1,16 +1,17 @@
 import { useSearchParams } from 'react-router-dom';
 import { useRuntimeConfig } from '@/config/runtime';
 import { useState, useEffect, useCallback, useMemo, type FC } from 'react';
-import { Button, Form, message, Card, Typography, Row, Col, Divider } from 'antd';
+import { Button, Form, message } from 'antd';
 import type { TableProps } from 'antd/es/table';
 import type { SorterResult } from 'antd/es/table/interface';
 import { useTranslation } from 'react-i18next';
-import { ReloadOutlined } from '@ant-design/icons';
+import { CreditCardOutlined, ReloadOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { useSimpleApi, useSimpleApiData } from '@/hooks/useSimpleApi';
 import { usePermissions } from '@/auth/usePermissions';
 import type { UseSimpleApiReturn } from '@/hooks/types';
 import AccountSummaryCards from '@/components/AccountSummaryCards';
+import PageHeader from '@/components/page/PageHeader';
 import type { AccountSummary } from '@/components/AccountSummaryCards';
 import PayableTable from '@/pages/Payable/components/PayableTable';
 import PayableModal from '@/pages/Payable/components/PayableModal';
@@ -27,8 +28,6 @@ import type {
   Supplier,
   TableSortOrder
 } from './types';
-
-const { Title } = Typography;
 
 const DEFAULT_PAGINATION: PaginationState = {
   current: 1,
@@ -229,32 +228,22 @@ const Payable: FC = () => {
   };
 
   return (
-    <div>
-      <Card>
-        <Row justify="space-between" align="middle" style={{ marginBottom: 16 }}>
-          <Col>
-            <Title level={2} style={{ margin: 0 }}>
-              {t('payable.title')}
-            </Title>
-          </Col>
-          <Col>
-            <Button
-              type="primary"
-              icon={<ReloadOutlined />}
-              onClick={handleRefresh}
-              style={{ marginRight: 8 }}
-            >
-              {t('payable.refresh')}
-            </Button>
-          </Col>
-        </Row>
+    <div className="page tone-amber">
+      <PageHeader
+        eyebrow={t('nav.finance')}
+        title={t('payable.title')}
+        description={t('payable.subtitle')}
+        icon={<CreditCardOutlined />}
+        actions={
+          <Button size="large" type="primary" icon={<ReloadOutlined />} onClick={handleRefresh}>
+            {t('payable.refresh')}
+          </Button>
+        }
+      />
 
-        <Divider />
+      <AccountSummaryCards kind="payable" summary={summary} />
 
-        <div style={{ marginBottom: 16 }}>
-          <AccountSummaryCards kind="payable" summary={summary} />
-        </div>
-
+      <section className="page-card">
         <PayableTable
           data={payableRecords}
           loading={loading}
@@ -269,9 +258,10 @@ const Payable: FC = () => {
           apiInstance={apiInstance as UseSimpleApiReturn}
           canWrite={canWrite}
         />
+      </section>
 
-        {canWrite && (
-          <PayableModal
+      {canWrite && (
+        <PayableModal
             visible={modalVisible}
             editingPayment={editingPayment}
             selectedSupplier={selectedSupplier}
@@ -279,9 +269,8 @@ const Payable: FC = () => {
             form={form}
             onSave={handleSavePayment}
             onCancel={() => setModalVisible(false)}
-          />
-        )}
-      </Card>
+        />
+      )}
     </div>
   );
 };

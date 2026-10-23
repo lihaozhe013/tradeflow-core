@@ -1,18 +1,14 @@
+/* The root also carries the shared "page" shell; this rule only caps its width. */
 .settings-page {
   max-width: 1240px;
   margin-inline: auto;
 }
-.settings-page-heading,
 .settings-section-heading {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   gap: 16px;
 }
-.settings-page-heading {
-  margin-bottom: 16px;
-}
-.settings-page-heading h2,
 .settings-section-heading h3 {
   margin-top: 0;
 }
@@ -162,7 +158,6 @@
   }
 }
 @media (max-width: 600px) {
-  .settings-page-heading,
   .settings-section-heading {
     flex-wrap: wrap;
   }

@@ -1,30 +1,22 @@
 import ExportButton from '@/components/ExportButton';
 import { useRuntimeConfig, withHistoricalOption } from '@/config/runtime';
 import ResponsiveTable from '@/components/ResponsiveTable';
+import PageHeader from '@/components/page/PageHeader';
+import PageListBar from '@/components/page/PageListBar';
 import { useState, useEffect, useCallback, type FC } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ColumnsType, TableProps } from 'antd/es/table';
 import type { FormProps } from 'antd';
+import { Button, Modal, Form, Input, Select, Space, message, Popconfirm } from 'antd';
 import {
-  Button,
-  Modal,
-  Form,
-  Input,
-  Select,
-  Space,
-  message,
-  Popconfirm,
-  Card,
-  Typography,
-  Row,
-  Col,
-  Divider
-} from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+  DeleteOutlined,
+  EditOutlined,
+  PlusOutlined,
+  SearchOutlined,
+  TagsOutlined
+} from '@ant-design/icons';
 import { useSimpleApi } from '@/hooks/useSimpleApi';
 import { usePermissions } from '@/auth/usePermissions';
-
-const { Title } = Typography;
 
 type ProductItem = {
   readonly code: string;
@@ -261,69 +253,82 @@ const Products: FC = () => {
     fetchProducts(1, nextFilters);
   };
 
+  const handleReset = (): void => {
+    filterForm.resetFields();
+    setFilters({});
+    fetchProducts(1, {});
+  };
+
   return (
-    <div>
-      <Card>
-        <Row justify="space-between" align="middle" style={{ marginBottom: 16 }}>
-          <Col>
-            <Title level={2} style={{ margin: 0 }}>
-              {t('products.title')}
-            </Title>
-          </Col>
-          {canWrite && (
-            <Col>
-              <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
+    <div className="page tone-teal">
+      <PageHeader
+        eyebrow={t('nav.masterData')}
+        title={t('products.title')}
+        description={t('products.subtitle')}
+        icon={<TagsOutlined />}
+        actions={
+          <>
+            {hasPermission('editor') && (
+              <ExportButton
+                size="large"
+                disabled={loading}
+                context={{ source: 'products', filters: { ...filters }, ids: exportKeys }}
+              />
+            )}
+            {canWrite && (
+              <Button size="large" type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
                 {t('products.addProduct')}
               </Button>
-            </Col>
-          )}
-        </Row>
+            )}
+          </>
+        }
+      />
 
-        <Form<ProductFilters> form={filterForm} layout="inline" style={{ marginBottom: 12 }}>
-          <Form.Item name="code" label={t('products.code')} style={{ minWidth: 200 }}>
-            <Input allowClear placeholder={t('products.inputCode')} />
-          </Form.Item>
-          <Form.Item
-            name="product_model"
-            label={t('products.productModel')}
-            style={{ minWidth: 240 }}
-          >
-            <Input allowClear placeholder={t('products.inputProductModel')} />
-          </Form.Item>
-          <Form.Item name="category" label={t('products.category')} style={{ minWidth: 220 }}>
-            <Select
-              showSearch
-              allowClear
-              placeholder={t('products.selectCategory')}
-              options={[...new Set([...PRODUCT_CATEGORIES, ...historicalCategories])].map(
-                (name) => ({
-                  value: name,
-                  label: name
-                })
-              )}
-              filterOption={(input, option) => {
-                const label = typeof option?.label === 'string' ? option.label : '';
-                return label.toLowerCase().includes(input.toLowerCase());
-              }}
-            />
-          </Form.Item>
-          <Form.Item>
-            <Button type="primary" onClick={handleFilter}>
-              {t('common.search')}
-            </Button>
-          </Form.Item>
-        </Form>
+      <section className="page-card">
+        <div className="page-toolbar">
+          <Form<ProductFilters> form={filterForm} layout="inline" className="page-filter-form">
+            <Form.Item name="code" label={t('products.code')}>
+              <Input allowClear placeholder={t('products.inputCode')} />
+            </Form.Item>
+            <Form.Item name="product_model" label={t('products.productModel')}>
+              <Input allowClear placeholder={t('products.inputProductModel')} />
+            </Form.Item>
+            <Form.Item name="category" label={t('products.category')}>
+              <Select
+                showSearch
+                allowClear
+                placeholder={t('products.selectCategory')}
+                options={[...new Set([...PRODUCT_CATEGORIES, ...historicalCategories])].map(
+                  (name) => ({
+                    value: name,
+                    label: name
+                  })
+                )}
+                filterOption={(input, option) => {
+                  const label = typeof option?.label === 'string' ? option.label : '';
+                  return label.toLowerCase().includes(input.toLowerCase());
+                }}
+              />
+            </Form.Item>
+            <Form.Item className="page-filter-form-actions">
+              <Space>
+                <Button type="primary" icon={<SearchOutlined />} onClick={handleFilter}>
+                  {t('common.search')}
+                </Button>
+                <Button type="text" onClick={handleReset}>
+                  {t('common.reset')}
+                </Button>
+              </Space>
+            </Form.Item>
+          </Form>
+        </div>
 
-        <Divider />
+        <PageListBar
+          total={pagination.total}
+          selectedCount={exportKeys.length}
+          onClearSelection={() => setExportKeys([])}
+        />
 
-        {hasPermission('editor') && (
-          <div style={{ marginBottom: 12 }}>
-            <ExportButton
-              disabled={loading}
-              context={{ source: 'products', filters: { ...filters }, ids: exportKeys }}
-            />
-          </div>
-        )}
         <ResponsiveTable<ProductItem>
           rowSelection={
             hasPermission('editor')
@@ -354,7 +359,7 @@ const Products: FC = () => {
           }}
           scroll={{ x: 900 }}
         />
-      </Card>
+      </section>
 
       {canWrite && (
         <Modal

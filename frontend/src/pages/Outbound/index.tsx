@@ -1,14 +1,16 @@
 import ExportButton from '@/components/ExportButton';
 import { useSearchParams } from 'react-router-dom';
 import { useState, useEffect, useCallback, useMemo, type FC, type Key } from 'react';
-import { Button, Form, message, Card, Typography, Row, Col, Divider } from 'antd';
+import { Button, Form, message } from 'antd';
 import type { TableProps } from 'antd/es/table';
 import type { SorterResult } from 'antd/es/table/interface';
 import dayjs, { type Dayjs } from 'dayjs';
-import { PlusOutlined, EditOutlined } from '@ant-design/icons';
+import { ArrowUpOutlined, EditOutlined, PlusOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useSimpleApi, useSimpleApiData } from '@/hooks/useSimpleApi';
 import { usePermissions } from '@/auth/usePermissions';
+import PageListBar from '@/components/page/PageListBar';
+import PageHeader from '@/components/page/PageHeader';
 import OutboundFilter from '@/pages/Outbound/components/OutboundFilter';
 import OutboundTable from '@/pages/Outbound/components/OutboundTable';
 import OutboundModal from '@/pages/Outbound/components/OutboundModal';
@@ -25,8 +27,6 @@ import type {
   Product,
   SorterState
 } from './types';
-
-const { Title } = Typography;
 
 interface PaginationState {
   readonly current: number;
@@ -554,66 +554,63 @@ const Outbound: FC = () => {
   };
 
   return (
-    <div>
-      <Card>
-        <Row justify="space-between" align="middle" style={{ marginBottom: 16 }}>
-          <Col>
-            <Title level={2} style={{ margin: 0 }}>
-              {t('outbound.title')}
-            </Title>
-          </Col>
-          <Col>
-            <PendingDraftLink direction="outbound" />
-          </Col>
-          {canWrite && (
-            <Col>
-              <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
-                {t('outbound.addOutboundRecord')}
-              </Button>
-            </Col>
-          )}
-        </Row>
+    <div className="page tone-blue">
+      <PageHeader
+        eyebrow={t('nav.operations')}
+        title={t('outbound.title')}
+        description={t('outbound.subtitle')}
+        icon={<ArrowUpOutlined />}
+        status={<PendingDraftLink direction="outbound" />}
+        actions={
+          canWrite || hasPermission('editor') ? (
+            <>
+              {hasPermission('editor') && (
+                <ExportButton
+                  size="large"
+                  disabled={loading}
+                  context={{
+                    direction: 'outbound',
+                    filters: exportFilters,
+                    ids: selectedRowKeys.map(Number)
+                  }}
+                />
+              )}
+              {canWrite && (
+                <Button
+                  size="large"
+                  className="batch-action-button"
+                  icon={<EditOutlined />}
+                  onClick={handleBatchEdit}
+                  disabled={selectedRowKeys.length === 0}
+                >
+                  {`${t('outbound.batchEdit')}${
+                    selectedRowKeys.length > 0 ? ` (${selectedRowKeys.length})` : ''
+                  }`}
+                </Button>
+              )}
+              {canWrite && (
+                <Button size="large" type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
+                  {t('outbound.addOutboundRecord')}
+                </Button>
+              )}
+            </>
+          ) : undefined
+        }
+      />
 
-        <Row justify="space-between" align="middle" style={{ marginBottom: 16 }}>
-          <Col flex="auto">
-            <OutboundFilter
-              filters={filters}
-              setFilters={setFilters}
-              partners={partners}
-              products={products}
-              onFilter={handleFilter}
-            />
-          </Col>
-          {canWrite && (
-            <Col>
-              <Button
-                type="default"
-                className="batch-action-button"
-                icon={<EditOutlined />}
-                onClick={handleBatchEdit}
-                disabled={selectedRowKeys.length === 0}
-                style={{ marginLeft: 8 }}
-              >
-                {`${t('outbound.batchEdit')}${
-                  selectedRowKeys.length > 0 ? ` (${selectedRowKeys.length})` : ''
-                }`}
-              </Button>
-            </Col>
-          )}
-        </Row>
-
-        {hasPermission('editor') && (
-          <ExportButton
-            disabled={loading}
-            context={{
-              direction: 'outbound',
-              filters: exportFilters,
-              ids: selectedRowKeys.map(Number)
-            }}
-          />
-        )}
-        <Divider />
-
+      <section className="page-card">
+        <OutboundFilter
+          filters={filters}
+          setFilters={setFilters}
+          partners={partners}
+          products={products}
+          onFilter={handleFilter}
+        />
+        <PageListBar
+          total={pagination.total}
+          selectedCount={selectedRowKeys.length}
+          onClearSelection={() => setSelectedRowKeys([])}
+        />
         <OutboundTable
           outboundRecords={outboundRecords}
           loading={loading}
@@ -633,7 +630,7 @@ const Outbound: FC = () => {
             showSizeChanger: false
           }}
         />
-      </Card>
+      </section>
 
       {canWrite && (
         <OutboundModal

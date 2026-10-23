@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, Button, Card, Modal, Select, Space, Tag } from 'antd';
+import { Alert, Button, Modal, Select, Tag } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { useTranslation } from 'react-i18next';
+import { ApiOutlined } from '@ant-design/icons';
 import ResponsiveTable from '@/components/ResponsiveTable';
+import PageHeader from '@/components/page/PageHeader';
+import PageListBar from '@/components/page/PageListBar';
 import { apiRequest, RequestError } from '@/utils/request';
 
 interface Connection {
@@ -167,66 +170,85 @@ export default function McpConnections(): React.ReactElement {
   ];
   const failedIds = results.filter((item) => !item.ok).map((item) => item.id);
   return (
-    <Card title={<h2 style={{ margin: 0, fontSize: 18 }}>{t('mcpConnections.title')}</h2>}>
-      <Space orientation="vertical" size="middle" style={{ width: '100%' }}>
+    <div className="page tone-teal">
+      <PageHeader
+        eyebrow={t('nav.administration')}
+        title={t('mcpConnections.title')}
+        description={t('mcpConnections.subtitle')}
+        icon={<ApiOutlined />}
+      />
+
+      <Alert
+        type="info"
+        showIcon
+        title={t('mcpConnections.scope')}
+        description={t('mcpConnections.explanation', { server: window.location.origin })}
+      />
+      {!enabled && <Alert type="warning" title={t('mcpConnections.disabled')} />}
+      {error && <Alert type="error" role="alert" title={t(`mcpConnections.${error}`)} />}
+      {results.length > 0 && (
         <Alert
-          type="info"
-          showIcon
-          title={t('mcpConnections.scope')}
-          description={t('mcpConnections.explanation', { server: window.location.origin })}
+          type={failedIds.length ? 'warning' : 'success'}
+          title={t('mcpConnections.result', {
+            succeeded: results.length - failedIds.length,
+            total: results.length
+          })}
+          description={
+            <>
+              {results.map((item) => (
+                <div key={item.id}>
+                  {item.id}:{' '}
+                  {t(item.ok ? 'mcpConnections.states.revoked' : 'mcpConnections.failed')}
+                </div>
+              ))}
+              {failedIds.length > 0 && (
+                <Button disabled={revoking} onClick={() => setConfirmIds(failedIds)}>
+                  {t('mcpConnections.retry')}
+                </Button>
+              )}
+            </>
+          }
         />
-        {!enabled && <Alert type="warning" title={t('mcpConnections.disabled')} />}
-        {error && <Alert type="error" role="alert" title={t(`mcpConnections.${error}`)} />}
-        <Space wrap>
-          <Select
-            aria-label={t('mcpConnections.filter')}
-            value={status}
-            style={{ width: 190 }}
-            disabled={revoking}
-            onChange={(value) => {
-              setStatus(value);
-              setPage(1);
-            }}
-            options={[
-              { value: '', label: t('mcpConnections.all') },
-              ...states.map((value) => ({ value, label: t(`mcpConnections.states.${value}`) }))
-            ]}
-          />
-          <Button disabled={loading || revoking} onClick={() => void load()}>
-            {t('mcpConnections.refresh')}
-          </Button>
-          <Button
-            danger
-            disabled={!selected.length || revoking || loading}
-            onClick={() => setConfirmIds(selected.map(String))}
-          >
-            {t('mcpConnections.revokeSelected')}
-          </Button>
-        </Space>
-        {results.length > 0 && (
-          <Alert
-            type={failedIds.length ? 'warning' : 'success'}
-            title={t('mcpConnections.result', {
-              succeeded: results.length - failedIds.length,
-              total: results.length
-            })}
-            description={
-              <>
-                {results.map((item) => (
-                  <div key={item.id}>
-                    {item.id}:{' '}
-                    {t(item.ok ? 'mcpConnections.states.revoked' : 'mcpConnections.failed')}
-                  </div>
-                ))}
-                {failedIds.length > 0 && (
-                  <Button disabled={revoking} onClick={() => setConfirmIds(failedIds)}>
-                    {t('mcpConnections.retry')}
-                  </Button>
-                )}
-              </>
-            }
-          />
-        )}
+      )}
+
+      <section className="page-card">
+        <div className="page-toolbar">
+          <div className="page-toolbar-row">
+            <Select
+              className="page-toolbar-field"
+              aria-label={t('mcpConnections.filter')}
+              value={status}
+              disabled={revoking}
+              onChange={(value) => {
+                setStatus(value);
+                setPage(1);
+              }}
+              options={[
+                { value: '', label: t('mcpConnections.all') },
+                ...states.map((value) => ({ value, label: t(`mcpConnections.states.${value}`) }))
+              ]}
+            />
+            <div className="page-toolbar-actions">
+              <Button disabled={loading || revoking} onClick={() => void load()}>
+                {t('mcpConnections.refresh')}
+              </Button>
+              <Button
+                danger
+                disabled={!selected.length || revoking || loading}
+                onClick={() => setConfirmIds(selected.map(String))}
+              >
+                {t('mcpConnections.revokeSelected')}
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        <PageListBar
+          total={total}
+          selectedCount={selected.length}
+          onClearSelection={() => setSelected([])}
+        />
+
         <ResponsiveTable<Connection>
           rowKey="id"
           columns={columns}
@@ -249,7 +271,8 @@ export default function McpConnections(): React.ReactElement {
             }
           }}
         />
-      </Space>
+      </section>
+
       <Modal
         title={t('mcpConnections.confirmTitle')}
         open={confirmIds.length > 0}
@@ -261,6 +284,6 @@ export default function McpConnections(): React.ReactElement {
       >
         {t('mcpConnections.confirm', { count: confirmIds.length })}
       </Modal>
-    </Card>
+    </div>
   );
 }

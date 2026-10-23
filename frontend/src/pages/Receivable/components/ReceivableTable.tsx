@@ -1,6 +1,7 @@
 import ExportButton from '@/components/ExportButton';
 import { useRuntimeConfig } from '@/config/runtime';
 import ResponsiveTable from '@/components/ResponsiveTable';
+import PageListBar from '@/components/page/PageListBar';
 import InvoicedSnapshotPanel from '@/components/InvoicedSnapshotPanel';
 import { useState, useEffect, type FC, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -485,26 +486,33 @@ const ReceivableTable: FC<ReceivableTableProps> = ({
 
   return (
     <>
-      <Row style={{ marginBottom: 16 }}>
-        <Col>
-          <Search
-            placeholder={t('receivable.searchCustomer') ?? ''}
-            allowClear
-            onSearch={handleSearch}
-            style={{ width: 250 }}
-            defaultValue={filters.customer_short_name}
-          />
-        </Col>
-      </Row>
-
-      {canWrite && (
-        <div style={{ marginBottom: 12 }}>
-          <ExportButton
-            disabled={loading}
-            context={{ source: 'receivable', filters: { ...filters }, ids: exportKeys }}
-          />
+      <div className="page-toolbar">
+        <div className="page-toolbar-row">
+          <div className="page-toolbar-search">
+            <Search
+              placeholder={t('receivable.searchCustomer') ?? ''}
+              allowClear
+              onSearch={handleSearch}
+              defaultValue={filters.customer_short_name}
+            />
+          </div>
+          {canWrite && (
+            <div className="page-toolbar-actions">
+              <ExportButton
+                disabled={loading}
+                context={{ source: 'receivable', filters: { ...filters }, ids: exportKeys }}
+              />
+            </div>
+          )}
         </div>
-      )}
+      </div>
+
+      <PageListBar
+        total={tablePagination.total ?? 0}
+        selectedCount={exportKeys.length}
+        onClearSelection={() => setExportKeys([])}
+      />
+
       <ResponsiveTable<ReceivableRecord>
         columns={tableColumns}
         dataSource={data}

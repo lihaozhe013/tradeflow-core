@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Alert, Avatar, Button, Card, Form, Input, Space, Tag, Typography, message } from 'antd';
 import { KeyOutlined, UserOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
+import PageHeader from '@/components/page/PageHeader';
 import { useAuth } from '@/auth/useAuth';
 import { useApi } from '@/hooks/useApi';
 import type { User } from '@/auth/auth';
@@ -78,11 +79,13 @@ function Profile(): React.ReactElement {
   };
 
   return (
-    <div className="profile-page">
-      <header className="profile-page-header">
-        <Typography.Title level={2}>{t('users.profileTitle')}</Typography.Title>
-        <Typography.Paragraph type="secondary">{t('users.profileDescription')}</Typography.Paragraph>
-      </header>
+    <div className="page profile-page tone-blue">
+      <PageHeader
+        eyebrow={t('nav.administration')}
+        title={t('users.profileTitle')}
+        description={t('users.profileDescription')}
+        icon={<UserOutlined />}
+      />
 
       <div className="profile-layout">
         <Card className="profile-overview-card">

@@ -219,21 +219,6 @@ body {
   border-bottom-color: #edf0f4;
 }
 
-.users-page-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 20px;
-}
-
-.users-page-header .ant-typography-title {
-  margin: 0 0 4px;
-}
-
-.users-page-header .ant-typography-paragraph {
-  margin-bottom: 0;
-}
-
 .overview-dashboard {
   min-width: 0;
 }
@@ -431,15 +416,6 @@ body {
 
   .app-page-container .ant-card-body {
     padding: 16px;
-  }
-
-  .users-page-header {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .users-page-header > .ant-btn {
-    align-self: flex-start;
   }
 
   .app-page-container .ant-card-head {

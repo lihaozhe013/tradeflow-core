@@ -17,7 +17,8 @@
     "systemSlogan": "定制 TradeFlow 系统",
     "systemVersion": "系统版本",
     "techStack": "技术栈",
-    "title": "关于我们"
+    "title": "关于我们",
+    "subtitle": "公司简介、系统信息与联系方式。"
   },
   "analysis": {
     "advancedExport": {
@@ -89,7 +90,8 @@
     "title": "数据分析",
     "to": "至",
     "totalRecords": "共 {{total}} 条记录",
-    "type": "类型"
+    "type": "类型",
+    "subtitle": "按往来单位、产品与时间区间对比交易量及毛利。"
   },
   "audit": {
     "action": "操作类型",
@@ -103,7 +105,8 @@
     "searchUser": "按用户名搜索",
     "title": "审计日志",
     "total": "共 {{count}} 条",
-    "username": "用户名"
+    "username": "用户名",
+    "subtitle": "查看已记录的操作、请求路径与参数。"
   },
   "auth": {
     "back": "返回上一页",
@@ -130,22 +133,27 @@
   },
   "common": {
     "add": "新增",
+    "activeFilters": "已应用的筛选",
     "advancedFilters": "高级筛选",
     "cancel": "取消",
     "chinese": "中文",
+    "clearAll": "清除全部",
     "clearSelection": "清除选择",
     "collapse": "收起",
     "confirm": "确认",
+    "dateRange": "日期范围",
     "delete": "删除",
     "edit": "编辑",
     "english": "English",
     "export": "导出",
     "followSystem": "跟随系统",
     "moreDetails": "更多详情",
+    "moreFilters": "更多筛选条件",
     "noData": "暂无数据",
     "korean": "한국어",
     "language": "语言",
     "logout": "退出登录",
+    "recordsHeading": "记录",
     "refresh": "刷新",
     "reset": "重置",
     "save": "保存",
@@ -153,6 +161,7 @@
     "selectRecord": "选择记录 {{record}}",
     "selectedCount": "已选择 {{count}} 项",
     "sortRecords": "排序记录",
+    "totalCount": "共 {{count}} 条",
     "deleteFailed": "删除失败",
     "deleteSuccess": "删除成功",
     "logoAlt": "TradeFlow 标志",
@@ -162,6 +171,7 @@
     "yes": "是"
   },
   "export": {
+    "title": "数据导出",
     "baseInfo": "基础信息",
     "dateRange": "日期范围",
     "emptyFile": "导出的文件为空，请检查筛选条件或数据",
@@ -198,7 +208,8 @@
     "statementTip": "对账单采用定制格式，与完整记录格式不同",
     "success": "导出成功！文件大小：{{size}}KB，已开始下载",
     "unknownError": "未知错误",
-    "receipt": "收据"
+    "receipt": "收据",
+    "subtitle": "生成对账单与发票，或进入各数据集导出。"
   },
   "inbound": {
     "actions": "操作",
@@ -244,6 +255,7 @@
     "selectProductModel": "选择产品型号",
     "selectSupplier": "选择供应商",
     "startDate": "开始日期",
+    "subtitle": "登记供应商采购入库，保持库存数据准确。",
     "supplierCode": "供应商代号",
     "supplierFullName": "供应商全称",
     "supplierShortName": "供应商简称",
@@ -281,7 +293,8 @@
     "searchProductModel": "搜索产品型号",
     "status": "库存状态",
     "title": "库存明细",
-    "totalCostEstimate": "总成本估算"
+    "totalCostEstimate": "总成本估算",
+    "subtitle": "按产品型号汇总的库存余量，来源于已记录的出入库。"
   },
   "nav": {
     "advanced": "高级",
@@ -382,7 +395,8 @@
       "unit_price_required": "请输入有效单价。",
       "date_required": "请选择业务日期。",
       "invalid_direction": "记录方向无效。"
-    }
+    },
+    "subtitle": "审核尚未转为出入库记录的交易草稿。"
   },
   "outbound": {
     "actions": "操作",
@@ -444,6 +458,7 @@
     "selectProductModel": "选择产品型号",
     "selectSupplier": "选择供应商",
     "startDate": "开始日期",
+    "subtitle": "登记客户销售出库，实时掌握库存变动。",
     "title": "出库",
     "totalPrice": "总价",
     "unitPrice": "单价",
@@ -528,7 +543,8 @@
     "shortNameMax": "简称不能超过50个字符",
     "supplier": "供应商",
     "title": "客户/供应商列表",
-    "type": "类型"
+    "type": "类型",
+    "subtitle": "管理入库、出库记录中使用的供应商与客户。"
   },
   "payable": {
     "action": "操作",
@@ -593,7 +609,8 @@
     "uninvoicedDetails": "未开票明细",
     "unitPrice": "单价",
     "unpaid": "未付: {{amount}}",
-    "unsettledSuffix": "未结清 {{count}} 家"
+    "unsettledSuffix": "未结清 {{count}} 家",
+    "subtitle": "查看供应商应付余额并登记付款。"
   },
   "productPrices": {
     "actions": "操作",
@@ -622,7 +639,8 @@
     "selectProductModel": "请选择产品型号",
     "title": "价格列表",
     "unitPrice": "单价",
-    "unitPriceMin": "单价必须大于等于0"
+    "unitPriceMin": "单价必须大于等于0",
+    "subtitle": "查看按往来单位维护的价格及生效日期。"
   },
   "products": {
     "actions": "操作",
@@ -647,7 +665,8 @@
     "remarkMax": "产品描述不能超过500个字符",
     "saveFailed": "保存失败",
     "selectCategory": "请选择产品分类",
-    "title": "产品列表"
+    "title": "产品列表",
+    "subtitle": "维护产品型号、分类及其相关属性。"
   },
   "receivable": {
     "action": "操作",
@@ -712,7 +731,8 @@
     "uninvoicedDetails": "未开票明细",
     "unitPrice": "单价",
     "unpaid": "未收: {{amount}}",
-    "unsettledSuffix": "未结清 {{count}} 家"
+    "unsettledSuffix": "未结清 {{count}} 家",
+    "subtitle": "查看客户应收余额并登记收款。"
   },
   "users": {
     "actions": "操作",
@@ -1011,7 +1031,8 @@
     "confirm": "撤销 {{count}} 个凭证？Agent 后续调用需要重新连接。",
     "cancel": "取消",
     "result": "已撤销 {{succeeded}}／{{total}} 个凭证",
-    "retry": "重试失败项"
+    "retry": "重试失败项",
+    "subtitle": "查看并吊销智能体访问本系统的凭据。"
   },
   "snapshot": {
     "notReady": "尚未生成数据，请点击刷新数据。",

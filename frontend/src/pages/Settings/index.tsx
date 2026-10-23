@@ -31,6 +31,7 @@ import {
   SettingOutlined
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
+import PageHeader from '@/components/page/PageHeader';
 import api, { RequestError } from '@/utils/request';
 import { useRefreshRuntimeSettings } from '@/config/runtime';
 import './settings.css';
@@ -665,16 +666,14 @@ export default function Settings() {
   }, [dirty]);
   const row = records[active];
   return (
-    <div className="settings-page">
-      <div className="settings-page-heading">
-        <div>
-          <Typography.Title level={2}>
-            <SettingOutlined aria-hidden="true" /> {t('settings.title')}
-          </Typography.Title>
-          <Typography.Paragraph type="secondary">{t('settings.subtitle')}</Typography.Paragraph>
-        </div>
-        <Tag>{t('settings.superuserOnly')}</Tag>
-      </div>
+    <div className="page settings-page tone-slate">
+      <PageHeader
+        eyebrow={t('nav.administration')}
+        title={t('settings.title')}
+        description={t('settings.subtitle')}
+        icon={<SettingOutlined />}
+        status={<Tag>{t('settings.superuserOnly')}</Tag>}
+      />
       {failed && (
         <Alert
           type="error"

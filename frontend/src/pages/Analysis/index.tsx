@@ -1,10 +1,12 @@
 import { useSearchParams } from 'react-router-dom';
 import React, { useState, useEffect } from 'react';
-import { Card, Spin, Divider, message, Typography } from 'antd';
+import { Spin, Divider, message } from 'antd';
 import { useTranslation } from 'react-i18next';
 import dayjs, { type Dayjs } from 'dayjs';
+import { LineChartOutlined } from '@ant-design/icons';
 
 // Components
+import PageHeader from '@/components/page/PageHeader';
 import AnalysisFilters from '@/pages/Analysis/components/AnalysisFilters';
 import AnalysisConditions from '@/pages/Analysis/components/AnalysisConditions';
 import AnalysisStatistics from '@/pages/Analysis/components/AnalysisStatistics';
@@ -116,10 +118,15 @@ const Analysis: React.FC = () => {
   };
 
   return (
-    <div style={{ padding: 24 }}>
-      <Typography.Title level={2}>{t('analysis.title')}</Typography.Title>
+    <div className="page tone-violet">
+      <PageHeader
+        eyebrow={t('nav.finance')}
+        title={t('analysis.title')}
+        description={t('analysis.subtitle')}
+        icon={<LineChartOutlined />}
+      />
 
-      <Card variant="borderless">
+      <section className="page-card page-card--padded">
         <AnalysisFilters
           dateRange={dateRange}
           onDateRangeChange={(dates) => setDateRange(dates as [Dayjs, Dayjs])}
@@ -169,7 +176,7 @@ const Analysis: React.FC = () => {
             analysisType={analysisType}
           />
         )}
-      </Card>
+      </section>
     </div>
   );
 };

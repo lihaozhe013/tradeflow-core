@@ -2,15 +2,15 @@ import ExportButton from '@/components/ExportButton';
 import { useSearchParams } from 'react-router-dom';
 import { useRuntimeConfig } from '@/config/runtime';
 import ResponsiveTable from '@/components/ResponsiveTable';
+import PageHeader from '@/components/page/PageHeader';
+import PageListBar from '@/components/page/PageListBar';
 import { useState, useCallback, useEffect, useMemo, type ChangeEvent, type FC } from 'react';
 import type { ColumnsType, TableProps } from 'antd/es/table';
-import { Card, Typography, Row, Col, Input, Button, message, Space, Tag, Divider } from 'antd';
-import { SearchOutlined, ReloadOutlined } from '@ant-design/icons';
+import { Input, Button, message, Tag } from 'antd';
+import { DatabaseOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useSimpleApi, useSimpleApiData } from '@/hooks/useSimpleApi';
 import { usePermissions } from '@/auth/usePermissions';
-
-const { Title } = Typography;
 
 type InventoryStatusColor = 'green' | 'orange' | 'red';
 
@@ -169,77 +169,72 @@ const Inventory: FC = () => {
   ];
 
   return (
-    <div>
-      <Card>
-        <Row justify="space-between" align="middle" style={{ marginBottom: 16 }}>
-          <Col>
-            <Title level={2} style={{ margin: 0 }}>
-              {t('inventory.title')}
-            </Title>
-          </Col>
-          <Col>
-            <Space>
+    <div className="page tone-green">
+      <PageHeader
+        eyebrow={t('nav.masterData')}
+        title={t('inventory.title')}
+        description={t('inventory.subtitle')}
+        icon={<DatabaseOutlined />}
+        actions={
+          <>
+            {hasPermission('editor') && (
+              <ExportButton
+                size="large"
+                disabled={loading}
+                context={{
+                  source: 'inventory',
+                  filters: { product_model: productFilter || undefined },
+                  ids: exportKeys
+                }}
+              />
+            )}
+            {canWrite && (
+              <Button
+                size="large"
+                type="primary"
+                icon={<ReloadOutlined spin={actionLoading} />}
+                onClick={handleRefreshCache}
+                loading={actionLoading}
+              >
+                {t('inventory.recalculate')}
+              </Button>
+            )}
+          </>
+        }
+      />
+
+      <section className="page-card">
+        <div className="page-toolbar">
+          <div className="page-toolbar-row">
+            <div className="page-toolbar-search" style={{ maxWidth: 420 }}>
               <Input
                 placeholder={t('inventory.searchProductModel')}
                 prefix={<SearchOutlined />}
                 value={productFilter}
                 onChange={handleProductFilterChange}
-                style={{ width: 200 }}
                 allowClear
+                aria-label={t('inventory.searchProductModel')}
               />
-              {canWrite && (
-                <Button
-                  type="primary"
-                  icon={<ReloadOutlined spin={actionLoading} />}
-                  onClick={handleRefreshCache}
-                  loading={actionLoading}
-                >
-                  {t('inventory.recalculate')}
-                </Button>
-              )}
-            </Space>
-          </Col>
-        </Row>
-        <Divider />
-
-        <Row
-          justify="space-between"
-          align="middle"
-          style={{
-            marginBottom: 16,
-            padding: '12px 16px',
-            backgroundColor: '#ffffff',
-            borderRadius: '6px',
-            border: '1px solid #d9d9d9',
-            boxShadow: '0 1px 2px rgba(0, 0, 0, 0.03)'
-          }}
-        >
-          <Col>
-            <Space>
-              <strong>{t('inventory.totalCostEstimate')}: </strong>
-              <Tag color="blue" style={{ fontSize: '14px', padding: '4px 8px' }}>
+            </div>
+            <div className="page-toolbar-actions">
+              <span className="page-summary-label">{t('inventory.totalCostEstimate')}</span>
+              <span className="page-summary-value">
                 {currency_unit_symbol}
                 {totalCostEstimate.toLocaleString('en-US', {
                   minimumFractionDigits: 2,
                   maximumFractionDigits: 2
                 })}
-              </Tag>
-            </Space>
-          </Col>
-        </Row>
-
-        {hasPermission('editor') && (
-          <div style={{ marginBottom: 12 }}>
-            <ExportButton
-              disabled={loading}
-              context={{
-                source: 'inventory',
-                filters: { product_model: productFilter || undefined },
-                ids: exportKeys
-              }}
-            />
+              </span>
+            </div>
           </div>
-        )}
+        </div>
+
+        <PageListBar
+          total={inventoryResponse?.pagination?.total ?? 0}
+          selectedCount={exportKeys.length}
+          onClearSelection={() => setExportKeys([])}
+        />
+
         <ResponsiveTable<InventoryItem>
           columns={inventoryColumns}
           dataSource={inventoryData}
@@ -269,7 +264,7 @@ const Inventory: FC = () => {
           }}
           scroll={{ x: 600 }}
         />
-      </Card>
+      </section>
     </div>
   );
 };

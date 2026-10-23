@@ -1,19 +1,8 @@
+/* The root also carries the shared "page" shell; this rule only caps its width. */
 .profile-page {
   width: 100%;
   max-width: 1100px;
   margin-inline: auto;
-}
-
-.profile-page-header {
-  margin-bottom: 24px;
-}
-
-.profile-page-header .ant-typography-title {
-  margin-bottom: 4px;
-}
-
-.profile-page-header .ant-typography-paragraph {
-  margin-bottom: 0;
 }
 
 .profile-layout {
@@ -77,10 +66,6 @@
 }
 
 @media (max-width: 575px) {
-  .profile-page-header {
-    margin-bottom: 16px;
-  }
-
   .profile-layout,
   .profile-form-sections {
     gap: 16px;
