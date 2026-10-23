@@ -7,7 +7,7 @@ import { getCustomerAnalysisData, getProductAnalysisData } from './analysisQueri
  * Format currency value for display
  */
 function formatCurrency(value: number): number {
-  return Math.round(value || 0);
+  return value || 0;
 }
 
 /**

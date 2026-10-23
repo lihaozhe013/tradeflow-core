@@ -1,4 +1,5 @@
-import { Prisma } from '@/prisma/client';
+import { accountSummaryQuery } from './accountSummaryQuery';
+import type { Prisma } from '@/prisma/client';
 import { prisma } from '@/prismaClient';
 import decimalCalc from '@/utils/decimalCalculator';
 import type {
@@ -11,36 +12,7 @@ import type {
 export async function getReceivableSummary(
   filters: ReceivableFilters = {}
 ): Promise<ReceivableSummaryDto[]> {
-  const conditions: Prisma.Sql[] = [Prisma.sql`1=1`];
-
-  if (filters.outboundFrom) {
-    conditions.push(Prisma.sql`o.outbound_date >= ${filters.outboundFrom}`);
-  }
-  if (filters.outboundTo) {
-    conditions.push(Prisma.sql`o.outbound_date <= ${filters.outboundTo}`);
-  }
-  if (filters.paymentFrom) {
-    conditions.push(Prisma.sql`(p.pay_date IS NULL OR p.pay_date >= ${filters.paymentFrom})`);
-  }
-  if (filters.paymentTo) {
-    conditions.push(Prisma.sql`(p.pay_date IS NULL OR p.pay_date <= ${filters.paymentTo})`);
-  }
-
-  const sql = Prisma.sql`
-        SELECT 
-          o.customer_code,
-          pa.short_name as customer_short_name,
-          pa.full_name as customer_full_name,
-          COALESCE(SUM(o.total_price), 0) as total_sales,
-          COALESCE(SUM(p.amount), 0) as total_payments,
-          COALESCE(SUM(o.total_price), 0) - COALESCE(SUM(p.amount), 0) as balance
-        FROM outbound_records o
-        LEFT JOIN receivable_payments p ON o.customer_code = p.customer_code
-        LEFT JOIN partners pa ON o.customer_code = pa.code
-        WHERE ${Prisma.join(conditions, ' AND ')}
-        GROUP BY o.customer_code, pa.short_name, pa.full_name
-        ORDER BY balance DESC
-      `;
+  const sql = accountSummaryQuery('receivable', filters);
 
   type ReceivableSummaryRow = {
     customer_code: string;

@@ -8,7 +8,7 @@ import type { AnalysisExportOptions } from '@/routes/export/utils/types';
  * Format currency value for display
  */
 function formatCurrency(value: number): number {
-  return Math.round(value || 0);
+  return value || 0;
 }
 
 /**
