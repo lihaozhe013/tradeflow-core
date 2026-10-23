@@ -1,12 +1,10 @@
+import ExportButton from '@/components/ExportButton';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Card, Row, Col, Button, Space, Form, Input, message } from 'antd';
-import { FileExcelOutlined } from '@ant-design/icons';
+import { Card, Row, Col, Button, Space, Form, Input } from 'antd';
 import ResponsiveDateRange from '@/components/ResponsiveDateRange';
 
 const ExportPanel = ({
-  handleExport,
-  loading,
   dateRange,
   setDateRange,
   selectedProduct,
@@ -56,57 +54,29 @@ const ExportPanel = ({
               </Form.Item>
             </Form>
             <Space wrap>
-              <Button
-                type="default"
-                className="hover-primary"
-                icon={<FileExcelOutlined />}
-                onClick={() =>
-                  handleExport('statement', {
-                    tables: '12',
-                    dateFrom: dateRange[0].format('YYYY-MM-DD'),
-                    dateTo: dateRange[1].format('YYYY-MM-DD'),
-                    productCode: selectedProduct || undefined,
-                    customerCode: selectedCustomer || undefined
-                  })
-                }
-                loading={loading}
-              >
-                {t('export.exportStatement')}
-              </Button>
-              <Button
-                type="default"
-                className="hover-primary"
-                icon={<FileExcelOutlined />}
-                onClick={() =>
-                  handleExport('statement', {
-                    tables: '1',
-                    dateFrom: dateRange[0].format('YYYY-MM-DD'),
-                    dateTo: dateRange[1].format('YYYY-MM-DD'),
-                    productCode: selectedProduct || undefined,
-                    customerCode: selectedCustomer || undefined
-                  })
-                }
-                loading={loading}
-              >
-                {t('export.inboundStatement')}
-              </Button>
-              <Button
-                type="default"
-                className="hover-primary"
-                icon={<FileExcelOutlined />}
-                onClick={() =>
-                  handleExport('statement', {
-                    tables: '2',
-                    dateFrom: dateRange[0].format('YYYY-MM-DD'),
-                    dateTo: dateRange[1].format('YYYY-MM-DD'),
-                    productCode: selectedProduct || undefined,
-                    customerCode: selectedCustomer || undefined
-                  })
-                }
-                loading={loading}
-              >
-                {t('export.outboundStatement')}
-              </Button>
+              {['12', '1', '2'].map((tables, index) => (
+                <ExportButton
+                  key={tables}
+                  buttonLabel={t(
+                    [
+                      'export.exportStatement',
+                      'export.inboundStatement',
+                      'export.outboundStatement'
+                    ][index]
+                  )}
+                  context={{
+                    report: 'statement',
+                    ids: [],
+                    filters: {
+                      tables,
+                      dateFrom: dateRange[0].format('YYYY-MM-DD'),
+                      dateTo: dateRange[1].format('YYYY-MM-DD'),
+                      productCode: selectedProduct || undefined,
+                      customerCode: selectedCustomer || undefined
+                    }
+                  }}
+                />
+              ))}
             </Space>
             <div style={{ marginTop: 8, fontSize: '12px', color: '#666' }}>
               {t('export.statementTip')}
@@ -129,7 +99,7 @@ const ExportPanel = ({
                   style={{ width: 150 }}
                 />
               </Form.Item>
-              <Form.Item label={t('export.invoiceRange')} required>
+              <Form.Item label={t('export.dateRange')} required>
                 <ResponsiveDateRange
                   value={invoiceRange}
                   onChange={(dates) => {
@@ -141,26 +111,19 @@ const ExportPanel = ({
               </Form.Item>
             </Form>
             <Space wrap>
-              <Button
-                type="default"
-                className="hover-primary"
-                icon={<FileExcelOutlined />}
-                onClick={() => {
-                  if (!invoicePartner) {
-                    message.warning(t('export.inputPartnerCode'));
-                    return;
-                  }
-                  handleExport('invoice', {
-                    partnerCode: invoicePartner,
+              <ExportButton
+                buttonLabel={t('export.exportInvoice')}
+                disabled={!invoicePartner.trim()}
+                context={{
+                  report: 'invoice',
+                  ids: [],
+                  filters: {
+                    partnerCode: invoicePartner.trim(),
                     dateFrom: invoiceRange[0].format('YYYY-MM-DD'),
                     dateTo: invoiceRange[1].format('YYYY-MM-DD')
-                  });
+                  }
                 }}
-                loading={loading}
-                disabled={!invoicePartner}
-              >
-                {t('export.exportInvoice')}
-              </Button>
+              />
             </Space>
             <div style={{ marginTop: 8, fontSize: '12px', color: '#666' }}>
               {t('export.invoiceTip')}

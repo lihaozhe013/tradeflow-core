@@ -1,8 +1,72 @@
+import { unzipSync } from 'fflate';
 import { describe, expect, it } from 'vitest';
 import * as XLSX from 'xlsx';
 import { authAgent } from '@/test/helpers/request';
 
 describe('Transaction export previews', () => {
+  it('uses system template headings, ordering, visibility and worksheet names without changing the saved template', async () => {
+    const admin = await authAgent('superuser');
+    const editor = await authAgent('editor');
+    const settings = await admin.get('/api/settings');
+    const original = settings.body.data.find(
+      (row: { section: string }) => row.section === 'export-templates'
+    );
+    let version = original.version;
+    try {
+      const value = structuredClone(original.value);
+      value.products = {
+        sheetName: 'Custom Products',
+        columns: [
+          { key: 'product_model', label: 'Custom model heading', visible: true },
+          { key: 'code', label: 'Hidden code', visible: false }
+        ]
+      };
+      const saved = await admin.put('/api/settings/export-templates').send({ value, version });
+      expect(saved.status).toBe(200);
+      version = saved.body.data.version;
+      const products = await editor.get('/api/products');
+      const code = products.body.data[0].code;
+      const result = await editor
+        .post('/api/export/previews/records')
+        .send({ source: 'products', filters: {}, keys: [code] });
+      expect(result.status).toBe(200);
+      expect(result.body.sheetName).toBe('Custom Products');
+      expect(result.body.columns.slice(0, 2)).toMatchObject([
+        { key: 'product_model', label: 'Custom model heading', visible: true },
+        { key: 'code', label: 'Hidden code', visible: false }
+      ]);
+      expect(result.body.columns.filter((c: { visible: boolean }) => c.visible)).toHaveLength(1);
+      const download = await editor
+        .post(`/api/export/previews/${result.body.id}/download`)
+        .send({
+          format: 'xlsx',
+          columns: result.body.columns.map((c: { key: string }) =>
+            c.key === 'product_model' ? { ...c, label: 'This export only' } : c
+          ),
+          font: 'Arial',
+          fontSize: 11
+        })
+        .buffer(true)
+        .parse((res, done) => {
+          const chunks: Buffer[] = [];
+          res.on('data', (chunk: Buffer) => chunks.push(chunk));
+          res.on('end', () => done(null, Buffer.concat(chunks)));
+        });
+      expect(download.status).toBe(200);
+      const book = XLSX.read(download.body, { type: 'buffer' });
+      expect(book.SheetNames).toEqual(['Custom Products']);
+      expect(book.Sheets['Custom Products']!['A1']?.v).toBe('This export only');
+      const fresh = await editor
+        .post('/api/export/previews/records')
+        .send({ source: 'products', filters: {}, keys: [code] });
+      expect(fresh.body.columns[0].label).toBe('Custom model heading');
+    } finally {
+      const restored = await admin
+        .put('/api/settings/export-templates')
+        .send({ value: original.value, version });
+      expect(restored.status).toBe(200);
+    }
+  });
   it('exports exactly the selected records and preserves column order and values', async () => {
     const agent = await authAgent('editor');
     const list = await agent.get('/api/outbound');
@@ -105,5 +169,54 @@ describe('Transaction export previews', () => {
       details.body.rows.every((row: { partner_code: string }) => row.partner_code === partner)
     ).toBe(true);
     expect(details.body.columns.map((c: { key: string }) => c.key)).toContain('payment_amount');
+  });
+  it('previews combined statements and exports all worksheets as CSV files', async () => {
+    const agent = await authAgent('editor');
+    const preview = await agent
+      .post('/api/export/previews/reports')
+      .send({ report: 'statement', filters: { tables: '12' } });
+    expect(preview.status).toBe(200);
+    expect(preview.body.sheets.map((sheet: { key: string }) => sheet.key)).toEqual([
+      'inbound',
+      'outbound'
+    ]);
+    expect(preview.body.total).toBeGreaterThan(0);
+    const download = await agent
+      .post(`/api/export/previews/${preview.body.id}/download`)
+      .send({
+        format: 'csv',
+        columns: preview.body.columns,
+        sheets: preview.body.sheets.map((sheet: { key: string; columns: unknown[] }) => ({
+          key: sheet.key,
+          columns: sheet.columns
+        })),
+        font: 'Arial',
+        fontSize: 11
+      })
+      .buffer(true)
+      .parse((res, done) => {
+        const chunks: Buffer[] = [];
+        res.on('data', (chunk: Buffer) => chunks.push(chunk));
+        res.on('end', () => done(null, Buffer.concat(chunks)));
+      });
+    expect(download.status).toBe(200);
+    expect(download.headers['content-type']).toContain('application/zip');
+    expect(Object.keys(unzipSync(download.body))).toHaveLength(2);
+  });
+
+  it('requires a partner for invoices and uses the invoice system template', async () => {
+    const agent = await authAgent('editor');
+    expect(
+      (await agent.post('/api/export/previews/reports').send({ report: 'invoice', filters: {} }))
+        .status
+    ).toBe(400);
+    const records = await agent.get('/api/outbound');
+    const preview = await agent
+      .post('/api/export/previews/reports')
+      .send({ report: 'invoice', filters: { partnerCode: records.body.data[0].customer_code } });
+    expect(preview.status).toBe(200);
+    expect(preview.body.sheets).toHaveLength(1);
+    expect(preview.body.total).toBeGreaterThan(0);
+    expect(preview.body.columns.map((c: { key: string }) => c.key)).toContain('quantity');
   });
 });

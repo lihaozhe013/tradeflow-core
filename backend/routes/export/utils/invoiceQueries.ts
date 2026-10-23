@@ -1,13 +1,17 @@
+import type { ReadDatabase } from '@/services/readService';
 import { Prisma } from '@/prisma/client';
 import { prisma } from '@/prismaClient';
 import type { InvoiceFilters, InvoiceItemDto } from '@/routes/export/utils/types';
 
-export async function getInvoiceData(filters: InvoiceFilters): Promise<InvoiceItemDto[]> {
+export async function getInvoiceData(
+  filters: InvoiceFilters,
+  db: ReadDatabase = prisma
+): Promise<InvoiceItemDto[]> {
   const { partnerCode, dateFrom, dateTo } = filters;
   if (!partnerCode) throw new Error('Partner Code is required');
 
   // Resolve partner codes (match against code or short_name)
-  const partners = await prisma.partner.findMany({
+  const partners = await db.partner.findMany({
     where: {
       OR: [{ code: partnerCode }, { short_name: partnerCode }]
     },
@@ -74,7 +78,7 @@ export async function getInvoiceData(filters: InvoiceFilters): Promise<InvoiceIt
     quantity: number | bigint;
     total_price: number | bigint;
   }
-  const rows = await prisma.$queryRaw<InvoiceRawResult[]>(sql);
+  const rows = await db.$queryRaw<InvoiceRawResult[]>(sql);
 
   // Map result to DTO, handling BigInt from SUM
   return rows.map((row) => ({
@@ -87,7 +91,8 @@ export async function getInvoiceData(filters: InvoiceFilters): Promise<InvoiceIt
 }
 
 export async function getAllInvoiceData(
-  filters: Omit<InvoiceFilters, 'partnerCode'>
+  filters: Omit<InvoiceFilters, 'partnerCode'>,
+  db: ReadDatabase = prisma
 ): Promise<Record<string, InvoiceItemDto[]>> {
   const { dateFrom, dateTo } = filters;
 
@@ -148,11 +153,11 @@ export async function getAllInvoiceData(
     quantity: number | bigint;
     total_price: number | bigint;
   }
-  const rows = await prisma.$queryRaw<InvoiceRawResult[]>(sql);
+  const rows = await db.$queryRaw<InvoiceRawResult[]>(sql);
 
   // We map the results and group them by partner's short_name
   // First fetch all partners to get short names
-  const partners = await prisma.partner.findMany({
+  const partners = await db.partner.findMany({
     select: { code: true, short_name: true }
   });
   const partnerMap = new Map(partners.map((p) => [p.code, p.short_name]));

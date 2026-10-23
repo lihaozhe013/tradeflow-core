@@ -24,13 +24,22 @@ interface Column {
   visible: boolean;
   width: number;
 }
+interface PreviewSheet {
+  key: string;
+  sheetName: string;
+  columns: Column[];
+  rows: Record<string, string | number | null>[];
+  total: number;
+}
 interface Preview {
+  sheets?: PreviewSheet[];
   id: string;
   columns: Column[];
   rows: Record<string, string | number | null>[];
   total: number;
 }
 interface Context {
+  report?: 'statement' | 'invoice';
   direction?: 'inbound' | 'outbound';
   source?: 'partners' | 'products' | 'prices' | 'receivable' | 'payable' | 'inventory';
   filters: Record<string, unknown>;
@@ -39,10 +48,12 @@ interface Context {
 
 export default function ExportButton({
   context,
-  disabled
+  disabled,
+  buttonLabel
 }: {
   context: Context;
   disabled?: boolean;
+  buttonLabel?: string;
 }) {
   const { t } = useTranslation();
   const api = useSimpleApi();
@@ -51,6 +62,8 @@ export default function ExportButton({
   const [preview, setPreview] = useState<Preview | null>(null);
   const [columns, setColumns] = useState<Column[]>([]);
   const [scope, setScope] = useState('all');
+  const [activeSheet, setActiveSheet] = useState('');
+  const [sheetColumns, setSheetColumns] = useState<Record<string, Column[]>>({});
   const [format, setFormat] = useState<'xlsx' | 'csv'>('xlsx');
   const [font, setFont] = useState('Arial');
   const [fontSize, setFontSize] = useState(11);
@@ -63,10 +76,15 @@ export default function ExportButton({
     setPreview(null);
     try {
       const response = await api.post<Preview>(
-        frozen.current.source ? '/export/previews/records' : '/export/previews/transactions',
+        frozen.current.report
+          ? '/export/previews/reports'
+          : frozen.current.source
+            ? '/export/previews/records'
+            : '/export/previews/transactions',
         {
           ...(frozen.current.source ? { source: frozen.current.source } : {}),
           direction: frozen.current.direction,
+          report: frozen.current.report,
           filters: frozen.current.filters,
           ...(range === 'selected'
             ? frozen.current.source
@@ -77,32 +95,10 @@ export default function ExportButton({
       );
       if (version !== generation.current) return;
       setPreview(response);
-      const names: Record<string, string> = {
-        partner_name:
-          frozen.current.direction === 'inbound' ? 'supplierShortName' : 'customerShortName',
-        product_model: 'productModel',
-        unit_price: 'unitPrice',
-        total_price: 'totalPrice',
-        order_number: 'orderNumber',
-        receipt_number: 'receiptNumber',
-        invoice_number: 'invoiceNumber',
-        inbound_date: 'inboundDate',
-        outbound_date: 'outboundDate',
-        supplier_code: 'supplierCode',
-        customer_code: 'customerCode'
-      };
-      setColumns(
-        response.columns.map((c) => ({
-          ...c,
-          label: t(
-            frozen.current.source
-              ? `exportPreview.fields.${c.key}`
-              : `${frozen.current.direction}.${names[c.key] ?? c.key}`,
-            {
-              defaultValue: c.label
-            }
-          )
-        }))
+      setColumns(response.columns);
+      setActiveSheet(response.sheets?.[0]?.key ?? '');
+      setSheetColumns(
+        Object.fromEntries((response.sheets ?? []).map((sheet) => [sheet.key, sheet.columns]))
       );
     } catch (error) {
       if (version === generation.current)
@@ -133,13 +129,22 @@ export default function ExportButton({
       const blob = await api.postBlob(`/export/previews/${preview.id}/download`, {
         format,
         columns,
+        ...(preview.sheets
+          ? {
+              sheets: preview.sheets.map((sheet) => ({
+                key: sheet.key,
+                columns:
+                  sheet.key === activeSheet ? columns : (sheetColumns[sheet.key] ?? sheet.columns)
+              }))
+            }
+          : {}),
         font,
         fontSize
       });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${frozen.current.source ?? frozen.current.direction}_${new Date().toISOString().slice(0, 10)}.${format}`;
+      a.download = `${frozen.current.report ?? frozen.current.source ?? frozen.current.direction}_${new Date().toISOString().slice(0, 10)}.${format === 'csv' && (preview.sheets?.length ?? 0) > 1 ? 'zip' : format}`;
       a.click();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch (error) {
@@ -152,7 +157,7 @@ export default function ExportButton({
   return (
     <>
       <Button icon={<ExportOutlined aria-hidden="true" />} disabled={disabled} onClick={show}>
-        {label('export')}
+        {buttonLabel ?? label('export')}
       </Button>
       <Modal
         open={open}
@@ -216,6 +221,24 @@ export default function ExportButton({
             .map(([k, v]) => `${k}: ${String(v)}`)
             .join(' · ')}
         </Typography.Paragraph>
+        {preview?.sheets && preview.sheets.length > 1 && (
+          <Select
+            aria-label={label('worksheet')}
+            style={{ width: '100%', marginBottom: 12 }}
+            value={activeSheet}
+            options={preview.sheets.map((sheet) => ({
+              value: sheet.key,
+              label: `${sheet.sheetName} (${sheet.total})`
+            }))}
+            onChange={(key) => {
+              setSheetColumns((value) => ({ ...value, [activeSheet]: columns }));
+              setActiveSheet(key);
+              setColumns(
+                sheetColumns[key] ?? preview.sheets!.find((sheet) => sheet.key === key)!.columns
+              );
+            }}
+          />
+        )}
         <Spin spinning={busy}>
           <Tabs
             items={[
@@ -226,8 +249,14 @@ export default function ExportButton({
                   <>
                     <Table
                       size="small"
-                      rowKey={(row) => String(row.id ?? row.code ?? row.product_model)}
-                      dataSource={preview?.rows ?? []}
+                      rowKey={(row) =>
+                        String(row.__rowKey ?? row.id ?? row.code ?? row.product_model)
+                      }
+                      dataSource={
+                        preview?.sheets?.find((sheet) => sheet.key === activeSheet)?.rows ??
+                        preview?.rows ??
+                        []
+                      }
                       pagination={false}
                       scroll={{ x: 'max-content', y: 400 }}
                       columns={visible.map((c) => ({

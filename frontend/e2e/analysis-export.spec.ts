@@ -100,6 +100,25 @@ async function createAnalysisFixtures(
 }
 
 async function expectExcelDownload(page: Page, buttonName: string): Promise<void> {
+  if (
+    [
+      'Export Statement',
+      'Inbound Statement',
+      'Outbound Statement',
+      'Export Invoice Details'
+    ].includes(buttonName)
+  ) {
+    await page.getByRole('button', { name: buttonName, exact: true }).click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog.getByRole('button', { name: 'Export', exact: true })).toBeEnabled();
+    const [file] = await Promise.all([
+      page.waitForEvent('download'),
+      dialog.getByRole('button', { name: 'Export', exact: true }).click()
+    ]);
+    expect(file.suggestedFilename()).toMatch(/\.xlsx$/i);
+    await dialog.getByRole('button', { name: 'Cancel', exact: true }).click();
+    return;
+  }
   const [download] = await Promise.all([
     page.waitForEvent('download'),
     page.getByRole('button', { name: buttonName }).click()
@@ -211,22 +230,17 @@ test('export page shows dedicated reports and shortcuts and handles failed respo
     await page.getByPlaceholder('Required').fill(fixture.customer.code);
     await expectExcelDownload(page, 'Export Invoice Details');
 
-    await page.route('**/api/export/statement', (route) =>
+    await page.route('**/api/export/previews/reports', (route) =>
       route.fulfill({
-        status: 200,
-        headers: { 'content-type': 'application/octet-stream' },
-        body: ''
+        status: 500,
+        contentType: 'application/json',
+        body: '{"message":"Report preview failed"}'
       })
     );
-    await page.getByRole('button', { name: 'Export Statement' }).click();
-    await expect(page.getByText('Exported file is empty, check filter or data.')).toBeVisible();
-    await page.unroute('**/api/export/statement');
-
-    await page.route('**/api/export/statement', (route) =>
-      route.fulfill({ status: 500, contentType: 'application/json', body: '{"message":"failed"}' })
-    );
-    await page.getByRole('button', { name: 'Export Statement' }).click();
-    await expect(page.getByText(/Export failed/)).toBeVisible();
+    await page.getByRole('button', { name: 'Export Statement', exact: true }).click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog.getByRole('button', { name: 'Export', exact: true })).toBeDisabled();
+    await expect(page.getByText('Report preview failed', { exact: true }).first()).toBeVisible();
   } finally {
     await records.cleanup();
   }
@@ -268,4 +282,18 @@ test('business tables expose export previews with localized column headings', as
     await expect(dialog.getByRole('table').first()).toBeVisible();
     await dialog.getByRole('button', { name: 'Cancel', exact: true }).click();
   }
+});
+
+test('export preview preserves server template headings', async ({ page }) => {
+  await page.route('**/api/export/previews/records', async (route) => {
+    const response = await route.fetch();
+    const body = await response.json();
+    body.columns[0].label = 'Custom system heading';
+    await route.fulfill({ response, json: body });
+  });
+  await page.goto('/#/products');
+  await page.getByRole('button', { name: 'Export', exact: true }).click();
+  await expect(
+    page.getByRole('dialog').getByRole('columnheader', { name: 'Custom system heading' })
+  ).toBeVisible();
 });

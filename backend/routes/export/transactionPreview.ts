@@ -1,3 +1,9 @@
+import { zipSync } from 'fflate';
+import { prepareReport, reportSpec } from './reportPreview';
+import { safeSheetName } from './utils/exportUtils';
+import decimalCalc from '@/utils/decimalCalculator';
+import { readExportTemplates } from '@/settings/service';
+import { previewColumns } from './previewTemplates';
 import { Router } from 'express';
 import { randomUUID } from 'node:crypto';
 import fs from 'node:fs/promises';
@@ -40,6 +46,8 @@ interface Snapshot {
   owner: string;
   expiresAt: number;
   direction: string;
+  sheetName?: string;
+  sheets?: Awaited<ReturnType<typeof prepareReport>>;
   columns: z.infer<typeof column>[];
   rows: Record<string, Cell>[];
 }
@@ -86,19 +94,29 @@ router.post('/previews/transactions', async (req, res) => {
     'receipt_number',
     'invoice_number'
   ];
-  const columns = keys.map((key) => ({ key, label: key, visible: key !== 'id', width: 18 }));
+  const template = (await readExportTemplates())[input.direction];
+  const columns = previewColumns([template], keys, {
+    [inbound ? 'supplier_short_name' : 'customer_short_name']: 'partner_name'
+  });
+  const fieldKeys = [...new Set([...keys, ...columns.map((c) => c.key)])];
   const rows = result.data.map((record) => {
     const raw = {
       ...record,
       partner_name: record.partner.short_name,
+      supplier_full_name: record.partner.full_name,
+      customer_full_name: record.partner.full_name,
       product_model: record.product?.product_model ?? null
     } as Record<string, unknown>;
-    return Object.fromEntries(keys.map((key) => [key, raw[key] ?? null])) as Record<string, Cell>;
+    return Object.fromEntries(fieldKeys.map((key) => [key, raw[key] ?? null])) as Record<
+      string,
+      Cell
+    >;
   });
   const id = randomUUID();
   const snapshot: Snapshot = {
     owner: req.user!.username,
     direction: input.direction,
+    sheetName: template.sheetName,
     expiresAt: Date.now() + 86400000,
     columns,
     rows
@@ -108,6 +126,7 @@ router.post('/previews/transactions', async (req, res) => {
   await fs.writeFile(path, JSON.stringify(snapshot), { flag: 'wx' });
   res.json({
     id,
+    sheetName: snapshot.sheetName,
     columns,
     rows: rows.slice(0, 50),
     total: rows.length,
@@ -152,19 +171,39 @@ router.post('/previews/records', async (req, res) => {
   }
   const data = await prisma.$transaction(
     async (db) => {
-      if (source === 'inventory')
+      if (source === 'inventory') {
+        const items = await db.inventory.findMany({
+          where: {
+            ...(f.product_model ? { product_model: { contains: f.product_model } } : {}),
+            ...(selected ? { AND: { product_model: { in: selected.map(String) } } } : {})
+          },
+          orderBy: { product_model: 'asc' },
+          take: 100001
+        });
+        const latest = await db.inboundRecord.findMany({
+          where: { product: { product_model: { in: items.map((item) => item.product_model) } } },
+          orderBy: [{ inbound_date: 'desc' }, { id: 'desc' }],
+          distinct: ['product_code'],
+          select: { unit_price: true, product: { select: { product_model: true } } }
+        });
+        const costs = new Map<string, number>();
+        for (const price of latest) {
+          const model = price.product?.product_model;
+          if (model && !costs.has(model)) costs.set(model, price.unit_price ?? 0);
+        }
         return {
           key: 'product_model',
           columns: ['product_model', 'quantity'],
-          rows: await db.inventory.findMany({
-            where: {
-              ...(f.product_model ? { product_model: { contains: f.product_model } } : {}),
-              ...(selected ? { AND: { product_model: { in: selected.map(String) } } } : {})
-            },
-            orderBy: { product_model: 'asc' },
-            take: 100001
+          rows: items.map((item) => {
+            const unit_cost = costs.get(item.product_model) ?? 0;
+            return {
+              ...item,
+              unit_cost,
+              total_value: decimalCalc.toDbNumber(decimalCalc.multiply(item.quantity, unit_cost), 2)
+            };
           })
         };
+      }
       if (source === 'partners')
         return {
           key: 'code',
@@ -269,6 +308,10 @@ router.post('/previews/records', async (req, res) => {
             quantity: r.quantity,
             unit_price: r.unit_price,
             total_price: r.total_price,
+            transaction_id: r.id,
+            payment_id: null,
+            payment_date: null,
+            remark: r.remark,
             payment_amount: null,
             payment_method: null
           };
@@ -281,7 +324,11 @@ router.post('/previews/records', async (req, res) => {
             partner_code: code,
             partner_name: names.get(code),
             record_type: 'payment',
-            date: r.pay_date,
+            date: null,
+            transaction_id: null,
+            payment_id: r.id,
+            payment_date: r.pay_date,
+            remark: r.remark,
             product_model: null,
             quantity: null,
             unit_price: null,
@@ -319,21 +366,41 @@ router.post('/previews/records', async (req, res) => {
     res.status(422).json({ message: 'Narrow the filters to at most 100000 records.' });
     return;
   }
-  const columns = data.columns.map((key) => ({
-    key,
-    label: key,
-    visible: key !== 'id',
-    width: 18
-  }));
-  const rows = data.rows.map((raw) =>
-    Object.fromEntries(
-      data.columns.map((key) => [key, (raw as unknown as Record<string, Cell>)[key] ?? null])
-    )
+  const templates = await readExportTemplates();
+  const financial = source === 'receivable' || source === 'payable';
+  const selectedTemplates = financial
+    ? [templates[`${source}_details`], templates[`${source}_payments`]]
+    : [templates[source as 'partners' | 'products' | 'prices' | 'inventory']];
+  const columns = previewColumns(
+    selectedTemplates,
+    data.columns,
+    financial
+      ? {
+          record_id: 'transaction_id',
+          id: 'payment_id',
+          customer_code: 'partner_code',
+          supplier_code: 'partner_code',
+          customer_short_name: 'partner_name',
+          supplier_short_name: 'partner_name',
+          outbound_date: 'date',
+          inbound_date: 'date',
+          pay_date: 'payment_date',
+          amount: 'payment_amount',
+          pay_method: 'payment_method'
+        }
+      : {}
   );
+  const fieldKeys = [...new Set([...data.columns, ...columns.map((c) => c.key)])];
+  const rows = data.rows.map((raw) => {
+    const record = { ...raw } as unknown as Record<string, Cell>;
+    if (source === 'partners') record['type_name'] = record['type'] === 0 ? 'Supplier' : 'Customer';
+    return Object.fromEntries(fieldKeys.map((key) => [key, record[key] ?? null]));
+  });
   const id = randomUUID();
   const snapshot: Snapshot = {
     owner: req.user!.username,
     direction: source,
+    sheetName: selectedTemplates[0]!.sheetName,
     expiresAt: Date.now() + 86400000,
     columns,
     rows
@@ -342,10 +409,49 @@ router.post('/previews/records', async (req, res) => {
   await fs.writeFile(snapshotPath(id), JSON.stringify(snapshot), { flag: 'wx' });
   res.json({
     id,
+    sheetName: snapshot.sheetName,
     columns,
     rows: rows.slice(0, 50),
     total: rows.length,
     expiresAt: new Date(snapshot.expiresAt).toISOString()
+  });
+});
+
+router.post('/previews/reports', async (req, res) => {
+  const parsed = reportSpec.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ message: 'Invalid report filters.', issues: parsed.error.issues });
+    return;
+  }
+  const sheets = await prepareReport(parsed.data);
+  const total = sheets.reduce((sum, sheet) => sum + sheet.rows.length, 0);
+  if (total > 100000 || sheets.length > 100) {
+    res.status(422).json({ message: 'Narrow the report filters.' });
+    return;
+  }
+  const first = sheets[0]!;
+  const id = randomUUID();
+  const snapshot: Snapshot = {
+    owner: req.user!.username,
+    expiresAt: Date.now() + 86400000,
+    direction: parsed.data.report,
+    sheetName: first.sheetName,
+    columns: first.columns,
+    rows: first.rows,
+    sheets
+  };
+  await fs.mkdir(resolveFilesInCachePath('export-previews'), { recursive: true });
+  await fs.writeFile(snapshotPath(id), JSON.stringify(snapshot), { flag: 'wx' });
+  res.json({
+    id,
+    columns: first.columns,
+    rows: first.rows.slice(0, 50),
+    total,
+    sheets: sheets.map((sheet) => ({
+      ...sheet,
+      rows: sheet.rows.slice(0, 50),
+      total: sheet.rows.length
+    }))
   });
 });
 
@@ -354,6 +460,16 @@ router.post('/previews/:id/download', async (req, res) => {
   const body = z
     .strictObject({
       format: z.enum(['xlsx', 'csv']),
+      sheets: z
+        .array(
+          z.strictObject({
+            key: z.string().min(1).max(100),
+            columns: z.array(column).min(1).max(100)
+          })
+        )
+        .min(1)
+        .max(100)
+        .optional(),
       columns: z.array(column).min(1).max(100),
       font: z.enum(['Arial', 'Calibri', 'Microsoft YaHei', 'SimSun']),
       fontSize: z.number().int().min(8).max(36)
@@ -381,62 +497,115 @@ router.post('/previews/:id/download', async (req, res) => {
     return;
   }
   const settings = body.data;
-  const keys = new Set(settings.columns.map((c) => c.key));
+  const sourceSheets = snapshot.sheets ?? [
+    {
+      key: 'default',
+      sheetName: snapshot.sheetName ?? snapshot.direction,
+      columns: snapshot.columns,
+      rows: snapshot.rows
+    }
+  ];
+  const overrides =
+    settings.sheets ?? sourceSheets.map((sheet) => ({ key: sheet.key, columns: settings.columns }));
   if (
-    keys.size !== settings.columns.length ||
-    settings.columns.some((c) => !snapshot.columns.some((allowed) => allowed.key === c.key))
+    overrides.length !== sourceSheets.length ||
+    new Set(overrides.map((sheet) => sheet.key)).size !== overrides.length ||
+    overrides.some((sheet) => !sourceSheets.some((source) => source.key === sheet.key))
+  ) {
+    res.status(400).json({ message: 'Invalid export worksheets.' });
+    return;
+  }
+  const resolved = sourceSheets.map((sheet) => ({
+    ...sheet,
+    columns: overrides.find((override) => override.key === sheet.key)!.columns
+  }));
+  if (
+    resolved.some(
+      (sheet) =>
+        new Set(sheet.columns.map((c) => c.key)).size !== sheet.columns.length ||
+        sheet.columns.some(
+          (c) =>
+            !sourceSheets
+              .find((source) => source.key === sheet.key)!
+              .columns.some((allowed) => allowed.key === c.key)
+        )
+    )
   ) {
     res.status(400).json({ message: 'Invalid export columns.' });
     return;
   }
-  const columns = settings.columns.filter((c) => c.visible);
-  if (!columns.length || !snapshot.rows.length) {
+  if (
+    resolved.some((sheet) => !sheet.columns.some((c) => c.visible)) ||
+    !resolved.some((sheet) => sheet.rows.length)
+  ) {
     res.status(422).json({ message: 'Select at least one column and one record.' });
     return;
   }
   const book = new ExcelJS.Workbook();
-  const sheet = book.addWorksheet(snapshot.direction, { views: [{ state: 'frozen', ySplit: 1 }] });
-  sheet.columns = columns.map((c) => ({ header: c.label, key: c.key, width: c.width }));
-  snapshot.rows.forEach((row) =>
-    sheet.addRow(Object.fromEntries(columns.map((c) => [c.key, row[c.key]])))
-  );
-  sheet.eachRow((row, index) =>
-    row.eachCell((cell) => {
-      cell.font = { name: settings.font, size: settings.fontSize, bold: index === 1 };
-      cell.alignment = { vertical: 'middle', wrapText: true };
-      if (
-        typeof cell.value === 'number' &&
-        cell.col &&
-        /price/.test(columns[Number(cell.col) - 1]?.key ?? '')
-      )
-        cell.numFmt = '#,##0.00';
-    })
-  );
-  sheet.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: columns.length } };
+  const used = new Set<string>();
+  const rendered = resolved.map((source) => {
+    const base = safeSheetName(source.sheetName);
+    let name = base;
+    for (let index = 1; used.has(name.toLowerCase()); index++) {
+      const suffix = `_${index}`;
+      name = base.slice(0, 31 - suffix.length) + suffix;
+    }
+    used.add(name.toLowerCase());
+    const columns = source.columns.filter((c) => c.visible);
+    const sheet = book.addWorksheet(name, { views: [{ state: 'frozen', ySplit: 1 }] });
+    sheet.columns = columns.map((c) => ({ header: c.label, key: c.key, width: c.width }));
+    source.rows.forEach((row) =>
+      sheet.addRow(Object.fromEntries(columns.map((c) => [c.key, row[c.key]])))
+    );
+    sheet.eachRow((row, index) =>
+      row.eachCell((cell) => {
+        cell.font = { name: settings.font, size: settings.fontSize, bold: index === 1 };
+        cell.alignment = { vertical: 'middle', wrapText: true };
+        if (
+          typeof cell.value === 'number' &&
+          /price/.test(columns[Number(cell.col) - 1]?.key ?? '')
+        )
+          cell.numFmt = '#,##0.00';
+      })
+    );
+    sheet.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: columns.length } };
+    return { ...source, sheetName: name, columns };
+  });
   const csvCell = (value: Cell | undefined) => {
     let s = String(value ?? '');
     if (typeof value === 'string' && /^[\s]*[=+\-@\t\r\n]/.test(s)) s = `'${s}`;
     return `"${s.replaceAll('"', '""')}"`;
   };
+  const csv = (sheet: (typeof rendered)[number]) =>
+    Buffer.from(
+      '\uFEFF' +
+        [
+          sheet.columns.map((c) => csvCell(c.label)).join(','),
+          ...sheet.rows.map((row) => sheet.columns.map((c) => csvCell(row[c.key])).join(','))
+        ].join('\r\n')
+    );
+  const zipped = settings.format === 'csv' && rendered.length > 1;
   const buffer =
     settings.format === 'xlsx'
       ? Buffer.from(await book.xlsx.writeBuffer())
-      : Buffer.from(
-          '\uFEFF' +
-            [
-              columns.map((c) => csvCell(c.label)).join(','),
-              ...snapshot.rows.map((row) => columns.map((c) => csvCell(row[c.key])).join(','))
-            ].join('\r\n')
-        );
+      : zipped
+        ? Buffer.from(
+            zipSync(
+              Object.fromEntries(rendered.map((sheet) => [sheet.sheetName + '.csv', csv(sheet)]))
+            )
+          )
+        : csv(rendered[0]!);
   res.setHeader(
     'Content-Type',
     settings.format === 'xlsx'
       ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-      : 'text/csv; charset=utf-8'
+      : zipped
+        ? 'application/zip'
+        : 'text/csv; charset=utf-8'
   );
   res.setHeader(
     'Content-Disposition',
-    `attachment; filename="${snapshot.direction}.${settings.format}"`
+    `attachment; filename="${snapshot.direction}.${zipped ? 'zip' : settings.format}"`
   );
   res.send(buffer);
 });

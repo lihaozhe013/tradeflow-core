@@ -1073,6 +1073,7 @@
       "payment_amount": "입출금 금액",
       "payment_method": "입출금 방법"
     },
-    "shortcuts": "바로가기"
+    "shortcuts": "바로가기",
+    "worksheet": "워크시트"
   }
 }

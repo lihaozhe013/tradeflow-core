@@ -1,3 +1,4 @@
+import type { ReadDatabase } from '@/services/readService';
 import { prisma } from '@/prismaClient';
 import type { Prisma } from '@/prisma/client';
 import type {
@@ -8,22 +9,24 @@ import type {
 } from '@/routes/export/utils/types';
 
 export async function getInboundOutboundData(
-  filters: TransactionFilters = {}
+  filters: TransactionFilters = {},
+  db: ReadDatabase = prisma
 ): Promise<InboundOutboundData> {
   const { tables = '12' } = filters;
   const result: InboundOutboundData = {};
 
   if (tables.includes('1')) {
-    result.inbound = await getInboundData(filters);
+    result.inbound = await getInboundData(filters, db);
   }
   if (tables.includes('2')) {
-    result.outbound = await getOutboundData(filters);
+    result.outbound = await getOutboundData(filters, db);
   }
   return result;
 }
 
 export async function getInboundData(
-  filters: TransactionFilters = {}
+  filters: TransactionFilters = {},
+  db: ReadDatabase = prisma
 ): Promise<InboundRecordDto[]> {
   const andConditions: Prisma.InboundRecordWhereInput[] = [];
 
@@ -55,7 +58,7 @@ export async function getInboundData(
   const where: Prisma.InboundRecordWhereInput =
     andConditions.length > 0 ? { AND: andConditions } : {};
 
-  const records = await prisma.inboundRecord.findMany({
+  const records = await db.inboundRecord.findMany({
     where,
     include: {
       partner: true,
@@ -73,7 +76,8 @@ export async function getInboundData(
 }
 
 export async function getOutboundData(
-  filters: TransactionFilters = {}
+  filters: TransactionFilters = {},
+  db: ReadDatabase = prisma
 ): Promise<OutboundRecordDto[]> {
   const andConditions: Prisma.OutboundRecordWhereInput[] = [];
 
@@ -105,7 +109,7 @@ export async function getOutboundData(
   const where: Prisma.OutboundRecordWhereInput =
     andConditions.length > 0 ? { AND: andConditions } : {};
 
-  const records = await prisma.outboundRecord.findMany({
+  const records = await db.outboundRecord.findMany({
     where,
     include: {
       partner: true,

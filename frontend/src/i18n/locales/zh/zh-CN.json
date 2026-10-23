@@ -1247,6 +1247,7 @@
       "payment_amount": "收付款金额",
       "payment_method": "收付款方式"
     },
-    "shortcuts": "快捷入口"
+    "shortcuts": "快捷入口",
+    "worksheet": "工作表"
   }
 }

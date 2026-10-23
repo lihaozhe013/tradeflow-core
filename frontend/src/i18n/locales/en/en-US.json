@@ -1247,6 +1247,7 @@
       "payment_amount": "Payment amount",
       "payment_method": "Payment method"
     },
-    "shortcuts": "Quick links"
+    "shortcuts": "Quick links",
+    "worksheet": "Worksheet"
   }
 }
