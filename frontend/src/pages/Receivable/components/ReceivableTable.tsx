@@ -1,3 +1,4 @@
+import ExportButton from '@/components/ExportButton';
 import { useRuntimeConfig } from '@/config/runtime';
 import ResponsiveTable from '@/components/ResponsiveTable';
 import InvoicedSnapshotPanel from '@/components/InvoicedSnapshotPanel';
@@ -93,6 +94,10 @@ const ReceivableTable: FC<ReceivableTableProps> = ({
   const { t } = useTranslation();
   const { currency_unit_symbol } = useRuntimeConfig();
   const [detailsVisible, setDetailsVisible] = useState(false);
+  const [exportKeys, setExportKeys] = useState<(string | number)[]>([]);
+  useEffect(() => {
+    setExportKeys([]);
+  }, [filters]);
   const [selectedCustomer, setSelectedCustomer] = useState<ReceivableRecord | null>(null);
   const [customerDetails, setCustomerDetails] = useState<ReceivableDetailResponse | null>(null);
   const [detailsLoading, setDetailsLoading] = useState(false);
@@ -492,10 +497,28 @@ const ReceivableTable: FC<ReceivableTableProps> = ({
         </Col>
       </Row>
 
+      {canWrite && (
+        <div style={{ marginBottom: 12 }}>
+          <ExportButton
+            disabled={loading}
+            context={{ source: 'receivable', filters: { ...filters }, ids: exportKeys }}
+          />
+        </div>
+      )}
       <ResponsiveTable<ReceivableRecord>
         columns={tableColumns}
         dataSource={data}
         rowKey="customer_code"
+        rowSelection={
+          canWrite
+            ? {
+                selectedRowKeys: exportKeys,
+                preserveSelectedRowKeys: true,
+                onChange: (keys) =>
+                  setExportKeys(keys.map((key) => (typeof key === 'bigint' ? String(key) : key)))
+              }
+            : undefined
+        }
         loading={loading}
         pagination={tablePagination}
         onChange={onTableChange}

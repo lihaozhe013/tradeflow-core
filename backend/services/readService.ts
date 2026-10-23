@@ -103,6 +103,7 @@ export async function listTransactions(
   db: ReadDatabase,
   args: {
     direction: 'inbound' | 'outbound';
+    ids?: number[];
     startDate?: string;
     endDate?: string;
     partnerCode?: string;
@@ -122,6 +123,7 @@ export async function listTransactions(
   const dateField = inbound ? 'inbound_date' : 'outbound_date';
   const partnerField = inbound ? 'supplier_code' : 'customer_code';
   const where = {
+    ...(args.ids ? { id: { in: args.ids } } : {}),
     ...(args.startDate || args.endDate
       ? {
           [dateField]: {

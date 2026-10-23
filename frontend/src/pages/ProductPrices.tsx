@@ -1,3 +1,4 @@
+import ExportButton from '@/components/ExportButton';
 import { useRuntimeConfig } from '@/config/runtime';
 import ResponsiveTable from '@/components/ResponsiveTable';
 import { useState, useCallback, useEffect, type FC } from 'react';
@@ -98,9 +99,13 @@ const ProductPrices: FC = () => {
   const [filterForm] = Form.useForm<ProductPriceFilters>();
   const { t } = useTranslation();
   const { currency_unit_symbol } = useRuntimeConfig();
-  const { canWrite } = usePermissions();
+  const { canWrite, hasPermission } = usePermissions();
+  const [exportKeys, setExportKeys] = useState<(string | number)[]>([]);
 
   const [filters, setFilters] = useState<FilterState>({});
+  useEffect(() => {
+    setExportKeys([]);
+  }, [filters]);
   const [pagination, setPagination] = useState<PaginationInfo>(DEFAULT_PAGINATION);
   const { current } = pagination;
 
@@ -439,7 +444,25 @@ const ProductPrices: FC = () => {
 
         <Divider />
 
+        {hasPermission('editor') && (
+          <div style={{ marginBottom: 12 }}>
+            <ExportButton
+              disabled={loading}
+              context={{ source: 'prices', filters: { ...filters }, ids: exportKeys }}
+            />
+          </div>
+        )}
         <ResponsiveTable<ProductPriceItem>
+          rowSelection={
+            hasPermission('editor')
+              ? {
+                  selectedRowKeys: exportKeys,
+                  preserveSelectedRowKeys: true,
+                  onChange: (keys) =>
+                    setExportKeys(keys.map((key) => (typeof key === 'bigint' ? String(key) : key)))
+                }
+              : undefined
+          }
           columns={columns}
           dataSource={productPrices}
           rowKey="id"

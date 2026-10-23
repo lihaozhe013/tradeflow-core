@@ -1,9 +1,24 @@
+import ExportButton from '@/components/ExportButton';
 import ResponsiveTable from '@/components/ResponsiveTable';
 import { useState, useEffect, useCallback, type FC } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ColumnsType, TableProps } from 'antd/es/table';
 import type { FormProps } from 'antd';
-import { Button, Modal, Form, Input, Select, Space, message, Popconfirm, Card, Typography, Row, Col, Divider } from 'antd';
+import {
+  Button,
+  Modal,
+  Form,
+  Input,
+  Select,
+  Space,
+  message,
+  Popconfirm,
+  Card,
+  Typography,
+  Row,
+  Col,
+  Divider
+} from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useSimpleApi } from '@/hooks/useSimpleApi';
 import { usePermissions } from '@/auth/usePermissions';
@@ -70,7 +85,11 @@ const Partners: FC = () => {
   const [pagination, setPagination] = useState<PaginationInfo>(DEFAULT_PAGINATION);
   const [filters, setFilters] = useState<PartnerFilters>({});
   const { t } = useTranslation();
-  const { canWrite } = usePermissions();
+  const { canWrite, hasPermission } = usePermissions();
+  const [exportKeys, setExportKeys] = useState<(string | number)[]>([]);
+  useEffect(() => {
+    setExportKeys([]);
+  }, [filters]);
 
   const { get, post, put, request } = useSimpleApi();
 
@@ -322,25 +341,43 @@ const Partners: FC = () => {
 
         <Divider />
 
+        {hasPermission('editor') && (
+          <div style={{ marginBottom: 12 }}>
+            <ExportButton
+              disabled={loading}
+              context={{ source: 'partners', filters: { ...filters }, ids: exportKeys }}
+            />
+          </div>
+        )}
         <ResponsiveTable<PartnerItem>
-            columns={columns}
-            dataSource={partners}
-            rowKey="short_name"
-            loading={loading}
-            onChange={handleTableChange}
-            pagination={{
-              current: pagination.current,
-              pageSize: pagination.pageSize,
-              total: pagination.total,
-              showQuickJumper: true,
-              showTotal: (total, range) =>
-                t('partners.paginationTotal', {
-                  start: range[0],
-                  end: range[1],
-                  total
-                })
-            }}
-            scroll={{ x: 900 }}
+          rowSelection={
+            hasPermission('editor')
+              ? {
+                  selectedRowKeys: exportKeys,
+                  preserveSelectedRowKeys: true,
+                  onChange: (keys) =>
+                    setExportKeys(keys.map((key) => (typeof key === 'bigint' ? String(key) : key)))
+                }
+              : undefined
+          }
+          columns={columns}
+          dataSource={partners}
+          rowKey="code"
+          loading={loading}
+          onChange={handleTableChange}
+          pagination={{
+            current: pagination.current,
+            pageSize: pagination.pageSize,
+            total: pagination.total,
+            showQuickJumper: true,
+            showTotal: (total, range) =>
+              t('partners.paginationTotal', {
+                start: range[0],
+                end: range[1],
+                total
+              })
+          }}
+          scroll={{ x: 900 }}
         />
       </Card>
 

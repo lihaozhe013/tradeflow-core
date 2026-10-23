@@ -1,3 +1,4 @@
+import ExportButton from '@/components/ExportButton';
 import { useSearchParams } from 'react-router-dom';
 import { useState, useEffect, useCallback, useMemo, type FC, type Key } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -40,7 +41,8 @@ const DEFAULT_PAGINATION: PaginationState = {
 
 const Inbound: FC = () => {
   const { t } = useTranslation();
-  const { canWrite } = usePermissions();
+  const { canWrite, hasPermission } = usePermissions();
+  const [exportFilters, setExportFilters] = useState<Record<string, unknown>>({});
   const [entryParams] = useSearchParams();
   const [inboundRecords, setInboundRecords] = useState<InboundRecord[]>([]);
   const [loading, setLoading] = useState(false);
@@ -98,6 +100,19 @@ const Inbound: FC = () => {
   const startDate = startDateRaw ?? '';
   const endDate = endDateRaw ?? '';
 
+  useEffect(() => {
+    setSelectedRowKeys([]);
+  }, [
+    keyword,
+    supplierShortName,
+    productModel,
+    orderNumber,
+    invoiceNumber,
+    receiptNumber,
+    startDate,
+    endDate
+  ]);
+
   const fetchInboundRecords = useCallback(
     async (params: FetchParams = {}) => {
       try {
@@ -120,6 +135,18 @@ const Inbound: FC = () => {
         const result = await get<InboundListResponse>(`/inbound?${query.toString()}`);
 
         setInboundRecords(Array.isArray(result?.data) ? result.data : []);
+        setExportFilters({
+          partnerShortName: query.get('supplier_short_name') || undefined,
+          productModel: query.get('product_model') || undefined,
+          keyword: query.get('keyword') || undefined,
+          orderNumber: query.get('order_number') || undefined,
+          invoiceNumber: query.get('invoice_number') || undefined,
+          receiptNumber: query.get('receipt_number') || undefined,
+          startDate: query.get('start_date') || undefined,
+          endDate: query.get('end_date') || undefined,
+          sortField: query.get('sort_field') || undefined,
+          sortOrder: query.get('sort_order') || undefined
+        });
         setPagination((prev: PaginationState) => ({
           current: result?.pagination?.page ?? page,
           pageSize: result?.pagination?.limit ?? prev.pageSize,
@@ -565,6 +592,16 @@ const Inbound: FC = () => {
           )}
         </Row>
 
+        {hasPermission('editor') && (
+          <ExportButton
+            disabled={loading}
+            context={{
+              direction: 'inbound',
+              filters: exportFilters,
+              ids: selectedRowKeys.map(Number)
+            }}
+          />
+        )}
         <Divider />
 
         <InboundTable

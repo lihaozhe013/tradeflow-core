@@ -188,7 +188,7 @@ test('analysis filters sales and purchases and supports normal and grouped expor
   }
 });
 
-test('export page downloads every report category and handles empty or failed responses', async ({
+test('export page shows dedicated reports and shortcuts and handles failed responses', async ({
   page,
   records
 }) => {
@@ -199,39 +199,33 @@ test('export page downloads every report category and handles empty or failed re
       new Date().toISOString().slice(0, 10)
     );
     await page.goto('/#/export');
-    await expect(page.getByRole('button', { name: 'Export All Base Info' })).toBeVisible();
-
-    await expectExcelDownload(page, 'Export All Base Info');
-    await expectExcelDownload(page, 'Export Only Partners');
-    await expectExcelDownload(page, 'Export Only Products');
-    await expectExcelDownload(page, 'Export Only Product Prices');
-    await expectExcelDownload(page, 'Inventory Export');
-    await expectExcelDownload(page, 'Export Inbound/Outbound Records');
-    await expectExcelDownload(page, 'Export Only Inbound Records');
-    await expectExcelDownload(page, 'Export Only Outbound Records');
+    await expect(page.getByText('Quick links', { exact: true })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Products' })).toHaveAttribute(
+      'href',
+      '#/products'
+    );
     await expectExcelDownload(page, 'Export Statement');
     await expectExcelDownload(page, 'Inbound Statement');
     await expectExcelDownload(page, 'Outbound Statement');
-    await expectExcelDownload(page, 'Export Receivable/Payable Details');
 
     await page.getByPlaceholder('Required').fill(fixture.customer.code);
     await expectExcelDownload(page, 'Export Invoice Details');
 
-    await page.route('**/api/export/inventory', (route) =>
+    await page.route('**/api/export/statement', (route) =>
       route.fulfill({
         status: 200,
         headers: { 'content-type': 'application/octet-stream' },
         body: ''
       })
     );
-    await page.getByRole('button', { name: 'Inventory Export' }).click();
+    await page.getByRole('button', { name: 'Export Statement' }).click();
     await expect(page.getByText('Exported file is empty, check filter or data.')).toBeVisible();
-    await page.unroute('**/api/export/inventory');
+    await page.unroute('**/api/export/statement');
 
-    await page.route('**/api/export/inventory', (route) =>
+    await page.route('**/api/export/statement', (route) =>
       route.fulfill({ status: 500, contentType: 'application/json', body: '{"message":"failed"}' })
     );
-    await page.getByRole('button', { name: 'Inventory Export' }).click();
+    await page.getByRole('button', { name: 'Export Statement' }).click();
     await expect(page.getByText(/Export failed/)).toBeVisible();
   } finally {
     await records.cleanup();
@@ -245,14 +239,33 @@ test.describe('mobile export', () => {
     try {
       await createAnalysisFixtures(page, records, new Date().toISOString().slice(0, 10));
       await page.goto('/#/export');
-      await expect(page.getByRole('button', { name: 'Export All Base Info' })).toBeVisible();
-      await expect(page.locator('.responsive-date-range .ant-picker')).toHaveCount(10);
+      await expect(page.getByText('Quick links', { exact: true })).toBeVisible();
+      await expect(page.locator('.responsive-date-range .ant-picker')).toHaveCount(4);
       await expectDesktopOrNarrowLayout(page);
 
-      await expectExcelDownload(page, 'Inventory Export');
+      await expectExcelDownload(page, 'Export Statement');
       await expectDesktopOrNarrowLayout(page);
     } finally {
       await records.cleanup();
     }
   });
+});
+
+test('business tables expose export previews with localized column headings', async ({ page }) => {
+  for (const route of [
+    '/partners',
+    '/products',
+    '/product-prices',
+    '/inventory',
+    '/receivable',
+    '/payable'
+  ]) {
+    await page.goto(`/#${route}`);
+    await page.getByRole('button', { name: 'Export', exact: true }).click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog.getByText('Export preview', { exact: true })).toBeVisible();
+    await expect(dialog.getByRole('button', { name: 'Export', exact: true })).toBeEnabled();
+    await expect(dialog.getByRole('table').first()).toBeVisible();
+    await dialog.getByRole('button', { name: 'Cancel', exact: true }).click();
+  }
 });

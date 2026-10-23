@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import { Router, type Router as ExpressRouter } from 'express';
 import { logger } from '@/utils/logger';
+import transactionPreview from './transactionPreview';
 import * as ExportService from '@/routes/export/utils';
 import type {
   BasicDataFilters,
@@ -11,6 +12,7 @@ import type {
 } from '@/routes/export/utils/types';
 
 const router: ExpressRouter = Router();
+router.use(transactionPreview);
 
 // Export base information
 router.post('/base-info', async (req: Request, res: Response) => {

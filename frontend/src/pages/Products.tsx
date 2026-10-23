@@ -1,3 +1,4 @@
+import ExportButton from '@/components/ExportButton';
 import { useRuntimeConfig, withHistoricalOption } from '@/config/runtime';
 import ResponsiveTable from '@/components/ResponsiveTable';
 import { useState, useEffect, useCallback, type FC } from 'react';
@@ -81,7 +82,11 @@ const Products: FC = () => {
   const {
     productCategories: { list: PRODUCT_CATEGORIES, default: DEFAULT_PRODUCT_CATEGORY }
   } = useRuntimeConfig();
-  const { canWrite } = usePermissions();
+  const { canWrite, hasPermission } = usePermissions();
+  const [exportKeys, setExportKeys] = useState<(string | number)[]>([]);
+  useEffect(() => {
+    setExportKeys([]);
+  }, [filters]);
 
   const { get, post, put, request } = useSimpleApi();
 
@@ -311,7 +316,25 @@ const Products: FC = () => {
 
         <Divider />
 
+        {hasPermission('editor') && (
+          <div style={{ marginBottom: 12 }}>
+            <ExportButton
+              disabled={loading}
+              context={{ source: 'products', filters: { ...filters }, ids: exportKeys }}
+            />
+          </div>
+        )}
         <ResponsiveTable<ProductItem>
+          rowSelection={
+            hasPermission('editor')
+              ? {
+                  selectedRowKeys: exportKeys,
+                  preserveSelectedRowKeys: true,
+                  onChange: (keys) =>
+                    setExportKeys(keys.map((key) => (typeof key === 'bigint' ? String(key) : key)))
+                }
+              : undefined
+          }
           columns={columns}
           dataSource={products}
           rowKey="code"

@@ -1,3 +1,4 @@
+import ExportButton from '@/components/ExportButton';
 import { useSearchParams } from 'react-router-dom';
 import { useRuntimeConfig } from '@/config/runtime';
 import ResponsiveTable from '@/components/ResponsiveTable';
@@ -45,7 +46,11 @@ const Inventory: FC = () => {
   const [pagination, setPagination] = useState<PaginationInfo>(DEFAULT_PAGINATION);
   const { t } = useTranslation();
   const { currency_unit_symbol } = useRuntimeConfig();
-  const { canWrite } = usePermissions();
+  const { canWrite, hasPermission } = usePermissions();
+  const [exportKeys, setExportKeys] = useState<(string | number)[]>([]);
+  useEffect(() => {
+    setExportKeys([]);
+  }, [productFilter]);
 
   const { post, loading: actionLoading } = useSimpleApi();
 
@@ -223,10 +228,31 @@ const Inventory: FC = () => {
           </Col>
         </Row>
 
+        {hasPermission('editor') && (
+          <div style={{ marginBottom: 12 }}>
+            <ExportButton
+              disabled={loading}
+              context={{
+                source: 'inventory',
+                filters: { product_model: productFilter || undefined },
+                ids: exportKeys
+              }}
+            />
+          </div>
+        )}
         <ResponsiveTable<InventoryItem>
           columns={inventoryColumns}
           dataSource={inventoryData}
           rowKey="product_model"
+          rowSelection={
+            hasPermission('editor')
+              ? {
+                  selectedRowKeys: exportKeys,
+                  preserveSelectedRowKeys: true,
+                  onChange: (keys) => setExportKeys(keys.map(String))
+                }
+              : undefined
+          }
           loading={loading}
           onChange={handleTableChange}
           pagination={{

@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card, Row, Col, Button, Space, Form, Input, message } from 'antd';
-import { DatabaseOutlined, FileExcelOutlined } from '@ant-design/icons';
+import { FileExcelOutlined } from '@ant-design/icons';
 import ResponsiveDateRange from '@/components/ResponsiveDateRange';
 
 const ExportPanel = ({
@@ -9,168 +9,18 @@ const ExportPanel = ({
   loading,
   dateRange,
   setDateRange,
-  paymentDateRange,
-  setPaymentDateRange,
   selectedProduct,
   setSelectedProduct,
   selectedCustomer,
   setSelectedCustomer
 }) => {
   const { t } = useTranslation();
+  const [invoicePartner, setInvoicePartner] = useState('');
+  const [invoiceRange, setInvoiceRange] = useState(dateRange);
   return (
     <div>
       <Row gutter={[16, 16]}>
-        <Col span={24}>
-          <Card
-            title={
-              <span style={{ fontSize: '16px', fontWeight: 'bold' }}>{t('export.baseInfo')}</span>
-            }
-            size="small"
-          >
-            <Space wrap>
-              <Button
-                type="default"
-                className="hover-primary"
-                icon={<DatabaseOutlined />}
-                onClick={() => handleExport('base-info', { tables: '123' })}
-                loading={loading}
-              >
-                {t('export.exportAllBase')}
-              </Button>
-              <Button
-                type="default"
-                className="hover-primary"
-                icon={<DatabaseOutlined />}
-                onClick={() => handleExport('base-info', { tables: '1' })}
-                loading={loading}
-              >
-                {t('export.exportPartners')}
-              </Button>
-              <Button
-                type="default"
-                className="hover-primary"
-                icon={<DatabaseOutlined />}
-                onClick={() => handleExport('base-info', { tables: '2' })}
-                loading={loading}
-              >
-                {t('export.exportProducts')}
-              </Button>
-              <Button
-                type="default"
-                className="hover-primary"
-                icon={<DatabaseOutlined />}
-                onClick={() => handleExport('base-info', { tables: '3' })}
-                loading={loading}
-              >
-                {t('export.exportProductPrices')}
-              </Button>
-              <Button
-                type="default"
-                className="hover-primary"
-                icon={<DatabaseOutlined />}
-                onClick={() => handleExport('inventory', {})}
-                loading={loading}
-              >
-                {t('export.inventoryExport')}
-              </Button>
-            </Space>
-          </Card>
-        </Col>
-
-        <Col span={24}>
-          <Card
-            title={
-              <span style={{ fontSize: '16px', fontWeight: 'bold' }}>
-                {t('export.inboundOutbound')}
-              </span>
-            }
-            size="small"
-          >
-            <Form layout="inline" style={{ marginBottom: 16 }}>
-              <Form.Item label={t('export.dateRange')}>
-                <ResponsiveDateRange
-                  value={dateRange}
-                  onChange={(dates) => {
-                    if (dates?.[0] && dates?.[1]) setDateRange(dates);
-                  }}
-                  startPlaceholder={t('analysis.startDate')}
-                  endPlaceholder={t('analysis.endDate')}
-                />
-              </Form.Item>
-              <Form.Item label={t('export.productCode')}>
-                <Input
-                  placeholder={t('export.optional')}
-                  value={selectedProduct}
-                  onChange={(e) => setSelectedProduct(e.target.value)}
-                  style={{ width: 120 }}
-                />
-              </Form.Item>
-              <Form.Item label={t('export.partnerCode')}>
-                <Input
-                  placeholder={t('export.optional')}
-                  value={selectedCustomer}
-                  onChange={(e) => setSelectedCustomer(e.target.value)}
-                  style={{ width: 120 }}
-                />
-              </Form.Item>
-            </Form>
-            <Space wrap>
-              <Button
-                type="default"
-                className="hover-primary"
-                icon={<FileExcelOutlined />}
-                onClick={() =>
-                  handleExport('inbound-outbound', {
-                    tables: '12',
-                    dateFrom: dateRange[0].format('YYYY-MM-DD'),
-                    dateTo: dateRange[1].format('YYYY-MM-DD'),
-                    productCode: selectedProduct || undefined,
-                    customerCode: selectedCustomer || undefined
-                  })
-                }
-                loading={loading}
-              >
-                {t('export.exportInboundOutbound')}
-              </Button>
-              <Button
-                type="default"
-                className="hover-primary"
-                icon={<FileExcelOutlined />}
-                onClick={() =>
-                  handleExport('inbound-outbound', {
-                    tables: '1',
-                    dateFrom: dateRange[0].format('YYYY-MM-DD'),
-                    dateTo: dateRange[1].format('YYYY-MM-DD'),
-                    productCode: selectedProduct || undefined,
-                    customerCode: selectedCustomer || undefined
-                  })
-                }
-                loading={loading}
-              >
-                {t('export.exportInbound')}
-              </Button>
-              <Button
-                type="default"
-                className="hover-primary"
-                icon={<FileExcelOutlined />}
-                onClick={() =>
-                  handleExport('inbound-outbound', {
-                    tables: '2',
-                    dateFrom: dateRange[0].format('YYYY-MM-DD'),
-                    dateTo: dateRange[1].format('YYYY-MM-DD'),
-                    productCode: selectedProduct || undefined,
-                    customerCode: selectedCustomer || undefined
-                  })
-                }
-                loading={loading}
-              >
-                {t('export.exportOutbound')}
-              </Button>
-            </Space>
-          </Card>
-        </Col>
-
-        <Col span={24}>
+        <Col xs={24} lg={12}>
           <Card
             title={
               <span style={{ fontSize: '16px', fontWeight: 'bold' }}>{t('export.statement')}</span>
@@ -263,60 +113,7 @@ const ExportPanel = ({
             </div>
           </Card>
         </Col>
-
-        <Col span={24}>
-          <Card
-            title={
-              <span style={{ fontSize: '16px', fontWeight: 'bold' }}>
-                {t('export.receivablePayable')}
-              </span>
-            }
-            size="small"
-          >
-            <Form layout="inline" style={{ marginBottom: 16 }}>
-              <Form.Item label={t('export.inoutDate')}>
-                <ResponsiveDateRange
-                  value={dateRange}
-                  onChange={(dates) => {
-                    if (dates?.[0] && dates?.[1]) setDateRange(dates);
-                  }}
-                  startPlaceholder={t('analysis.startDate')}
-                  endPlaceholder={t('analysis.endDate')}
-                />
-              </Form.Item>
-              <Form.Item label={t('export.paymentDate')}>
-                <ResponsiveDateRange
-                  value={paymentDateRange}
-                  onChange={(dates) => {
-                    if (dates?.[0] && dates?.[1]) setPaymentDateRange(dates);
-                  }}
-                  startPlaceholder={t('export.paymentStart')}
-                  endPlaceholder={t('export.paymentEnd')}
-                />
-              </Form.Item>
-            </Form>
-            <Space wrap>
-              <Button
-                type="default"
-                className="hover-primary"
-                icon={<FileExcelOutlined />}
-                onClick={() =>
-                  handleExport('receivable-payable', {
-                    outboundFrom: dateRange[0].format('YYYY-MM-DD'),
-                    outboundTo: dateRange[1].format('YYYY-MM-DD'),
-                    paymentFrom: paymentDateRange[0].format('YYYY-MM-DD'),
-                    paymentTo: paymentDateRange[1].format('YYYY-MM-DD')
-                  })
-                }
-                loading={loading}
-              >
-                {t('export.exportReceivablePayable')}
-              </Button>
-            </Space>
-          </Card>
-        </Col>
-
-        <Col span={24}>
+        <Col xs={24} lg={12}>
           <Card
             title={
               <span style={{ fontSize: '16px', fontWeight: 'bold' }}>{t('export.invoice')}</span>
@@ -327,16 +124,16 @@ const ExportPanel = ({
               <Form.Item label={t('export.partnerCode')} required>
                 <Input
                   placeholder={t('export.required')}
-                  value={selectedCustomer}
-                  onChange={(e) => setSelectedCustomer(e.target.value)}
+                  value={invoicePartner}
+                  onChange={(e) => setInvoicePartner(e.target.value)}
                   style={{ width: 150 }}
                 />
               </Form.Item>
-              <Form.Item label={t('export.dateRange')} required>
+              <Form.Item label={t('export.invoiceRange')} required>
                 <ResponsiveDateRange
-                  value={dateRange}
+                  value={invoiceRange}
                   onChange={(dates) => {
-                    if (dates?.[0] && dates?.[1]) setDateRange(dates);
+                    if (dates?.[0] && dates?.[1]) setInvoiceRange(dates);
                   }}
                   startPlaceholder={t('analysis.startDate')}
                   endPlaceholder={t('analysis.endDate')}
@@ -349,18 +146,18 @@ const ExportPanel = ({
                 className="hover-primary"
                 icon={<FileExcelOutlined />}
                 onClick={() => {
-                  if (!selectedCustomer) {
+                  if (!invoicePartner) {
                     message.warning(t('export.inputPartnerCode'));
                     return;
                   }
                   handleExport('invoice', {
-                    partnerCode: selectedCustomer,
-                    dateFrom: dateRange[0].format('YYYY-MM-DD'),
-                    dateTo: dateRange[1].format('YYYY-MM-DD')
+                    partnerCode: invoicePartner,
+                    dateFrom: invoiceRange[0].format('YYYY-MM-DD'),
+                    dateTo: invoiceRange[1].format('YYYY-MM-DD')
                   });
                 }}
                 loading={loading}
-                disabled={!selectedCustomer}
+                disabled={!invoicePartner}
               >
                 {t('export.exportInvoice')}
               </Button>
@@ -368,6 +165,27 @@ const ExportPanel = ({
             <div style={{ marginTop: 8, fontSize: '12px', color: '#666' }}>
               {t('export.invoiceTip')}
             </div>
+          </Card>
+        </Col>
+        <Col span={24}>
+          <Card title={t('exportPreview.shortcuts')}>
+            <Space wrap>
+              {[
+                ['/partners', 'nav.partners'],
+                ['/products', 'nav.products'],
+                ['/product-prices', 'nav.productPrices'],
+                ['/inbound', 'nav.inbound'],
+                ['/outbound', 'nav.outbound'],
+                ['/inventory', 'nav.inventory'],
+                ['/receivable', 'nav.receivable'],
+                ['/payable', 'nav.payable'],
+                ['/analysis', 'nav.analysis']
+              ].map(([path, key]) => (
+                <Button key={path} href={`#${path}`}>
+                  {t(key)}
+                </Button>
+              ))}
+            </Space>
           </Card>
         </Col>
       </Row>

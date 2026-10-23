@@ -1,3 +1,4 @@
+import ExportButton from '@/components/ExportButton';
 import { useRuntimeConfig } from '@/config/runtime';
 import ResponsiveTable from '@/components/ResponsiveTable';
 import InvoicedSnapshotPanel from '@/components/InvoicedSnapshotPanel';
@@ -93,6 +94,10 @@ const PayableTable: FC<PayableTableProps> = ({
   const { t } = useTranslation();
   const { currency_unit_symbol } = useRuntimeConfig();
   const [detailsVisible, setDetailsVisible] = useState(false);
+  const [exportKeys, setExportKeys] = useState<(string | number)[]>([]);
+  useEffect(() => {
+    setExportKeys([]);
+  }, [filters]);
   const [selectedSupplier, setSelectedSupplier] = useState<PayableRecord | null>(null);
   const [supplierDetails, setSupplierDetails] = useState<PayableDetailResponse | null>(null);
   const [detailsLoading, setDetailsLoading] = useState(false);
@@ -488,10 +493,28 @@ const PayableTable: FC<PayableTableProps> = ({
         </Col>
       </Row>
 
+      {canWrite && (
+        <div style={{ marginBottom: 12 }}>
+          <ExportButton
+            disabled={loading}
+            context={{ source: 'payable', filters: { ...filters }, ids: exportKeys }}
+          />
+        </div>
+      )}
       <ResponsiveTable<PayableRecord>
         columns={tableColumns}
         dataSource={data}
         rowKey="supplier_code"
+        rowSelection={
+          canWrite
+            ? {
+                selectedRowKeys: exportKeys,
+                preserveSelectedRowKeys: true,
+                onChange: (keys) =>
+                  setExportKeys(keys.map((key) => (typeof key === 'bigint' ? String(key) : key)))
+              }
+            : undefined
+        }
         loading={loading}
         pagination={tablePagination}
         onChange={onTableChange}
