@@ -24,20 +24,22 @@ function PageHeader({
 }: PageHeaderProps): ReactElement {
   return (
     <header className="page-header">
-      <div className="page-header-main">
-        <div className="page-header-identity">
-          {icon ? (
-            <span className="page-header-icon" aria-hidden="true">
-              {icon}
-            </span>
-          ) : null}
-          <div className="page-header-text">
-            {eyebrow ? <p className="page-header-eyebrow">{eyebrow}</p> : null}
-            <h2 className="page-header-title">{title}</h2>
-            {description ? <p className="page-header-description">{description}</p> : null}
-          </div>
+      <div className="page-header-identity">
+        {icon ? (
+          <span className="page-header-icon" aria-hidden="true">
+            {icon}
+          </span>
+        ) : null}
+        <div className="page-header-text">
+          {eyebrow ? <p className="page-header-eyebrow">{eyebrow}</p> : null}
+          <h2 className="page-header-title">{title}</h2>
         </div>
-        {status ? <div className="page-header-status">{status}</div> : null}
+        {description || status ? (
+          <div className="page-header-meta">
+            {description ? <p className="page-header-description">{description}</p> : null}
+            {status ? <div className="page-header-status">{status}</div> : null}
+          </div>
+        ) : null}
       </div>
       {actions ? <div className="page-header-actions">{actions}</div> : null}
     </header>

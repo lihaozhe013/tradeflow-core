@@ -55,45 +55,57 @@
   justify-content: space-between;
   gap: 24px;
   min-width: 0;
-  --page-icon-size: 54px;
+  --page-icon-size: 44px;
   --page-icon-gap: 16px;
 }
 
-.page-header-main {
-  display: flex;
-  flex: 1 1 auto;
-  flex-direction: column;
-  min-width: 0;
-}
-
 .page-header-identity {
-  display: flex;
-  align-items: stretch;
-  gap: var(--page-icon-gap);
+  display: grid;
+  flex: 1 1 auto;
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: var(--page-icon-gap);
+  row-gap: 8px;
+  align-items: start;
   min-width: 0;
 }
 
+/* The tile is a square whose side follows the eyebrow + title block, so the
+   description row stays outside of it. */
 .page-header-icon {
   display: inline-flex;
-  flex: 0 0 var(--page-icon-size);
+  grid-column: 1;
+  grid-row: 1;
   align-self: stretch;
   align-items: center;
   justify-content: center;
-  width: var(--page-icon-size);
+  width: auto;
+  aspect-ratio: 1;
+  min-width: var(--page-icon-size);
   min-height: var(--page-icon-size);
   border: 1px solid var(--page-accent-border);
-  border-radius: 16px;
+  border-radius: 14px;
   background: var(--page-accent-tint);
   color: var(--page-accent);
-  font-size: 28px;
+  font-size: 22px;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65);
 }
 
 .page-header-text {
   display: flex;
-  flex: 1 1 auto;
   flex-direction: column;
+  grid-column: 2;
+  grid-row: 1;
   justify-content: center;
+  align-self: stretch;
+  min-width: 0;
+}
+
+.page-header-meta {
+  display: flex;
+  flex-direction: column;
+  grid-column: 2;
+  grid-row: 2;
+  gap: 8px;
   min-width: 0;
 }
 
@@ -118,15 +130,10 @@
 
 .page-header-description {
   max-width: 62ch;
-  margin: 6px 0 0;
+  margin: 0;
   color: #475467;
   font-size: 13px;
   line-height: 1.5;
-}
-
-.page-header-status {
-  margin-top: 12px;
-  padding-left: calc(var(--page-icon-size) + var(--page-icon-gap));
 }
 
 .page-header-status .ant-tag {
@@ -568,9 +575,15 @@
     --page-icon-gap: 12px;
   }
 
+  .page-header-identity {
+    row-gap: 10px;
+  }
+
   .page-header-icon {
     align-self: flex-start;
+    width: var(--page-icon-size);
     height: var(--page-icon-size);
+    aspect-ratio: auto;
     border-radius: 12px;
     font-size: 18px;
   }

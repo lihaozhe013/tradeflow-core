@@ -7,26 +7,6 @@
   gap: 20px;
   color: #172033;
 }
-.business-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-}
-.business-header h2 {
-  margin: 6px 0 !important;
-  font-size: 28px;
-}
-.business-eyebrow {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  color: #667085;
-}
-.business-actions {
-  display: flex;
-  gap: 10px;
-}
 .business-toolbar {
   display: flex;
   align-items: center;
@@ -378,16 +358,9 @@
   }
 }
 @media (max-width: 767px) {
-  .business-header {
-    align-items: flex-start;
-    flex-direction: column;
-  }
   .business-main-grid,
   .business-bottom-grid {
     grid-template-columns: 1fr;
-  }
-  .business-actions {
-    width: 100%;
   }
   .business-timestamp {
     text-align: left;

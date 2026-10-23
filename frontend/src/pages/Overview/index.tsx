@@ -16,6 +16,7 @@ import {
   ReloadOutlined,
   ArrowRightOutlined,
   BarChartOutlined,
+  DashboardOutlined,
   RiseOutlined,
   PercentageOutlined,
   ShoppingCartOutlined,
@@ -38,6 +39,7 @@ import { useTranslation } from 'react-i18next';
 import { apiRequest, RequestError } from '@/utils/request';
 import { useRuntimeConfig } from '@/config/runtime';
 import { usePermissions } from '@/auth/usePermissions';
+import PageHeader from '@/components/page/PageHeader';
 import './dashboard.css';
 
 type Metric = {
@@ -250,44 +252,45 @@ export default function Overview() {
   };
   const ranks = period ? (rankTab === 'products' ? period.products : period.customers) : [];
   return (
-    <div className="business-dashboard">
-      <header className="business-header">
-        <div>
-          <span className="business-eyebrow">TRADEFLOW / {label('workspace')}</span>
-          <Typography.Title level={2}>{label('title')}</Typography.Title>
-          <Typography.Text type="secondary">{label('subtitle')}</Typography.Text>
-        </div>
-        <div className="business-actions">
-          <Button
-            aria-label={label('refresh')}
-            icon={<ReloadOutlined aria-hidden="true" />}
-            loading={refreshing}
-            onClick={() => void load(true)}
-          >
-            {label('refresh')}
-          </Button>
-          {canWrite && (
-            <Dropdown
-              trigger={['click']}
-              menu={{
-                items: [
-                  { key: 'inbound', label: t('overview.quickInbound') },
-                  { key: 'outbound', label: t('overview.quickOutbound') }
-                ],
-                onClick: ({ key }) => navigate('/' + key + '?create=1')
-              }}
+    <div className="business-dashboard tone-blue">
+      <PageHeader
+        eyebrow={`TRADEFLOW / ${label('workspace')}`}
+        title={label('title')}
+        description={label('subtitle')}
+        icon={<DashboardOutlined aria-hidden="true" />}
+        actions={
+          <>
+            <Button
+              aria-label={label('refresh')}
+              icon={<ReloadOutlined aria-hidden="true" />}
+              loading={refreshing}
+              onClick={() => void load(true)}
             >
-              <Button
-                type="primary"
-                aria-label={label('newBusiness')}
-                icon={<PlusOutlined aria-hidden="true" />}
+              {label('refresh')}
+            </Button>
+            {canWrite && (
+              <Dropdown
+                trigger={['click']}
+                menu={{
+                  items: [
+                    { key: 'inbound', label: t('overview.quickInbound') },
+                    { key: 'outbound', label: t('overview.quickOutbound') }
+                  ],
+                  onClick: ({ key }) => navigate('/' + key + '?create=1')
+                }}
               >
-                {label('newBusiness')}
-              </Button>
-            </Dropdown>
-          )}
-        </div>
-      </header>
+                <Button
+                  type="primary"
+                  aria-label={label('newBusiness')}
+                  icon={<PlusOutlined aria-hidden="true" />}
+                >
+                  {label('newBusiness')}
+                </Button>
+              </Dropdown>
+            )}
+          </>
+        }
+      />
       <div className="business-toolbar">
         <Segmented
           aria-label={label('period')}
