@@ -177,7 +177,6 @@ router.get('/', authorize(['superuser']), async (req: Request, res: Response): P
   ]);
 
   const safeUsers = users.map((u) => {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password_hash, ...rest } = u;
     return rest;
   });

@@ -257,7 +257,6 @@ export async function getCustomerAnalysisData(
         .sort((a, b) => b.sales_amount - a.sales_amount);
 
       // Construct final object without the map
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { product_details_map, ...rest } = cust;
       return { ...rest, product_details: productDetails };
     })
@@ -332,7 +331,6 @@ export async function getProductAnalysisData(
         })
         .sort((a, b) => b.sales_amount - a.sales_amount);
 
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { customer_details_map, ...rest } = prod;
       return { ...rest, customer_details: customerDetails };
     })

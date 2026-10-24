@@ -25,6 +25,6 @@ def build(base_dir):
     # build backend
     builder.delete(backend_dir / 'prisma' / 'client')
     builder.run(backend_dir, 'bun run prisma:generate')
-    builder.run(backend_dir, 'node ./scripts/bundle.mjs')
+    builder.run(backend_dir, 'bun run build')
     builder.move(backend_dir / 'dist', dist_dir / 'backend')
     builder.copy(backend_dir / 'prisma', dist_dir / 'backend' / 'prisma')

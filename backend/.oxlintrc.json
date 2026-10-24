@@ -1,0 +1,40 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "unicorn", "oxc", "promise"],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "warn",
+    "perf": "warn"
+  },
+  "env": {
+    "node": true
+  },
+  "ignorePatterns": ["dist/", "dist_output/", "coverage/", "prisma/"],
+  "rules": {
+    "no-unused-vars": [
+      "error",
+      {
+        "argsIgnorePattern": "^_",
+        "varsIgnorePattern": "^_",
+        "caughtErrorsIgnorePattern": "^_",
+        "ignoreRestSiblings": true
+      }
+    ],
+    "no-var": "error",
+    "prefer-const": "warn",
+    "eqeqeq": ["warn", "smart"],
+    "no-console": ["warn", { "allow": ["warn", "error", "info"] }],
+    "no-explicit-any": "warn",
+    "consistent-type-imports": ["warn", { "fixStyle": "separate-type-imports" }],
+    "no-await-in-loop": "off",
+    "no-underscore-dangle": "off",
+    "no-async-endpoint-handlers": "off",
+    "no-map-spread": "off",
+    "no-array-sort": "off",
+    "no-array-reverse": "off",
+    "require-module-specifiers": "off",
+    "always-return": "off",
+    "no-callback-in-promise": "off",
+    "no-promise-in-callback": "off"
+  }
+}
