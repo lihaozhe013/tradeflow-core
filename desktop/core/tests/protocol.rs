@@ -11,7 +11,7 @@ use std::{
 };
 use tradeflow_connect::{
     mcp,
-    storage::{Client, Profile, Store},
+    storage::{Profile, Store},
 };
 struct Fixture(std::process::Child);
 impl Drop for Fixture {
@@ -46,21 +46,24 @@ async fn rust_client_and_stdio_bridge_interoperate_with_typescript_server() {
         id: uuid::Uuid::new_v4().to_string(),
         connection_id: uuid::Uuid::new_v4().to_string(),
         owner_username: "fixture-user".into(),
-        client: Client::Opencode,
+        client: "Protocol fixture".into(),
         base_url: format!("http://127.0.0.1:{port}"),
         token: "tfmcp_protocol_fixture".into(),
         tools: vec!["get_inventory".into()],
         expires_at: "2030-01-01T00:00:00Z".into(),
-        config_path: root.join("config.json"),
         helper_path: env!("CARGO_BIN_EXE_tradeflow-connect").into(),
         mode: "bridge".into(),
         pending_cleanup: vec![],
+        catalog_version: Some("fixture-catalog".into()),
+        guide_version: Some("2".into()),
+        last_sync_at: None,
     };
     let result = tokio::time::timeout(Duration::from_secs(35), mcp::probe(&profile))
         .await
         .unwrap()
         .unwrap();
     assert_eq!(result["structuredResult"], true);
+    assert_eq!(result["sampleQuery"], "get_inventory");
     let mut invalid = profile.clone();
     invalid.token = "invalid".into();
     assert!(mcp::probe(&invalid).await.is_err());

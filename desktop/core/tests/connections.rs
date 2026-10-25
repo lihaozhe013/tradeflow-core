@@ -5,9 +5,9 @@ use std::{
 };
 use tradeflow_connect::{
     api::Session,
-    config, connection,
+    connection,
     diagnostics::{Action, Operation},
-    storage::{Client, Profile, Store},
+    storage::Store,
 };
 struct Fixture(std::process::Child);
 impl Drop for Fixture {
@@ -40,123 +40,89 @@ fn fixture(args: &[&str]) -> (Fixture, Session) {
         },
     )
 }
-fn old(store: &Store) -> Profile {
-    let profile = Profile {
-        id: uuid::Uuid::new_v4().to_string(),
-        connection_id: uuid::Uuid::new_v4().to_string(),
-        owner_username: "same-name".into(),
-        client: Client::Workbuddy,
-        base_url: "http://127.0.0.1:1".into(),
-        token: "tfmcp_old-secret".into(),
-        tools: vec!["get_inventory".into()],
-        expires_at: "2030-01-01T00:00:00Z".into(),
-        config_path: store.root.join("mcp.json"),
-        helper_path: "unused".into(),
-        mode: "remote".into(),
-        pending_cleanup: vec![],
-    };
-    store.save(&profile).unwrap();
-    std::fs::write(
-        &profile.config_path,
-        config::patch(
-            "{\n// Preserve this comment\n\"mcpServers\":{\"other\":{\"command\":\"other\"}}\n}",
-            &profile.client,
-            &profile.server_name(),
-            Some(&config::entry(&profile)),
-        )
-        .unwrap(),
-    )
-    .unwrap();
-    profile
+fn helper() -> std::path::PathBuf {
+    env!("CARGO_BIN_EXE_tradeflow-connect").into()
 }
 #[tokio::test]
-async fn offline_source_is_replaced_and_reconnecting_reuses_the_credential() {
+async fn connecting_creates_one_profile_and_reuses_the_credential() {
     let (_fixture, session) = fixture(&[]);
     let dir = tempfile::tempdir().unwrap();
     let store = Store::at(dir.path().to_owned()).unwrap();
-    let source = old(&store);
     let operation = Operation::new(
         &store,
         Action::Connect,
-        Some(Client::Workbuddy),
+        Some("Office assistant".into()),
         Some(&session.base_url),
         None,
     );
     let (result, report) = operation
-        .run(connection::connect_at(
+        .run(connection::connect(
             &session,
             &store,
-            Client::Workbuddy,
-            "unused".into(),
+            helper(),
             None,
-            "remote",
-            source.config_path.clone(),
+            "Office assistant",
+            "bridge",
         ))
         .await;
     let result = result.unwrap();
-    assert_eq!(result["serviceVerified"], true);
     assert!(report.error_code.is_none());
-    assert!(store.load(&source.id).is_err());
-    assert_eq!(store.profiles().unwrap().len(), 1);
-    let profile = store.profiles().unwrap().remove(0);
-    assert!(config::configured(&profile).unwrap());
-    let text = std::fs::read_to_string(&source.config_path).unwrap();
-    assert!(text.contains("Preserve this comment"));
-    assert!(!text.contains(&source.server_name()));
-    assert!(text.contains("other"));
-    assert_eq!(
-        store.pending_revocations().unwrap()[0].connection_id,
-        source.connection_id
-    );
-    let result = connection::connect_at(
+    assert_eq!(result["serviceVerified"], true);
+    assert_eq!(result["hostActivationRequired"], true);
+    assert_eq!(result["reusedCredential"], false);
+    assert_eq!(result["profile"]["client"], "Office assistant");
+    assert!(result["profile"]["catalogVersion"].is_string());
+    let profiles = store.profiles().unwrap();
+    assert_eq!(profiles.len(), 1);
+    let profile = &profiles[0];
+    assert_eq!(profile.client, "Office assistant");
+    assert_eq!(profile.mode, "bridge");
+    assert!(!profile.token.is_empty());
+    assert!(profile.last_sync_at.is_some());
+    assert_eq!(session.get("/api/stats").await.unwrap()["issueCount"], 1);
+
+    let reused = connection::connect(
         &session,
         &store,
-        Client::Workbuddy,
-        "unused".into(),
-        None,
-        "remote",
-        source.config_path.clone(),
+        helper(),
+        Some(profile.id.clone()),
+        "Ignored rename",
+        "bridge",
     )
     .await
     .unwrap();
-    assert_eq!(result["reusedCredential"], true);
+    assert_eq!(reused["reusedCredential"], true);
+    assert_eq!(reused["profile"]["client"], "Office assistant");
     assert_eq!(session.get("/api/stats").await.unwrap()["issueCount"], 1);
-    assert_eq!(session.get("/api/stats").await.unwrap()["revoked"], 0);
-    let result = connection::disconnect(None, &store, &profile.id, false)
+
+    let removed = connection::disconnect(None, &store, &profile.id, false)
         .await
         .unwrap();
-    assert_eq!(result["localRemoved"], true);
+    assert_eq!(removed["localRemoved"], true);
     assert!(store.profiles().unwrap().is_empty());
-    assert!(connection::recover_switches(&store).unwrap().is_empty());
-    assert!(
-        !std::fs::read_to_string(source.config_path)
-            .unwrap()
-            .contains(&profile.server_name())
-    );
+    assert_eq!(store.pending_revocations().unwrap().len(), 1);
+    assert!(connection::recover_operations(&store).unwrap().is_empty());
 }
 #[tokio::test]
-async fn query_failure_restores_source_and_records_failed_stage_without_secrets() {
+async fn a_failed_probe_revokes_or_queues_the_new_credential_without_leaking_it() {
     let (_fixture, session) = fixture(&["--fail-query", "--fail-revoke"]);
     let dir = tempfile::tempdir().unwrap();
     let store = Store::at(dir.path().to_owned()).unwrap();
-    let source = old(&store);
-    let before = std::fs::read_to_string(&source.config_path).unwrap();
     let operation = Operation::new(
         &store,
         Action::Connect,
-        Some(Client::Workbuddy),
+        Some("Office assistant".into()),
         Some(&session.base_url),
         None,
     );
     let (result, report) = operation
-        .run(connection::connect_at(
+        .run(connection::connect(
             &session,
             &store,
-            Client::Workbuddy,
-            "unused".into(),
+            helper(),
             None,
-            "remote",
-            source.config_path.clone(),
+            "Office assistant",
+            "bridge",
         ))
         .await;
     assert_eq!(result.unwrap_err().to_string(), "MCP_QUERY_FAILED");
@@ -164,17 +130,46 @@ async fn query_failure_restores_source_and_records_failed_stage_without_secrets(
         serde_json::to_value(&report).unwrap()["failedStage"],
         "sample_query"
     );
+    assert!(store.profiles().unwrap().is_empty());
+    let pending = store.pending_revocations().unwrap();
+    assert_eq!(pending.len(), 1);
     assert_eq!(
-        std::fs::read_to_string(&source.config_path).unwrap(),
-        before
+        pending[0].last_error.as_deref(),
+        Some("INSTALL_FAILED_CLEANUP_PENDING")
     );
-    assert_eq!(store.profiles().unwrap().len(), 1);
-    assert_eq!(store.load(&source.id).unwrap().token, source.token);
-    assert!(store.switch_journals().unwrap().is_empty());
-    assert_eq!(store.pending_revocations().unwrap().len(), 1);
     let logs =
         serde_json::to_string(&tradeflow_connect::diagnostics::recent(&store).unwrap()).unwrap();
     assert!(!logs.contains("tfmcp_"));
     assert!(!logs.contains("fixture-jwt"));
-    assert!(logs.contains("HTTP_503"));
+}
+#[tokio::test]
+async fn syncing_refreshes_tools_and_catalog_metadata() {
+    let (_fixture, session) = fixture(&[]);
+    let dir = tempfile::tempdir().unwrap();
+    let store = Store::at(dir.path().to_owned()).unwrap();
+    let profile = connection::connect(
+        &session,
+        &store,
+        helper(),
+        None,
+        "Office assistant",
+        "bridge",
+    )
+    .await
+    .unwrap()["profile"]
+        .clone();
+    let id = profile["id"].as_str().unwrap();
+    let mut stored = store.load(id).unwrap();
+    stored.tools = vec!["get_inventory".into(), "retired_tool".into()];
+    stored.catalog_version = Some("old-version".into());
+    store.save(&stored).unwrap();
+
+    let result = connection::sync(&session, &store, id).await.unwrap();
+    assert_eq!(result["changed"], true);
+    assert_eq!(result["removed"], json!(["retired_tool"]));
+    assert_eq!(result["added"], json!([]));
+    assert_eq!(result["profile"]["tools"], json!(["get_inventory"]));
+    assert_ne!(result["profile"]["catalogVersion"], "old-version");
+    assert!(result["profile"]["lastSyncAt"].is_string());
+    assert_eq!(result["catalog"]["guideVersion"], "2");
 }

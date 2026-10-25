@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test';
+import { readFileSync } from 'node:fs';
 import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -6,6 +7,8 @@ import { publishRelease } from './publish-release.ts';
 
 const oldSha = 'b'.repeat(40);
 const newSha = 'a'.repeat(40);
+const desktopVersion = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'))
+  .version as string;
 const assetNames = [
   'tradeflow-connect-windows-x64.exe',
   'tradeflow-connect-windows-arm64.exe',
@@ -257,7 +260,7 @@ describe('desktop rolling release publisher', () => {
     expect(assets).toHaveLength(6);
     const checksumAsset = assets.find((asset) => asset.name.endsWith('.txt'))!;
     expect(new TextDecoder().decode(checksumAsset.data)).toContain(
-      'tradeflow-connect-0.1.1-linux-x64-100-1.AppImage'
+      `tradeflow-connect-${desktopVersion}-linux-x64-100-1.AppImage`
     );
   });
 
@@ -273,7 +276,7 @@ describe('desktop rolling release publisher', () => {
     expect(github.tags.get('desktop-latest')).toBe(newSha);
     expect(release.draft).toBe(false);
     expect(release.prerelease).toBe(true);
-    expect(release.body).toContain('tradeflow-connect-0.1.1-windows-x64-100-1.exe');
+    expect(release.body).toContain(`tradeflow-connect-${desktopVersion}-windows-x64-100-1.exe`);
     expect(github.assets.get(release.id)).toHaveLength(6);
   });
 

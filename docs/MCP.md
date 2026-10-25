@@ -51,19 +51,19 @@ agent.
 
 ## Available tools
 
-| Tool                | What it returns                                                                                 |
-| ------------------- | ----------------------------------------------------------------------------------------------- |
-| `search_partners`   | Customer and supplier codes and names                                                           |
-| `search_products`   | Product codes, models, and categories                                                           |
-| `get_inventory`     | Current on-hand quantities                                                                      |
-| `list_transactions` | Inbound or outbound records, with date, partner, product, quantity, price, and document numbers |
-| `get_receivables`   | Receivable balances or one customer's transaction and payment details                           |
-| `get_payables`      | Payable balances or one supplier's transaction and payment details                              |
-| `get_analysis`      | Date-filtered purchase or sales summary; sales includes FIFO cost, profit, and profit rate      |
-| `submit_transaction_drafts` | Submit 1–100 inbound or outbound rows into the review queue; retries use `requestId` |
-| `update_transaction_draft` | Update one pending draft using its current version |
-| `list_transaction_drafts` | Page through drafts submitted by this account or static credential |
-| `get_transaction_draft` | Read one draft in the caller's scope, including its review status |
+| Tool                        | What it returns                                                                                 |
+| --------------------------- | ----------------------------------------------------------------------------------------------- |
+| `search_partners`           | Customer and supplier codes and names                                                           |
+| `search_products`           | Product codes, models, and categories                                                           |
+| `get_inventory`             | Current on-hand quantities                                                                      |
+| `list_transactions`         | Inbound or outbound records, with date, partner, product, quantity, price, and document numbers |
+| `get_receivables`           | Receivable balances or one customer's transaction and payment details                           |
+| `get_payables`              | Payable balances or one supplier's transaction and payment details                              |
+| `get_analysis`              | Date-filtered purchase or sales summary; sales includes FIFO cost, profit, and profit rate      |
+| `submit_transaction_drafts` | Submit 1–100 inbound or outbound rows into the review queue; retries use `requestId`            |
+| `update_transaction_draft`  | Update one pending draft using its current version                                              |
+| `list_transaction_drafts`   | Page through drafts submitted by this account or static credential                              |
+| `get_transaction_draft`     | Read one draft in the caller's scope, including its review status                               |
 
 All list tools default to 20 rows per page and allow at most 100. Dates use `YYYY-MM-DD`. Results
 include the validated query parameters, pagination information, a query timestamp, and the
@@ -94,6 +94,45 @@ Account-bound credentials can also be created and revoked without restarting thr
 password version; reader accounts retain their financial and analysis restrictions. A configured
 empty static credential list is valid for this database-backed mode.
 
+Account credentials are named by the client that creates them. The name is a label, not a fixed
+Agent list, so a new host connects without a server or desktop release. The assistant's default
+transport is a local stdio bridge that keeps the token outside Agent configuration; a host may
+instead use the remote endpoint directly.
+
+## Tool catalog and updates
+
+`GET /api/mcp/catalog` returns the tools visible to the signed-in account together with a catalog
+version, an instruction-guide version, and the minimum bridge version:
+
+```json
+{
+  "success": true,
+  "data": {
+    "version": "c4a1e27f9b30",
+    "guideVersion": "2",
+    "minBridgeVersion": "0.2.0",
+    "tools": [
+      {
+        "name": "get_inventory",
+        "group": "inventory",
+        "summary": "Read current on-hand inventory.",
+        "mutating": false
+      }
+    ]
+  }
+}
+```
+
+The version is a SHA-256 prefix of the visible entries, so adding or changing a tool changes it
+without a manual bump. Tool input schemas remain authoritative through `tools/list`; the catalog
+only supports connection guidance, change detection, and version reporting.
+
+After a tool change, reload the Agent or start a new session so the host re-reads `tools/list`, or
+run the assistant's update prompt. The assistant's **Sync latest capabilities** action reads this
+catalog, probes the MCP endpoint, and stores the new tool list. Neither action reissues credentials
+or grants additional tools: a missing tool means the account role or credential allowlist does not
+include it, and authorization is reviewed separately in the connection assistant.
+
 Account users can inspect and revoke their own credentials at `/#/mcp-connections`. The page also
 shows effective tools, including role-granted draft tools. Account users can inspect transaction
 drafts at `/#/transaction-drafts`; editors and superusers can edit, merge, and void them. See
@@ -103,12 +142,13 @@ desktop workflow.
 ## Optional Agent skill and manual connection
 
 The portable [TradeFlow MCP skill](../skills/tradeflow-mcp/SKILL.md) teaches an Agent to choose
-tools, use `limit` pagination, interpret FIFO analysis and account balances, and diagnose connection
-failures. Copy the complete `skills/tradeflow-mcp/` folder to the host's skill location or import it
-as a local skill package. The skill has no secrets and does not register an MCP connection.
+tools, use `limit` pagination, interpret FIFO analysis and account balances, refresh the tool
+catalog after a server change, and diagnose connection failures. Copy the complete
+`skills/tradeflow-mcp/` folder to the host's skill location or import it as a local skill package.
+The skill has no secrets and does not register an MCP connection.
 
-Its [manual connection reference](../skills/tradeflow-mcp/references/connection.md) covers OpenCode
-V2 and WorkBuddy, administrator-issued credentials, and account-bound credential creation through
-the existing API. Direct remote use requires neither the Tauri assistant nor a local runtime. The
-web credential page still only lists and revokes credentials. Native host activation must be
-verified separately from a successful HTTP probe.
+Its [manual connection reference](../skills/tradeflow-mcp/references/connection.md) covers the stdio
+bridge, administrator-issued credentials, and account-bound credential creation through the existing
+API. Direct remote use requires neither the Tauri assistant nor a local runtime. The web credential
+page still only lists and revokes credentials. Native host activation must be verified separately
+from a successful HTTP probe.

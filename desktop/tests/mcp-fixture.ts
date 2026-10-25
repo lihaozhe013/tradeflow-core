@@ -21,7 +21,8 @@ const server = createServer(async (req, res) => {
     'get_inventory',
     {
       description: 'Fixture inventory',
-      inputSchema: z.object({ page: z.number().optional(), limit: z.number().optional() })
+      inputSchema: z.object({ page: z.number().optional(), limit: z.number().optional() }),
+      annotations: { readOnlyHint: true }
     },
     async () => ({
       content: [{ type: 'text', text: '{"data":[]}' }],

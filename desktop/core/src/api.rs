@@ -10,6 +10,13 @@ pub struct Session {
     pub jwt: String,
     pub user: Value,
 }
+fn string_array(value: &Value) -> bool {
+    value.as_array().is_some_and(|values| {
+        values
+            .iter()
+            .all(|item| item.as_str().is_some_and(|text| !text.is_empty()))
+    })
+}
 pub fn normalize_url(input: &str) -> Result<String> {
     let url = Url::parse(input.trim()).context("INVALID_SERVER_URL")?;
     let local = matches!(
@@ -114,13 +121,28 @@ impl Session {
             bail!("BACKEND_UPGRADE_REQUIRED");
         }
         if data["data"]["enabled"].as_bool().is_none()
-            || !data["data"]["allowedTools"]
-                .as_array()
-                .is_some_and(|values| values.iter().all(|value| value.as_str().is_some()))
+            || !string_array(&data["data"]["allowedTools"])
         {
             bail!("INVALID_SERVER_RESPONSE");
         }
         Ok(data["data"].clone())
+    }
+    pub async fn catalog(&self) -> Result<Value> {
+        let data = self.get("/api/mcp/catalog").await?;
+        let value = data["data"].clone();
+        if !value["version"]
+            .as_str()
+            .is_some_and(|version| !version.is_empty() && version.len() <= 64)
+            || !value["tools"].as_array().is_some_and(|tools| {
+                !tools.is_empty()
+                    && tools
+                        .iter()
+                        .all(|tool| tool["name"].as_str().is_some_and(|name| !name.is_empty()))
+            })
+        {
+            bail!("INVALID_SERVER_RESPONSE");
+        }
+        Ok(value)
     }
     pub async fn get(&self, path: &str) -> Result<Value> {
         decode(
@@ -154,23 +176,7 @@ impl Session {
             || !data["expiresAt"]
                 .as_str()
                 .is_some_and(|date| chrono::DateTime::parse_from_rfc3339(date).is_ok())
-            || !data["tools"].as_array().is_some_and(|tools| {
-                !tools.is_empty()
-                    && tools.iter().all(|tool| {
-                        matches!(
-                            tool.as_str(),
-                            Some(
-                                "search_partners"
-                                    | "search_products"
-                                    | "get_inventory"
-                                    | "list_transactions"
-                                    | "get_receivables"
-                                    | "get_payables"
-                                    | "get_analysis"
-                            )
-                        )
-                    })
-            })
+            || !string_array(&data["tools"])
         {
             bail!("INVALID_SERVER_RESPONSE");
         }

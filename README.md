@@ -9,7 +9,9 @@ For repository rules and task entry points, read [AGENTS.md](AGENTS.md) and
 
 For Agent access to business data, see [the read-only MCP service](docs/MCP.md) and the portable
 [TradeFlow MCP skill](skills/tradeflow-mcp/SKILL.md). The skill includes manual connection
-instructions for OpenCode and WorkBuddy without requiring the desktop assistant.
+instructions that do not assume a specific Agent, and the
+[desktop connection assistant](docs/DESKTOP_CONNECT.md) can generate a prompt that lets any
+stdio-capable Agent configure its own connection.
 
 ## Setup
 

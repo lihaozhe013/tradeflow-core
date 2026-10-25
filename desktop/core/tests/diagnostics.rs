@@ -183,7 +183,7 @@ fn crash_exports_use_only_validated_fields_and_keep_older_versions() {
 
 #[test]
 fn connection_command_future_stays_small_before_polling() {
-    use tradeflow_connect::{connection, storage::Client};
+    use tradeflow_connect::connection;
     let directory = tempfile::tempdir().unwrap();
     let store = Store::at(directory.path().to_owned()).unwrap();
     let session = api::Session {
@@ -191,14 +191,7 @@ fn connection_command_future_stays_small_before_polling() {
         jwt: String::new(),
         user: serde_json::json!({"username":"fixture"}),
     };
-    let future = connection::connect_simple(
-        &session,
-        &store,
-        Client::Workbuddy,
-        "helper".into(),
-        None,
-        "remote",
-    );
+    let future = connection::connect(&session, &store, "helper".into(), None, "Fixture", "bridge");
     // Tauri constructs command futures on the native window thread before spawning them.
     assert!(std::mem::size_of_val(&future) < 4096);
 }

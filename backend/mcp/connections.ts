@@ -5,12 +5,24 @@ import { authenticateToken, getAuthConfig } from '@/utils/auth';
 import { logger } from '@/utils/logger';
 import { generateMcpToken, hashMcpToken } from '@/mcp/credentials';
 import { effectiveToolsForRole, MCP_STAGING_TOOL_NAMES, toolsForRole } from '@/mcp/tools';
+import { MCP_GUIDE_VERSION, MIN_BRIDGE_VERSION, roleCatalog } from '@/mcp/catalog';
 import type { McpConfig } from '@/types/config';
 
 export const MCP_CREDENTIAL_DAYS = 90;
+
+/**
+ * A connection name is chosen by the user or client. It is a label, not a fixed Agent list, so a
+ * new host does not require a server release to connect.
+ */
+const clientNameSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .max(64)
+  .regex(/^[\p{L}\p{N}][\p{L}\p{N} ._-]*$/u, 'Use letters, numbers, spaces, . _ or -.');
 const createSchema = z
   .object({
-    client: z.enum(['opencode', 'workbuddy']),
+    client: clientNameSchema,
     deviceId: z.string().uuid()
   })
   .strict();
@@ -20,7 +32,7 @@ const listSchema = z
     page: z.coerce.number().int().min(1).max(1_000_000).default(1),
     limit: z.coerce.number().int().min(1).max(100).default(100),
     status: z.enum(['active', 'revoked', 'expired', 'password_changed']).optional(),
-    client: z.enum(['opencode', 'workbuddy']).optional()
+    client: clientNameSchema.optional()
   })
   .strict();
 const publicFields = {
@@ -32,6 +44,15 @@ const publicFields = {
   expiresAt: true,
   revokedAt: true
 } as const;
+
+function catalogMetadata(role: string, stagingWritesEnabled: boolean) {
+  const catalog = roleCatalog(role, stagingWritesEnabled);
+  return {
+    catalogVersion: catalog.version,
+    guideVersion: MCP_GUIDE_VERSION,
+    minBridgeVersion: MIN_BRIDGE_VERSION
+  };
+}
 
 export function createMcpConnectionRouter(settings: McpConfig): Router {
   const router = Router();
@@ -69,8 +90,15 @@ export function createMcpConnectionRouter(settings: McpConfig): Router {
         ),
         stagingWritesEnabled: settings.stagingWrites?.enabled === true,
         credentialDays: MCP_CREDENTIAL_DAYS,
-        dataScope: 'instance'
+        dataScope: 'instance',
+        ...catalogMetadata(req.user!.role, settings.stagingWrites?.enabled === true)
       }
+    });
+  });
+  router.get('/catalog', (req, res) => {
+    res.json({
+      success: true,
+      data: roleCatalog(req.user!.role, settings.stagingWrites?.enabled === true)
     });
   });
   router.get('/connections', async (req, res) => {
@@ -174,7 +202,8 @@ export function createMcpConnectionRouter(settings: McpConfig): Router {
       data: {
         ...connection,
         token,
-        effectiveTools: effectiveToolsForRole(owner.role, settings.stagingWrites?.enabled === true)
+        effectiveTools: effectiveToolsForRole(owner.role, settings.stagingWrites?.enabled === true),
+        ...catalogMetadata(owner.role, settings.stagingWrites?.enabled === true)
       }
     });
   });

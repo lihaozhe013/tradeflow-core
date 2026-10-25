@@ -1,6 +1,6 @@
 use crate::{
     connection::safe_code,
-    storage::{Client, Store, atomic_write, private_dir, reject_symlink},
+    storage::{Store, atomic_write, private_dir, reject_symlink},
 };
 use anyhow::{Context, Result};
 use fs2::FileExt;
@@ -36,6 +36,7 @@ pub enum Stage {
     Repair,
     Recovery,
     Bridge,
+    SyncCatalog,
     Complete,
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -48,6 +49,7 @@ pub enum Action {
     Remove,
     Recovery,
     Bridge,
+    Sync,
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -64,7 +66,7 @@ pub struct Event {
     pub action: Action,
     pub stage: Stage,
     pub status: Status,
-    pub client: Option<Client>,
+    pub client: Option<String>,
     pub server: Option<String>,
     pub duration_ms: u64,
     pub error_code: Option<String>,
@@ -88,7 +90,7 @@ struct Inner {
     store: Store,
     id: String,
     action: Action,
-    client: Option<Client>,
+    client: Option<String>,
     server: Option<String>,
     sink: Option<Sink>,
     started: Instant,
@@ -108,7 +110,7 @@ impl Operation {
     pub fn new(
         store: &Store,
         action: Action,
-        client: Option<Client>,
+        client: Option<String>,
         server: Option<&str>,
         sink: Option<Sink>,
     ) -> Self {

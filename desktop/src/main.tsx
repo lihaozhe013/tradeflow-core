@@ -8,32 +8,38 @@ import './style.css';
 import connectIcon from './assets/connect.svg?no-inline';
 import { version } from '../package.json';
 
-type Client = 'opencode' | 'workbuddy';
 type Language = 'zh' | 'en';
 type Setting = Language | 'system';
+type PromptKind = 'connect' | 'business' | 'update' | 'repair';
 type Profile = {
   id: string;
   connectionId: string;
-  client: Client;
+  client: string;
   ownerUsername: string;
-  baseUrl: string;
   serverName: string;
-  configPath: string;
+  baseUrl: string;
   mode: string;
   tools: string[];
-  configurationWritten: boolean;
   expiresAt: string;
+  pendingCleanup: string[];
+  catalogVersion: string | null;
+  guideVersion: string | null;
+  lastSyncAt: string | null;
 };
-type Agent = { client: Client; installed: boolean; supported: boolean; version: string | null };
 type Session = {
   baseUrl: string;
   user: { username: string; role: string; display_name: string };
-  capabilities: { enabled: boolean; allowedTools: string[] };
+  capabilities: {
+    enabled: boolean;
+    allowedTools: string[];
+    catalogVersion?: string;
+    guideVersion?: string;
+  };
 };
 type Cleanup = {
   baseUrl: string;
   ownerUsername: string;
-  client: Client;
+  client: string;
   connectionId: string;
   lastError: string | null;
 };
@@ -43,7 +49,7 @@ type Event = {
   action: string;
   stage: string;
   status: string;
-  client: Client | null;
+  client: string | null;
   server: string | null;
   durationMs: number;
   errorCode: string | null;
@@ -66,38 +72,42 @@ type Operation = {
   logAvailable: boolean;
   events: Event[];
 };
+type SyncResult = { added: string[]; removed: string[]; changed: boolean };
 type Result = {
   operation?: Operation;
   errorCode?: string;
-  configurationWritten?: boolean;
   serviceVerified?: boolean;
+  hostActivationRequired?: boolean;
+  reusedCredential?: boolean;
   localRemoved?: boolean;
+  remoteRevoked?: boolean;
   remoteCleanupRequired?: boolean;
-  localCleanupErrorCode?: string | null;
   profile?: Profile;
+  added?: string[];
+  removed?: string[];
+  changed?: boolean;
+  catalog?: { version?: string; guideVersion?: string };
 };
-type Outcome = { client: Client; ok: boolean; result: Result };
 const systemLanguage: Language = navigator.language.toLowerCase().startsWith('zh') ? 'zh' : 'en';
-const clientName = (client: Client) => (client === 'opencode' ? 'OpenCode' : 'WorkBuddy');
+const dateText = (value: string, language: Language) =>
+  new Date(value).toLocaleString(language === 'zh' ? 'zh-CN' : 'en-US');
 
 function App() {
   const [setting, setSetting] = useState<Setting>('system');
   const language = setting === 'system' ? systemLanguage : setting;
   const t = (language === 'zh' ? zh : en).desktopConnect;
-  const [view, setView] = useState<'home' | 'diagnostics'>('home');
+  const [view, setView] = useState<'connections' | 'diagnostics'>('connections');
   const [server, setServer] = useState('https://');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
   const [session, setSession] = useState<Session | null>(null);
   const [loginOpen, setLoginOpen] = useState(true);
   const [profiles, setProfiles] = useState<Profile[]>([]);
-  const [agents, setAgents] = useState<Agent[]>([]);
-  const [selected, setSelected] = useState<Client[]>([]);
   const [cleanup, setCleanup] = useState<Cleanup[]>([]);
   const [crashes, setCrashes] = useState<Crash[]>([]);
   const [logs, setLogs] = useState<Event[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
-  const [outcomes, setOutcomes] = useState<Outcome[]>([]);
   const [report, setReport] = useState<Result | null>(null);
   const [errorCode, setErrorCode] = useState('');
   const [logWarning, setLogWarning] = useState('');
@@ -105,26 +115,18 @@ function App() {
   const [busy, setBusy] = useState(false);
   const [checks, setChecks] = useState<Record<string, boolean>>({});
   const [prompt, setPrompt] = useState('');
-  const [promptSource, setPromptSource] = useState<{
-    id: string;
-    kind: 'business' | 'repair';
-  } | null>(null);
+  const [promptSource, setPromptSource] = useState<{ id: string; kind: PromptKind } | null>(null);
+  const [syncResult, setSyncResult] = useState<({ id: string } & SyncResult) | null>(null);
   const [recovery, setRecovery] = useState<Array<{ errorCode: string }>>([]);
   const [removeTarget, setRemoveTarget] = useState<Profile | null>(null);
   const dialog = useRef<HTMLDialogElement>(null);
   const accepting = useRef(false);
   const unlisten = useRef<(() => void) | null>(null);
   const stageText = (stage: string) => (t.stages as Record<string, string>)[stage] ?? t.busy;
-  const errorText = (code: string) => {
-    const alias: Record<string, string> = {
-      INVALID_CONFIG_JSON: 'CONFIG_DAMAGED',
-      CONFIG_READ_FAILED: 'CONFIG_DAMAGED',
-      CONFIG_ROOT_MUST_BE_OBJECT: 'CONFIG_DAMAGED',
-      INVALID_MCP_OBJECT: 'CONFIG_DAMAGED',
-      INVALID_SERVERS_OBJECT: 'CONFIG_DAMAGED'
-    };
-    return (t.localizedErrors as Record<string, string>)[alias[code] ?? code] ?? t.error;
-  };
+  const errorText = (code: string) =>
+    (t.localizedErrors as Record<string, string>)[code] ?? t.error;
+  const roleText = (role: string) =>
+    role === 'reader' ? t.roleReader : role === 'editor' ? t.roleEditor : t.roleSuperuser;
   const safeFailure = (failure: unknown): Result => {
     if (failure && typeof failure === 'object') {
       const value = failure as Result;
@@ -141,15 +143,13 @@ function App() {
   };
   async function refresh() {
     const issues =
-      await invoke<Array<{ recovered?: boolean; errorCode: string }>>('recover_switches');
+      await invoke<Array<{ recovered?: boolean; errorCode: string }>>('recover_operations');
     setRecovery(issues.filter((item) => !item.recovered));
-    const [nextProfiles, nextAgents, nextCleanup] = await Promise.all([
+    const [nextProfiles, nextCleanup] = await Promise.all([
       invoke<Profile[]>('profiles'),
-      invoke<Agent[]>('detect_clients'),
       invoke<Cleanup[]>('pending_revocations')
     ]);
     setProfiles(nextProfiles);
-    setAgents(nextAgents);
     setCleanup(nextCleanup);
     if (promptSource && !nextProfiles.some((profile) => profile.id === promptSource.id)) {
       setPromptSource(null);
@@ -213,10 +213,10 @@ function App() {
     setBusy(true);
     setEvents([]);
     setReport(null);
-    setOutcomes([]);
     setMessage(null);
     setErrorCode('');
     setLogWarning('');
+    setSyncResult(null);
   }
   async function finish() {
     accepting.current = false;
@@ -256,7 +256,7 @@ function App() {
   async function signIn(event: React.FormEvent) {
     event.preventDefault();
     const result = await run(() =>
-      invoke<Session & Result>('login', { server, username, password, preservePrevious: false })
+      invoke<Session & Result>('login', { server, username, password })
     );
     setPassword('');
     if (result) {
@@ -264,48 +264,73 @@ function App() {
       setSession(nextSession);
       setServer(nextSession.baseUrl);
       setLoginOpen(false);
-      setSelected(
-        agents.filter((agent) => agent.installed && agent.supported).map((agent) => agent.client)
-      );
     }
   }
-  async function connect() {
-    if (!session || !selected.length) {
-      setMessage('selectAtLeastOne');
+  async function createConnection(event: React.FormEvent) {
+    event.preventDefault();
+    if (!session) {
+      setErrorCode('LOGIN_REQUIRED');
       return;
     }
-    begin();
-    const results: Outcome[] = [];
-    for (const client of selected) {
-      const existing = profiles.find(
-        (p) =>
-          p.client === client &&
-          p.baseUrl === session.baseUrl &&
-          p.ownerUsername === session.user.username
-      );
-      try {
-        const result = await invoke<Result>('connect_agent', {
-          client,
-          existing: existing?.id ?? null,
-          mode: existing?.mode ?? 'remote'
-        });
-        results.push({ client, ok: true, result });
-        if (result.profile)
-          setChecks((current) => ({
-            ...current,
-            [result.profile!.id]: result.serviceVerified === true
-          }));
-      } catch (failure) {
-        results.push({ client, ok: false, result: safeFailure(failure) });
-      }
-      setOutcomes([...results]);
+    if (!name.trim()) {
+      setErrorCode('INVALID_CONNECTION_NAME');
+      return;
     }
-    await finish();
+    const result = await run(() =>
+      invoke<Result>('connect_connection', { name, existing: null, mode: 'bridge' })
+    );
+    if (result?.profile) {
+      setName('');
+      setChecks((current) => ({
+        ...current,
+        [result.profile!.id]: result.serviceVerified === true
+      }));
+      await copyPrompt(result.profile.id, 'connect');
+    }
   }
-  async function remove(profile: Profile) {
+  async function diagnose(profile: Profile) {
+    const result = await run(() => invoke<Result>('diagnose', { profile: profile.id }));
+    if (result) {
+      setChecks((current) => ({ ...current, [profile.id]: result.serviceVerified === true }));
+    }
+  }
+  async function renew(profile: Profile) {
+    const result = await run(() =>
+      invoke<Result>('connect_connection', {
+        name: profile.client,
+        existing: profile.id,
+        mode: 'bridge'
+      })
+    );
+    if (result?.profile) {
+      setChecks((current) => ({
+        ...current,
+        [result.profile!.id]: result.serviceVerified === true
+      }));
+    }
+  }
+  async function sync(profile: Profile) {
+    if (!session || session.baseUrl !== profile.baseUrl) {
+      setErrorCode('LOGIN_REQUIRED');
+      return;
+    }
+    const result = await run(() =>
+      invoke<Result & SyncResult>('sync_connection', { profile: profile.id })
+    );
+    if (result) {
+      setSyncResult({
+        id: profile.id,
+        changed: result.changed === true,
+        added: result.added ?? [],
+        removed: result.removed ?? []
+      });
+      setMessage(result.changed === true ? 'syncChanged' : 'syncEmpty');
+    }
+  }
+  async function remove(profile: Profile, mode: 'local' | 'revoke') {
     const result = await run(
-      () => invoke<Result>('disconnect_agent', { profile: profile.id, mode: 'local' }),
-      'removedReload'
+      () => invoke<Result>('disconnect_connection', { profile: profile.id, mode }),
+      mode === 'revoke' ? 'remoteRevoked' : 'localRemovedPending'
     );
     if (result) {
       dialog.current?.close();
@@ -316,19 +341,18 @@ function App() {
       }
     }
   }
-  async function copy(profile: Profile, kind: 'business' | 'repair') {
-    setReport(null);
-    setOutcomes([]);
+  async function copyPrompt(id: string, kind: PromptKind) {
     setErrorCode('');
-    setEvents([]);
     try {
       const values = await invoke<Record<string, string>>('connection_prompts', {
-        profile: profile.id,
+        profile: id,
         language
       });
-      await invoke('copy_prompt', { profile: profile.id, kind, language });
-      setPromptSource({ id: profile.id, kind });
+      await invoke('copy_prompt', { profile: id, kind, language });
+      setPromptSource({ id, kind });
       setPrompt(values[kind]);
+      setReport(null);
+      setEvents([]);
       setMessage('copied');
     } catch (failure) {
       setErrorCode(safeFailure(failure).errorCode!);
@@ -377,16 +401,9 @@ function App() {
           {errorText(result.errorCode)}
         </p>
       ) : result.serviceVerified ? (
-        <p className="verified">{t.verifiedReload}</p>
-      ) : result.localRemoved ? (
-        <p>{t.removedReload}</p>
+        <p className="verified">{t.statusVerified}</p>
       ) : null}
       {result.remoteCleanupRequired && <p>{t.manualCleanupHint}</p>}
-      {result.localCleanupErrorCode && (
-        <p className="error">
-          {t.recoveryRequired} {errorText(result.localCleanupErrorCode)}
-        </p>
-      )}
       {result.operation?.logAvailable === false && (
         <p className="error">{errorText('LOG_WRITE_FAILED')}</p>
       )}
@@ -396,8 +413,12 @@ function App() {
       </details>
     </>
   );
+  const profileForPrompt = promptSource
+    ? profiles.find((profile) => profile.id === promptSource.id)
+    : undefined;
+  const sameServer = (profile: Profile) => session?.baseUrl === profile.baseUrl;
   return (
-    <main>
+    <main className="app-shell">
       <header className="app-header">
         <img className="mark" src={connectIcon} alt="" />
         <div className="brand">
@@ -405,7 +426,7 @@ function App() {
           <p>{t.subtitle}</p>
         </div>
         <label className="language-picker">
-          {t.language}
+          <span>{t.language}</span>
           <select
             aria-label={t.language}
             value={setting}
@@ -418,48 +439,50 @@ function App() {
           </select>
         </label>
       </header>
-      <nav className="view-tabs">
+      <nav className="view-tabs" aria-label={t.title}>
         <button
           disabled={busy}
-          className={view === 'home' ? 'primary' : ''}
-          onClick={() => setView('home')}
+          aria-current={view === 'connections' ? 'page' : undefined}
+          className={view === 'connections' ? 'active' : ''}
+          onClick={() => setView('connections')}
         >
           {t.home}
         </button>
         <button
           disabled={busy}
-          className={view === 'diagnostics' ? 'primary' : ''}
+          aria-current={view === 'diagnostics' ? 'page' : undefined}
+          className={view === 'diagnostics' ? 'active' : ''}
           onClick={() => setView('diagnostics')}
         >
           {t.diagnostics}
         </button>
       </nav>
-      {view === 'home' ? (
+      <div className="notice" role="note">
+        {t.hostNotice}
+      </div>
+      {view === 'connections' ? (
         <>
-          <section>
+          <section className="card account-card" aria-labelledby="account-heading">
             <div className="section-heading">
               <div>
-                <h2>{t.stepLogin}</h2>
+                <p className="eyebrow">{t.stepLogin}</p>
+                <h2 id="account-heading">
+                  {session ? session.user.display_name || session.user.username : t.login}
+                </h2>
                 {session && (
                   <p className="server-address">
-                    {session.baseUrl} · {session.user.display_name} ·{' '}
-                    {session.user.role === 'reader'
-                      ? t.roleReader
-                      : session.user.role === 'editor'
-                        ? t.roleEditor
-                        : t.roleSuperuser}
+                    {session.baseUrl} · {session.user.username} · {roleText(session.user.role)}
                   </p>
                 )}
               </div>
               {session && (
-                <div className="buttons">
+                <div className="button-row">
                   <button
                     disabled={busy}
                     onClick={() => {
                       setLoginOpen(true);
                       setReport(null);
                       setEvents([]);
-                      setOutcomes([]);
                       setErrorCode('');
                       setMessage(null);
                     }}
@@ -473,7 +496,7 @@ function App() {
                         await invoke('logout');
                         setSession(null);
                         setLoginOpen(true);
-                        return {};
+                        return {} as Result;
                       }, 'logoutNote')
                     }
                   >
@@ -482,8 +505,8 @@ function App() {
                 </div>
               )}
             </div>
-            {loginOpen && (
-              <form noValidate onSubmit={(event) => void signIn(event)}>
+            {(!session || loginOpen) && (
+              <form noValidate className="form" onSubmit={(event) => void signIn(event)}>
                 <label>
                   {t.server}
                   <input
@@ -494,7 +517,7 @@ function App() {
                     placeholder="https://tradeflow.example.com"
                   />
                 </label>
-                <div className="grid">
+                <div className="form-grid">
                   <label>
                     {t.username}
                     <input
@@ -509,13 +532,13 @@ function App() {
                     <input
                       required
                       type="password"
-                      autoComplete="off"
+                      autoComplete="current-password"
                       value={password}
                       onChange={(event) => setPassword(event.target.value)}
                     />
                   </label>
                 </div>
-                <div className="buttons">
+                <div className="button-row">
                   <button className="primary" disabled={busy}>
                     {busy ? t.busy : t.login}
                   </button>
@@ -535,102 +558,129 @@ function App() {
                 </div>
               </form>
             )}
+            {session && !session.capabilities.enabled && <p className="error">{t.noMcp}</p>}
           </section>
           {session && !loginOpen && (
-            <section>
+            <section className="card" aria-labelledby="create-heading">
               <div className="section-heading">
                 <div>
-                  <h2>{t.stepSelect}</h2>
-                  <p>{t.scope}</p>
+                  <p className="eyebrow">{t.stepCreate}</p>
+                  <h2 id="create-heading">{t.createTitle}</h2>
+                  <p>{t.connectHint}</p>
                 </div>
               </div>
-              {!session.capabilities.enabled && <p className="error">{t.noMcp}</p>}
-              <div className="agent-grid">
-                {agents.map((agent) => (
-                  <article key={agent.client}>
-                    <label className="agent-select">
-                      <input
-                        type="checkbox"
-                        checked={selected.includes(agent.client)}
-                        disabled={busy || !agent.installed || !agent.supported}
-                        onChange={(event) =>
-                          setSelected((current) =>
-                            event.target.checked
-                              ? [...current, agent.client]
-                              : current.filter((client) => client !== agent.client)
-                          )
-                        }
-                      />
-                      <span>
-                        <strong>{clientName(agent.client)}</strong>
-                        <small>
-                          {agent.version ?? (agent.installed ? t.workbuddyVersion : t.notInstalled)}
-                        </small>
-                      </span>
-                    </label>
-                    {profiles.filter((p) => p.client === agent.client).length > 0 && (
-                      <div className="replacement-note">
-                        <strong>{t.replaceLocal}</strong>
-                        {profiles
-                          .filter((p) => p.client === agent.client)
-                          .map((p) => (
-                            <p key={p.id} className="server-address">
-                              {p.baseUrl} · {p.ownerUsername}
-                            </p>
-                          ))}
-                        <p>{t.switchSubtitle}</p>
-                      </div>
-                    )}
-                  </article>
-                ))}
-              </div>
-              <button
-                className="primary connect-button"
-                disabled={busy || !session.capabilities.enabled || !selected.length}
-                onClick={() => void connect()}
-              >
-                {t.connectSelected}
-              </button>
+              <form className="form create-form" onSubmit={(event) => void createConnection(event)}>
+                <label className="grow">
+                  {t.connectionName}
+                  <input
+                    required
+                    maxLength={64}
+                    value={name}
+                    placeholder={t.connectionNamePlaceholder}
+                    onChange={(event) => setName(event.target.value)}
+                  />
+                  <small className="field-hint">{t.connectionNameHint}</small>
+                </label>
+                <button className="primary" disabled={busy || !session.capabilities.enabled}>
+                  {t.connectSelected}
+                </button>
+              </form>
             </section>
           )}
-          <section>
+          <section aria-labelledby="profiles-heading">
             <div className="section-heading">
-              <h2>{t.profiles}</h2>
+              <div>
+                <p className="eyebrow">{t.stepApply}</p>
+                <h2 id="profiles-heading">{t.profiles}</h2>
+                <p>{t.scope}</p>
+              </div>
             </div>
             {profiles.length === 0 ? (
-              <p>{t.empty}</p>
+              <div className="empty-state">
+                <strong>{t.empty}</strong>
+                <p>{t.connectHint}</p>
+              </div>
             ) : (
               <div className="connection-grid">
                 {profiles.map((profile) => (
-                  <article key={profile.id}>
-                    <h3>{clientName(profile.client)}</h3>
-                    <p className="server-address">{profile.baseUrl}</p>
-                    <p>{profile.ownerUsername}</p>
-                    <p>
-                      {profile.configurationWritten ? t.statusConfigured : t.statusMissingConfig}
+                  <article className="card connection-card" key={profile.id}>
+                    <div className="connection-heading">
+                      <div>
+                        <h3>{profile.client}</h3>
+                        <span className="account-line">
+                          {profile.ownerUsername} · {profile.baseUrl}
+                        </span>
+                      </div>
+                      <span className="mode-badge">
+                        {profile.mode === 'bridge' ? t.bridge : t.remote}
+                      </span>
+                    </div>
+                    <dl className="meta-grid">
+                      <div>
+                        <dt>{t.expires}</dt>
+                        <dd>{dateText(profile.expiresAt, language)}</dd>
+                      </div>
+                      <div>
+                        <dt>{t.catalogVersion}</dt>
+                        <dd>{profile.catalogVersion ?? t.neverSynced}</dd>
+                      </div>
+                      <div>
+                        <dt>{t.guideVersion}</dt>
+                        <dd>{profile.guideVersion ?? t.neverSynced}</dd>
+                      </div>
+                      <div>
+                        <dt>{t.lastSync}</dt>
+                        <dd>
+                          {profile.lastSyncAt
+                            ? dateText(profile.lastSyncAt, language)
+                            : t.neverSynced}
+                        </dd>
+                      </div>
+                    </dl>
+                    <div className="status-row">
+                      <span
+                        className={`pill ${
+                          Date.parse(profile.expiresAt) <= Date.now() ? 'warn' : 'neutral'
+                        }`}
+                      >
+                        {Date.parse(profile.expiresAt) <= Date.now()
+                          ? t.credentialExpired
+                          : t.statusCredential}
+                      </span>
+                      <span className={`pill ${checks[profile.id] === true ? 'ok' : 'neutral'}`}>
+                        {checks[profile.id] === true ? t.statusVerified : t.statusUnchecked}
+                      </span>
+                      <span className="pill neutral">{t.statusHostPending}</span>
+                      {profile.pendingCleanup.length > 0 && (
+                        <span className="pill warn">{t.cleanup}</span>
+                      )}
+                    </div>
+                    <p className="mono-line">
+                      {t.connectionId}: {profile.connectionId}
                     </p>
-                    {checks[profile.id] === true && <p className="verified">{t.verifiedReload}</p>}
+                    <div className="chips" aria-label={t.tools}>
+                      {profile.tools.slice(0, 6).map((tool) => (
+                        <code key={tool}>{tool}</code>
+                      ))}
+                      {profile.tools.length > 6 && <code>+{profile.tools.length - 6}</code>}
+                    </div>
                     <div className="card-actions">
                       <button
+                        className="primary"
                         disabled={busy}
-                        onClick={() =>
-                          void run(() =>
-                            invoke<Result>('diagnose', {
-                              profile: profile.id,
-                              client: profile.client
-                            })
-                          ).then((result) =>
-                            setChecks((current) => ({
-                              ...current,
-                              [profile.id]: result?.serviceVerified === true
-                            }))
-                          )
-                        }
+                        onClick={() => void copyPrompt(profile.id, 'connect')}
                       >
-                        {t.doctor}
+                        {t.connectPrompt}
                       </button>
-                      <button disabled={busy} onClick={() => void copy(profile, 'business')}>
-                        {t.business}
+                      <button
+                        disabled={busy || !sameServer(profile)}
+                        title={sameServer(profile) ? t.syncHint : t.syncSignIn}
+                        onClick={() => void sync(profile)}
+                      >
+                        {t.sync}
+                      </button>
+                      <button disabled={busy} onClick={() => void diagnose(profile)}>
+                        {t.doctor}
                       </button>
                       <button
                         className="danger-button"
@@ -640,9 +690,55 @@ function App() {
                           dialog.current?.showModal();
                         }}
                       >
-                        {t.removeLocal}
+                        {t.disconnect}
                       </button>
                     </div>
+                    <div className="sync-result" aria-live="polite">
+                      {syncResult?.id === profile.id && (
+                        <>
+                          {syncResult.added.length > 0 && (
+                            <p className="sync-line">
+                              <strong>+</strong> {syncResult.added.join(', ')}
+                            </p>
+                          )}
+                          {syncResult.removed.length > 0 && (
+                            <p className="sync-line">
+                              <strong>−</strong> {syncResult.removed.join(', ')}
+                            </p>
+                          )}
+                          {!syncResult.changed && <p>{t.syncEmpty}</p>}
+                        </>
+                      )}
+                    </div>
+                    <details className="more-actions">
+                      <summary>{t.moreActions}</summary>
+                      <div className="button-row">
+                        <button disabled={busy} onClick={() => void renew(profile)}>
+                          {t.renew}
+                        </button>
+                        <button
+                          disabled={busy}
+                          onClick={() => void copyPrompt(profile.id, 'update')}
+                        >
+                          {t.updatePrompt}
+                        </button>
+                        <button
+                          disabled={busy}
+                          onClick={() => void copyPrompt(profile.id, 'repair')}
+                        >
+                          {t.repairPrompt}
+                        </button>
+                        <button
+                          disabled={busy}
+                          onClick={() => void copyPrompt(profile.id, 'business')}
+                        >
+                          {t.business}
+                        </button>
+                        <button disabled={busy} onClick={() => void openCloud(profile.baseUrl)}>
+                          {t.cloudCredentials}
+                        </button>
+                      </div>
+                    </details>
                   </article>
                 ))}
               </div>
@@ -651,10 +747,10 @@ function App() {
         </>
       ) : (
         <>
-          <section>
+          <section className="card" aria-labelledby="diagnostics-heading">
             <div className="section-heading">
               <div>
-                <h2>{t.diagnostics}</h2>
+                <h2 id="diagnostics-heading">{t.diagnostics}</h2>
                 <p>{t.logHint}</p>
               </div>
               <button
@@ -663,7 +759,7 @@ function App() {
                   void run(async () => {
                     const value = await invoke<{ exported: boolean }>('export_operation_logs');
                     if (value.exported) setMessage('exported');
-                    return {};
+                    return {} as Result;
                   })
                 }
               >
@@ -677,8 +773,8 @@ function App() {
                 <pre>{JSON.stringify(crashes, null, 2)}</pre>
               </details>
             )}
-            {recovery.map((issue, i) => (
-              <p key={i} className="error">
+            {recovery.map((issue, index) => (
+              <p key={index} className="error">
                 {t.recoveryRequired} {errorText(issue.errorCode)}
               </p>
             ))}
@@ -691,7 +787,7 @@ function App() {
                     {new Date(values[0].timestamp).toLocaleString(
                       language === 'zh' ? 'zh-CN' : 'en-US'
                     )}{' '}
-                    · {values[0].client ? clientName(values[0].client) : t.account} ·{' '}
+                    · {values[0].client ?? t.account} ·{' '}
                     {(t.actions as Record<string, string>)[values[0].action] ?? t.report} ·{' '}
                     {values.at(-1)?.status === 'failed'
                       ? t.failed
@@ -706,47 +802,22 @@ function App() {
             )}
           </section>
           {profiles.length > 0 && (
-            <section>
+            <section className="card">
               <h2>{t.advanced}</h2>
               <p>{t.advancedHint}</p>
               {profiles.map((profile) => (
                 <article className="diagnostic-profile" key={profile.id}>
-                  <h3>{clientName(profile.client)}</h3>
+                  <h3>{profile.client}</h3>
                   <p className="server-address">
                     {profile.baseUrl} · {profile.ownerUsername}
                   </p>
-                  <p className="server-address">{profile.configPath}</p>
-                  <div className="buttons">
-                    <button
-                      disabled={busy}
-                      onClick={() =>
-                        void run(() =>
-                          invoke('repair_agent', {
-                            profile: profile.id,
-                            client: profile.client,
-                            mode: 'auto'
-                          })
-                        )
-                      }
-                    >
-                      {t.repair}
-                    </button>
-                    <button
-                      disabled={busy}
-                      onClick={() =>
-                        void run(() =>
-                          invoke('repair_agent', {
-                            profile: profile.id,
-                            client: profile.client,
-                            mode: 'bridge'
-                          })
-                        )
-                      }
-                    >
-                      {t.bridge}
-                    </button>
-                    <button disabled={busy} onClick={() => void copy(profile, 'repair')}>
+                  <p className="mono-line">{profile.serverName}</p>
+                  <div className="button-row">
+                    <button disabled={busy} onClick={() => void copyPrompt(profile.id, 'repair')}>
                       {t.repairPrompt}
+                    </button>
+                    <button disabled={busy} onClick={() => void copyPrompt(profile.id, 'update')}>
+                      {t.updatePrompt}
                     </button>
                     <button disabled={busy} onClick={() => void openCloud(profile.baseUrl)}>
                       {t.cloudCredentials}
@@ -757,89 +828,133 @@ function App() {
             </section>
           )}
           {cleanup.length > 0 && (
-            <section>
-              <h2>{t.cleanupRecords}</h2>
+            <section className="card">
+              <h2>{t.pendingTitle}</h2>
               <p>{t.manualCleanupHint}</p>
               {cleanup.map((item) => (
                 <article
                   className="diagnostic-profile"
                   key={`${item.baseUrl}-${item.connectionId}`}
                 >
-                  <h3>{clientName(item.client)}</h3>
+                  <h3>{item.client}</h3>
                   <p className="server-address">
                     {item.baseUrl} · {item.ownerUsername}
                   </p>
-                  <p className="server-address">
+                  <p className="mono-line">
                     {t.connectionId}: {item.connectionId}
                   </p>
-                  <button disabled={busy} onClick={() => void openCloud(item.baseUrl)}>
-                    {t.cloudCredentials}
-                  </button>
+                  <div className="button-row">
+                    <button
+                      disabled={busy}
+                      onClick={() =>
+                        void run(async () => {
+                          const value = await invoke<{ revoked: number; remaining: number }>(
+                            'retry_pending_revocations'
+                          );
+                          setMessage(value.remaining > 0 ? 'cleanup' : 'remoteRevoked');
+                          return {} as Result;
+                        })
+                      }
+                    >
+                      {t.retryPending}
+                    </button>
+                    <button disabled={busy} onClick={() => void openCloud(item.baseUrl)}>
+                      {t.cloudCredentials}
+                    </button>
+                  </div>
                 </article>
               ))}
             </section>
           )}
         </>
       )}
+      {prompt && (
+        <section className="card prompt-panel" aria-labelledby="prompt-heading">
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">{profileForPrompt?.client ?? t.showPrompt}</p>
+              <h2 id="prompt-heading">{t.showPrompt}</h2>
+              <p>{t.promptPreviewHint}</p>
+            </div>
+            <div className="button-row">
+              {(['connect', 'update', 'business', 'repair'] as PromptKind[]).map((kind) => (
+                <button
+                  key={kind}
+                  className={promptSource?.kind === kind ? 'active' : ''}
+                  aria-pressed={promptSource?.kind === kind}
+                  disabled={busy || !profileForPrompt}
+                  onClick={() => void copyPrompt(promptSource!.id, kind)}
+                >
+                  {(t.promptTabs as Record<string, string>)[kind]}
+                </button>
+              ))}
+            </div>
+          </div>
+          <pre className="prompt-text">{prompt}</pre>
+        </section>
+      )}
+      <div className="operation-status" aria-live="polite">
+        {(busy || events.length > 0 || report || message || errorCode) && (
+          <section className="card">
+            <h2>{busy ? t.busy : t.lastOperation}</h2>
+            {message && <p className="success">{String(t[message] ?? '')}</p>}
+            {errorCode && !report?.errorCode && (
+              <p className="error" role="alert">
+                {errorText(errorCode)}
+              </p>
+            )}
+            {busy && events.at(-1) && <p>{stageText(events.at(-1)!.stage)}</p>}
+            {events.length > 0 && (
+              <details open={busy}>
+                <summary>{t.progress}</summary>
+                <ol className="event-list">{eventRows(events)}</ol>
+              </details>
+            )}
+            {report && resultView(report)}
+          </section>
+        )}
+      </div>
       {logWarning && (
         <p className="error" role="alert">
           {errorText(logWarning)}
         </p>
       )}
-      {(busy || events.length > 0 || report || outcomes.length > 0 || message || errorCode) && (
-        <section aria-live="polite">
-          <h2>{busy ? t.busy : t.lastOperation}</h2>
-          {message && <p>{String(t[message])}</p>}
-          {errorCode && !report?.errorCode && (
-            <p className="error" role="alert">
-              {errorText(errorCode)}
-            </p>
-          )}
-          {busy && events.at(-1) && <p>{stageText(events.at(-1)!.stage)}</p>}
-          {events.length > 0 && (
-            <details open={busy}>
-              <summary>{t.progress}</summary>
-              <ol className="event-list">{eventRows(events)}</ol>
-            </details>
-          )}
-          {report && resultView(report)}
-          {outcomes.map((item) => (
-            <article className="diagnostic-profile" key={item.client}>
-              <h3>
-                {clientName(item.client)} · {item.ok ? t.stageDone : t.failed}
-              </h3>
-              {resultView(item.result)}
-            </article>
-          ))}
-        </section>
-      )}
-      {prompt && (
-        <section>
-          <h2>{t.showPrompt}</h2>
-          <pre>{prompt}</pre>
-        </section>
-      )}
       <footer>
         {t.testBuild} · {version}
       </footer>
-      <dialog ref={dialog} className="disconnect-dialog" onClose={() => setRemoveTarget(null)}>
-        <h2>{t.removeLocal}</h2>
+      <dialog
+        ref={dialog}
+        className="disconnect-dialog"
+        aria-labelledby="remove-heading"
+        onClose={() => setRemoveTarget(null)}
+      >
+        <h2 id="remove-heading">{t.disconnectTitle}</h2>
         {removeTarget && (
           <p className="server-address">
-            {clientName(removeTarget.client)} · {removeTarget.baseUrl}
+            {removeTarget.client} · {removeTarget.baseUrl}
           </p>
         )}
         <p>{t.removeHint}</p>
-        <div className="buttons">
-          <button autoFocus disabled={busy} onClick={() => dialog.current?.close()}>
-            {t.cancel}
-          </button>
+        <div className="stacked-actions">
           <button
             className="danger-button"
             disabled={busy}
-            onClick={() => removeTarget && void remove(removeTarget)}
+            onClick={() => removeTarget && void remove(removeTarget, 'revoke')}
           >
-            {t.confirmDisconnect}
+            {t.disconnectRevoke}
+          </button>
+          <small>{t.disconnectRevokeHint}</small>
+          <button
+            disabled={busy}
+            onClick={() => removeTarget && void remove(removeTarget, 'local')}
+          >
+            {t.disconnectLocal}
+          </button>
+          <small>{t.disconnectLocalHint}</small>
+        </div>
+        <div className="button-row end">
+          <button disabled={busy} onClick={() => dialog.current?.close()}>
+            {t.cancel}
           </button>
         </div>
       </dialog>

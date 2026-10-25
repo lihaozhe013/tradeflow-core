@@ -1,12 +1,28 @@
 # TradeFlow Connect (test release)
 
 TradeFlow Connect is a Tauri 2 desktop assistant for Windows x64/ARM64, macOS Apple Silicon, and
-Linux x64. It creates account-bound MCP credentials and installs user-level OpenCode V2 or WorkBuddy
-connections. Query tools are read-only. When staging writes are enabled, editor and superuser
-connections also receive tools that submit and update pending transaction drafts. Only an
-authenticated editor or superuser can review and merge drafts in the web app. Reader accounts cannot
-discover or call receivable, payable, analysis, or draft mutation tools. Authorized query tools read
-the entire instance, not an employee partition.
+Linux x64. It manages account-bound MCP credentials and hands each Agent a prompt that lets the
+Agent configure its own MCP connection. The assistant never edits Agent configuration files.
+
+Query tools are read-only. When staging writes are enabled, editor and superuser connections also
+receive tools that submit and update pending transaction drafts. Only an authenticated editor or
+superuser can review and merge drafts in the web application. Reader accounts cannot discover or
+call receivable, payable, analysis, or draft mutation tools. Authorized query tools read the entire
+instance, not an employee partition.
+
+## Responsibilities
+
+| Component | Owns                                                                   | Does not own                        |
+| --------- | ---------------------------------------------------------------------- | ----------------------------------- |
+| Assistant | Sign-in, credential issue, renewal, revocation, prompts, diagnostics   | Agent configuration, Agent versions |
+| Bridge    | Credential lookup, MCP forwarding, error classification, local logging | Business tool names or permissions  |
+| Agent     | Its own MCP entry, trust/reload, tool discovery, host usage            | Passwords, login JWTs, MCP tokens   |
+| Backend   | Tool catalog, authorization, rate limits, business execution           | Agent identity                      |
+
+A connection is a revocable access grant for one user-chosen name, not a fixed Agent type. Any host
+that can run a local stdio MCP server can connect without a new desktop release. The default and
+recommended transport is the bundled stdio bridge; a direct remote transport remains available for
+hosts that prefer Streamable HTTP.
 
 ## Server upgrade
 
@@ -22,83 +38,99 @@ the entire instance, not an employee partition.
 
 User connection endpoints require a real login JWT even if normal web authentication is disabled.
 The disabled-auth development identity cannot create connections. Capabilities have interface
-version 1. Account credentials last 90 days, store only a SHA-256 digest on the server, and become
-invalid after revocation, expiry, password changes, account deletion, or while the account is
-disabled. Current role permissions are checked on every MCP request. All dynamic credentials owned
-by one account share its request/concurrency budget. Existing static integrations keep their own
-budgets and permissions.
+version 1 and now include the catalog and guide versions. Credential names are free-form labels of
+up to 64 printable characters; `client` no longer rejects unknown Agents.
+
+Account credentials last 90 days, store only a SHA-256 digest on the server, and become invalid
+after revocation, expiry, password changes, account deletion, or while the account is disabled.
+Current role permissions are checked on every MCP request. All dynamic credentials owned by one
+account share its request/concurrency budget. Existing static integrations keep their own budgets
+and permissions.
 
 ## User workflow
 
 1. Enter the server origin, such as `https://tradeflow.example.com`, and sign in with your TradeFlow
    account. HTTP is accepted only for loopback development. Paths, embedded passwords, queries, and
    fragments are rejected.
-2. Select OpenCode, WorkBuddy, or both and click **Connect selected agents**. The page lists the
-   local connections that will be replaced. Each Agent is processed independently.
-3. Wait for **Service verified. Reload the Agent and run one query.** Enable/trust or reload the
-   connection in the Agent, then use the copied business prompt. Its minimal query uses `limit: 5`.
+2. Enter a connection name, for example `Office assistant`, and create the connection. The assistant
+   verifies the server, issues an independent credential, and probes the MCP endpoint.
+3. The assistant copies the connect prompt and shows it for review. Paste it into the Agent you want
+   to connect. The prompt contains no token: it names the bundled bridge executable and the
+   `serve --profile <id>` launch command.
+4. Let the Agent register the stdio server using its own MCP management command or documented
+   configuration fields, then trust or reload the connection and run one query.
 
-**Switch server** opens the same login form. There is no separate switching wizard. A failed login
-leaves the existing session and Agent configuration intact. A verified destination replaces the
-assistant's existing entries for that Agent, preserving other MCP servers and JSONC comments. An
-existing valid credential for the destination account is reused. Expired or rejected credentials are
-replaced while preserving the local profile name. Successful replacements leave old remote
-credentials for manual revocation; an offline old server does not block the new connection.
+Several connections can coexist, including multiple connections for the same host or account. Each
+one has its own credential and can be revoked separately.
 
-Endpoint verification does not prove host activation. A running Agent may still hold its old
-configuration until it is reloaded. Sign out only clears the in-memory login session; installed
-connections continue to work.
+**Switch server** opens the same login form and keeps existing connections. Signing out only clears
+the in-memory JWT; installed connections continue to work.
+
+### Prompts
+
+The main screen exposes one primary action per connection and keeps the rest behind **More
+actions**:
+
+| Prompt   | Purpose                                                                                     |
+| -------- | ------------------------------------------------------------------------------------------- |
+| Connect  | Register the stdio bridge entry, verify discovery, run a minimal query.                     |
+| Update   | Re-discover tools, compare with the stored catalog, refresh host guidance, verify a query.  |
+| Repair   | Diagnose the service, host entry, trust state, credential expiry, and network/TLS failures. |
+| Business | Ask the Agent for business answers through the connected service.                           |
+
+Prompts follow the assistant language (Simplified Chinese, English, or Follow system). CLI commands,
+MCP tool names, and diagnostic JSON keys remain unchanged.
+
+### Sync and update
+
+The tool catalog is versioned by the backend. `GET /api/mcp/catalog` returns the catalog version,
+the instruction-guide version, the minimum bridge version, and the tools visible to the signed-in
+account. The version is derived from the visible entries, so adding or changing a tool changes it
+without a manual bump.
+
+**Sync latest capabilities** signs in to the same server, reads the catalog, probes the MCP
+endpoint, updates the stored tool list and versions, and reports added or removed tools. It does not
+reissue the credential, rewrite Agent configuration, or expand authorization. When tools change,
+reload the Agent or start a new session so the host re-reads `tools/list`.
+
+If a host cannot refresh tools inside a running session, the update prompt must end with that
+instruction instead of claiming success. There is no push notification requirement: each tool
+discovery reads the live catalog, and the sync action or update prompt covers the rest.
 
 ### Remove locally and revoke remotely
 
-1. On a connection card, click **Remove local configuration**, then confirm. No login or network is
-   needed. Only the assistant-managed entry and its active profile are removed. If the configuration
-   is damaged or concurrently modified, the assistant stops rather than replacing unrelated data.
-2. Reload or restart the Agent. Removing a configuration file entry does not terminate a running
-   Agent or remove a credential from its memory.
-3. Open **Diagnostics → Remote cleanup records → Open My MCP credentials**. Sign in to the original
-   server with the original account, select the old credential ID, and revoke it. You can also open
-   `https://your-original-server/#/mcp-connections` directly. Each server manages its own
-   credentials.
+A connection card offers **Remove local connection only**, which works offline and queues a redacted
+reminder for the remote credential, and **Revoke credential and remove**, which requires a matching
+sign-in. The assistant removes only its own credential profile. The Agent's MCP entry is owned by
+the Agent, so remove it there if you no longer use it.
 
-Cleanup records contain only server origin, username, Agent, credential ID, expiry when known, and
-safe status. They contain no token, password, or JWT and never prevent new connections. Records are
-historical reminders: manual web revocation does not automatically delete a local reminder. The
-legacy cleanup retry command still treats only explicit `CONNECTION_NOT_FOUND` as already removed;
-other HTTP 404 responses remain failures.
-
-The assistant saves a private recovery journal before changing configuration. Verification failure
-restores the previous file unless another program changed it, and attempts to revoke newly issued
-credentials. Cleanup failure leaves a redacted reminder. After restart, unverified changes roll back
-and verified changes finish local cleanup. External edits are never silently overwritten.
+Remote cleanup records are historical reminders: manual web revocation does not automatically delete
+a local reminder. The legacy cleanup retry treats only explicit `CONNECTION_NOT_FOUND` as already
+removed; other HTTP 404 responses remain failures.
 
 ### Diagnostics and operation logs
 
-The connection result displays the failing step, safe error code, and next action. Starting a new
-operation clears the prior result, including after login failure. The main screen contains only
-connection checks, business prompts, and local removal; repair, bridge selection, repair prompts,
-and remote cleanup reminders live in **Diagnostics**.
+The connection result displays the failing step, safe error code, and next action. Repair prompts,
+remote cleanup reminders, crash records, and operation history live in **Diagnostics**. **Export
+diagnostic report** saves recent events through a file picker.
 
-Rust records login, capability checks, Agent detection, credential issuance, configuration changes,
-MCP handshake, discovery, minimal query, commit, rollback, and temporary credential cleanup. GUI
-progress and CLI reports use the same events and operation IDs. **Export diagnostic report** saves
-recent events through a file picker. Logs survive restarts in the private data directory's `logs/`
-folder: at most three JSONL files, each at most 5 MiB. They exclude passwords, JWTs, MCP tokens,
-headers, raw configuration, business parameters, and query results. A logging failure is displayed
-separately from the connection result. The stdio bridge reserves stdout for MCP messages.
+Rust records login, capability checks, credential issuance, MCP handshake, discovery, minimal query,
+catalog sync, revocation, and recovery. GUI progress and CLI reports use the same events and
+operation IDs. Logs survive restarts in the private data directory's `logs/` folder: at most three
+JSONL files, each at most 5 MiB. They exclude passwords, JWTs, MCP tokens, headers, raw
+configuration, business parameters, and query results. A logging failure is displayed separately
+from the connection result. The stdio bridge reserves stdout for MCP messages.
 
-TradeFlow Connect supports Simplified Chinese, English, and Follow system. The setting persists
-locally. Chinese system locales select Simplified Chinese; other locales select English. Korean is
-not offered. UI explanations, operation stages, and generated prompts follow the selected language.
-CLI commands, MCP tool names, and diagnostic JSON keys remain unchanged.
+The assistant reports `serviceVerified` separately from `hostVerified`. It cannot observe Agent
+trust or reload state, so host activation always remains a user-confirmed step.
 
 ## My MCP credentials on the web
 
 Open **Administration → My MCP credentials** or `/#/mcp-connections`. Reader, editor, and superuser
-accounts can view and revoke only their own credentials. The table shows Agent, device and
-credential IDs, dates, status, and effective/granted tools. Filter by status, select one or multiple
-credentials, revoke them, and retry failed items. Tokens cannot be displayed or recovered. This page
-does not create credentials or edit permissions.
+accounts can view and revoke only their own credentials. The table shows the connection name, device
+and credential IDs, dates, status, and effective/granted tools. Filter by status or connection name,
+select one or multiple credentials, revoke them, and retry failed items. Tokens cannot be displayed
+or recovered. This page does not create credentials or edit permissions.
 
 The page remains usable while MCP is disabled; account authentication must be enabled. Status is
 revoked, expired, password changed, or active, in that precedence. Effective tools are constrained
@@ -106,66 +138,79 @@ by the account's current role. Revocation is idempotent and blocks subsequent MC
 business query already executing. No additional database migration is required for this page.
 
 `GET /api/mcp/connections` retains its `data` array and adds `pagination`. Query parameters are
-`page` (default 1), `limit` (default 100 for compatibility, maximum 100), `status`, and `client`.
-The web UI requests 20 rows per page. Listing never returns password versions or credential hashes.
-`DELETE /api/mcp/connections/:id` remains account-scoped, returning 204 for repeated revocation.
+`page` (default 1), `limit` (default 100 for compatibility, maximum 100), `status`, and `client`
+(exact connection name). The web UI requests 20 rows per page. Listing never returns password
+versions or credential hashes. `DELETE /api/mcp/connections/:id` remains account-scoped, returning
+204 for repeated revocation.
 
-## Agent adapters and compatibility status
+## Transport, bridge and compatibility
 
-- OpenCode V2: user configuration under the XDG config directory (or `~/.config/opencode`),
-  `opencode.jsonc` preferred when present, otherwise an existing `opencode.json` is used. Entries
-  use `mcp.servers`, `type: remote`, `oauth: false`, and a Bearer header. V1 is rejected.
-- WorkBuddy: `~/.workbuddy/mcp.json`, `mcpServers`, `type: streamableHttp`, a remote URL and Bearer
-  header. The baseline is desktop 5.6.0. The GUI asks users to confirm the version; it does not
-  treat a directory as proof of a verified version. Actual remote header support and trust/reload
-  behavior must be checked on each target platform before calling that version certified.
-- Bridge mode: OpenCode uses a local command array; WorkBuddy uses command/args. The bundled
-  `tradeflow-connect serve --profile <id>` executable speaks MCP over stdio and forwards only
-  tools/list and tools/call to the remote backend. The GUI need not remain open. It uses the
-  official Rust SDK and does not listen on an HTTP port.
+The bundled `tradeflow-connect serve --profile <id>` executable speaks MCP over stdio and forwards
+only `tools/list` and `tools/call` to the remote backend. It reads the credential from its private
+profile, so no token appears in Agent configuration. The GUI need not remain open and the bridge
+does not listen on an HTTP port.
 
-A profile has a stable UUID and a managed server name. Configuration updates preserve other servers
-and JSONC comments, back up the original with private permissions, use an advisory lock, check for
-concurrent changes, and atomically replace the file. Project-specific overrides are reported by the
-CLI from its working directory and are never automatically edited.
+The bridge does not filter business tool names. It forwards whatever the backend authorizes, which
+means a new server tool is visible after the host re-discovers tools without a desktop release. The
+probe samples only a page-based read-only tool, so a write tool is never called during verification.
 
-Automatic repair keeps the current transport. When the endpoint is healthy but the host cannot use
-remote Streamable HTTP, select Use bridge or let the repair prompt invoke `--mode bridge`. Transport
-switching is explicit because direct endpoint probes cannot detect the host's trust policy or
-private protocol behavior. It is never triggered to conceal HTTP 401/403/404/429, network or TLS
-errors. Certificates are not bypassed and redirects are not followed with credentials.
+Direct remote transport remains available for hosts with a documented Streamable HTTP client. In
+that mode the Agent stores a Bearer token in its own secret configuration; the assistant does not
+manage that file. Because the assistant no longer inspects Agent files, it cannot detect
+project-level overrides, malformed host configuration, or trust policy. Those checks belong to the
+Agent and the prompt.
+
+A connection profile is a private local credential store, not encrypted storage. Profile IDs are not
+a security boundary: any process running as the same OS user can use the bridge. Use OS account and
+file permissions as the boundary, and revoke unused credentials.
 
 ## Diagnostic and repair commands
 
-The GUI copies both a business prompt and a complete setup/repair prompt. The latter describes the
-account login, credential lifecycle, local configuration, transport choice, diagnosis, expected
-checks, and error handling. It gives OS-quoted commands with the helper's absolute installed path.
-Tokens do not appear in either prompt.
+The assistant copies prompts that embed the helper's absolute installed path. Tokens do not appear
+in any prompt.
 
 ```sh
-tradeflow-connect doctor --profile <uuid> --client opencode --json
-tradeflow-connect repair --profile <uuid> --client opencode --mode auto --json
-tradeflow-connect repair --profile <uuid> --client workbuddy --mode bridge --json
+tradeflow-connect describe --profile <uuid> --json
+tradeflow-connect doctor --profile <uuid> --json
 tradeflow-connect serve --profile <uuid>
 ```
 
-Doctor and repair return redacted JSON, not raw configuration or business query results. Serve
-reserves stdout for MCP and uses stderr for generic errors. The agent must not read credential
-files, print full MCP configuration, change permissions, or disable host security to repair a
-connection. Missing/expired credentials require GUI login. Host trust and reload steps remain
-user-controlled.
+`describe` returns the redacted launch descriptor (transport, executable, arguments, server name,
+tools, versions, expiry). `doctor` returns a redacted JSON diagnosis of the service and helper.
+`serve` reserves stdout for MCP and uses stderr for generic errors. The Agent must not read
+credential files, print full MCP configuration, change permissions, or disable host security to
+repair a connection. Missing or expired credentials require assistant sign-in.
+
+`--client` is no longer accepted: the profile already describes the connection, and Agent identity
+is not required for protocol access.
 
 ## Local credential storage
 
 Passwords are never persisted. Login JWTs remain in Rust memory only; MCP credentials are stored in
-private profile files and remote host configuration. The default profile directory is the OS local
-data directory under `com.tradeflow.connect`. Profile files, configuration files, and backups use
-Unix 0600 or user-only Windows ACLs; the assistant's data directory uses Unix 0700. Symlink paths
-are refused. `TRADEFLOW_CONNECT_DATA_DIR` overrides the profile directory for isolated tests.
+private profile files. The default profile directory is the OS local data directory under
+`com.tradeflow.connect`. Profile files use Unix 0600 or user-only Windows ACLs; the data directory
+uses Unix 0700. Symlink paths are refused. `TRADEFLOW_CONNECT_DATA_DIR` overrides the profile
+directory for isolated tests.
 
-The directory is a private local credential store, not encrypted storage. Do not share profile or
-backup files. When an agent's execution engine runs on another machine or in a cloud sandbox, local
-profiles and the stdio executable are unavailable; that is outside this release's scope.
+The directory is a private local credential store, not encrypted storage. Do not share profile
+files. When an Agent's execution engine runs on another machine or in a cloud sandbox, local
+profiles and the stdio executable are unavailable; such hosts need a manual remote connection
+outside this release's scope.
+
+## Upgrading from a configuration-writing release
+
+Earlier releases wrote OpenCode, WorkBuddy, or other host entries directly. This release does not.
+
+- Existing profile files load unchanged. The stored Agent id becomes the connection name and the old
+  host configuration path is ignored and removed on the next save.
+- Host entries installed by an earlier release keep working because they point at
+  `tradeflow-connect serve --profile <id>` or at the remote endpoint. Remove or replace them in the
+  Agent when convenient.
+- Interrupted operations recorded by an earlier release are resolved by finishing local profile
+  cleanup and credential revocation. The assistant no longer restores host configuration files;
+  re-run the connect prompt for that connection if the host entry is missing or stale.
+- `doctor`/`repair` no longer edit host files. Regenerate prompts after upgrading so they contain
+  the current commands.
 
 ## Development and test packages
 
@@ -214,72 +259,15 @@ The desktop icon source is `desktop/src/assets/connect.svg`. Regenerate native i
 the matching desktop PNG, ICO and ICNS files into `desktop/src-tauri/icons/`.
 
 Protocol tests run an isolated official TypeScript SDK fixture and exercise the Rust direct client,
-rejection of invalid credentials, and stdio forwarding with structured content. Config checks cover
-comments, existing servers, malformed files, rollback, concurrent changes, Chinese and
-space-containing paths, project overrides, credential redaction, private permissions and symlinks.
-Backend integration tests use only `tradeflow_e2e` via `bun run test`.
-
-Adapter references: [OpenCode V2 MCP](https://opencode.ai/v2/docs/mcp-servers),
-[WorkBuddy user configuration](https://www.codebuddy.cn/docs/workbuddy/From-Beginner-to-Expert-Guide/Function-Description/MCP-Guide),
-[WorkBuddy transport fields](https://open.workbuddy.cn/en/docs/connector).
+rejection of invalid credentials, and stdio forwarding with structured content. Storage tests cover
+profile round-trips, legacy profile and journal handling, prompt rendering without credentials,
+private permissions and symlinks. Backend integration tests use only `tradeflow_e2e` via
+`bun run test`.
 
 ## Required native release acceptance
 
-Do not mark Windows/macOS or WorkBuddy compatibility certified solely because CI compiled it. For
-each installer and host version record: installation, login, remote tool discovery/query, reader
-restrictions, credential renewal, revocation, host restart, GUI closure, bridge query, and repair of
-a damaged configuration via the generated prompt. Include WorkBuddy trust/activation steps and
-OpenCode project override behavior. Keep the exact tested versions with release evidence.
-
-## Implementation verification (2026-10-02, Linux)
-
-- Existing server/frontend build, backend lint and backend/frontend TypeScript checks passed.
-- Full backend run: 186 tests passed. After adding live downgrade/deletion coverage, the focused MCP
-  suite passed all 20 tests.
-- Full browser run: 29 of 30 tests passed. The editor navigation/logout test timed out waiting for
-  its menu; an isolated rerun passed. No unrelated application behavior was changed for that test.
-- Rust config tests (8), official SDK direct/stdio interoperability (1), and mocked GUI IPC tests
-  (2) passed. The entire Rust workspace passed clippy and the Tauri application passed native
-  checking.
-- OpenCode 2.0.21 was detected locally, but its catalog probe did not complete within the test
-  timeout. No live conversation/tool-call acceptance is claimed. WorkBuddy and Windows/macOS hosts
-  are not available in this environment; native compatibility and installer acceptance remain
-  pending.
-
-The checked-in CI workflow is the build definition, not evidence that native installers have been
-produced. Record its artifact links and the native host acceptance results before a test release.
-
-## Windows 0.1.1 diagnostics
-
-Windows storage permissions use the current process user's SID and a protected DACL through native
-APIs. No shell or localized account-name output is involved. Agent detection and helper checks run
-with `CREATE_NO_WINDOW`; redirected CLI and bridge standard IO remain available.
-
-Native Rust panics inside observed operations return `OPERATION_PANICKED`. The assistant records
-only the application version, timestamp, operation ID, stage and source filename/line in a bounded
-private `logs/crashes.jsonl` file. Panic payloads and memory dumps are excluded. The Diagnostics
-page and exported report include these records. Unwind recovery does not catch Windows access
-violations, stack overflow or external process termination; interrupted configuration journals are
-still checked on the next startup. Record the exact application version when reporting a failure.
-
-The temporary `codex/windows-mcp-smoke` branch was removed after native verification. Its Actions
-run linked below retains the verification record. The test drove real Tauri login and connection
-buttons with a local fixture backend and fake Agent detection, checked reuse/removal/query-failure
-rollback, and saved redacted reports. It does not certify actual OpenCode or WorkBuddy activation.
-`build-mcp-app` builds release installers for Windows x64/ARM64, macOS Apple Silicon, and Linux x64.
-
-### Native regression verification (2026-10-02)
-
-The Windows runner reproduced application termination immediately after the connection button, with
-a truncated exit code of 253 and no connection-stage event. This is consistent with stack overflow,
-but the original full exception code was not captured. Observed GUI operations now use boxed
-futures, and the connection entry future shrank from 21,600 to 136 bytes on the local build. A
-regression test bounds its size before polling, since Tauri constructs command futures on the native
-window thread.
-
-After this change, the
-[Windows release smoke run](https://github.com/lihaozhe013/tradeflow-core/actions/runs/37029061255)
-passed actual window login, both Agent connection buttons, credential reuse, local removal and
-query-failure rollback with temporary credential revocation. Native private ACL and hidden-process
-standard-IO tests also passed. This validates the simulated installation flow; production server
-connections and actual Agent trust/reload/tool calls still require user acceptance on Windows.
+Do not mark a host compatible solely because CI compiled it. For each installer and host version
+record: installation, login, connection creation, prompt copy, host registration by the Agent, tool
+discovery, a real host query, reader restrictions, capability sync after a tool change, credential
+renewal, revocation, host restart, GUI closure, and bridge query. Keep the exact tested host
+versions with release evidence.

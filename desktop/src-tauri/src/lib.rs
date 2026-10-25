@@ -8,27 +8,19 @@ use tradeflow_connect::{
     connection,
     diagnostics::{self, Action, Operation},
     prompts,
-    storage::{Client, Settings, Store},
+    storage::{Settings, Store},
 };
 
 #[derive(Default)]
 struct AppState {
     session: Mutex<Option<Session>>,
-    previous_session: Mutex<Option<Session>>,
     operation: Mutex<()>,
 }
 
-fn target(value: &str) -> Result<Client, String> {
-    match value {
-        "opencode" => Ok(Client::Opencode),
-        "workbuddy" => Ok(Client::Workbuddy),
-        _ => Err("INVALID_CLIENT".into()),
-    }
-}
 async fn observed(
     app: &tauri::AppHandle,
     action: Action,
-    client: Option<Client>,
+    client: Option<String>,
     server: Option<&str>,
     work: Pin<Box<dyn Future<Output = anyhow::Result<Value>> + Send + '_>>,
 ) -> Result<Value, Value> {
@@ -63,7 +55,6 @@ async fn login(
     server: String,
     username: String,
     password: String,
-    preserve_previous: Option<bool>,
 ) -> Result<Value, Value> {
     observed(
         &app,
@@ -79,14 +70,6 @@ async fn login(
             let capabilities = session.capabilities().await?;
             let result =
                 json!({"user":session.user,"capabilities":capabilities,"baseUrl":session.base_url});
-            if preserve_previous.unwrap_or(false) {
-                let previous = state.session.lock().await.take();
-                if let Some(previous) = previous {
-                    *state.previous_session.lock().await = Some(previous);
-                }
-            } else {
-                *state.previous_session.lock().await = None;
-            }
             *state.session.lock().await = Some(session);
             Ok(result)
         }),
@@ -96,20 +79,6 @@ async fn login(
 #[tauri::command]
 async fn logout(state: State<'_, AppState>) -> Result<(), String> {
     *state.session.lock().await = None;
-    *state.previous_session.lock().await = None;
-    Ok(())
-}
-#[tauri::command]
-async fn cancel_server_switch(state: State<'_, AppState>) -> Result<(), String> {
-    let previous = state.previous_session.lock().await.take();
-    if previous.is_some() {
-        *state.session.lock().await = previous;
-    }
-    Ok(())
-}
-#[tauri::command]
-async fn finish_server_switch(state: State<'_, AppState>) -> Result<(), String> {
-    *state.previous_session.lock().await = None;
     Ok(())
 }
 #[tauri::command]
@@ -149,18 +118,11 @@ fn profiles() -> Result<Value, String> {
         .map_err(|e| connection::safe_code(&e))
 }
 #[tauri::command]
-fn recover_switches() -> Result<Value, String> {
+fn recover_operations() -> Result<Value, String> {
     let store = Store::system().map_err(|e| connection::safe_code(&e))?;
-    connection::recover_switches(&store)
+    connection::recover_operations(&store)
         .map_err(|e| connection::safe_code(&e))
         .map(Value::Array)
-}
-#[tauri::command]
-fn detect_clients() -> Value {
-    json!([
-        connection::detect(&Client::Opencode),
-        connection::detect(&Client::Workbuddy)
-    ])
 }
 fn helper(app: &tauri::AppHandle) -> Result<PathBuf, String> {
     let name = if cfg!(windows) {
@@ -202,10 +164,10 @@ fn helper(app: &tauri::AppHandle) -> Result<PathBuf, String> {
     Err("HELPER_NOT_FOUND".into())
 }
 #[tauri::command]
-async fn connect_agent(
+async fn connect_connection(
     app: tauri::AppHandle,
     state: State<'_, AppState>,
-    client: String,
+    name: String,
     existing: Option<String>,
     mode: String,
 ) -> Result<Value, Value> {
@@ -214,7 +176,7 @@ async fn connect_agent(
     observed(
         &app,
         Action::Connect,
-        target(&client).ok(),
+        Some(name.clone()),
         server.as_deref(),
         Box::pin(async {
             let _operation = state
@@ -223,12 +185,12 @@ async fn connect_agent(
                 .map_err(|_| anyhow::anyhow!("OPERATION_BUSY"))?;
             let session = session.ok_or_else(|| anyhow::anyhow!("LOGIN_REQUIRED"))?;
             let store = Store::system()?;
-            connection::connect_simple(
+            connection::connect(
                 &session,
                 &store,
-                target(&client).map_err(anyhow::Error::msg)?,
                 helper(&app).map_err(anyhow::Error::msg)?,
                 existing,
+                &name,
                 &mode,
             )
             .await
@@ -237,51 +199,47 @@ async fn connect_agent(
     .await
 }
 #[tauri::command]
-async fn switch_agent(
+async fn sync_connection(
     app: tauri::AppHandle,
     state: State<'_, AppState>,
-    client: String,
-    old_profile: Option<String>,
-    target_profile: Option<String>,
-    mode: String,
-) -> Result<Value, String> {
-    let _operation = state.operation.try_lock().map_err(|_| "OPERATION_BUSY")?;
-    let session = state.session.lock().await.clone().ok_or("LOGIN_REQUIRED")?;
-    let previous_session = state.previous_session.lock().await.clone();
-    let store = Store::system().map_err(|e| connection::safe_code(&e))?;
-    let result = connection::switch(
-        &session,
-        previous_session.as_ref(),
-        &store,
-        connection::SwitchRequest {
-            client: target(&client)?,
-            helper_path: helper(&app)?,
-            old_profile_id: old_profile,
-            target_profile_id: target_profile,
-            mode,
-        },
+    profile: String,
+) -> Result<Value, Value> {
+    let store = Store::system().map_err(|e| json!({"errorCode":connection::safe_code(&e)}))?;
+    let loaded = store.load(&profile).ok();
+    let server = loaded.as_ref().map(|p| p.base_url.clone());
+    observed(
+        &app,
+        Action::Sync,
+        loaded.as_ref().map(|p| p.client.clone()),
+        server.as_deref(),
+        Box::pin(async {
+            let _operation = state
+                .operation
+                .try_lock()
+                .map_err(|_| anyhow::anyhow!("OPERATION_BUSY"))?;
+            let session = state
+                .session
+                .lock()
+                .await
+                .clone()
+                .ok_or_else(|| anyhow::anyhow!("LOGIN_REQUIRED"))?;
+            connection::sync(&session, &store, &profile).await
+        }),
     )
     .await
-    .map_err(|e| connection::safe_code(&e))?;
-    Ok(result)
 }
 #[tauri::command]
-async fn diagnose(app: tauri::AppHandle, profile: String, client: String) -> Result<Value, Value> {
+async fn diagnose(app: tauri::AppHandle, profile: String) -> Result<Value, Value> {
     let store = Store::system().map_err(|e| json!({"errorCode":connection::safe_code(&e)}))?;
-    let server = store.load(&profile).ok().map(|p| p.base_url);
+    let loaded = store.load(&profile).ok();
+    let server = loaded.as_ref().map(|p| p.base_url.clone());
     observed(
         &app,
         Action::Doctor,
-        target(&client).ok(),
+        loaded.as_ref().map(|p| p.client.clone()),
         server.as_deref(),
         Box::pin(async {
-            let report = connection::doctor(
-                &store,
-                &profile,
-                target(&client).map_err(anyhow::Error::msg)?,
-                &std::env::current_dir()?,
-            )
-            .await?;
+            let report = connection::doctor(&store, &profile).await?;
             if let Some(code) = report["errorCode"].as_str() {
                 anyhow::bail!("{code}");
             }
@@ -291,39 +249,7 @@ async fn diagnose(app: tauri::AppHandle, profile: String, client: String) -> Res
     .await
 }
 #[tauri::command]
-async fn repair_agent(
-    app: tauri::AppHandle,
-    state: State<'_, AppState>,
-    profile: String,
-    client: String,
-    mode: String,
-) -> Result<Value, Value> {
-    let store = Store::system().map_err(|e| json!({"errorCode":connection::safe_code(&e)}))?;
-    let server = store.load(&profile).ok().map(|p| p.base_url);
-    observed(
-        &app,
-        Action::Repair,
-        target(&client).ok(),
-        server.as_deref(),
-        Box::pin(async {
-            let _operation = state
-                .operation
-                .try_lock()
-                .map_err(|_| anyhow::anyhow!("OPERATION_BUSY"))?;
-            connection::repair(
-                &store,
-                &profile,
-                target(&client).map_err(anyhow::Error::msg)?,
-                &mode,
-                &std::env::current_dir()?,
-            )
-            .await
-        }),
-    )
-    .await
-}
-#[tauri::command]
-async fn disconnect_agent(
+async fn disconnect_connection(
     app: tauri::AppHandle,
     state: State<'_, AppState>,
     profile: String,
@@ -418,7 +344,7 @@ fn copy_prompt(
     language: Option<String>,
 ) -> Result<(), String> {
     use tauri_plugin_clipboard_manager::ClipboardExt;
-    if !matches!(kind.as_str(), "business" | "repair") {
+    if !matches!(kind.as_str(), "business" | "connect" | "update" | "repair") {
         return Err("INVALID_PROMPT_KIND".into());
     }
     let values = connection_prompts(profile, language)?;
@@ -441,20 +367,16 @@ pub fn run() {
             open_credentials_page,
             login,
             logout,
-            cancel_server_switch,
-            finish_server_switch,
             get_settings,
             set_language,
             pending_revocations,
             retry_pending_revocations,
             profiles,
-            recover_switches,
-            detect_clients,
-            connect_agent,
-            switch_agent,
+            recover_operations,
+            connect_connection,
+            sync_connection,
             diagnose,
-            repair_agent,
-            disconnect_agent,
+            disconnect_connection,
             connection_prompts,
             copy_prompt
         ])

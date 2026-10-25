@@ -1,30 +1,47 @@
 use crate::{
     api::Session,
-    config,
     diagnostics::{self, Stage},
     mcp,
-    storage::{Client, PendingRevocation, Profile, Store, SwitchJournal},
+    storage::{PendingRevocation, Profile, Store, validate_connection_name},
 };
 use anyhow::{Context, Result, bail};
 use fs2::FileExt;
 use serde_json::{Value, json};
 use std::{
-    collections::HashSet,
     fs::{self, File},
-    path::{Path, PathBuf},
+    future::Future,
+    path::PathBuf,
+    pin::Pin,
 };
 
-fn operation_lock(store: &Store, client: &Client) -> Result<File> {
+pub type BoxFuture<'a> = Pin<Box<dyn Future<Output = Result<Value>> + Send + 'a>>;
+
+fn operation_lock(store: &Store, key: &str) -> Result<File> {
+    let name: String = key
+        .chars()
+        .map(|value| {
+            if value.is_ascii_alphanumeric() || value == '-' || value == '_' {
+                value
+            } else {
+                '_'
+            }
+        })
+        .take(64)
+        .collect();
     let lock = fs::OpenOptions::new()
         .create(true)
         .truncate(false)
         .read(true)
         .write(true)
-        .open(store.root.join(format!("{}-operation.lock", client.name())))?;
+        .open(store.root.join(format!("{name}-operation.lock")))?;
     lock.try_lock_exclusive().context("OPERATION_BUSY")?;
     Ok(lock)
 }
-fn queue_candidate(store: &Store, profile: &Profile, error: &str) -> Result<()> {
+fn unexpired(profile: &Profile) -> bool {
+    chrono::DateTime::parse_from_rfc3339(&profile.expires_at)
+        .is_ok_and(|date| date > chrono::Utc::now())
+}
+fn queue_revocation(store: &Store, profile: &Profile, error: &str) -> Result<()> {
     store.queue_revocation(PendingRevocation {
         base_url: profile.base_url.clone(),
         owner_username: profile.owner_username.clone(),
@@ -34,11 +51,7 @@ fn queue_candidate(store: &Store, profile: &Profile, error: &str) -> Result<()> 
         last_error: Some(error.into()),
     })
 }
-async fn revoke_or_queue_candidate(
-    session: &Session,
-    store: &Store,
-    profile: &Profile,
-) -> Result<bool> {
+async fn revoke_or_queue(session: &Session, store: &Store, profile: &Profile) -> Result<bool> {
     if diagnostics::step(
         Stage::RevokeCandidate,
         session.revoke(&profile.connection_id),
@@ -48,83 +61,19 @@ async fn revoke_or_queue_candidate(
     {
         return Ok(true);
     }
-    queue_candidate(store, profile, "INSTALL_FAILED")?;
+    queue_revocation(store, profile, "INSTALL_FAILED_CLEANUP_PENDING")?;
     Ok(false)
 }
-
-pub fn detect(client: &Client) -> Value {
-    let home = dirs::home_dir().unwrap_or_default();
-    match client {
-        Client::Opencode => {
-            let executable = if cfg!(windows) {
-                "opencode.exe"
-            } else {
-                "opencode"
-            };
-            let candidates = [
-                PathBuf::from(executable),
-                home.join(".opencode/bin").join(executable),
-                home.join(".bun/bin").join(executable),
-                PathBuf::from("/opt/homebrew/bin").join(executable),
-                PathBuf::from("/usr/local/bin").join(executable),
-            ];
-            let version = candidates.iter().find_map(|path| {
-                crate::process::command(path)
-                    .arg("--version")
-                    .output()
-                    .ok()
-                    .filter(|r| r.status.success())
-                    .map(|r| String::from_utf8_lossy(&r.stdout).trim().to_owned())
-            });
-            json!({"client":"opencode","installed":version.is_some(),"version":version,"supported":version.as_ref().is_some_and(|v|v.contains("v2."))})
-        }
-        Client::Workbuddy => {
-            #[cfg(target_os = "macos")]
-            let installed = Path::new("/Applications/WorkBuddy.app").exists()
-                || home.join("Applications/WorkBuddy.app").exists();
-            #[cfg(windows)]
-            let installed = std::env::var_os("LOCALAPPDATA").is_some_and(|base| {
-                PathBuf::from(base)
-                    .join("Programs/WorkBuddy/WorkBuddy.exe")
-                    .exists()
-            }) || home.join(".workbuddy").exists();
-            #[cfg(not(any(windows, target_os = "macos")))]
-            let installed = home.join(".workbuddy").exists();
-            json!({"client":"workbuddy","installed":installed,"version":null,"supported":installed,"baseline":"5.6.0","versionConfirmationRequired":true})
-        }
-    }
+fn tools_from(value: &Value) -> Result<Vec<String>> {
+    serde_json::from_value(value.clone()).context("INVALID_SERVER_RESPONSE")
 }
-fn validate_client(profile: &Profile, client: &Client) -> Result<()> {
-    if &profile.client != client {
-        bail!("PROFILE_CLIENT_MISMATCH");
+fn catalog_values(profile: &mut Profile, source: &Value) {
+    if let Some(version) = source["catalogVersion"].as_str() {
+        profile.catalog_version = Some(version.to_owned());
     }
-    Ok(())
-}
-pub async fn doctor(store: &Store, id: &str, client: Client, cwd: &Path) -> Result<Value> {
-    let profile = store.load(id)?;
-    validate_client(&profile, &client)?;
-    let configured = diagnostics::sync_step(Stage::ReadConfig, || config::configured(&profile))?;
-    let overrides = config::overrides(&profile, cwd);
-    let helper_available = profile.mode != "bridge"
-        || crate::process::command(&profile.helper_path)
-            .arg("--version")
-            .output()
-            .is_ok_and(|result| {
-                result.status.success()
-                    && String::from_utf8_lossy(&result.stdout).starts_with("tradeflow-connect ")
-            });
-    let probe = if helper_available {
-        mcp::probe(&profile).await
-    } else {
-        Err(anyhow::anyhow!("HELPER_NOT_FOUND"))
-    };
-    let (remote, error) = match probe {
-        Ok(value) => (value, Value::Null),
-        Err(e) => (Value::Null, Value::String(safe_code(&e))),
-    };
-    Ok(
-        json!({"profile":profile.summary(),"configurationWritten":configured,"helperAvailable":helper_available,"serviceVerified":!remote.is_null(),"hostVerified":false,"hostActivationRequired":true,"overrides":overrides,"remote":remote,"errorCode":error,"nextStep":"Enable/trust or reload the host, then run one TradeFlow query. Expired credentials require GUI login."}),
-    )
+    if let Some(version) = source["guideVersion"].as_str() {
+        profile.guide_version = Some(version.to_owned());
+    }
 }
 pub fn safe_code(error: &anyhow::Error) -> String {
     let value = error.to_string();
@@ -137,39 +86,26 @@ pub fn safe_code(error: &anyhow::Error) -> String {
         "BRIDGE_IO_FAILED",
         "BRIDGE_START_FAILED",
         "BROWSER_OPEN_FAILED",
-        "CLIENT_NOT_INSTALLED",
         "CLIPBOARD_WRITE_FAILED",
-        "CONFIG_BUSY",
-        "CONFIG_CONCURRENT_CHANGE",
-        "CONFIG_READ_FAILED",
-        "CONFIG_RECOVERY_CONCURRENT_CHANGE",
-        "CONFIG_RECOVERY_FAILED",
-        "CONFIG_ROOT_MUST_BE_OBJECT",
-        "CONNECTION_NOT_FOUND",
         "HELPER_NOT_FOUND",
         "HOME_UNAVAILABLE",
         "HOST_COMPATIBILITY",
         "HTTPS_OR_LOOPBACK_ORIGIN_REQUIRED",
-        "INSTALL_FAILED_CLEANUP_PENDING",
-        "INVALID_CLIENT",
-        "INVALID_CONFIG_JSON",
         "INVALID_CONNECTION_ID",
         "INVALID_CONNECTION_MODE",
+        "INVALID_CONNECTION_NAME",
         "INVALID_DEVICE_ID",
         "INVALID_DISCONNECT_MODE",
         "INVALID_LANGUAGE",
-        "INVALID_MCP_OBJECT",
         "INVALID_OPERATION_ID",
-        "INVALID_OPERATION_PHASE",
-        "INVALID_PENDING_REVOCATIONS",
         "INVALID_PROFILE",
         "INVALID_PROFILE_ID",
         "INVALID_PROMPT_KIND",
-        "INVALID_SERVERS_OBJECT",
         "INVALID_SERVER_RESPONSE",
         "INVALID_SERVER_URL",
         "INVALID_SETTINGS",
         "INVALID_STORAGE_PATH",
+        "LEGACY_JOURNAL_UNREADABLE",
         "LOCAL_DATA_UNAVAILABLE",
         "LOGIN_REQUIRED",
         "LOGIN_FIELDS_REQUIRED",
@@ -183,25 +119,16 @@ pub fn safe_code(error: &anyhow::Error) -> String {
         "MCP_TIMEOUT",
         "NETWORK_CONNECTION_FAILED",
         "NETWORK_ERROR",
-        "NETWORK_OR_TLS_ERROR",
         "NETWORK_TIMEOUT",
         "NO_AUTHORIZED_TOOLS",
-        "OPENCODE_V2_REQUIRED",
         "OPERATION_BUSY",
         "OPERATION_FAILED",
         "OPERATION_PANICKED",
         "PROFILE_ACCOUNT_MISMATCH",
-        "PROFILE_CLIENT_MISMATCH",
-        "PROFILE_CONFIG_PATH_CHANGED",
         "PROFILE_NOT_FOUND",
         "PROFILE_REMOVE_FAILED",
         "PROFILE_SERVER_MISMATCH",
-        "PROFILE_SERVER_OR_CLIENT_MISMATCH",
         "ROLE_NOT_SUPPORTED",
-        "ROLLBACK_CONCURRENT_CHANGE",
-        "ROLLBACK_FAILED",
-        "STRUCTURED_RESULT_MISSING",
-        "SWITCH_RECOVERY_PENDING",
         "SYMLINK_PATH_REJECTED",
         "TLS_ERROR",
     ];
@@ -215,397 +142,254 @@ pub fn safe_code(error: &anyhow::Error) -> String {
         "OPERATION_FAILED".into()
     }
 }
-pub struct SwitchRequest {
-    pub client: Client,
-    pub helper_path: PathBuf,
-    pub old_profile_id: Option<String>,
-    pub target_profile_id: Option<String>,
-    pub mode: String,
+pub fn profile_summaries(store: &Store) -> Result<Vec<Value>> {
+    Ok(store
+        .profiles()?
+        .iter()
+        .map(Profile::summary)
+        .collect::<Vec<_>>())
 }
-pub async fn repair(
-    store: &Store,
-    id: &str,
-    client: Client,
-    mode: &str,
-    cwd: &Path,
-) -> Result<Value> {
-    let _operation = operation_lock(store, &client)?;
-    let mut profile = store.load(id)?;
-    validate_client(&profile, &client)?;
-    match mode {
-        "auto" => (),
-        "remote" | "bridge" => profile.mode = mode.into(),
-        _ => bail!("INVALID_CONNECTION_MODE"),
-    }
-    if profile.mode == "bridge" && !profile.helper_path.exists() {
-        bail!("HELPER_NOT_FOUND");
-    }
-    let change = diagnostics::sync_step(Stage::WriteConfig, || {
-        config::install(store, &profile, false)
-    })?;
-    if let Err(error) = mcp::probe(&profile).await {
-        diagnostics::sync_step(Stage::RollbackLocal, || change.rollback())
-            .context("ROLLBACK_FAILED")?;
-        return Err(error);
-    }
-    if let Err(error) = store.save(&profile) {
-        diagnostics::sync_step(Stage::RollbackLocal, || change.rollback())
-            .context("ROLLBACK_FAILED")?;
-        return Err(error);
-    }
-    doctor(store, &profile.id, client, cwd).await
+/// Redacted launch descriptor. It contains no credential, so an Agent can read it safely.
+pub fn describe(store: &Store, id: &str) -> Result<Value> {
+    let profile = store.load(id)?;
+    Ok(json!({
+        "client": profile.client,
+        "server": profile.base_url,
+        "account": profile.owner_username,
+        "profile": profile.id,
+        "serverName": profile.server_name(),
+        "mode": profile.mode,
+        "transport": "stdio",
+        "command": profile.helper_path,
+        "args": profile.launch_args(),
+        "tools": profile.tools,
+        "expiresAt": profile.expires_at,
+        "catalogVersion": profile.catalog_version,
+        "guideVersion": profile.guide_version,
+        "lastSyncAt": profile.last_sync_at,
+    }))
 }
-pub async fn install(
-    session: &Session,
-    store: &Store,
-    client: Client,
+pub async fn doctor(store: &Store, id: &str) -> Result<Value> {
+    let profile = store.load(id)?;
+    let helper_available = profile.helper_path.is_file();
+    let probe = if helper_available {
+        mcp::probe(&profile).await
+    } else {
+        Err(anyhow::anyhow!("HELPER_NOT_FOUND"))
+    };
+    let (remote, error) = match probe {
+        Ok(value) => (value, Value::Null),
+        Err(failure) => (Value::Null, Value::String(safe_code(&failure))),
+    };
+    Ok(json!({
+        "profile": profile.summary(),
+        "helperAvailable": helper_available,
+        "serviceVerified": !remote.is_null(),
+        "hostVerified": false,
+        "hostActivationRequired": true,
+        "remote": remote,
+        "errorCode": error,
+        "nextStep": "Enable/trust or reload the host, then run one TradeFlow query. Expired credentials require renewal in the connection assistant.",
+    }))
+}
+enum Credential {
+    Reused(Value),
+    Issued(Value),
+}
+pub fn connect<'a>(
+    session: &'a Session,
+    store: &'a Store,
     helper_path: PathBuf,
     existing: Option<String>,
-    mode: &str,
-) -> Result<Value> {
-    connect_simple(session, store, client, helper_path, existing, mode).await
-}
-pub async fn switch(
-    session: &Session,
-    _previous_session: Option<&Session>,
-    store: &Store,
-    request: SwitchRequest,
-) -> Result<Value> {
-    connect_simple(
-        session,
-        store,
-        request.client,
-        request.helper_path,
-        request.target_profile_id,
-        &request.mode,
-    )
-    .await
-}
-pub async fn connect_simple(
-    session: &Session,
-    store: &Store,
-    client: Client,
-    helper_path: PathBuf,
-    existing: Option<String>,
-    mode: &str,
-) -> Result<Value> {
-    diagnostics::sync_step(Stage::DetectClient, || {
-        if !matches!(mode, "remote" | "bridge") {
+    name: &'a str,
+    mode: &'a str,
+) -> BoxFuture<'a> {
+    // Tauri constructs command futures on the native window thread; keep the state machine off it.
+    Box::pin(async move {
+        let name = validate_connection_name(name)?;
+        if !matches!(mode, "bridge" | "remote") {
             bail!("INVALID_CONNECTION_MODE");
-        }
-        let detected = detect(&client);
-        if detected["installed"] != true {
-            bail!("CLIENT_NOT_INSTALLED");
-        }
-        if client == Client::Opencode && detected["supported"] != true {
-            bail!("OPENCODE_V2_REQUIRED");
         }
         if mode == "bridge" && !helper_path.exists() {
             bail!("HELPER_NOT_FOUND");
         }
-        Ok(())
-    })?;
-    Box::pin(connect_at(
-        session,
-        store,
-        client.clone(),
-        helper_path,
-        existing,
-        mode,
-        config::config_path(&client)?,
-    ))
-    .await
+        let _operation = operation_lock(store, "connect")?;
+        let username = session.user["username"]
+            .as_str()
+            .context("INVALID_SERVER_RESPONSE")?;
+        let previous = existing.as_deref().map(|id| store.load(id)).transpose()?;
+        if let Some(old) = &previous {
+            if old.owner_username != username {
+                bail!("PROFILE_ACCOUNT_MISMATCH");
+            }
+            if old.base_url != session.base_url {
+                bail!("PROFILE_SERVER_MISMATCH");
+            }
+        }
+        let capabilities = session.capabilities().await?;
+        if capabilities["enabled"] != true {
+            bail!("MCP_DISABLED");
+        }
+        let reuse_name = previous
+            .as_ref()
+            .map(|profile| profile.client.clone())
+            .unwrap_or(name);
+        let credential = match previous.as_ref() {
+            Some(old) if unexpired(old) => match mcp::probe(old).await {
+                Ok(value) => Credential::Reused(value),
+                Err(error) if safe_code(&error) == "HTTP_401" => {
+                    // An expired or revoked credential is replaced without changing the profile ID.
+                    Credential::Issued(
+                        diagnostics::step(
+                            Stage::IssueCredential,
+                            session.issue(&reuse_name, &store.device_id()?),
+                        )
+                        .await?,
+                    )
+                }
+                Err(error) => return Err(error),
+            },
+            _ => Credential::Issued(
+                diagnostics::step(
+                    Stage::IssueCredential,
+                    session.issue(&reuse_name, &store.device_id()?),
+                )
+                .await?,
+            ),
+        };
+        let (mut candidate, reused) = match credential {
+            Credential::Reused(remote) => {
+                let mut profile = previous.clone().context("PROFILE_NOT_FOUND")?;
+                profile.mode = mode.into();
+                profile.helper_path = helper_path;
+                profile.tools = tools_from(&remote["tools"])?;
+                catalog_values(&mut profile, &capabilities);
+                (profile, Some(remote))
+            }
+            Credential::Issued(issued) => {
+                let mut profile = Profile {
+                    id: previous
+                        .as_ref()
+                        .map(|profile| profile.id.clone())
+                        .unwrap_or_else(|| uuid::Uuid::new_v4().to_string()),
+                    connection_id: issued["id"]
+                        .as_str()
+                        .context("INVALID_SERVER_RESPONSE")?
+                        .into(),
+                    owner_username: username.into(),
+                    client: reuse_name.clone(),
+                    base_url: session.base_url.clone(),
+                    token: issued["token"]
+                        .as_str()
+                        .context("INVALID_SERVER_RESPONSE")?
+                        .into(),
+                    tools: tools_from(issued.get("effectiveTools").unwrap_or(&issued["tools"]))?,
+                    expires_at: issued["expiresAt"]
+                        .as_str()
+                        .context("INVALID_SERVER_RESPONSE")?
+                        .into(),
+                    helper_path,
+                    mode: mode.into(),
+                    pending_cleanup: vec![],
+                    catalog_version: None,
+                    guide_version: None,
+                    last_sync_at: None,
+                };
+                catalog_values(&mut profile, &issued);
+                catalog_values(&mut profile, &capabilities);
+                (profile, None)
+            }
+        };
+        if candidate.catalog_version.is_none() {
+            catalog_values(&mut candidate, &capabilities);
+        }
+        let reused_credential = reused.is_some();
+        let verified = match reused {
+            Some(remote) => remote,
+            None => match mcp::probe(&candidate).await {
+                Ok(remote) => remote,
+                Err(error) => {
+                    revoke_or_queue(session, store, &candidate).await?;
+                    return Err(error);
+                }
+            },
+        };
+        candidate.tools = tools_from(&verified["tools"])?;
+        candidate.last_sync_at = Some(chrono::Utc::now().to_rfc3339());
+        if let Some(old) = &previous
+            && old.connection_id != candidate.connection_id
+        {
+            queue_revocation(store, old, "MANUAL_REVOCATION")?;
+        }
+        if let Err(error) = store.save(&candidate) {
+            if !reused_credential {
+                revoke_or_queue(session, store, &candidate).await?;
+            }
+            return Err(error);
+        }
+        Ok(json!({
+            "profile": candidate.summary(),
+            "serviceVerified": true,
+            "hostVerified": false,
+            "hostActivationRequired": true,
+            "reusedCredential": reused_credential,
+            "remote": verified,
+            "nextStep": "Copy the connect prompt into the Agent. The Agent configures its own MCP entry, then reload and run one query.",
+        }))
+    })
 }
-pub async fn connect_at(
-    session: &Session,
-    store: &Store,
-    client: Client,
-    helper_path: PathBuf,
-    existing: Option<String>,
-    mode: &str,
-    config_path: PathBuf,
-) -> Result<Value> {
-    let _operation = operation_lock(store, &client)?;
-    if !matches!(mode, "remote" | "bridge") {
-        bail!("INVALID_CONNECTION_MODE");
-    }
-    if mode == "bridge" && !helper_path.exists() {
-        bail!("HELPER_NOT_FOUND");
-    }
-    let username = session.user["username"]
-        .as_str()
-        .context("INVALID_SERVER_RESPONSE")?;
-    let sources: Vec<Profile> = store
-        .profiles()?
-        .into_iter()
-        .filter(|p| p.client == client)
-        .collect();
-    let previous = match existing {
-        Some(id) => Some(store.load(&id)?),
-        None => sources
-            .iter()
-            .find(|p| p.base_url == session.base_url && p.owner_username == username)
-            .cloned(),
-    };
-    if let Some(old) = &previous {
-        if old.owner_username != username {
+pub fn sync<'a>(session: &'a Session, store: &'a Store, id: &'a str) -> BoxFuture<'a> {
+    Box::pin(async move {
+        let mut profile = store.load(id)?;
+        let username = session.user["username"]
+            .as_str()
+            .context("INVALID_SERVER_RESPONSE")?;
+        if profile.owner_username != username {
             bail!("PROFILE_ACCOUNT_MISMATCH");
         }
-        if old.base_url != session.base_url || old.client != client {
-            bail!("PROFILE_SERVER_OR_CLIENT_MISMATCH");
+        if profile.base_url != session.base_url {
+            bail!("PROFILE_SERVER_MISMATCH");
         }
-    }
-    let capabilities = session.capabilities().await?;
-    if capabilities["enabled"] != true {
-        bail!("MCP_DISABLED");
-    }
-    let config_path = diagnostics::sync_step(Stage::ReadConfig, || {
-        let path = config_path;
-        config::validate_path(&path)?;
-        if sources.iter().any(|old| old.config_path != path) {
-            bail!("PROFILE_CONFIG_PATH_CHANGED");
+        let _operation = operation_lock(store, &profile.id)?;
+        let capabilities = session.capabilities().await?;
+        if capabilities["enabled"] != true {
+            bail!("MCP_DISABLED");
         }
-        Ok(path)
-    })?;
-    let mut reusable = None;
-    if let Some(old) = &previous {
-        let unexpired = chrono::DateTime::parse_from_rfc3339(&old.expires_at)
-            .is_ok_and(|date| date > chrono::Utc::now());
-        if unexpired {
-            match mcp::probe(old).await {
-                Ok(remote) => {
-                    let names = remote["tools"]
-                        .as_array()
-                        .context("INVALID_SERVER_RESPONSE")?;
-                    let allowed = capabilities["allowedTools"]
-                        .as_array()
-                        .context("INVALID_SERVER_RESPONSE")?;
-                    if allowed.iter().all(|name| names.contains(name)) {
-                        reusable = Some(remote);
-                    }
-                }
-                Err(error) if safe_code(&error) == "HTTP_401" => (),
-                Err(error) => return Err(error),
-            }
-        }
-    }
-    let issued = if reusable.is_none() {
-        Some(
-            diagnostics::step(
-                Stage::IssueCredential,
-                session.issue(client.name(), &store.device_id()?),
-            )
-            .await?,
-        )
-    } else {
-        None
-    };
-    let candidate_result: Result<Profile> = (|| {
-        if let Some(issued) = &issued {
-            Ok(Profile {
-                id: previous
-                    .as_ref()
-                    .map(|p| p.id.clone())
-                    .unwrap_or_else(|| uuid::Uuid::new_v4().to_string()),
-                connection_id: issued["id"]
-                    .as_str()
-                    .context("INVALID_SERVER_RESPONSE")?
-                    .into(),
-                owner_username: username.into(),
-                client: client.clone(),
-                base_url: session.base_url.clone(),
-                token: issued["token"]
-                    .as_str()
-                    .context("INVALID_SERVER_RESPONSE")?
-                    .into(),
-                tools: serde_json::from_value(
-                    issued
-                        .get("effectiveTools")
-                        .unwrap_or(&issued["tools"])
-                        .clone(),
-                )
-                .context("INVALID_SERVER_RESPONSE")?,
-                expires_at: issued["expiresAt"]
-                    .as_str()
-                    .context("INVALID_SERVER_RESPONSE")?
-                    .into(),
-                config_path: config_path.clone(),
-                helper_path: helper_path.clone(),
-                mode: mode.into(),
-                pending_cleanup: vec![],
-            })
-        } else {
-            let mut profile = previous.clone().context("PROFILE_NOT_FOUND")?;
-            profile.mode = mode.into();
-            profile.helper_path = helper_path;
-            if let Some(remote) = &reusable {
-                profile.tools = serde_json::from_value(remote["tools"].clone())
-                    .context("INVALID_SERVER_RESPONSE")?;
-            }
-            profile.pending_cleanup.clear();
-            Ok(profile)
-        }
-    })();
-    let profile = candidate_result?;
-    let mut staged = profile.clone();
-    staged.id = uuid::Uuid::new_v4().to_string();
-    let preparation = diagnostics::sync_step(Stage::ReadConfig, || {
-        let mut plan = config::plan_switch(&staged, &profile, None)?;
-        for old in &sources {
-            if old.id != profile.id {
-                plan.final_after =
-                    config::patch(&plan.final_after, &client, &old.server_name(), None)?;
-            }
-        }
-        Ok(plan)
-    });
-    let plan = match preparation {
-        Ok(plan) => plan,
-        Err(error) => {
-            if issued.is_some() {
-                revoke_or_queue_candidate(session, store, &profile).await?;
-            }
-            return Err(error);
-        }
-    };
-    let retired: Vec<PendingRevocation> = sources
-        .iter()
-        .flat_map(|old| {
-            let mut values: Vec<PendingRevocation> = old
-                .pending_cleanup
-                .iter()
-                .map(|id| PendingRevocation {
-                    base_url: old.base_url.clone(),
-                    owner_username: old.owner_username.clone(),
-                    client: old.client.clone(),
-                    connection_id: id.clone(),
-                    expires_at: None,
-                    last_error: Some("LEGACY_CLEANUP_PENDING".into()),
-                })
-                .collect();
-            if old.connection_id != profile.connection_id {
-                values.push(PendingRevocation {
-                    base_url: old.base_url.clone(),
-                    owner_username: old.owner_username.clone(),
-                    client: old.client.clone(),
-                    connection_id: old.connection_id.clone(),
-                    expires_at: Some(old.expires_at.clone()),
-                    last_error: Some("MANUAL_REVOCATION".into()),
-                });
-            }
-            values
-        })
-        .collect();
-    let mut journal = SwitchJournal {
-        id: uuid::Uuid::new_v4().to_string(),
-        phase: "prepared".into(),
-        candidate: profile.clone(),
-        candidate_is_new: issued.is_some(),
-        staged_profile_id: Some(staged.id.clone()),
-        source_profile_id: None,
-        source_profile_ids: sources.iter().map(|p| p.id.clone()).collect(),
-        retired_credentials: retired.clone(),
-        config_path: plan.path.clone(),
-        config_before: plan.before.clone(),
-        config_after: plan.staged.clone(),
-        config_final: plan.final_after.clone(),
-    };
-    let saved = diagnostics::sync_step(Stage::WriteConfig, || {
-        store.save_switch_journal(&journal)?;
-        store.save(&staged)?;
-        Ok(())
-    });
-    if let Err(error) = saved {
-        if issued.is_some() {
-            revoke_or_queue_candidate(session, store, &profile).await?;
-        }
-        if store.load(&staged.id).is_ok() {
-            store.remove(&staged.id)?;
-        }
-        store.remove_switch_journal(&journal.id)?;
-        return Err(error);
-    }
-    let applied = diagnostics::sync_step(Stage::WriteConfig, || {
-        config::apply_plan(store, &staged, plan.staged_change())
-    });
-    let change = match applied {
-        Ok(change) => change,
-        Err(error) => {
-            if issued.is_some() {
-                revoke_or_queue_candidate(session, store, &profile).await?;
-            }
-            store.remove(&staged.id)?;
-            store.remove_switch_journal(&journal.id)?;
-            return Err(error);
-        }
-    };
-    let verified = match reusable {
-        Some(remote) => Ok(remote),
-        None => mcp::probe(&profile).await,
-    };
-    let verified = match verified {
-        Ok(remote) => remote,
-        Err(error) => {
-            let rollback = diagnostics::sync_step(Stage::RollbackLocal, || change.rollback());
-            if issued.is_some() {
-                revoke_or_queue_candidate(session, store, &profile).await?;
-            }
-            if rollback.is_ok() {
-                store.remove(&staged.id)?;
-                store.remove_switch_journal(&journal.id)?;
-            }
-            rollback?;
-            return Err(error);
-        }
-    };
-    let committed = diagnostics::sync_step(Stage::CommitLocal, || {
-        config::commit_switch(store, &staged, &change, plan.final_after.clone())
-    });
-    let final_change = match committed {
-        Ok(change) => change,
-        Err(error) => {
-            let rollback = diagnostics::sync_step(Stage::RollbackLocal, || change.rollback());
-            if issued.is_some() {
-                revoke_or_queue_candidate(session, store, &profile).await?;
-            }
-            if rollback.is_ok() {
-                store.remove(&staged.id)?;
-                store.remove_switch_journal(&journal.id)?;
-            }
-            rollback?;
-            return Err(error);
-        }
-    };
-    journal.phase = "verified".into();
-    if let Err(error) = store.save_switch_journal(&journal) {
-        let rollback = diagnostics::sync_step(Stage::RollbackLocal, || final_change.rollback());
-        if issued.is_some() {
-            revoke_or_queue_candidate(session, store, &profile).await?;
-        }
-        if rollback.is_ok() {
-            store.remove(&staged.id)?;
-            store.remove_switch_journal(&journal.id)?;
-        }
-        rollback?;
-        return Err(error);
-    }
-    diagnostics::sync_step(Stage::CommitLocal, || store.save(&profile))
-        .context("SWITCH_RECOVERY_PENDING")?;
-    let cleanup = diagnostics::sync_step(Stage::CommitLocal, || {
-        for entry in &retired {
-            store.queue_revocation(entry.clone())?;
-        }
-        for old in &sources {
-            if old.id != profile.id && store.load(&old.id).is_ok() {
-                store.remove(&old.id)?;
-            }
-        }
-        store.remove(&staged.id)?;
-        store.remove_switch_journal(&journal.id)
-    });
-    Ok(
-        json!({"profile":profile.summary(),"configurationWritten":true,"serviceVerified":true,"hostVerified":false,"hostActivationRequired":true,"remote":verified,"reusedCredential":issued.is_none(),"remoteCleanupRequired":!retired.is_empty(),"localCleanupErrorCode":cleanup.err().map(|e|safe_code(&e)),"nextStep":"Reload the Agent. Old credentials can be revoked on the original server's My MCP credentials page."}),
-    )
+        let catalog = diagnostics::step(Stage::SyncCatalog, session.catalog()).await?;
+        let remote = mcp::probe(&profile).await?;
+        let tools = tools_from(&remote["tools"])?;
+        let added: Vec<String> = tools
+            .iter()
+            .filter(|name| !profile.tools.contains(name))
+            .cloned()
+            .collect();
+        let removed: Vec<String> = profile
+            .tools
+            .iter()
+            .filter(|name| !tools.contains(name))
+            .cloned()
+            .collect();
+        profile.tools = tools;
+        profile.catalog_version = catalog["version"].as_str().map(str::to_owned);
+        profile.guide_version = catalog["guideVersion"].as_str().map(str::to_owned);
+        profile.last_sync_at = Some(chrono::Utc::now().to_rfc3339());
+        store.save(&profile)?;
+        Ok(json!({
+            "profile": profile.summary(),
+            "catalog": {
+                "version": catalog["version"],
+                "guideVersion": catalog["guideVersion"],
+                "minBridgeVersion": catalog["minBridgeVersion"],
+                "tools": catalog["tools"],
+            },
+            "remote": remote,
+            "added": added,
+            "removed": removed,
+            "changed": !added.is_empty() || !removed.is_empty(),
+            "hostActivationRequired": true,
+            "nextStep": "If tools changed, reload or start a new session in the host, then run one minimal query.",
+        }))
+    })
 }
 pub async fn disconnect(
     session: Option<&Session>,
@@ -614,7 +398,7 @@ pub async fn disconnect(
     revoke: bool,
 ) -> Result<Value> {
     let profile = store.load(id)?;
-    let _operation = operation_lock(store, &profile.client)?;
+    let _operation = operation_lock(store, &profile.id)?;
     let mut revoked = false;
     if revoke && let Some(session) = session {
         if session.user["username"].as_str() != Some(&profile.owner_username) {
@@ -623,51 +407,43 @@ pub async fn disconnect(
         if profile.base_url != session.base_url {
             bail!("PROFILE_SERVER_MISMATCH");
         }
-        if session.revoke(&profile.connection_id).await.is_ok() {
-            revoked = true;
-        }
+        revoked = session.revoke(&profile.connection_id).await.is_ok();
     }
-    let change = diagnostics::sync_step(Stage::RemoveLocal, || {
-        config::install(store, &profile, true)
-    })?;
-    let cleanup = (|| {
-        if !revoked {
-            store.queue_revocation(PendingRevocation {
-                base_url: profile.base_url.clone(),
-                owner_username: profile.owner_username.clone(),
-                client: profile.client.clone(),
-                connection_id: profile.connection_id.clone(),
-                expires_at: Some(profile.expires_at.clone()),
-                last_error: Some(
-                    if revoke {
-                        "REVOCATION_PENDING"
-                    } else {
-                        "LOCAL_ONLY"
-                    }
-                    .into(),
-                ),
-            })?;
-        }
-        for pending in &profile.pending_cleanup {
-            store.queue_revocation(PendingRevocation {
-                base_url: profile.base_url.clone(),
-                owner_username: profile.owner_username.clone(),
-                client: profile.client.clone(),
-                connection_id: pending.clone(),
-                expires_at: None,
-                last_error: Some("LEGACY_CLEANUP_PENDING".into()),
-            })?;
-        }
-        store.remove(id)?;
-        Ok(())
-    })();
-    if let Err(error) = cleanup {
-        diagnostics::sync_step(Stage::RollbackLocal, || change.rollback())?;
-        return Err(error);
+    if !revoked {
+        store.queue_revocation(PendingRevocation {
+            base_url: profile.base_url.clone(),
+            owner_username: profile.owner_username.clone(),
+            client: profile.client.clone(),
+            connection_id: profile.connection_id.clone(),
+            expires_at: Some(profile.expires_at.clone()),
+            last_error: Some(
+                if revoke {
+                    "REVOCATION_PENDING"
+                } else {
+                    "LOCAL_ONLY"
+                }
+                .into(),
+            ),
+        })?;
     }
-    Ok(
-        json!({"localRemoved":true,"remoteRevoked":revoked,"reloadRequired":true,"remoteCleanupRequired":!revoked}),
-    )
+    for pending in &profile.pending_cleanup {
+        store.queue_revocation(PendingRevocation {
+            base_url: profile.base_url.clone(),
+            owner_username: profile.owner_username.clone(),
+            client: profile.client.clone(),
+            connection_id: pending.clone(),
+            expires_at: None,
+            last_error: Some("LEGACY_CLEANUP_PENDING".into()),
+        })?;
+    }
+    store.remove(id)?;
+    Ok(json!({
+        "localRemoved": true,
+        "remoteRevoked": revoked,
+        "reloadRequired": true,
+        "remoteCleanupRequired": !revoked,
+        "agentConfigurationNote": "The host may still list this MCP server. Remove it in the Agent if you no longer use it.",
+    }))
 }
 pub async fn retry_pending_revocations(session: &Session, store: &Store) -> Result<Value> {
     let mut pending = store.pending_revocations()?;
@@ -703,123 +479,47 @@ pub fn list_pending_revocations(store: &Store) -> Result<Vec<PendingRevocation>>
     }
     store.pending_revocations()
 }
-pub fn profile_summaries(store: &Store) -> Result<Vec<Value>> {
-    let staged_ids = store
-        .switch_journals()?
-        .into_iter()
-        .filter_map(|journal| journal.staged_profile_id)
-        .collect::<HashSet<_>>();
-    store
-        .profiles()?
-        .iter()
-        .filter(|profile| !staged_ids.contains(&profile.id))
-        .map(|profile| {
-            let mut summary = profile.summary();
-            let Some(object) = summary.as_object_mut() else {
-                bail!("INVALID_PROFILE");
-            };
-            object.insert(
-                "connectionId".into(),
-                Value::String(profile.connection_id.clone()),
-            );
-            match config::configured(profile) {
-                Ok(value) => {
-                    object.insert("configurationWritten".into(), Value::Bool(value));
-                }
-                Err(error) => {
-                    object.insert("configurationWritten".into(), Value::Bool(false));
-                    object.insert(
-                        "configurationErrorCode".into(),
-                        Value::String(safe_code(&error)),
-                    );
-                }
-            }
-            Ok(summary)
-        })
-        .collect()
-}
-pub fn recover_switches(store: &Store) -> Result<Vec<Value>> {
+/// Finishes profile cleanup for journals written before host configuration management was removed.
+/// Host entries themselves are owned by the Agent and are never edited here.
+pub fn recover_operations(store: &Store) -> Result<Vec<Value>> {
     let mut issues = Vec::new();
-    for journal in store.switch_journals()? {
-        let _operation = match operation_lock(store, &journal.candidate.client) {
+    for journal in store.legacy_journals()? {
+        let _operation = match operation_lock(store, &journal.candidate.id) {
             Ok(lock) => lock,
             Err(error) => {
                 issues.push(json!({"id":journal.id,"errorCode":safe_code(&error)}));
                 continue;
             }
         };
-        let recovered = match journal.phase.as_str() {
-            "prepared" => {
-                let result = config::restore_journal(
-                    store,
-                    &journal.candidate.client,
-                    &journal.config_path,
-                    &journal.config_before,
-                    &journal.config_after,
-                    &journal.config_final,
-                );
-                if result.is_ok() {
-                    if journal.candidate_is_new {
-                        queue_candidate(store, &journal.candidate, "SWITCH_ROLLED_BACK")?;
-                    }
-                    if let Some(id) = &journal.staged_profile_id
-                        && store.load(id).is_ok()
-                    {
-                        store.remove(id)?;
-                    }
-                    store.remove_switch_journal(&journal.id)?;
-                    true
-                } else {
-                    issues.push(json!({"id":journal.id,"errorCode":result.err().map(|e|safe_code(&e)).unwrap_or_else(||"OPERATION_FAILED".into())}));
-                    false
+        let result = (|| -> Result<()> {
+            if journal.phase == "verified" {
+                store.save(&journal.candidate)?;
+                for retired in &journal.retired_credentials {
+                    store.queue_revocation(retired.clone())?;
                 }
-            }
-            "verified" => {
-                let expected = if journal.config_final.is_empty() {
-                    &journal.config_after
-                } else {
-                    &journal.config_final
-                };
-                if !config::journal_committed(&journal.config_path, expected)? {
-                    issues.push(
-                        json!({"id":journal.id,"errorCode":"CONFIG_RECOVERY_CONCURRENT_CHANGE"}),
-                    );
-                    continue;
+                for source in journal
+                    .source_profile_ids
+                    .iter()
+                    .map(String::as_str)
+                    .chain(journal.source_profile_id.as_deref())
+                {
+                    if source != journal.candidate.id && store.load(source).is_ok() {
+                        store.remove(source)?;
+                    }
                 }
-                if let Err(error) = store.save(&journal.candidate) {
-                    issues.push(json!({"id":journal.id,"errorCode":safe_code(&error)}));
-                    false
-                } else {
-                    for mut retired in journal.retired_credentials.clone() {
-                        retired.last_error = Some("SWITCH_RECOVERY_PENDING".into());
-                        store.queue_revocation(retired)?;
-                    }
-                    for source_id in journal
-                        .source_profile_ids
-                        .iter()
-                        .map(String::as_str)
-                        .chain(journal.source_profile_id.as_deref())
-                    {
-                        if source_id != journal.candidate.id && store.load(source_id).is_ok() {
-                            store.remove(source_id)?;
-                        }
-                    }
-                    if let Some(id) = &journal.staged_profile_id
-                        && store.load(id).is_ok()
-                    {
-                        store.remove(id)?;
-                    }
-                    store.remove_switch_journal(&journal.id)?;
-                    true
-                }
+            } else if journal.candidate_is_new {
+                queue_revocation(store, &journal.candidate, "SWITCH_ROLLED_BACK")?;
             }
-            _ => {
-                issues.push(json!({"id":journal.id,"errorCode":"INVALID_OPERATION_PHASE"}));
-                false
+            if let Some(id) = &journal.staged_profile_id
+                && store.load(id).is_ok()
+            {
+                store.remove(id)?;
             }
-        };
-        if recovered {
-            issues.push(json!({"id":journal.id,"recovered":true}));
+            store.remove_legacy_journal(&journal.id)
+        })();
+        match result {
+            Ok(()) => issues.push(json!({"id":journal.id,"recovered":true})),
+            Err(error) => issues.push(json!({"id":journal.id,"errorCode":safe_code(&error)})),
         }
     }
     Ok(issues)

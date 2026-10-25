@@ -22,7 +22,32 @@ const server = createServer(async (req, res) => {
     }
     if (req.url === '/api/mcp/capabilities') {
       send({
-        data: { version: 1, endpointPath: '/mcp', enabled: true, allowedTools: ['get_inventory'] }
+        data: {
+          version: 1,
+          endpointPath: '/mcp',
+          enabled: true,
+          allowedTools: ['get_inventory'],
+          catalogVersion: 'fixture-catalog',
+          guideVersion: '2'
+        }
+      });
+      return;
+    }
+    if (req.url === '/api/mcp/catalog') {
+      send({
+        data: {
+          version: 'fixture-catalog',
+          guideVersion: '2',
+          minBridgeVersion: '0.2.0',
+          tools: [
+            {
+              name: 'get_inventory',
+              group: 'inventory',
+              summary: 'Fixture inventory',
+              mutating: false
+            }
+          ]
+        }
       });
       return;
     }
@@ -50,7 +75,9 @@ const server = createServer(async (req, res) => {
           id,
           token: `tfmcp_${id}`,
           tools: ['get_inventory'],
-          expiresAt: '2030-01-01T00:00:00Z'
+          expiresAt: '2030-01-01T00:00:00Z',
+          catalogVersion: 'fixture-catalog',
+          guideVersion: '2'
         }
       },
       201
@@ -67,7 +94,8 @@ const server = createServer(async (req, res) => {
     'get_inventory',
     {
       description: 'Fixture',
-      inputSchema: z.object({ page: z.number().optional(), limit: z.number().optional() })
+      inputSchema: z.object({ page: z.number().optional(), limit: z.number().optional() }),
+      annotations: { readOnlyHint: true }
     },
     async () => ({
       isError: failedQuery,

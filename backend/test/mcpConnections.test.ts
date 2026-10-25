@@ -56,14 +56,21 @@ afterAll(async () => {
 describe('User MCP connections', () => {
   it('requires a real login and validates external input', async () => {
     expect((await request(app).post('/api/mcp/connections').send({})).status).toBe(401);
-    expect(
-      (
-        await request(app)
-          .post('/api/mcp/connections')
-          .set('Authorization', `Bearer ${readerJwt}`)
-          .send({ client: 'other', deviceId })
-      ).status
-    ).toBe(400);
+    for (const invalid of [
+      { client: '', deviceId },
+      { client: 'bad/name', deviceId },
+      { client: 'x'.repeat(65), deviceId },
+      { deviceId },
+      { client: 'Office assistant', deviceId, extra: true }
+    ])
+      expect(
+        (
+          await request(app)
+            .post('/api/mcp/connections')
+            .set('Authorization', `Bearer ${readerJwt}`)
+            .send(invalid)
+        ).status
+      ).toBe(400);
     const auth = config.auth!;
     const enabled = auth.enabled;
     auth.enabled = false;
@@ -72,6 +79,34 @@ describe('User MCP connections', () => {
     } finally {
       auth.enabled = enabled;
     }
+  });
+  it('accepts any printable connection name and exposes a versioned tool catalog', async () => {
+    const named = await issue(readerJwt, 'Office assistant');
+    expect(named.status).toBe(201);
+    expect(named.body.data.client).toBe('Office assistant');
+    expect(named.body.data.catalogVersion).toMatch(/^[a-f0-9]{12}$/);
+    expect(named.body.data.guideVersion).toBeTruthy();
+    const unicode = await issue(readerJwt, '办公助手');
+    expect(unicode.status).toBe(201);
+    const filtered = await request(app)
+      .get(`/api/mcp/connections?client=${encodeURIComponent('Office assistant')}`)
+      .set('Authorization', `Bearer ${readerJwt}`);
+    expect(filtered.status).toBe(200);
+    expect(
+      filtered.body.data.every((row: { client: string }) => row.client === 'Office assistant')
+    ).toBe(true);
+    const readerCatalog = await request(app)
+      .get('/api/mcp/catalog')
+      .set('Authorization', `Bearer ${readerJwt}`);
+    expect(readerCatalog.status).toBe(200);
+    expect(readerCatalog.body.data.tools).toHaveLength(4);
+    expect(readerCatalog.body.data.version).toBe(named.body.data.catalogVersion);
+    expect(JSON.stringify(readerCatalog.body)).not.toContain('token');
+    const editorCatalog = await request(app)
+      .get('/api/mcp/catalog')
+      .set('Authorization', `Bearer ${editorJwt}`);
+    expect(editorCatalog.body.data.tools).toHaveLength(7);
+    expect(editorCatalog.body.data.version).not.toBe(readerCatalog.body.data.version);
   });
   it('issues a 90-day credential and hides secrets from list responses', async () => {
     const result = await issue(readerJwt);
@@ -153,13 +188,16 @@ describe('User MCP connections', () => {
     const list = await request(stagingApp)
       .get('/api/mcp/connections')
       .set('Authorization', `Bearer ${liveEditorJwt}`);
-    const connection = list.body.data.find((item: { id: string }) => item.id === issued.body.data.id);
+    const connection = list.body.data.find(
+      (item: { id: string }) => item.id === issued.body.data.id
+    );
     expect(connection.effectiveTools).toHaveLength(11);
 
     const server = createServer(stagingApp);
     await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
     const address = server.address();
-    if (!address || typeof address === 'string') throw new Error('Staging MCP server did not start');
+    if (!address || typeof address === 'string')
+      throw new Error('Staging MCP server did not start');
     const client = new Client({ name: 'staging-permission-test', version: '1' });
     try {
       await client.connect(
@@ -252,7 +290,7 @@ describe('User MCP connections', () => {
         /tokenSha256|passwordVersion|password_hash/
       );
     }
-    for (const query of ['page=0', 'limit=101', 'status=wrong', 'client=wrong', 'page=1.5'])
+    for (const query of ['page=0', 'limit=101', 'status=wrong', 'client=bad%2Fname', 'page=1.5'])
       expect((await list(query)).status).toBe(400);
     const disabled = createApp({ ...settings, enabled: false });
     const visible = await request(disabled)

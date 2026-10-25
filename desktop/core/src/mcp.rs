@@ -91,55 +91,57 @@ pub async fn probe(profile: &Profile) -> Result<Value> {
                 .map_err(|e| anyhow::anyhow!(classify(&e.to_string())))
         })
         .await?;
-        let names: Vec<String> = tools
-            .tools
-            .iter()
-            .map(|t| t.name.to_string())
-            .filter(|name| {
-                matches!(
-                    name.as_str(),
-                    "search_partners"
-                        | "search_products"
-                        | "get_inventory"
-                        | "list_transactions"
-                        | "get_receivables"
-                        | "get_payables"
-                        | "get_analysis"
-                        | "submit_transaction_drafts"
-                        | "update_transaction_draft"
-                        | "list_transaction_drafts"
-                        | "get_transaction_draft"
-                )
-            })
-            .collect();
+        let names: Vec<String> = tools.tools.iter().map(|t| t.name.to_string()).collect();
         if names.is_empty() {
             bail!("NO_AUTHORIZED_TOOLS");
         }
-        let name = if names.iter().any(|v| v == "search_products") {
-            "search_products"
-        } else if names.iter().any(|v| v == "get_inventory") {
-            "get_inventory"
-        } else {
-            "list_transaction_drafts"
-        };
-        diagnostics::step(Stage::SampleQuery, async {
-            let call = remote
-                .call_tool(
-                    CallToolRequestParams::new(name)
-                        .with_arguments(json!({"page":1,"limit":1}).as_object().unwrap().clone()),
-                )
-                .await
-                .map_err(|e| anyhow::anyhow!(classify(&e.to_string())))?;
-            if call.is_error == Some(true) {
-                bail!("MCP_QUERY_FAILED");
-            }
-            if call.structured_content.is_none() {
-                bail!("STRUCTURED_RESULT_MISSING");
-            }
-            Ok(())
-        })
-        .await?;
-        Ok(json!({"tools":names,"structuredResult":true,"sampleQuery":name}))
+        let read_only: Vec<String> = tools
+            .tools
+            .iter()
+            .filter(|tool| {
+                tool.annotations
+                    .as_ref()
+                    .and_then(|annotations| annotations.read_only_hint)
+                    == Some(true)
+            })
+            .map(|tool| tool.name.to_string())
+            .collect();
+        // Only page-based read tools are sampled: calling a write tool or a tool with required
+        // arguments would report a false connection failure.
+        const SAMPLE_PREFERENCE: [&str; 5] = [
+            "get_inventory",
+            "search_products",
+            "search_partners",
+            "list_transactions",
+            "get_receivables",
+        ];
+        let sample = SAMPLE_PREFERENCE
+            .iter()
+            .find(|name| read_only.iter().any(|value| value == *name));
+        let mut structured = false;
+        if let Some(name) = sample {
+            diagnostics::step(Stage::SampleQuery, async {
+                let call =
+                    remote
+                        .call_tool(CallToolRequestParams::new(*name).with_arguments(
+                            json!({"page":1,"limit":1}).as_object().unwrap().clone(),
+                        ))
+                        .await
+                        .map_err(|e| anyhow::anyhow!(classify(&e.to_string())))?;
+                if call.is_error == Some(true) {
+                    bail!("MCP_QUERY_FAILED");
+                }
+                structured = call.structured_content.is_some();
+                Ok(())
+            })
+            .await?;
+        }
+        Ok(json!({
+            "tools": names,
+            "readOnlyTools": read_only,
+            "structuredResult": structured,
+            "sampleQuery": sample.copied(),
+        }))
     }
     .await;
     let _ = remote.cancel().await;

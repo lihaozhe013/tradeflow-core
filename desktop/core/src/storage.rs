@@ -8,42 +8,65 @@ use std::{
 };
 use uuid::Uuid;
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
-#[serde(rename_all = "lowercase")]
-pub enum Client {
-    Opencode,
-    Workbuddy,
-}
-impl Client {
-    pub fn name(&self) -> &'static str {
-        match self {
-            Self::Opencode => "opencode",
-            Self::Workbuddy => "workbuddy",
-        }
+pub const MAX_CONNECTION_NAME_CHARS: usize = 64;
+
+/// A connection name is a user-facing label stored with the credential. It is deliberately free
+/// form so any host can connect without a client release, but it must stay printable and bounded
+/// because it is also written to the remote credential record.
+pub fn validate_connection_name(value: &str) -> Result<String> {
+    let name = value.trim();
+    let length = name.chars().count();
+    if length == 0 || length > MAX_CONNECTION_NAME_CHARS || name.chars().any(char::is_control) {
+        bail!("INVALID_CONNECTION_NAME");
     }
+    Ok(name.to_owned())
 }
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Profile {
     pub id: String,
     pub connection_id: String,
     pub owner_username: String,
-    pub client: Client,
+    /// Connection name chosen by the user. Older profiles store the Agent id here.
+    pub client: String,
     pub base_url: String,
     pub token: String,
     pub tools: Vec<String>,
     pub expires_at: String,
-    pub config_path: PathBuf,
     pub helper_path: PathBuf,
     pub mode: String,
     #[serde(default)]
     pub pending_cleanup: Vec<String>,
+    #[serde(default)]
+    pub catalog_version: Option<String>,
+    #[serde(default)]
+    pub guide_version: Option<String>,
+    #[serde(default)]
+    pub last_sync_at: Option<String>,
 }
 impl Profile {
     pub fn server_name(&self) -> String {
         format!("tradeflow_{}", self.id.replace('-', ""))
     }
+    pub fn launch_args(&self) -> Vec<String> {
+        vec!["serve".to_owned(), "--profile".to_owned(), self.id.clone()]
+    }
     pub fn summary(&self) -> Value {
-        serde_json::json!({"id":self.id,"client":self.client,"ownerUsername":self.owner_username,"serverName":self.server_name(),"baseUrl":self.base_url,"tools":self.tools,"expiresAt":self.expires_at,"configPath":self.config_path,"mode":self.mode,"pendingCleanup":self.pending_cleanup})
+        serde_json::json!({
+            "id": self.id,
+            "connectionId": self.connection_id,
+            "client": self.client,
+            "ownerUsername": self.owner_username,
+            "serverName": self.server_name(),
+            "baseUrl": self.base_url,
+            "tools": self.tools,
+            "expiresAt": self.expires_at,
+            "mode": self.mode,
+            "pendingCleanup": self.pending_cleanup,
+            "catalogVersion": self.catalog_version,
+            "guideVersion": self.guide_version,
+            "lastSyncAt": self.last_sync_at,
+        })
     }
 }
 #[derive(Clone)]
@@ -55,7 +78,7 @@ pub struct Store {
 pub struct PendingRevocation {
     pub base_url: String,
     pub owner_username: String,
-    pub client: Client,
+    pub client: String,
     pub connection_id: String,
     pub expires_at: Option<String>,
     pub last_error: Option<String>,
@@ -64,28 +87,23 @@ pub struct PendingRevocation {
 pub struct Settings {
     pub language: String,
 }
-#[derive(Clone, Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct SwitchJournal {
+/// Read-only view of the switch journals written by earlier releases. This release no longer edits
+/// host configuration, so recovery only finishes local profile cleanup and credential revocation.
+#[derive(Clone, Debug, Deserialize)]
+pub struct LegacySwitchJournal {
     pub id: String,
     pub phase: String,
     pub candidate: Profile,
-    #[serde(default = "default_candidate_is_new")]
+    #[serde(default)]
     pub candidate_is_new: bool,
     #[serde(default)]
     pub staged_profile_id: Option<String>,
+    #[serde(default)]
     pub source_profile_id: Option<String>,
     #[serde(default)]
     pub source_profile_ids: Vec<String>,
-    pub retired_credentials: Vec<PendingRevocation>,
-    pub config_path: PathBuf,
-    pub config_before: Option<String>,
-    pub config_after: String,
     #[serde(default)]
-    pub config_final: String,
-}
-fn default_candidate_is_new() -> bool {
-    true
+    pub retired_credentials: Vec<PendingRevocation>,
 }
 impl Store {
     pub fn system() -> Result<Self> {
@@ -178,14 +196,7 @@ impl Store {
         private_dir(&path)?;
         Ok(path)
     }
-    pub fn save_switch_journal(&self, journal: &SwitchJournal) -> Result<()> {
-        Uuid::parse_str(&journal.id).context("INVALID_OPERATION_ID")?;
-        atomic_write(
-            &self.operations_dir()?.join(format!("{}.json", journal.id)),
-            &serde_json::to_vec(journal)?,
-        )
-    }
-    pub fn switch_journals(&self) -> Result<Vec<SwitchJournal>> {
+    pub fn legacy_journals(&self) -> Result<Vec<LegacySwitchJournal>> {
         let directory = self.operations_dir()?;
         let mut values = Vec::new();
         for entry in fs::read_dir(directory)? {
@@ -195,12 +206,24 @@ impl Store {
                 .is_some_and(|extension| extension == "json")
             {
                 reject_symlink(&path)?;
-                values.push(serde_json::from_slice(&fs::read(path)?)?);
+                match serde_json::from_slice(&fs::read(&path)?) {
+                    Ok(journal) => values.push(journal),
+                    Err(_) => {
+                        // An unreadable journal cannot be replayed safely; keep it for inspection.
+                        private_dir(&self.root.join("unreadable-operations"))?;
+                        let name = path
+                            .file_name()
+                            .context("INVALID_STORAGE_PATH")?
+                            .to_os_string();
+                        let target = self.root.join("unreadable-operations").join(name);
+                        let _ = fs::rename(&path, target);
+                    }
+                }
             }
         }
         Ok(values)
     }
-    pub fn remove_switch_journal(&self, id: &str) -> Result<()> {
+    pub fn remove_legacy_journal(&self, id: &str) -> Result<()> {
         Uuid::parse_str(id).context("INVALID_OPERATION_ID")?;
         let path = self.operations_dir()?.join(format!("{id}.json"));
         reject_symlink(&path)?;

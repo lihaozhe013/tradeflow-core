@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, Button, Modal, Select, Tag } from 'antd';
+import { Alert, Button, Input, Modal, Select, Tag } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { useTranslation } from 'react-i18next';
 import { ApiOutlined } from '@ant-design/icons';
@@ -10,7 +10,7 @@ import { apiRequest, RequestError } from '@/utils/request';
 
 interface Connection {
   id: string;
-  client: 'opencode' | 'workbuddy';
+  client: string;
   deviceId: string;
   tools: string[];
   effectiveTools: string[];
@@ -31,6 +31,7 @@ export default function McpConnections(): React.ReactElement {
   const [limit, setLimit] = useState(20);
   const [total, setTotal] = useState(0);
   const [status, setStatus] = useState('');
+  const [client, setClient] = useState('');
   const [loading, setLoading] = useState(false);
   const [enabled, setEnabled] = useState(true);
   const [error, setError] = useState<'authDisabled' | 'failed' | null>(null);
@@ -46,6 +47,7 @@ export default function McpConnections(): React.ReactElement {
     try {
       const query = new URLSearchParams({ page: String(page), limit: String(limit) });
       if (status) query.set('status', status);
+      if (client) query.set('client', client);
       const [list, capabilities] = await Promise.all([
         apiRequest.get<ListResponse>(`/mcp/connections?${query}`),
         apiRequest.get<{ data: { enabled: boolean } }>('/mcp/capabilities')
@@ -63,7 +65,7 @@ export default function McpConnections(): React.ReactElement {
     } finally {
       if (current === sequence.current) setLoading(false);
     }
-  }, [page, limit, status]);
+  }, [page, limit, status, client]);
   useEffect(() => {
     void load();
     return () => {
@@ -92,8 +94,8 @@ export default function McpConnections(): React.ReactElement {
     {
       title: t('mcpConnections.agent'),
       dataIndex: 'client',
-      width: 130,
-      render: (client: string) => (client === 'opencode' ? 'OpenCode' : 'WorkBuddy')
+      width: 160,
+      render: (value: string) => <Tag>{value}</Tag>
     },
     {
       title: t('mcpConnections.identification'),
@@ -214,6 +216,17 @@ export default function McpConnections(): React.ReactElement {
       <section className="page-card">
         <div className="page-toolbar">
           <div className="page-toolbar-row">
+            <Input.Search
+              className="page-toolbar-field"
+              aria-label={t('mcpConnections.clientFilter')}
+              allowClear
+              defaultValue={client}
+              placeholder={t('mcpConnections.clientFilter')}
+              onSearch={(value) => {
+                setClient(value.trim());
+                setPage(1);
+              }}
+            />
             <Select
               className="page-toolbar-field"
               aria-label={t('mcpConnections.filter')}

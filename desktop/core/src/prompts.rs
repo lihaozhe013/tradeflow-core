@@ -28,32 +28,53 @@ pub fn generate_for(profile: &Profile, language: &str) -> Value {
     let resources: Value = serde_json::from_str(if language == "zh" { ZH } else { EN })
         .expect("checked-in desktop locale JSON is valid");
     let templates = &resources["desktopConnect"]["prompts"];
-    let name = profile.server_name();
-    let tools = profile.tools.join(", ");
-    let client = profile.client.name().to_owned();
-    let server = profile.base_url.clone();
-    let path = profile.config_path.display().to_string();
     let id = profile.id.clone();
     let executable = quote(&profile.helper_path.to_string_lossy());
     let invoke = if cfg!(windows) { "& " } else { "" };
-    let common = format!("--profile {id} --client {client}");
-    let doctor = format!("{invoke}{executable} doctor {common} --json");
-    let repair = format!("{invoke}{executable} repair {common} --mode auto --json");
-    let bridge = format!("{invoke}{executable} repair {common} --mode bridge --json");
+    let serve = format!("{invoke}{executable} serve --profile {id}");
+    let doctor = format!("{invoke}{executable} doctor --profile {id} --json");
+    let describe = format!("{invoke}{executable} describe --profile {id} --json");
+    let tools = if profile.tools.is_empty() {
+        "—".to_owned()
+    } else {
+        profile.tools.join(", ")
+    };
+    let catalog = profile
+        .catalog_version
+        .clone()
+        .unwrap_or_else(|| "unknown".into());
+    let guide = profile
+        .guide_version
+        .clone()
+        .unwrap_or_else(|| "unknown".into());
     let pairs = [
-        ("{{serverName}}", name),
+        ("{{serverName}}", profile.server_name()),
         ("{{tools}}", tools),
-        ("{{client}}", client),
-        ("{{server}}", server.clone()),
+        ("{{client}}", profile.client.clone()),
+        ("{{server}}", profile.base_url.clone()),
+        ("{{account}}", profile.owner_username.clone()),
         ("{{profile}}", id),
-        ("{{configPath}}", path),
-        ("{{doctor}}", doctor),
-        ("{{repair}}", repair),
-        ("{{bridge}}", bridge),
+        ("{{helperPath}}", profile.helper_path.display().to_string()),
+        ("{{mode}}", profile.mode.clone()),
+        ("{{expiresAt}}", profile.expires_at.clone()),
+        ("{{catalogVersion}}", catalog),
+        ("{{guideVersion}}", guide),
+        ("{{serveCommand}}", serve),
+        ("{{doctorCommand}}", doctor),
+        ("{{describeCommand}}", describe),
     ];
     json!({
         "business": render(templates["business"].as_str().unwrap_or_default(), &pairs),
+        "connect": render(templates["connect"].as_str().unwrap_or_default(), &pairs),
+        "update": render(templates["update"].as_str().unwrap_or_default(), &pairs),
         "repair": render(templates["repair"].as_str().unwrap_or_default(), &pairs),
-        "metadata": {"server": server, "client": profile.client.name(), "profile": profile.id}
+        "metadata": {
+            "server": profile.base_url,
+            "client": profile.client,
+            "profile": profile.id,
+            "serverName": profile.server_name(),
+            "catalogVersion": profile.catalog_version,
+            "guideVersion": profile.guide_version,
+        }
     })
 }

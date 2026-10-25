@@ -1,6 +1,6 @@
 [package]
 name = "tradeflow-connect"
-version = "0.1.1"
+version = "0.2.0"
 edition = "2024"
 
 [lib]
@@ -16,7 +16,6 @@ chrono = { version = "0.4", features = ["serde"] }
 clap = { version = "4", features = ["derive"] }
 dirs = "6"
 fs2 = "0.4"
-jsonc-parser = { version = "0.34", features = ["cst", "serde"] }
 reqwest = { version = "0.13", default-features = false, features = ["json", "rustls"] }
 rmcp = { version = "3.5", features = ["client", "server", "transport-io", "transport-child-process", "transport-streamable-http-client-reqwest"] }
 serde = { version = "1", features = ["derive"] }
