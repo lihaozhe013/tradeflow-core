@@ -93,6 +93,9 @@ async fn login_inner(base_url: &str, username: &str, password: &str) -> Result<S
             .map_err(network_error)?,
     )
     .await?;
+    session_from_response(base_url, &value)
+}
+fn session_from_response(base_url: String, value: &Value) -> Result<Session> {
     let jwt = value["token"]
         .as_str()
         .context("LOGIN_TOKEN_MISSING")?
@@ -110,6 +113,103 @@ async fn login_inner(base_url: &str, username: &str, password: &str) -> Result<S
         jwt,
         user: value["user"].clone(),
     })
+}
+pub struct RememberedLogin {
+    pub session: Session,
+    pub refresh_token: String,
+    pub expires_at: String,
+}
+
+pub async fn remember_login(
+    base_url: &str,
+    username: &str,
+    password: &str,
+) -> Result<RememberedLogin> {
+    diagnostics::step(
+        Stage::Login,
+        remember_login_inner(base_url, username, password),
+    )
+    .await
+}
+async fn remember_login_inner(
+    base_url: &str,
+    username: &str,
+    password: &str,
+) -> Result<RememberedLogin> {
+    let base_url = normalize_url(base_url)?;
+    if username.trim().is_empty() || password.is_empty() {
+        bail!("LOGIN_FIELDS_REQUIRED");
+    }
+    let value = decode(
+        http_client()?
+            .post(format!("{base_url}/api/auth/desktop/login"))
+            .json(&json!({"username":username,"password":password}))
+            .send()
+            .await
+            .map_err(network_error)?,
+    )
+    .await
+    .map_err(|error| {
+        if error.to_string() == "HTTP_404" {
+            anyhow::anyhow!("BACKEND_UPGRADE_REQUIRED")
+        } else {
+            error
+        }
+    })?;
+    let refresh_token = value["refreshToken"]
+        .as_str()
+        .context("INVALID_SERVER_RESPONSE")?
+        .to_owned();
+    if !valid_refresh_token(&refresh_token) {
+        bail!("INVALID_SERVER_RESPONSE");
+    }
+    let expires_at = value["refreshExpiresAt"]
+        .as_str()
+        .context("INVALID_SERVER_RESPONSE")?
+        .to_owned();
+    chrono::DateTime::parse_from_rfc3339(&expires_at).context("INVALID_SERVER_RESPONSE")?;
+    Ok(RememberedLogin {
+        session: session_from_response(base_url, &value)?,
+        refresh_token,
+        expires_at,
+    })
+}
+pub fn valid_refresh_token(value: &str) -> bool {
+    value.len() == 101
+        && value.starts_with("tfds_")
+        && value[5..].bytes().all(|byte| byte.is_ascii_hexdigit())
+}
+pub async fn refresh_login(base_url: &str, refresh_token: &str) -> Result<Session> {
+    let base_url = normalize_url(base_url)?;
+    if !valid_refresh_token(refresh_token) {
+        bail!("INVALID_SAVED_SESSION");
+    }
+    let value = decode(
+        http_client()?
+            .post(format!("{base_url}/api/auth/desktop/refresh"))
+            .json(&json!({"refreshToken":refresh_token}))
+            .send()
+            .await
+            .map_err(network_error)?,
+    )
+    .await?;
+    session_from_response(base_url, &value)
+}
+pub async fn revoke_login(base_url: &str, refresh_token: &str) -> Result<()> {
+    let base_url = normalize_url(base_url)?;
+    if !valid_refresh_token(refresh_token) {
+        bail!("INVALID_SAVED_SESSION");
+    }
+    decode(
+        http_client()?
+            .post(format!("{base_url}/api/auth/desktop/logout"))
+            .json(&json!({"refreshToken":refresh_token}))
+            .send()
+            .await
+            .map_err(network_error)?,
+    )
+    .await?;
+    Ok(())
 }
 impl Session {
     pub async fn capabilities(&self) -> Result<Value> {

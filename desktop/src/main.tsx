@@ -27,6 +27,8 @@ type Profile = {
   lastSyncAt: string | null;
 };
 type Session = {
+  remembered?: boolean;
+  savedLoginMayRemain?: boolean;
   baseUrl: string;
   user: { username: string; role: string; display_name: string };
   capabilities: {
@@ -92,14 +94,35 @@ const systemLanguage: Language = navigator.language.toLowerCase().startsWith('zh
 const dateText = (value: string, language: Language) =>
   new Date(value).toLocaleString(language === 'zh' ? 'zh-CN' : 'en-US');
 
+function CopyIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      aria-hidden="true"
+    >
+      <rect x="8" y="8" width="12" height="13" rx="2" />
+      <path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3" />
+    </svg>
+  );
+}
+
 function App() {
   const [setting, setSetting] = useState<Setting>('system');
   const language = setting === 'system' ? systemLanguage : setting;
   const t = (language === 'zh' ? zh : en).desktopConnect;
   const [view, setView] = useState<'connections' | 'diagnostics'>('connections');
+  const [workspaceFocus, setWorkspaceFocus] = useState<'manage' | 'prompts'>('manage');
   const [server, setServer] = useState('https://');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [remember, setRemember] = useState(true);
+  const [restoring, setRestoring] = useState(true);
+  const [restoreError, setRestoreError] = useState('');
   const [name, setName] = useState('');
   const [session, setSession] = useState<Session | null>(null);
   const [loginOpen, setLoginOpen] = useState(true);
@@ -116,6 +139,8 @@ function App() {
   const [checks, setChecks] = useState<Record<string, boolean>>({});
   const [prompt, setPrompt] = useState('');
   const [promptSource, setPromptSource] = useState<{ id: string; kind: PromptKind } | null>(null);
+  const [copying, setCopying] = useState(false);
+  const [copiedPrompt, setCopiedPrompt] = useState<{ id: string; kind: PromptKind } | null>(null);
   const [syncResult, setSyncResult] = useState<({ id: string } & SyncResult) | null>(null);
   const [recovery, setRecovery] = useState<Array<{ errorCode: string }>>([]);
   const [removeTarget, setRemoveTarget] = useState<Profile | null>(null);
@@ -188,13 +213,47 @@ function App() {
       unlisten.current?.();
     };
   }, []);
+  async function restoreLogin() {
+    setRestoring(true);
+    setRestoreError('');
+    try {
+      const value = await invoke<Session & { restored: boolean }>('restore_session');
+      if (value?.restored) {
+        setSession(value);
+        setServer(value.baseUrl);
+        setUsername(value.user.username);
+        setLoginOpen(false);
+      }
+    } catch (failure) {
+      setRestoreError(safeFailure(failure).errorCode!);
+    } finally {
+      setRestoring(false);
+    }
+  }
+  useEffect(() => {
+    void restoreLogin();
+  }, []);
   useEffect(() => {
     document.documentElement.lang = language === 'zh' ? 'zh-CN' : 'en-US';
   }, [language]);
   useEffect(() => {
+    if (!promptSource && profiles.length > 0) {
+      setPromptSource({ id: profiles[0].id, kind: 'connect' });
+    }
+  }, [profiles, promptSource]);
+  useEffect(() => {
+    if (!copiedPrompt) return;
+    const timer = window.setTimeout(() => setCopiedPrompt(null), 2500);
+    return () => window.clearTimeout(timer);
+  }, [copiedPrompt]);
+  useEffect(() => {
     let active = true;
+    setPrompt('');
     if (promptSource)
-      invoke<Record<string, string>>('connection_prompts', { profile: promptSource.id, language })
+      invoke<Record<string, string>>('connection_prompts', {
+        profile: promptSource.id,
+        language: 'en'
+      })
         .then((values) => {
           if (active) setPrompt(values[promptSource.kind]);
         })
@@ -207,7 +266,7 @@ function App() {
     return () => {
       active = false;
     };
-  }, [language, promptSource]);
+  }, [promptSource]);
   function begin() {
     accepting.current = true;
     setBusy(true);
@@ -256,15 +315,29 @@ function App() {
   async function signIn(event: React.FormEvent) {
     event.preventDefault();
     const result = await run(() =>
-      invoke<Session & Result>('login', { server, username, password })
+      invoke<Session & Result>('login', { server, username, password, remember })
     );
     setPassword('');
     if (result) {
       const nextSession = result as Session & Result;
       setSession(nextSession);
+      setRestoreError('');
       setServer(nextSession.baseUrl);
       setLoginOpen(false);
     }
+  }
+  async function signOut() {
+    await run(async () => {
+      try {
+        const result = await invoke<{ remoteSessionCleanupRequired?: boolean }>('logout');
+        setMessage(result?.remoteSessionCleanupRequired ? 'logoutRemotePending' : 'logoutNote');
+        setRestoreError('');
+        return {} as Result;
+      } finally {
+        setSession(null);
+        setLoginOpen(true);
+      }
+    });
   }
   async function createConnection(event: React.FormEvent) {
     event.preventDefault();
@@ -342,13 +415,21 @@ function App() {
     }
   }
   async function copyPrompt(id: string, kind: PromptKind) {
+    if (copying) return;
+    setCopying(true);
+    setCopiedPrompt(null);
+    setMessage(null);
+    setReport(null);
+    setEvents([]);
     setErrorCode('');
     try {
       const values = await invoke<Record<string, string>>('connection_prompts', {
         profile: id,
-        language
+        language: 'en'
       });
-      await invoke('copy_prompt', { profile: id, kind, language });
+      await invoke('copy_prompt', { profile: id, kind, language: 'en' });
+      setCopiedPrompt({ id, kind });
+      setWorkspaceFocus('prompts');
       setPromptSource({ id, kind });
       setPrompt(values[kind]);
       setReport(null);
@@ -356,6 +437,8 @@ function App() {
       setMessage('copied');
     } catch (failure) {
       setErrorCode(safeFailure(failure).errorCode!);
+    } finally {
+      setCopying(false);
     }
   }
   async function openCloud(baseUrl: string) {
@@ -439,289 +522,427 @@ function App() {
           </select>
         </label>
       </header>
-      <nav className="view-tabs" aria-label={t.title}>
+      <div className="workspace-toolbar">
+        <nav className="view-tabs" aria-label={t.title}>
+          <button
+            disabled={busy}
+            aria-current={view === 'connections' ? 'page' : undefined}
+            className={view === 'connections' ? 'active' : ''}
+            onClick={() => {
+              setView('connections');
+              setWorkspaceFocus('manage');
+            }}
+          >
+            {t.home}
+          </button>
+          <button
+            disabled={busy}
+            aria-current={view === 'diagnostics' ? 'page' : undefined}
+            className={view === 'diagnostics' ? 'active' : ''}
+            onClick={() => {
+              setView('diagnostics');
+              setWorkspaceFocus('manage');
+            }}
+          >
+            {t.diagnostics}
+          </button>
+        </nav>
         <button
-          disabled={busy}
-          aria-current={view === 'connections' ? 'page' : undefined}
-          className={view === 'connections' ? 'active' : ''}
-          onClick={() => setView('connections')}
+          className="mobile-pane-toggle"
+          aria-pressed={workspaceFocus === 'prompts'}
+          onClick={() => setWorkspaceFocus(workspaceFocus === 'prompts' ? 'manage' : 'prompts')}
         >
-          {t.home}
+          {workspaceFocus === 'prompts' ? t.home : t.showPrompt}
         </button>
-        <button
-          disabled={busy}
-          aria-current={view === 'diagnostics' ? 'page' : undefined}
-          className={view === 'diagnostics' ? 'active' : ''}
-          onClick={() => setView('diagnostics')}
-        >
-          {t.diagnostics}
-        </button>
-      </nav>
-      <div className="notice" role="note">
-        {t.hostNotice}
+        <div className="notice" role="note">
+          {t.hostNotice}
+        </div>
       </div>
-      {view === 'connections' ? (
-        <>
-          <section className="card account-card" aria-labelledby="account-heading">
-            <div className="section-heading">
-              <div>
-                <p className="eyebrow">{t.stepLogin}</p>
-                <h2 id="account-heading">
-                  {session ? session.user.display_name || session.user.username : t.login}
-                </h2>
-                {session && (
-                  <p className="server-address">
-                    {session.baseUrl} · {session.user.username} · {roleText(session.user.role)}
-                  </p>
+      <div className={`workspace focus-${workspaceFocus}`}>
+        <div
+          className="management-pane"
+          role="region"
+          aria-label={view === 'connections' ? t.home : t.diagnostics}
+          tabIndex={0}
+        >
+          {view === 'connections' ? (
+            <>
+              <section className="card account-card" aria-labelledby="account-heading">
+                <div className="section-heading">
+                  <div>
+                    <p className="eyebrow">{t.stepLogin}</p>
+                    <h2 id="account-heading">
+                      {session ? session.user.display_name || session.user.username : t.login}
+                    </h2>
+                    {session && (
+                      <p className="server-address">
+                        {session.baseUrl} · {session.user.username} · {roleText(session.user.role)}
+                      </p>
+                    )}
+                  </div>
+                  {session && (
+                    <div className="button-row">
+                      <button
+                        disabled={busy}
+                        onClick={() => {
+                          setLoginOpen(true);
+                          setReport(null);
+                          setEvents([]);
+                          setErrorCode('');
+                          setMessage(null);
+                        }}
+                      >
+                        {t.switchServer}
+                      </button>
+                      <button disabled={busy} onClick={() => void signOut()}>
+                        {t.logout}
+                      </button>
+                    </div>
+                  )}
+                </div>
+                {restoring && <p role="status">{t.restoringSession}</p>}
+                {restoreError && (
+                  <div className="session-notice" role="status">
+                    <p>{errorText(restoreError)}</p>
+                    <div className="button-row">
+                      <button disabled={busy || restoring} onClick={() => void restoreLogin()}>
+                        {t.retryRestore}
+                      </button>
+                      <button disabled={busy || restoring} onClick={() => void signOut()}>
+                        {t.forgetSavedSession}
+                      </button>
+                    </div>
+                  </div>
                 )}
-              </div>
-              {session && (
-                <div className="button-row">
-                  <button
-                    disabled={busy}
-                    onClick={() => {
-                      setLoginOpen(true);
-                      setReport(null);
-                      setEvents([]);
-                      setErrorCode('');
-                      setMessage(null);
-                    }}
+                {session?.savedLoginMayRemain && <p className="error">{t.savedLoginMayRemain}</p>}
+                {session?.remembered && !loginOpen && (
+                  <p className="session-hint">{t.sessionRemembered}</p>
+                )}
+                {(!session || loginOpen) && !restoring && (
+                  <form noValidate className="form" onSubmit={(event) => void signIn(event)}>
+                    <label>
+                      {t.server}
+                      <input
+                        required
+                        type="url"
+                        value={server}
+                        onChange={(event) => setServer(event.target.value)}
+                        placeholder="https://tradeflow.example.com"
+                      />
+                    </label>
+                    <div className="form-grid">
+                      <label>
+                        {t.username}
+                        <input
+                          required
+                          autoComplete="username"
+                          value={username}
+                          onChange={(event) => setUsername(event.target.value)}
+                        />
+                      </label>
+                      <label>
+                        {t.password}
+                        <input
+                          required
+                          type="password"
+                          autoComplete="current-password"
+                          value={password}
+                          onChange={(event) => setPassword(event.target.value)}
+                        />
+                      </label>
+                    </div>
+                    <label className="remember-session">
+                      <input
+                        type="checkbox"
+                        checked={remember}
+                        disabled={busy}
+                        onChange={(event) => setRemember(event.target.checked)}
+                      />
+                      <span>
+                        {t.rememberSession}
+                        <small className="field-hint">{t.rememberSessionHint}</small>
+                      </span>
+                    </label>
+                    <div className="button-row">
+                      <button className="primary" disabled={busy || restoring}>
+                        {busy ? t.busy : t.login}
+                      </button>
+                      {session && (
+                        <button
+                          type="button"
+                          disabled={busy}
+                          onClick={() => {
+                            setLoginOpen(false);
+                            setPassword('');
+                            setServer(session.baseUrl);
+                          }}
+                        >
+                          {t.cancel}
+                        </button>
+                      )}
+                    </div>
+                  </form>
+                )}
+                {session && !session.capabilities.enabled && <p className="error">{t.noMcp}</p>}
+              </section>
+              {session && !loginOpen && (
+                <section className="card" aria-labelledby="create-heading">
+                  <div className="section-heading">
+                    <div>
+                      <p className="eyebrow">{t.stepCreate}</p>
+                      <h2 id="create-heading">{t.createTitle}</h2>
+                      <p>{t.connectHint}</p>
+                    </div>
+                  </div>
+                  <form
+                    className="form create-form"
+                    onSubmit={(event) => void createConnection(event)}
                   >
-                    {t.switchServer}
-                  </button>
+                    <label className="grow">
+                      {t.connectionName}
+                      <input
+                        required
+                        maxLength={64}
+                        value={name}
+                        placeholder={t.connectionNamePlaceholder}
+                        onChange={(event) => setName(event.target.value)}
+                      />
+                      <small className="field-hint">{t.connectionNameHint}</small>
+                    </label>
+                    <button className="primary" disabled={busy || !session.capabilities.enabled}>
+                      {t.connectSelected}
+                    </button>
+                  </form>
+                </section>
+              )}
+              <section aria-labelledby="profiles-heading">
+                <div className="section-heading">
+                  <div>
+                    <p className="eyebrow">{t.stepApply}</p>
+                    <h2 id="profiles-heading">{t.profiles}</h2>
+                    <p>{t.scope}</p>
+                  </div>
+                </div>
+                {profiles.length === 0 ? (
+                  <div className="empty-state">
+                    <strong>{t.empty}</strong>
+                    <p>{t.connectHint}</p>
+                  </div>
+                ) : (
+                  <div className="connection-grid">
+                    {profiles.map((profile) => (
+                      <article className="card connection-card" key={profile.id}>
+                        <div className="connection-heading">
+                          <div>
+                            <h3>{profile.client}</h3>
+                            <span className="account-line">
+                              {profile.ownerUsername} · {profile.baseUrl}
+                            </span>
+                          </div>
+                          <span className="mode-badge">
+                            {profile.mode === 'bridge' ? t.bridge : t.remote}
+                          </span>
+                        </div>
+                        <dl className="meta-grid">
+                          <div>
+                            <dt>{t.expires}</dt>
+                            <dd>{dateText(profile.expiresAt, language)}</dd>
+                          </div>
+                          <div>
+                            <dt>{t.catalogVersion}</dt>
+                            <dd>{profile.catalogVersion ?? t.neverSynced}</dd>
+                          </div>
+                          <div>
+                            <dt>{t.guideVersion}</dt>
+                            <dd>{profile.guideVersion ?? t.neverSynced}</dd>
+                          </div>
+                          <div>
+                            <dt>{t.lastSync}</dt>
+                            <dd>
+                              {profile.lastSyncAt
+                                ? dateText(profile.lastSyncAt, language)
+                                : t.neverSynced}
+                            </dd>
+                          </div>
+                        </dl>
+                        <div className="status-row">
+                          <span
+                            className={`pill ${
+                              Date.parse(profile.expiresAt) <= Date.now() ? 'warn' : 'neutral'
+                            }`}
+                          >
+                            {Date.parse(profile.expiresAt) <= Date.now()
+                              ? t.credentialExpired
+                              : t.statusCredential}
+                          </span>
+                          <span
+                            className={`pill ${checks[profile.id] === true ? 'ok' : 'neutral'}`}
+                          >
+                            {checks[profile.id] === true ? t.statusVerified : t.statusUnchecked}
+                          </span>
+                          <span className="pill neutral">{t.statusHostPending}</span>
+                          {profile.pendingCleanup.length > 0 && (
+                            <span className="pill warn">{t.cleanup}</span>
+                          )}
+                        </div>
+                        <p className="mono-line">
+                          {t.connectionId}: {profile.connectionId}
+                        </p>
+                        <div className="chips" aria-label={t.tools}>
+                          {profile.tools.slice(0, 6).map((tool) => (
+                            <code key={tool}>{tool}</code>
+                          ))}
+                          {profile.tools.length > 6 && <code>+{profile.tools.length - 6}</code>}
+                        </div>
+                        <div className="card-actions">
+                          <button
+                            className="primary"
+                            disabled={busy}
+                            onClick={() => void copyPrompt(profile.id, 'connect')}
+                          >
+                            {t.connectPrompt}
+                          </button>
+                          <button
+                            disabled={busy || !sameServer(profile)}
+                            title={sameServer(profile) ? t.syncHint : t.syncSignIn}
+                            onClick={() => void sync(profile)}
+                          >
+                            {t.sync}
+                          </button>
+                          <button disabled={busy} onClick={() => void diagnose(profile)}>
+                            {t.doctor}
+                          </button>
+                          <button
+                            className="danger-button"
+                            disabled={busy}
+                            onClick={() => {
+                              setRemoveTarget(profile);
+                              dialog.current?.showModal();
+                            }}
+                          >
+                            {t.disconnect}
+                          </button>
+                        </div>
+                        <div className="sync-result" aria-live="polite">
+                          {syncResult?.id === profile.id && (
+                            <>
+                              {syncResult.added.length > 0 && (
+                                <p className="sync-line">
+                                  <strong>+</strong> {syncResult.added.join(', ')}
+                                </p>
+                              )}
+                              {syncResult.removed.length > 0 && (
+                                <p className="sync-line">
+                                  <strong>−</strong> {syncResult.removed.join(', ')}
+                                </p>
+                              )}
+                              {!syncResult.changed && <p>{t.syncEmpty}</p>}
+                            </>
+                          )}
+                        </div>
+                        <details className="more-actions">
+                          <summary>{t.moreActions}</summary>
+                          <div className="button-row">
+                            <button disabled={busy} onClick={() => void renew(profile)}>
+                              {t.renew}
+                            </button>
+                            <button
+                              disabled={busy}
+                              onClick={() => void copyPrompt(profile.id, 'update')}
+                            >
+                              {t.updatePrompt}
+                            </button>
+                            <button
+                              disabled={busy}
+                              onClick={() => void copyPrompt(profile.id, 'repair')}
+                            >
+                              {t.repairPrompt}
+                            </button>
+                            <button
+                              disabled={busy}
+                              onClick={() => void copyPrompt(profile.id, 'business')}
+                            >
+                              {t.business}
+                            </button>
+                            <button disabled={busy} onClick={() => void openCloud(profile.baseUrl)}>
+                              {t.cloudCredentials}
+                            </button>
+                          </div>
+                        </details>
+                      </article>
+                    ))}
+                  </div>
+                )}
+              </section>
+            </>
+          ) : (
+            <>
+              <section className="card" aria-labelledby="diagnostics-heading">
+                <div className="section-heading">
+                  <div>
+                    <h2 id="diagnostics-heading">{t.diagnostics}</h2>
+                    <p>{t.logHint}</p>
+                  </div>
                   <button
                     disabled={busy}
                     onClick={() =>
                       void run(async () => {
-                        await invoke('logout');
-                        setSession(null);
-                        setLoginOpen(true);
+                        const value = await invoke<{ exported: boolean }>('export_operation_logs');
+                        if (value.exported) setMessage('exported');
                         return {} as Result;
-                      }, 'logoutNote')
+                      })
                     }
                   >
-                    {t.logout}
+                    {t.exportLogs}
                   </button>
                 </div>
-              )}
-            </div>
-            {(!session || loginOpen) && (
-              <form noValidate className="form" onSubmit={(event) => void signIn(event)}>
-                <label>
-                  {t.server}
-                  <input
-                    required
-                    type="url"
-                    value={server}
-                    onChange={(event) => setServer(event.target.value)}
-                    placeholder="https://tradeflow.example.com"
-                  />
-                </label>
-                <div className="form-grid">
-                  <label>
-                    {t.username}
-                    <input
-                      required
-                      autoComplete="username"
-                      value={username}
-                      onChange={(event) => setUsername(event.target.value)}
-                    />
-                  </label>
-                  <label>
-                    {t.password}
-                    <input
-                      required
-                      type="password"
-                      autoComplete="current-password"
-                      value={password}
-                      onChange={(event) => setPassword(event.target.value)}
-                    />
-                  </label>
-                </div>
-                <div className="button-row">
-                  <button className="primary" disabled={busy}>
-                    {busy ? t.busy : t.login}
-                  </button>
-                  {session && (
-                    <button
-                      type="button"
-                      disabled={busy}
-                      onClick={() => {
-                        setLoginOpen(false);
-                        setPassword('');
-                        setServer(session.baseUrl);
-                      }}
-                    >
-                      {t.cancel}
-                    </button>
-                  )}
-                </div>
-              </form>
-            )}
-            {session && !session.capabilities.enabled && <p className="error">{t.noMcp}</p>}
-          </section>
-          {session && !loginOpen && (
-            <section className="card" aria-labelledby="create-heading">
-              <div className="section-heading">
-                <div>
-                  <p className="eyebrow">{t.stepCreate}</p>
-                  <h2 id="create-heading">{t.createTitle}</h2>
-                  <p>{t.connectHint}</p>
-                </div>
-              </div>
-              <form className="form create-form" onSubmit={(event) => void createConnection(event)}>
-                <label className="grow">
-                  {t.connectionName}
-                  <input
-                    required
-                    maxLength={64}
-                    value={name}
-                    placeholder={t.connectionNamePlaceholder}
-                    onChange={(event) => setName(event.target.value)}
-                  />
-                  <small className="field-hint">{t.connectionNameHint}</small>
-                </label>
-                <button className="primary" disabled={busy || !session.capabilities.enabled}>
-                  {t.connectSelected}
-                </button>
-              </form>
-            </section>
-          )}
-          <section aria-labelledby="profiles-heading">
-            <div className="section-heading">
-              <div>
-                <p className="eyebrow">{t.stepApply}</p>
-                <h2 id="profiles-heading">{t.profiles}</h2>
-                <p>{t.scope}</p>
-              </div>
-            </div>
-            {profiles.length === 0 ? (
-              <div className="empty-state">
-                <strong>{t.empty}</strong>
-                <p>{t.connectHint}</p>
-              </div>
-            ) : (
-              <div className="connection-grid">
-                {profiles.map((profile) => (
-                  <article className="card connection-card" key={profile.id}>
-                    <div className="connection-heading">
-                      <div>
-                        <h3>{profile.client}</h3>
-                        <span className="account-line">
-                          {profile.ownerUsername} · {profile.baseUrl}
-                        </span>
-                      </div>
-                      <span className="mode-badge">
-                        {profile.mode === 'bridge' ? t.bridge : t.remote}
-                      </span>
-                    </div>
-                    <dl className="meta-grid">
-                      <div>
-                        <dt>{t.expires}</dt>
-                        <dd>{dateText(profile.expiresAt, language)}</dd>
-                      </div>
-                      <div>
-                        <dt>{t.catalogVersion}</dt>
-                        <dd>{profile.catalogVersion ?? t.neverSynced}</dd>
-                      </div>
-                      <div>
-                        <dt>{t.guideVersion}</dt>
-                        <dd>{profile.guideVersion ?? t.neverSynced}</dd>
-                      </div>
-                      <div>
-                        <dt>{t.lastSync}</dt>
-                        <dd>
-                          {profile.lastSyncAt
-                            ? dateText(profile.lastSyncAt, language)
-                            : t.neverSynced}
-                        </dd>
-                      </div>
-                    </dl>
-                    <div className="status-row">
-                      <span
-                        className={`pill ${
-                          Date.parse(profile.expiresAt) <= Date.now() ? 'warn' : 'neutral'
-                        }`}
-                      >
-                        {Date.parse(profile.expiresAt) <= Date.now()
-                          ? t.credentialExpired
-                          : t.statusCredential}
-                      </span>
-                      <span className={`pill ${checks[profile.id] === true ? 'ok' : 'neutral'}`}>
-                        {checks[profile.id] === true ? t.statusVerified : t.statusUnchecked}
-                      </span>
-                      <span className="pill neutral">{t.statusHostPending}</span>
-                      {profile.pendingCleanup.length > 0 && (
-                        <span className="pill warn">{t.cleanup}</span>
-                      )}
-                    </div>
-                    <p className="mono-line">
-                      {t.connectionId}: {profile.connectionId}
-                    </p>
-                    <div className="chips" aria-label={t.tools}>
-                      {profile.tools.slice(0, 6).map((tool) => (
-                        <code key={tool}>{tool}</code>
-                      ))}
-                      {profile.tools.length > 6 && <code>+{profile.tools.length - 6}</code>}
-                    </div>
-                    <div className="card-actions">
-                      <button
-                        className="primary"
-                        disabled={busy}
-                        onClick={() => void copyPrompt(profile.id, 'connect')}
-                      >
-                        {t.connectPrompt}
-                      </button>
-                      <button
-                        disabled={busy || !sameServer(profile)}
-                        title={sameServer(profile) ? t.syncHint : t.syncSignIn}
-                        onClick={() => void sync(profile)}
-                      >
-                        {t.sync}
-                      </button>
-                      <button disabled={busy} onClick={() => void diagnose(profile)}>
-                        {t.doctor}
-                      </button>
-                      <button
-                        className="danger-button"
-                        disabled={busy}
-                        onClick={() => {
-                          setRemoveTarget(profile);
-                          dialog.current?.showModal();
-                        }}
-                      >
-                        {t.disconnect}
-                      </button>
-                    </div>
-                    <div className="sync-result" aria-live="polite">
-                      {syncResult?.id === profile.id && (
-                        <>
-                          {syncResult.added.length > 0 && (
-                            <p className="sync-line">
-                              <strong>+</strong> {syncResult.added.join(', ')}
-                            </p>
-                          )}
-                          {syncResult.removed.length > 0 && (
-                            <p className="sync-line">
-                              <strong>−</strong> {syncResult.removed.join(', ')}
-                            </p>
-                          )}
-                          {!syncResult.changed && <p>{t.syncEmpty}</p>}
-                        </>
-                      )}
-                    </div>
-                    <details className="more-actions">
-                      <summary>{t.moreActions}</summary>
+                {crashes.length > 0 && (
+                  <details>
+                    <summary>{t.crashNotice}</summary>
+                    <p>{t.crashAdvice}</p>
+                    <pre>{JSON.stringify(crashes, null, 2)}</pre>
+                  </details>
+                )}
+                {recovery.map((issue, index) => (
+                  <p key={index} className="error">
+                    {t.recoveryRequired} {errorText(issue.errorCode)}
+                  </p>
+                ))}
+                {recent.length === 0 ? (
+                  <p>{t.noLogs}</p>
+                ) : (
+                  recent.map(([id, values]) => (
+                    <details key={id} className="operation-history">
+                      <summary>
+                        {new Date(values[0].timestamp).toLocaleString(
+                          language === 'zh' ? 'zh-CN' : 'en-US'
+                        )}{' '}
+                        · {values[0].client ?? t.account} ·{' '}
+                        {(t.actions as Record<string, string>)[values[0].action] ?? t.report} ·{' '}
+                        {values.at(-1)?.status === 'failed'
+                          ? t.failed
+                          : values.at(-1)?.stage === 'complete'
+                            ? t.stageDone
+                            : t.interrupted}
+                      </summary>
+                      <ol className="event-list">{eventRows(values)}</ol>
+                      <pre>{JSON.stringify(values, null, 2)}</pre>
+                    </details>
+                  ))
+                )}
+              </section>
+              {profiles.length > 0 && (
+                <section className="card">
+                  <h2>{t.advanced}</h2>
+                  <p>{t.advancedHint}</p>
+                  {profiles.map((profile) => (
+                    <article className="diagnostic-profile" key={profile.id}>
+                      <h3>{profile.client}</h3>
+                      <p className="server-address">
+                        {profile.baseUrl} · {profile.ownerUsername}
+                      </p>
+                      <p className="mono-line">{profile.serverName}</p>
                       <div className="button-row">
-                        <button disabled={busy} onClick={() => void renew(profile)}>
-                          {t.renew}
-                        </button>
-                        <button
-                          disabled={busy}
-                          onClick={() => void copyPrompt(profile.id, 'update')}
-                        >
-                          {t.updatePrompt}
-                        </button>
                         <button
                           disabled={busy}
                           onClick={() => void copyPrompt(profile.id, 'repair')}
@@ -730,169 +951,148 @@ function App() {
                         </button>
                         <button
                           disabled={busy}
-                          onClick={() => void copyPrompt(profile.id, 'business')}
+                          onClick={() => void copyPrompt(profile.id, 'update')}
                         >
-                          {t.business}
+                          {t.updatePrompt}
                         </button>
                         <button disabled={busy} onClick={() => void openCloud(profile.baseUrl)}>
                           {t.cloudCredentials}
                         </button>
                       </div>
-                    </details>
-                  </article>
-                ))}
-              </div>
-            )}
-          </section>
-        </>
-      ) : (
-        <>
-          <section className="card" aria-labelledby="diagnostics-heading">
-            <div className="section-heading">
-              <div>
-                <h2 id="diagnostics-heading">{t.diagnostics}</h2>
-                <p>{t.logHint}</p>
-              </div>
-              <button
-                disabled={busy}
-                onClick={() =>
-                  void run(async () => {
-                    const value = await invoke<{ exported: boolean }>('export_operation_logs');
-                    if (value.exported) setMessage('exported');
-                    return {} as Result;
-                  })
-                }
-              >
-                {t.exportLogs}
-              </button>
-            </div>
-            {crashes.length > 0 && (
-              <details>
-                <summary>{t.crashNotice}</summary>
-                <p>{t.crashAdvice}</p>
-                <pre>{JSON.stringify(crashes, null, 2)}</pre>
-              </details>
-            )}
-            {recovery.map((issue, index) => (
-              <p key={index} className="error">
-                {t.recoveryRequired} {errorText(issue.errorCode)}
-              </p>
-            ))}
-            {recent.length === 0 ? (
-              <p>{t.noLogs}</p>
-            ) : (
-              recent.map(([id, values]) => (
-                <details key={id} className="operation-history">
-                  <summary>
-                    {new Date(values[0].timestamp).toLocaleString(
-                      language === 'zh' ? 'zh-CN' : 'en-US'
-                    )}{' '}
-                    · {values[0].client ?? t.account} ·{' '}
-                    {(t.actions as Record<string, string>)[values[0].action] ?? t.report} ·{' '}
-                    {values.at(-1)?.status === 'failed'
-                      ? t.failed
-                      : values.at(-1)?.stage === 'complete'
-                        ? t.stageDone
-                        : t.interrupted}
-                  </summary>
-                  <ol className="event-list">{eventRows(values)}</ol>
-                  <pre>{JSON.stringify(values, null, 2)}</pre>
-                </details>
-              ))
-            )}
-          </section>
-          {profiles.length > 0 && (
-            <section className="card">
-              <h2>{t.advanced}</h2>
-              <p>{t.advancedHint}</p>
-              {profiles.map((profile) => (
-                <article className="diagnostic-profile" key={profile.id}>
-                  <h3>{profile.client}</h3>
-                  <p className="server-address">
-                    {profile.baseUrl} · {profile.ownerUsername}
-                  </p>
-                  <p className="mono-line">{profile.serverName}</p>
-                  <div className="button-row">
-                    <button disabled={busy} onClick={() => void copyPrompt(profile.id, 'repair')}>
-                      {t.repairPrompt}
-                    </button>
-                    <button disabled={busy} onClick={() => void copyPrompt(profile.id, 'update')}>
-                      {t.updatePrompt}
-                    </button>
-                    <button disabled={busy} onClick={() => void openCloud(profile.baseUrl)}>
-                      {t.cloudCredentials}
-                    </button>
-                  </div>
-                </article>
-              ))}
-            </section>
-          )}
-          {cleanup.length > 0 && (
-            <section className="card">
-              <h2>{t.pendingTitle}</h2>
-              <p>{t.manualCleanupHint}</p>
-              {cleanup.map((item) => (
-                <article
-                  className="diagnostic-profile"
-                  key={`${item.baseUrl}-${item.connectionId}`}
-                >
-                  <h3>{item.client}</h3>
-                  <p className="server-address">
-                    {item.baseUrl} · {item.ownerUsername}
-                  </p>
-                  <p className="mono-line">
-                    {t.connectionId}: {item.connectionId}
-                  </p>
-                  <div className="button-row">
-                    <button
-                      disabled={busy}
-                      onClick={() =>
-                        void run(async () => {
-                          const value = await invoke<{ revoked: number; remaining: number }>(
-                            'retry_pending_revocations'
-                          );
-                          setMessage(value.remaining > 0 ? 'cleanup' : 'remoteRevoked');
-                          return {} as Result;
-                        })
-                      }
+                    </article>
+                  ))}
+                </section>
+              )}
+              {cleanup.length > 0 && (
+                <section className="card">
+                  <h2>{t.pendingTitle}</h2>
+                  <p>{t.manualCleanupHint}</p>
+                  {cleanup.map((item) => (
+                    <article
+                      className="diagnostic-profile"
+                      key={`${item.baseUrl}-${item.connectionId}`}
                     >
-                      {t.retryPending}
-                    </button>
-                    <button disabled={busy} onClick={() => void openCloud(item.baseUrl)}>
-                      {t.cloudCredentials}
-                    </button>
-                  </div>
-                </article>
-              ))}
-            </section>
+                      <h3>{item.client}</h3>
+                      <p className="server-address">
+                        {item.baseUrl} · {item.ownerUsername}
+                      </p>
+                      <p className="mono-line">
+                        {t.connectionId}: {item.connectionId}
+                      </p>
+                      <div className="button-row">
+                        <button
+                          disabled={busy}
+                          onClick={() =>
+                            void run(async () => {
+                              const value = await invoke<{ revoked: number; remaining: number }>(
+                                'retry_pending_revocations'
+                              );
+                              setMessage(value.remaining > 0 ? 'cleanup' : 'remoteRevoked');
+                              return {} as Result;
+                            })
+                          }
+                        >
+                          {t.retryPending}
+                        </button>
+                        <button disabled={busy} onClick={() => void openCloud(item.baseUrl)}>
+                          {t.cloudCredentials}
+                        </button>
+                      </div>
+                    </article>
+                  ))}
+                </section>
+              )}
+            </>
           )}
-        </>
-      )}
-      {prompt && (
-        <section className="card prompt-panel" aria-labelledby="prompt-heading">
-          <div className="section-heading">
+        </div>
+        <section className="prompt-panel" aria-labelledby="prompt-heading">
+          <div className="prompt-header">
             <div>
-              <p className="eyebrow">{profileForPrompt?.client ?? t.showPrompt}</p>
+              <p className="eyebrow">{t.agentWorkspace}</p>
               <h2 id="prompt-heading">{t.showPrompt}</h2>
-              <p>{t.promptPreviewHint}</p>
             </div>
-            <div className="button-row">
-              {(['connect', 'update', 'business', 'repair'] as PromptKind[]).map((kind) => (
-                <button
-                  key={kind}
-                  className={promptSource?.kind === kind ? 'active' : ''}
-                  aria-pressed={promptSource?.kind === kind}
-                  disabled={busy || !profileForPrompt}
-                  onClick={() => void copyPrompt(promptSource!.id, kind)}
-                >
-                  {(t.promptTabs as Record<string, string>)[kind]}
-                </button>
-              ))}
-            </div>
+            <span className="mode-badge">English</span>
           </div>
-          <pre className="prompt-text">{prompt}</pre>
+          <label className="prompt-profile-picker">
+            {t.selectConnection}
+            <select
+              disabled={busy || copying || profiles.length === 0}
+              value={promptSource?.id ?? ''}
+              onChange={(event) =>
+                setPromptSource({ id: event.target.value, kind: promptSource?.kind ?? 'connect' })
+              }
+            >
+              {profiles.length === 0 && <option value="">{t.selectConnection}</option>}
+              {profiles.map((profile) => (
+                <option key={profile.id} value={profile.id}>
+                  {profile.client}
+                </option>
+              ))}
+            </select>
+          </label>
+          <div className="prompt-choices" role="group" aria-label={t.showPrompt}>
+            {(['connect', 'update', 'business', 'repair'] as PromptKind[]).map((kind, index) => {
+              const title = (t.promptTabs as Record<string, string>)[kind];
+              const copied = copiedPrompt?.id === promptSource?.id && copiedPrompt?.kind === kind;
+              return (
+                <div
+                  className={`prompt-choice ${promptSource?.kind === kind ? 'selected' : ''}`}
+                  key={kind}
+                >
+                  <button
+                    className="prompt-choice-label"
+                    aria-pressed={promptSource?.kind === kind}
+                    disabled={busy || copying || !profileForPrompt}
+                    onClick={() => setPromptSource({ id: promptSource!.id, kind })}
+                  >
+                    <span className="prompt-number" aria-hidden="true">
+                      0{index + 1}
+                    </span>
+                    {title}
+                  </button>
+                  <button
+                    className="prompt-copy"
+                    disabled={busy || copying || !profileForPrompt}
+                    aria-label={`${t.copyPrompt} · ${title}`}
+                    onClick={() => void copyPrompt(promptSource!.id, kind)}
+                  >
+                    <CopyIcon />
+                    {copied ? t.copyDone : t.copyPrompt}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+          <div className="prompt-document-heading">
+            <span>
+              {promptSource
+                ? (t.promptTabs as Record<string, string>)[promptSource.kind]
+                : t.showPrompt}
+            </span>
+            <button
+              className="primary"
+              disabled={busy || copying || !prompt || !profileForPrompt}
+              onClick={() => void copyPrompt(promptSource!.id, promptSource!.kind)}
+            >
+              <CopyIcon />
+              {copiedPrompt?.id === promptSource?.id && copiedPrompt?.kind === promptSource?.kind
+                ? t.copyDone
+                : t.copyCurrentPrompt}
+            </button>
+          </div>
+          {prompt ? (
+            <pre className="prompt-text" tabIndex={0} aria-label={t.showPrompt}>
+              {prompt}
+            </pre>
+          ) : (
+            <div className="prompt-empty">
+              <CopyIcon />
+              <p>{profiles.length === 0 ? t.promptEmpty : t.busy}</p>
+            </div>
+          )}
+          <p className="prompt-hint">{t.promptPreviewHint}</p>
         </section>
-      )}
+      </div>
       <div className="operation-status" aria-live="polite">
         {(busy || events.length > 0 || report || message || errorCode) && (
           <section className="card">

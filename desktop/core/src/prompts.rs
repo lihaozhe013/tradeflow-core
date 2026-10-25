@@ -1,8 +1,7 @@
 use crate::storage::Profile;
 use serde_json::{Value, json};
 
-const EN: &str = include_str!("../../../frontend/src/i18n/locales/en/en-US.json");
-const ZH: &str = include_str!("../../../frontend/src/i18n/locales/zh/zh-CN.json");
+const TEMPLATES: &str = include_str!("../resources/prompts.json");
 
 fn quote(value: &str) -> String {
     if cfg!(windows) {
@@ -24,10 +23,10 @@ pub fn generate(profile: &Profile) -> Value {
     generate_for(profile, "en")
 }
 
-pub fn generate_for(profile: &Profile, language: &str) -> Value {
-    let resources: Value = serde_json::from_str(if language == "zh" { ZH } else { EN })
-        .expect("checked-in desktop locale JSON is valid");
-    let templates = &resources["desktopConnect"]["prompts"];
+pub fn generate_for(profile: &Profile, _language: &str) -> Value {
+    // Agent instructions stay in English independently of the interface language.
+    let templates: Value =
+        serde_json::from_str(TEMPLATES).expect("checked-in Agent prompt JSON is valid");
     let id = profile.id.clone();
     let executable = quote(&profile.helper_path.to_string_lossy());
     let invoke = if cfg!(windows) { "& " } else { "" };

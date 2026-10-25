@@ -63,13 +63,52 @@ and permissions.
 Several connections can coexist, including multiple connections for the same host or account. Each
 one has its own credential and can be revoked separately.
 
-**Switch server** opens the same login form and keeps existing connections. Signing out only clears
-the in-memory JWT; installed connections continue to work.
+**Switch server** opens the same login form and keeps existing connections. Signing out clears the
+App login, including its saved session, but installed MCP connections continue to work.
+
+### Remembered App sign-in
+
+**Stay signed in on this device** is enabled by default and can be unchecked before signing in on a
+shared device. A remembered login lasts at most 90 days from issuance; refreshing does not extend
+that deadline. The backend issues a separate opaque refresh secret and stores only its SHA-256 hash
+in `desktop_sessions`. The short-lived API JWT keeps the configured normal lifetime and remains in
+Rust memory. Passwords are never stored.
+
+The App stores the refresh secret only in Windows Credential Manager, macOS Keychain, or Linux
+Secret Service. The stable service/account identity is independent of the executable path and app
+version, so a normal in-place upgrade preserves login. Linux requires an available, unlocked Secret
+Service provider. OS keychain prompts may still appear after an upgrade. There is no plaintext
+fallback if secure storage is unavailable. Unchecking the option still allows an in-memory-only
+login without a keychain provider. If an inaccessible vault prevents checking or clearing an older
+saved login, the App explicitly warns that the older login may remain until the vault is unlocked.
+
+At startup, the App restores the session, fetches current permissions, and opens connection
+management without a password prompt. It renews its in-memory access token before privileged actions
+when the cached login is older than five minutes. Temporary network failures preserve the saved
+session and expose **Retry saved sign-in**. Expired, revoked, password-invalidated, or
+disabled-account sessions require signing in again. **Forget saved sign-in** is available when
+recovery fails.
+
+Signing out removes the local saved secret and revokes the server session when reachable. Offline
+sign-out reports that remote revocation could not be completed; the remaining server session expires
+at its original deadline. Account deletion cascades session removal; password changes invalidate all
+remembered sessions. Login secrets are never exposed to the webview, prompts, Agent configuration,
+MCP bridge, or diagnostic logs.
+
+This feature requires the upgraded backend (`/api/auth/desktop/login`, `/refresh`, and `/logout`).
+The startup schema bootstrap adds the new table without altering existing users or MCP credentials.
+It does not change browser sign-in behavior or the lifetime of MCP credentials.
 
 ### Prompts
 
-The main screen exposes one primary action per connection and keeps the rest behind **More
-actions**:
+The desktop window has a fixed header and status bar. Connection management and the Agent workspace
+use independent scroll regions instead of scrolling the entire window. At narrow widths, a pane
+switcher keeps each workspace usable.
+
+The Agent workspace shows all four prompt types with an explicit one-click **Copy** button for each,
+plus a **Copy prompt** button above the current preview. Switching a prompt type only changes the
+preview; copying shows a success state only after the clipboard write succeeds. Select a connection
+to change the prompt source.
 
 | Prompt   | Purpose                                                                                     |
 | -------- | ------------------------------------------------------------------------------------------- |
@@ -78,8 +117,11 @@ actions**:
 | Repair   | Diagnose the service, host entry, trust state, credential expiry, and network/TLS failures. |
 | Business | Ask the Agent for business answers through the connected service.                           |
 
-Prompts follow the assistant language (Simplified Chinese, English, or Follow system). CLI commands,
-MCP tool names, and diagnostic JSON keys remain unchanged.
+Generated and copied prompts are always in English, including when the interface is in Simplified
+Chinese or follows a Chinese system language. The interface labels and copy feedback remain
+localized. CLI commands, MCP tool names, and diagnostic JSON keys remain unchanged. The English
+Agent templates live in `desktop/core/resources/prompts.json`, separately from the interface locale
+resources.
 
 ### Sync and update
 
@@ -186,8 +228,9 @@ is not required for protocol access.
 
 ## Local credential storage
 
-Passwords are never persisted. Login JWTs remain in Rust memory only; MCP credentials are stored in
-private profile files. The default profile directory is the OS local data directory under
+Passwords are never persisted. Login JWTs remain in Rust memory only; optional App refresh secrets
+live in the operating system credential store, outside the profile directory. MCP credentials are
+stored in private profile files. The default profile directory is the OS local data directory under
 `com.tradeflow.connect`. Profile files use Unix 0600 or user-only Windows ACLs; the data directory
 uses Unix 0700. Symlink paths are refused. `TRADEFLOW_CONNECT_DATA_DIR` overrides the profile
 directory for isolated tests.
@@ -271,3 +314,9 @@ record: installation, login, connection creation, prompt copy, host registration
 discovery, a real host query, reader restrictions, capability sync after a tool change, credential
 renewal, revocation, host restart, GUI closure, and bridge query. Keep the exact tested host
 versions with release evidence.
+
+For remembered App sign-in, verify the native credential store on each OS: restart, in-place
+upgrade, restore after the API JWT expires, locked/unavailable keychain, network failure then retry,
+password change, account disablement, online/offline sign-out, and opting out on a shared device.
+Confirm profiles, logs and Agent configuration contain neither the App refresh secret nor the API
+JWT.

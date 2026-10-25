@@ -11,10 +11,73 @@ use tradeflow_connect::{
     storage::{Settings, Store},
 };
 
+mod session_store;
+
 #[derive(Default)]
 struct AppState {
     session: Mutex<Option<Session>>,
+    session_started: Mutex<Option<std::time::Instant>>,
+    remembered: Mutex<bool>,
     operation: Mutex<()>,
+}
+
+async fn restored_session(state: &AppState) -> anyhow::Result<Option<Session>> {
+    let Some(saved) = session_store::load().await? else {
+        return Ok(None);
+    };
+    match api::refresh_login(&saved.base_url, &saved.refresh_token).await {
+        Ok(session) => {
+            *state.session.lock().await = Some(session.clone());
+            *state.session_started.lock().await = Some(std::time::Instant::now());
+            *state.remembered.lock().await = true;
+            Ok(Some(session))
+        }
+        Err(error) => {
+            if matches!(
+                connection::safe_code(&error).as_str(),
+                "HTTP_401" | "AUTH_DISABLED" | "ACCOUNT_DISABLED"
+            ) {
+                *state.session.lock().await = None;
+                session_store::clear().await?;
+            }
+            Err(error)
+        }
+    }
+}
+async fn current_session(state: &AppState) -> anyhow::Result<Session> {
+    let current = state.session.lock().await.clone();
+    let fresh = state
+        .session_started
+        .lock()
+        .await
+        .is_some_and(|time| time.elapsed().as_secs() < 300);
+    if fresh && let Some(session) = current.as_ref() {
+        return Ok(session.clone());
+    }
+    if !*state.remembered.lock().await {
+        return current.ok_or_else(|| anyhow::anyhow!("LOGIN_REQUIRED"));
+    }
+    if let Some(session) = restored_session(state).await? {
+        return Ok(session);
+    }
+    current.ok_or_else(|| anyhow::anyhow!("LOGIN_REQUIRED"))
+}
+#[tauri::command]
+async fn restore_session(state: State<'_, AppState>) -> Result<Value, String> {
+    let _operation = state.operation.try_lock().map_err(|_| "OPERATION_BUSY")?;
+    let session = restored_session(&state)
+        .await
+        .map_err(|e| connection::safe_code(&e))?;
+    let Some(session) = session else {
+        return Ok(json!({"restored":false}));
+    };
+    let capabilities = session
+        .capabilities()
+        .await
+        .map_err(|e| connection::safe_code(&e))?;
+    Ok(
+        json!({"restored":true,"remembered":true,"user":session.user,"baseUrl":session.base_url,"capabilities":capabilities}),
+    )
 }
 
 async fn observed(
@@ -55,6 +118,7 @@ async fn login(
     server: String,
     username: String,
     password: String,
+    remember: Option<bool>,
 ) -> Result<Value, Value> {
     observed(
         &app,
@@ -66,20 +130,59 @@ async fn login(
                 .operation
                 .try_lock()
                 .map_err(|_| anyhow::anyhow!("OPERATION_BUSY"))?;
-            let session = api::login(&server, &username, &password).await?;
-            let capabilities = session.capabilities().await?;
-            let result =
-                json!({"user":session.user,"capabilities":capabilities,"baseUrl":session.base_url});
+            let previous_result = session_store::load().await;
+            let saved_login_may_remain = previous_result.is_err() && !remember.unwrap_or(false);
+            let previous = if remember.unwrap_or(false) { previous_result? } else { previous_result.ok().flatten() };
+            let remembered = if remember.unwrap_or(false) {
+                Some(api::remember_login(&server, &username, &password).await?)
+            } else { None };
+            let session = match &remembered {
+                Some(value) => value.session.clone(),
+                None => api::login(&server, &username, &password).await?,
+            };
+            let setup = async {
+                let capabilities = session.capabilities().await?;
+                if let Some(value) = &remembered {
+                    session_store::save(session_store::SavedSession {
+                        base_url: session.base_url.clone(), refresh_token: value.refresh_token.clone(), expires_at: value.expires_at.clone(),
+                    }).await?;
+                } else if previous.is_some() { session_store::clear().await?; }
+                Ok::<_, anyhow::Error>(capabilities)
+            }.await;
+            let capabilities = match setup {
+                Ok(value) => value,
+                Err(error) => {
+                    if let Some(value) = &remembered { let _ = api::revoke_login(&session.base_url, &value.refresh_token).await; }
+                    return Err(error);
+                }
+            };
+            if let Some(old) = previous { let _ = api::revoke_login(&old.base_url, &old.refresh_token).await; }
+            let result = json!({"user":session.user,"capabilities":capabilities,"baseUrl":session.base_url,"remembered":remembered.is_some(),"savedLoginMayRemain":saved_login_may_remain});
+            *state.remembered.lock().await = remembered.is_some();
             *state.session.lock().await = Some(session);
+            *state.session_started.lock().await = Some(std::time::Instant::now());
             Ok(result)
         }),
     )
     .await
 }
 #[tauri::command]
-async fn logout(state: State<'_, AppState>) -> Result<(), String> {
+async fn logout(state: State<'_, AppState>) -> Result<Value, String> {
+    let _operation = state.operation.try_lock().map_err(|_| "OPERATION_BUSY")?;
     *state.session.lock().await = None;
-    Ok(())
+    *state.session_started.lock().await = None;
+    *state.remembered.lock().await = false;
+    let saved = session_store::load().await;
+    session_store::clear()
+        .await
+        .map_err(|e| connection::safe_code(&e))?;
+    let mut remote_pending = false;
+    if let Ok(Some(saved)) = saved {
+        remote_pending = api::revoke_login(&saved.base_url, &saved.refresh_token)
+            .await
+            .is_err();
+    }
+    Ok(json!({"remoteSessionCleanupRequired":remote_pending}))
 }
 #[tauri::command]
 fn get_settings() -> Result<Value, String> {
@@ -104,7 +207,10 @@ fn pending_revocations() -> Result<Value, String> {
 }
 #[tauri::command]
 async fn retry_pending_revocations(state: State<'_, AppState>) -> Result<Value, String> {
-    let session = state.session.lock().await.clone().ok_or("LOGIN_REQUIRED")?;
+    let _operation = state.operation.try_lock().map_err(|_| "OPERATION_BUSY")?;
+    let session = current_session(&state)
+        .await
+        .map_err(|e| connection::safe_code(&e))?;
     let store = Store::system().map_err(|e| connection::safe_code(&e))?;
     connection::retry_pending_revocations(&session, &store)
         .await
@@ -183,7 +289,7 @@ async fn connect_connection(
                 .operation
                 .try_lock()
                 .map_err(|_| anyhow::anyhow!("OPERATION_BUSY"))?;
-            let session = session.ok_or_else(|| anyhow::anyhow!("LOGIN_REQUIRED"))?;
+            let session = current_session(&state).await?;
             let store = Store::system()?;
             connection::connect(
                 &session,
@@ -217,12 +323,7 @@ async fn sync_connection(
                 .operation
                 .try_lock()
                 .map_err(|_| anyhow::anyhow!("OPERATION_BUSY"))?;
-            let session = state
-                .session
-                .lock()
-                .await
-                .clone()
-                .ok_or_else(|| anyhow::anyhow!("LOGIN_REQUIRED"))?;
+            let session = current_session(&state).await?;
             connection::sync(&session, &store, &profile).await
         }),
     )
@@ -271,14 +372,7 @@ async fn disconnect_connection(
                 anyhow::bail!("INVALID_DISCONNECT_MODE");
             }
             let session = if mode == "revoke" {
-                Some(
-                    state
-                        .session
-                        .lock()
-                        .await
-                        .clone()
-                        .ok_or_else(|| anyhow::anyhow!("LOGIN_REQUIRED"))?,
-                )
+                Some(current_session(&state).await?)
             } else {
                 None
             };
@@ -366,6 +460,7 @@ pub fn run() {
             export_operation_logs,
             open_credentials_page,
             login,
+            restore_session,
             logout,
             get_settings,
             set_language,
@@ -382,4 +477,25 @@ pub fn run() {
         ])
         .run(tauri::generate_context!())
         .expect("Failed to start TradeFlow Connect");
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[tokio::test]
+    async fn temporary_logins_do_not_need_a_system_keyring_for_operations() {
+        let state = AppState::default();
+        *state.session.lock().await = Some(Session {
+            base_url: "https://tradeflow.example.com".into(),
+            jwt: "in-memory-only".into(),
+            user: json!({"username":"reader","role":"reader"}),
+        });
+        let session = current_session(&state).await.unwrap();
+        assert_eq!(session.jwt, "in-memory-only");
+        *state.session.lock().await = None;
+        assert_eq!(
+            current_session(&state).await.err().unwrap().to_string(),
+            "LOGIN_REQUIRED"
+        );
+    }
 }

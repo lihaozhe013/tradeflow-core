@@ -8,8 +8,10 @@ import {
   loginRateLimiter
 } from '@/utils/auth';
 import { logger } from '@/utils/logger';
+import desktopSessions from '@/routes/desktopSessions';
 
 const router: Router = express.Router();
+router.use('/desktop', desktopSessions);
 
 /**
  * POST /api/auth/login

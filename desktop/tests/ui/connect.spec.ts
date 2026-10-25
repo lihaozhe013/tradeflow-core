@@ -20,6 +20,10 @@ async function mock(
     profiles?: unknown[];
     failLogin?: boolean;
     syncAdded?: string[];
+    longPrompt?: boolean;
+    failCopy?: boolean;
+    savedSession?: boolean;
+    restoreFailsOnce?: boolean;
   } = {}
 ) {
   await page.addInitScript(
@@ -30,6 +34,8 @@ async function mock(
       const calls: Array<{ command: string; args: Record<string, unknown> }> = [];
       const callbacks = new Map<number, (value: unknown) => void>();
       let listener = 0;
+      let restores = 0;
+      let savedSession = options.savedSession ?? false;
       const result = (action: string, stage: string, failure: boolean) => {
         const event = {
           operationId: `${action}-operation`,
@@ -73,6 +79,22 @@ async function mock(
               return 1;
             }
             if (command === 'get_settings') return { language: 'en' };
+            if (command === 'restore_session') {
+              if (options.restoreFailsOnce && restores++ === 0) throw 'NETWORK_CONNECTION_FAILED';
+              return savedSession
+                ? {
+                    restored: true,
+                    remembered: true,
+                    baseUrl: 'https://new.example.com',
+                    user: { username: 'reader', role: 'reader', display_name: 'Test reader' },
+                    capabilities: { enabled: true, allowedTools: ['get_inventory'] }
+                  }
+                : { restored: false };
+            }
+            if (command === 'logout') {
+              savedSession = false;
+              return {};
+            }
             if (command === 'recover_operations') return [];
             if (command === 'profiles') return profiles;
             if (command === 'pending_revocations')
@@ -92,6 +114,7 @@ async function mock(
               return {
                 ...result('login', 'capabilities', false),
                 baseUrl: args.server,
+                remembered: args.remember === true,
                 user: { username: 'reader', role: 'reader', display_name: 'Test reader' },
                 capabilities: { enabled: true, allowedTools: ['get_inventory'] }
               };
@@ -129,11 +152,16 @@ async function mock(
             if (command === 'connection_prompts')
               return {
                 business: 'Use get_inventory with "limit":5 to query inventory.',
-                connect: 'Register a local stdio server named tradeflow_test.',
+                connect: options.longPrompt
+                  ? 'Register a local stdio server named tradeflow_test.\n'.repeat(180)
+                  : 'Register a local stdio server named tradeflow_test.',
                 update: 'Re-discover the tools and report tool changes.',
                 repair: 'Run doctor with a redacted report.'
               };
-            if (command === 'copy_prompt') return null;
+            if (command === 'copy_prompt') {
+              if (options.failCopy) throw 'CLIPBOARD_WRITE_FAILED';
+              return null;
+            }
             if (command === 'retry_pending_revocations') return { revoked: 1, remaining: 0 };
             if (command === 'export_operation_logs') return { exported: true };
             if (command === 'open_credentials_page') return null;
@@ -181,6 +209,53 @@ test('creates a connection and hands a connect prompt to the Agent', async ({ pa
   await page.getByRole('button', { name: 'Export diagnostic report' }).click();
   await expect(page.getByText('Diagnostic report exported')).toBeVisible();
 });
+test('restores saved app sign-in without asking for a password and can sign out', async ({
+  page
+}) => {
+  await mock(page, { profiles: [profile], savedSession: true });
+  await page.goto('/');
+  await expect(
+    page.getByText('Sign-in saved securely on this device. App upgrades preserve it.')
+  ).toBeVisible();
+  await expect(page.getByLabel('Password', { exact: true })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Sync latest capabilities', exact: true }).click();
+  const calls = await page.evaluate(
+    () => (window as unknown as { __nativeCalls: Array<{ command: string }> }).__nativeCalls
+  );
+  expect(calls.some((call) => call.command === 'login')).toBe(false);
+  await page.getByRole('button', { name: 'Sign out', exact: true }).click();
+  await expect(page.getByLabel('Password', { exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Office assistant' })).toBeVisible();
+});
+
+test('offline restore can be retried without deleting the saved session', async ({ page }) => {
+  await mock(page, { profiles: [profile], savedSession: true, restoreFailsOnce: true });
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Retry saved sign-in', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Test reader' })).toBeVisible();
+  const calls = await page.evaluate(
+    () => (window as unknown as { __nativeCalls: Array<{ command: string }> }).__nativeCalls
+  );
+  expect(calls.filter((call) => call.command === 'restore_session')).toHaveLength(2);
+  expect(calls.some((call) => call.command === 'logout' || call.command === 'login')).toBe(false);
+});
+
+test('remembering app sign-in is optional', async ({ page }) => {
+  await mock(page);
+  await page.goto('/');
+  await page.getByRole('checkbox', { name: 'Stay signed in on this device' }).uncheck();
+  await signIn(page);
+  const calls = await page.evaluate(
+    () =>
+      (
+        window as unknown as {
+          __nativeCalls: Array<{ command: string; args: Record<string, unknown> }>;
+        }
+      ).__nativeCalls
+  );
+  expect(calls.find((call) => call.command === 'login')?.args.remember).toBe(false);
+});
+
 test('sync reports added tools without reissuing a credential', async ({ page }) => {
   await mock(page, { profiles: [profile], syncAdded: ['get_new_report'] });
   await page.goto('/');
@@ -220,6 +295,107 @@ test('failed login replaces stale removal results and exposes the failed step', 
   await expect(page.locator('.operation-history').first()).toContainText('HTTP_401');
   await expect(page.locator('main')).not.toContainText('fixture-password');
 });
+test('each prompt has an explicit copy action and Chinese UI requests English instructions', async ({
+  page
+}) => {
+  await mock(page, { profiles: [profile] });
+  await page.goto('/');
+  await page.getByLabel('Language', { exact: true }).selectOption('zh');
+  const panel = page.locator('.prompt-panel');
+  await expect(panel.locator('.prompt-text')).toContainText('local stdio server');
+  for (const [kind, label] of [
+    ['connect', '接入'],
+    ['update', '更新'],
+    ['business', '业务'],
+    ['repair', '修复']
+  ]) {
+    await panel.getByRole('button', { name: `复制 · ${label}`, exact: true }).click();
+    await expect(panel.getByRole('button', { name: `复制 · ${label}`, exact: true })).toContainText(
+      '已复制'
+    );
+    const last = await page.evaluate(() =>
+      (
+        window as unknown as { __nativeCalls: Array<{ command: string; args: unknown }> }
+      ).__nativeCalls
+        .filter((call) => call.command === 'copy_prompt')
+        .at(-1)
+    );
+    expect(last?.args).toEqual({ profile: profile.id, kind, language: 'en' });
+  }
+  await panel.getByRole('button', { name: '修复', exact: true }).click();
+  await panel.getByRole('button', { name: '已复制', exact: true }).click();
+  await page.getByLabel('语言', { exact: true }).selectOption('en');
+  await expect(panel.locator('.prompt-text')).toContainText('Run doctor');
+});
+
+test('clipboard failures never show a successful copy state', async ({ page }) => {
+  await mock(page, { profiles: [profile], failCopy: true });
+  await page.goto('/');
+  await page
+    .locator('.prompt-panel')
+    .getByRole('button', { name: 'Copy · Connect', exact: true })
+    .click();
+  await expect(page.getByRole('alert')).toBeVisible();
+  await expect(page.locator('.prompt-copy').filter({ hasText: 'Copied' })).toHaveCount(0);
+});
+
+test('window stays fixed while connection and prompt panes scroll independently', async ({
+  page
+}, testInfo) => {
+  await mock(page, {
+    profiles: Array.from({ length: 10 }, (_, index) => ({
+      ...profile,
+      id: `${profile.id}-${index}`,
+      client: `Assistant ${index}`
+    })),
+    longPrompt: true
+  });
+  await page.setViewportSize({ width: 960, height: 760 });
+  await page.goto('/');
+  const text = page.locator('.prompt-text');
+  await expect(text).toContainText('local stdio server');
+  await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'reduce' });
+  await page.screenshot({ path: testInfo.outputPath('workspace-light.png') });
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await page.screenshot({ path: testInfo.outputPath('workspace-dark.png') });
+  for (const size of [
+    { width: 960, height: 760 },
+    { width: 720, height: 600 }
+  ]) {
+    await page.setViewportSize(size);
+    expect(
+      await page.evaluate(() => ({
+        height: document.documentElement.scrollHeight,
+        width: document.documentElement.scrollWidth
+      }))
+    ).toEqual({ height: size.height, width: size.width });
+    const headingY = (await page.locator('.prompt-header').boundingBox())!.y;
+    await text.evaluate((element) => {
+      element.scrollTop = 300;
+    });
+    expect(await text.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+    expect((await page.locator('.prompt-header').boundingBox())!.y).toBe(headingY);
+    await page.locator('.management-pane').evaluate((element) => {
+      element.scrollTop = 500;
+    });
+    expect(
+      await page.locator('.management-pane').evaluate((element) => element.scrollTop)
+    ).toBeGreaterThan(0);
+    expect((await text.boundingBox())!.height).toBeGreaterThan(100);
+  }
+  await page.getByRole('button', { name: 'Check connection', exact: true }).first().click();
+  await expect(page.locator('.operation-status')).toBeVisible();
+  expect((await text.boundingBox())!.height).toBeGreaterThan(100);
+  expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBe(600);
+  await page.setViewportSize({ width: 375, height: 667 });
+  await page.getByRole('button', { name: 'Prompt preview', exact: true }).click();
+  await expect(text).toBeVisible();
+  expect((await text.boundingBox())!.height).toBeGreaterThan(100);
+  expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBe(667);
+  await page.getByRole('button', { name: 'Connections', exact: true }).last().click();
+  await expect(page.locator('.management-pane')).toBeVisible();
+});
+
 test('Chinese local removal works without login and narrow layouts do not overflow', async ({
   page
 }) => {

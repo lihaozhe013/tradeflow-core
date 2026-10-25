@@ -101,6 +101,8 @@ pub fn safe_code(error: &anyhow::Error) -> String {
         "INVALID_PROFILE",
         "INVALID_PROFILE_ID",
         "INVALID_PROMPT_KIND",
+        "INVALID_SAVED_SESSION",
+        "SESSION_STORAGE_UNAVAILABLE",
         "INVALID_SERVER_RESPONSE",
         "INVALID_SERVER_URL",
         "INVALID_SETTINGS",

@@ -104,10 +104,9 @@ fn prompts_describe_the_launch_without_exposing_credentials() {
         assert!(!text.contains("{{"), "unrendered placeholder in {prompt}");
         assert!(!text.contains(&profile.token));
         assert!(!text.contains("tfmcp_"));
-        assert!(
-            chinese[prompt]
-                .as_str()
-                .is_some_and(|value| !value.is_empty())
+        assert_eq!(
+            chinese[prompt], english[prompt],
+            "Agent instructions must stay in English"
         );
     }
     let connect = english["connect"].as_str().unwrap();
