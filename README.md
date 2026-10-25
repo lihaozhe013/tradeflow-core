@@ -46,6 +46,22 @@ and rerun. Tests require the isolated `tradeflow_e2e` database and Playwright Ch
 browser once with `cd frontend && bunx playwright install chromium`. Use `bun run test:e2e` for the
 browser suite alone. Do not use `bun test` or `scripts/init_postgres.sql` for test setup.
 
+## Frontend lint
+
+```bash
+bun run lint:frontend
+bun run --cwd frontend lint:fix
+bun run type-check:frontend
+```
+
+Oxlint checks frontend source, tooling, and E2E tests with a lightweight, agent-friendly baseline.
+Correctness issues and invalid React Hook calls are errors; Hook dependency issues are non-blocking
+warnings. Unused variables, `any`, console calls, and formatting are not restricted. Strict React
+Compiler checks for effect state updates, refs, memoization, immutability, and purity are disabled.
+React Hook rules do not apply to Playwright fixtures, whose `use` callback is not a React Hook.
+Type checking remains separate, and Prettier owns formatting. `lint:fix` applies safe fixes only.
+Configure rules in `frontend/.oxlintrc.json`; generated output and test reports are ignored.
+
 ## Manual translation check
 
 Run `bun run check:i18n` occasionally to find translation gaps. This read-only command prints

@@ -30,9 +30,10 @@ code; verify behavior in source rather than treating documentation as an API con
 
 - Install from the root with `bun install`; generate Prisma client with
   `bun run --cwd backend prisma:generate` when needed.
-- Run backend lint with `bun run --cwd backend lint` after backend changes. Run frontend type
-  checking with `bun run --cwd frontend type-check` after frontend changes. Use the narrowest
-  relevant tests; run `bun run build` for build or cross-workspace integration changes.
+- Run backend lint with `bun run --cwd backend lint` after backend changes. Run frontend lint with
+  `bun run lint:frontend` and type checking with `bun run --cwd frontend type-check` after frontend
+  changes. Use the narrowest relevant tests; run `bun run build` for build or cross-workspace
+  integration changes.
 - Run the repository suite with `bun run test`, not `bun test`. It prepares the isolated
   `tradeflow_e2e` database and runs backend Vitest plus frontend Playwright. Review
   [docs/AGENT_MAP.md](docs/AGENT_MAP.md) before any database setup or seed command.

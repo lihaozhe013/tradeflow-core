@@ -61,8 +61,10 @@ jobs:
         env:
           TRADEFLOW_CONFIG_DIR: ${{ github.workspace }}/backend/test-config
 
-      - name: Type-check frontend
-        run: bun run type-check:frontend
+      - name: Lint and type-check frontend
+        run: |
+          bun run lint:frontend
+          bun run type-check:frontend
 
       - name: Install Playwright browser
         run: bunx playwright install --with-deps chromium
