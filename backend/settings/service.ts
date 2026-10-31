@@ -11,6 +11,23 @@ export async function initializeSettings(): Promise<void> {
     })),
     skipDuplicates: true
   });
+  const exportSetting = await prisma.systemSetting.findUnique({
+    where: { section: 'export-templates' }
+  });
+  if (exportSetting) {
+    const value = exportSetting.value as Record<string, unknown>;
+    const invoice = value?.['invoice'] as
+      { columns: { key: string; label: string; visible?: boolean }[] } | undefined;
+    if (invoice?.columns && !invoice.columns.some((c) => c.key === 'category')) {
+      const modelIndex = invoice.columns.findIndex((c) => c.key === 'product_model');
+      const insertIndex = modelIndex >= 0 ? modelIndex : 0;
+      invoice.columns.splice(insertIndex, 0, { key: 'category', label: 'Category' });
+      await prisma.systemSetting.update({
+        where: { section: 'export-templates' },
+        data: { value: value as Prisma.InputJsonValue }
+      });
+    }
+  }
 }
 export async function readSetting<K extends SettingSection>(
   section: K,

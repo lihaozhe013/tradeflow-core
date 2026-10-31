@@ -218,5 +218,6 @@ describe('Transaction export previews', () => {
     expect(preview.body.sheets).toHaveLength(1);
     expect(preview.body.total).toBeGreaterThan(0);
     expect(preview.body.columns.map((c: { key: string }) => c.key)).toContain('quantity');
+    expect(preview.body.columns.map((c: { key: string }) => c.key)).toContain('category');
   });
 });

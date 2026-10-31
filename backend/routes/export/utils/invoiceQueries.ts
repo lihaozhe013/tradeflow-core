@@ -39,18 +39,20 @@ export async function getInvoiceData(
   if (dateTo) outboundConditions.push(Prisma.sql`r.outbound_date <= ${dateTo}`);
 
   // Combine queries using UNION ALL
-  // Note: We select product_model, unit_price, quantity, total_price from both tables.
+  // Note: We select category, product_model, unit_price, quantity, total_price from both tables.
   // We assume unit_price is consistent for grouping or just group by it.
   // The original query grouped by product_model AND unit_price.
 
   const sql = Prisma.sql`
     SELECT 
+      category,
       product_model,
       unit_price,
       SUM(quantity) as quantity,
       SUM(total_price) as total_price
     FROM (
       SELECT 
+        p.category,
         p.product_model,
         r.unit_price,
         r.quantity,
@@ -60,6 +62,7 @@ export async function getInvoiceData(
       WHERE ${Prisma.join(inboundConditions, ' AND ')}
       UNION ALL
       SELECT 
+        p.category,
         p.product_model,
         r.unit_price,
         r.quantity,
@@ -68,11 +71,12 @@ export async function getInvoiceData(
       LEFT JOIN products p ON r.product_code = p.code
       WHERE ${Prisma.join(outboundConditions, ' AND ')}
     ) as combined_records
-    GROUP BY product_model, unit_price
-    ORDER BY product_model, unit_price
+    GROUP BY category, product_model, unit_price
+    ORDER BY category, product_model, unit_price
   `;
 
   interface InvoiceRawResult {
+    category: string | null;
     product_model: string;
     unit_price: number | bigint;
     quantity: number | bigint;
@@ -82,6 +86,7 @@ export async function getInvoiceData(
 
   // Map result to DTO, handling BigInt from SUM
   return rows.map((row) => ({
+    category: row.category,
     product_model: row.product_model,
     unit_price: Number(row.unit_price),
     quantity: typeof row.quantity === 'bigint' ? Number(row.quantity) : Number(row.quantity),
@@ -117,6 +122,7 @@ export async function getAllInvoiceData(
   const sql = Prisma.sql`
     SELECT 
       partner_code,
+      category,
       product_model,
       unit_price,
       SUM(quantity) as quantity,
@@ -124,6 +130,7 @@ export async function getAllInvoiceData(
     FROM (
       SELECT 
         r.supplier_code as partner_code,
+        p.category,
         p.product_model,
         r.unit_price,
         r.quantity,
@@ -134,6 +141,7 @@ export async function getAllInvoiceData(
       UNION ALL
       SELECT 
         r.customer_code as partner_code,
+        p.category,
         p.product_model,
         r.unit_price,
         r.quantity,
@@ -142,12 +150,13 @@ export async function getAllInvoiceData(
       LEFT JOIN products p ON r.product_code = p.code
       ${outboundWhere}
     ) as combined_records
-    GROUP BY partner_code, product_model, unit_price
-    ORDER BY partner_code, product_model, unit_price
+    GROUP BY partner_code, category, product_model, unit_price
+    ORDER BY partner_code, category, product_model, unit_price
   `;
 
   interface InvoiceRawResult {
     partner_code: string;
+    category: string | null;
     product_model: string;
     unit_price: number | bigint;
     quantity: number | bigint;
@@ -173,6 +182,7 @@ export async function getAllInvoiceData(
     }
 
     result[partnerName].push({
+      category: row.category,
       product_model: row.product_model,
       unit_price: Number(row.unit_price),
       quantity: typeof row.quantity === 'bigint' ? Number(row.quantity) : Number(row.quantity),

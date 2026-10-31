@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import * as XLSX from 'xlsx';
 import type request from 'supertest';
 import type { Response } from 'superagent';
 import { authAgent, publicAgent } from '@/test/helpers/request';
@@ -59,6 +60,10 @@ describe('Export endpoints (xlsx)', () => {
       partnerCode: 'SUP0'
     });
     assertXlsxExport(res);
+    const workbook = XLSX.read(res.body as Buffer, { type: 'buffer' });
+    const sheet = workbook.Sheets[workbook.SheetNames[0]!]!;
+    const rows = XLSX.utils.sheet_to_json<string[]>(sheet, { header: 1 });
+    expect(rows[0]).toContain('Category');
   });
 
   it('returns 400 for invoice export without partnerCode', async () => {

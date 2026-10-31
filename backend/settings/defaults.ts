@@ -411,6 +411,10 @@ export const DEFAULT_SETTINGS = {
     invoice: {
       columns: [
         {
+          key: 'category',
+          label: 'Category'
+        },
+        {
           key: 'product_model',
           label: 'Product Model'
         },

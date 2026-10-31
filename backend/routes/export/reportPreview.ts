@@ -37,7 +37,7 @@ export async function prepareReport(input: z.infer<typeof reportSpec>) {
         data: unknown[],
         name = template.sheetName
       ) => {
-        const columns = previewColumns([template], []);
+        const columns = previewColumns([template], ['category']);
         sheets.push({
           key,
           sheetName: name,

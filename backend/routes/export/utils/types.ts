@@ -88,6 +88,7 @@ export interface ReceivablePayableData {
 }
 
 export interface InvoiceItemDto {
+  category: string | null;
   product_model: string;
   unit_price: number;
   quantity: number;
