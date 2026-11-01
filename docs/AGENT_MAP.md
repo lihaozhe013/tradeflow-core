@@ -32,5 +32,7 @@ Avoid maintaining route inventories or copied data flows here.
 - The root test scripts use `backend/test-config/config.yaml` and require its database name to be
   `tradeflow_e2e`. `scripts/init_postgres.sql` drops the default `tradeflow` database; never use it
   for test setup. `bun run test:setup` prepares the isolated test database.
-- `bun run build` invokes `build.py`; it recreates `dist/`, copies the logo into `frontend/public/`,
-  and regenerates the Prisma client. Review the build script before changing these generated paths.
+- `bun run build` invokes `build.py`; it recreates `dist/`, copies the logo and the optional brand
+  icons/manifest into `frontend/public/`, and regenerates the Prisma client. Review the build script
+  before changing these generated paths. Icon sets are regenerated with
+  `scripts/build/generate-icons.mjs`.

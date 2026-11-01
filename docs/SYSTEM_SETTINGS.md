@@ -29,6 +29,9 @@ Both `build-config/` and its tracked example contain only:
 
 - `frontendConfig.json`: build-time frontend authentication preferences and server URL.
 - `logo.svg`: build-time branding.
+- `icons/` (optional): home screen icons that replace the committed PWA defaults.
+- `manifest.webmanifest` (optional): web app manifest; its `short_name` also becomes the iOS home
+  screen label.
 
 Database connection, backend authentication, and server configuration remain in runtime YAML.
 Currency is no longer read from YAML. Runtime business settings are not bundled into the browser.
