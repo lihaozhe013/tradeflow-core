@@ -1,5 +1,5 @@
 import { expect } from 'vitest';
-import type { Response } from 'superagent';
+import type { TestResponse } from '@/test/helpers/request';
 
 export interface XlsxExportAssertion {
   status: number;
@@ -8,7 +8,7 @@ export interface XlsxExportAssertion {
   bufferLength: number;
 }
 
-export function assertXlsxExport(res: Response): XlsxExportAssertion {
+export function assertXlsxExport(res: TestResponse): XlsxExportAssertion {
   expect(res.status).toBe(200);
   expect(res.headers['content-type']).toContain(
     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'

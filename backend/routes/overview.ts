@@ -1,9 +1,10 @@
+import { Hono } from 'hono';
 import { getDashboard, refreshDashboard } from '@/services/dashboardService';
-import express, { type Router } from 'express';
 import { getOverviewSnapshot, refreshOverviewSnapshot } from '@/services/overviewSnapshotService';
 import { SnapshotError } from '@/services/snapshotRefresh';
+import type { AppEnv } from '@/types/hono';
 
-const router: Router = express.Router();
+const app = new Hono<AppEnv>();
 
 async function requireSnapshot() {
   const snapshot = await getOverviewSnapshot();
@@ -17,39 +18,40 @@ async function requireSnapshot() {
   return snapshot;
 }
 
-router.get('/dashboard', async (_req, res) => {
+app.get('/dashboard', async (c) => {
   const data = await getDashboard();
   if (!data) throw new SnapshotError(503, 'SNAPSHOT_NOT_READY', 'Dashboard is not ready.');
-  res.json(data);
-});
-router.post('/dashboard', async (_req, res) => {
-  res.json(await refreshDashboard());
+  return c.json(data);
 });
 
-router.get('/stats', async (_req, res) => {
-  res.json(await requireSnapshot());
+app.post('/dashboard', async (c) => {
+  return c.json(await refreshDashboard());
 });
 
-router.post('/stats', async (_req, res) => {
-  res.json(await refreshOverviewSnapshot());
+app.get('/stats', async (c) => {
+  return c.json(await requireSnapshot());
 });
 
-router.get('/top-sales-products', async (_req, res) => {
+app.post('/stats', async (c) => {
+  return c.json(await refreshOverviewSnapshot());
+});
+
+app.get('/top-sales-products', async (c) => {
   const snapshot = await requireSnapshot();
-  res.json({
+  return c.json({
     success: true,
     data: snapshot.top_sales_products,
     last_updated: snapshot.last_updated
   });
 });
 
-router.get('/monthly-inventory-change/:productModel', async (req, res) => {
+app.get('/monthly-inventory-change/:productModel', async (c) => {
   const snapshot = await requireSnapshot();
-  const model = req.params['productModel'] as string;
+  const model = c.req.param('productModel');
   const data = Object.hasOwn(snapshot.monthly_inventory_changes, model)
     ? snapshot.monthly_inventory_changes[model]
     : undefined;
-  res.json(
+  return c.json(
     data
       ? { success: true, data, last_updated: snapshot.last_updated }
       : {
@@ -60,4 +62,4 @@ router.get('/monthly-inventory-change/:productModel', async (req, res) => {
   );
 });
 
-export default router;
+export default app;

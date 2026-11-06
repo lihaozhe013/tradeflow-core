@@ -1,15 +1,16 @@
-import type { Request, Response, NextFunction } from 'express';
+import type { MiddlewareHandler } from 'hono';
 import { prisma } from '@/prismaClient';
+import type { AppEnv } from '@/types/hono';
 
 /**
  * Paths that should not be logged (e.g., manual snapshot refreshes)
  */
-const IGNORED_PATHS = [
+const IGNORED_PATHS = new Set([
   '/api/overview/stats',
   '/api/inventory/refresh',
   '/api/payable/invoices/refresh',
   '/api/receivable/invoices/refresh'
-];
+]);
 
 /**
  * Sensitive keys to mask in the logs
@@ -24,18 +25,18 @@ const SENSITIVE_KEYS = [
   'confirmnewPassword'
 ];
 
-function shouldSkipLogging(req: Request): boolean {
-  if (req.originalUrl.split('?')[0]?.startsWith('/api/settings')) return true;
-  if (req.originalUrl.split('?')[0]?.startsWith('/api/transaction-drafts')) return true;
-  if (req.originalUrl.split('?')[0] === '/api/mcp' || req.originalUrl.startsWith('/api/mcp/'))
-    return true;
-  if (req.originalUrl.split('?')[0] === '/mcp' || req.originalUrl.startsWith('/mcp/')) return true;
+function shouldSkipLogging(path: string, url: string): boolean {
+  const cleanPath = path.split('?')[0] ?? '';
+  if (cleanPath.startsWith('/api/settings')) return true;
+  if (cleanPath.startsWith('/api/transaction-drafts')) return true;
+  if (cleanPath === '/api/mcp' || cleanPath.startsWith('/api/mcp/')) return true;
+  if (cleanPath === '/mcp' || cleanPath.startsWith('/mcp/')) return true;
 
   // Check exact matches
-  if (IGNORED_PATHS.includes(req.path)) return true;
+  if (IGNORED_PATHS.has(cleanPath)) return true;
 
   // Check for refresh patterns (common in snapshot operations)
-  if (req.originalUrl.includes('/refresh/')) return true;
+  if (url.includes('/refresh/')) return true;
 
   return false;
 }
@@ -63,62 +64,72 @@ function maskSensitiveData(data: unknown): unknown {
  * Access Logger Middleware
  * Logs modifications (POST, PUT, DELETE, PATCH) to the database.
  */
-export const requestLogger = (req: Request, res: Response, next: NextFunction): void => {
+export const requestLogger: MiddlewareHandler<AppEnv> = async (c, next) => {
   // Only log mutations
-  if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(req.method)) {
-    // Check if this request should be skipped
-    if (shouldSkipLogging(req)) {
-      next();
-      return;
-    }
-
-    res.on('finish', async () => {
-      // Only log if the request was processed (status code exists and no error preventing request handling)
-      // Usually logging regardless of success is better for audit, but let's stick to user request "if valid"
-      if (res.statusCode) {
-        try {
-          const username = req.user?.username || 'anonymous';
-          // Filter out anonymous requests that are not login attempts (e.g. network attacks)
-          if (username === 'anonymous' && req.originalUrl !== '/api/auth/login') {
-            return;
-          }
-
-          let bodyToLog = null;
-          if (req.body) {
-            // Mask sensitive fields
-            const maskedBody = maskSensitiveData(req.body);
-            bodyToLog = JSON.stringify(maskedBody);
-          }
-
-          await prisma.systemLog.create({
-            data: {
-              username,
-              action: req.method,
-              resource: req.originalUrl,
-              user_agent: req.get('User-Agent') || '',
-              params: bodyToLog
-            }
-          });
-        } catch (error) {
-          console.error('Failed to write system log:', error);
-        }
-      }
-    });
+  if (!['POST', 'PUT', 'DELETE', 'PATCH'].includes(c.req.method)) {
+    return await next();
   }
 
-  next();
+  const path = c.req.path;
+  const url = c.req.url;
+
+  if (shouldSkipLogging(path, url)) {
+    return await next();
+  }
+
+  let bodyToLog: string | null = null;
+  try {
+    const cloned = c.req.raw.clone();
+    const body = await cloned.json();
+    if (body) {
+      bodyToLog = JSON.stringify(maskSensitiveData(body));
+    }
+  } catch {
+    // ignore non-json body
+  }
+
+  await next();
+
+  if (c.res.status) {
+    try {
+      const user = c.get('user');
+      const username = user?.username || 'anonymous';
+      const parsedUrl = new URL(url, 'http://localhost');
+      const resource = parsedUrl.pathname + parsedUrl.search;
+
+      if (username === 'anonymous' && resource !== '/api/auth/login') {
+        return;
+      }
+
+      await prisma.systemLog.create({
+        data: {
+          username,
+          action: c.req.method,
+          resource,
+          user_agent: c.req.header('user-agent') || '',
+          params: bodyToLog
+        }
+      });
+    } catch (error) {
+      console.error('Failed to write system log:', error);
+    }
+  }
 };
 
 /**
  * Error Log Middleware
  */
-export const errorLogger = (err: Error, req: Request, _res: Response, next: NextFunction): void => {
+export const errorLogger = (
+  err: Error,
+  path: string,
+  method: string,
+  username = 'anonymous'
+): void => {
   console.error('API Error', {
     message: err.message,
     stack: err.stack,
-    method: req.method,
-    url: req.originalUrl,
-    user: req.user?.username || 'anonymous'
+    method,
+    url: path,
+    user: username
   });
-  next(err);
 };

@@ -192,7 +192,7 @@ describe('initializeDatabase', () => {
     expect(state.configs.every((pool) => pool.password === 'test-password')).toBe(true);
     expect(result.tablesCreated).toBe(generatedManifest.tables.length);
     expect(result.indexesAdded).toBe(generatedManifest.indexes.length);
-    expect(result.constraintsAdded).toBe(7);
+    expect(result.constraintsAdded).toBe(generatedManifest.foreignKeys.length);
     expect(state.queries).toContain('SELECT pg_advisory_lock(hashtext($1))');
     expect(state.queries).toContain('SELECT pg_advisory_xact_lock(hashtext($1))');
     expect(state.queries.at(-1)).toBe('COMMIT');

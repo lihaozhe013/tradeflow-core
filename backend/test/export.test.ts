@@ -1,15 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import * as XLSX from 'xlsx';
-import type request from 'supertest';
-import type { Response } from 'superagent';
+import type { TestAgent, TestResponse } from '@/test/helpers/request';
 import { authAgent, publicAgent } from '@/test/helpers/request';
 import { assertXlsxExport } from '@/test/helpers/assertXlsx';
 
 const XLSX_BODY = { tables: '123' };
 
-type TestAgent = ReturnType<typeof request.agent>;
-
-async function postBinary(agent: TestAgent, url: string, body: unknown): Promise<Response> {
+async function postBinary(agent: TestAgent, url: string, body: unknown): Promise<TestResponse> {
   const req = agent
     .post(url)
     .send(body as object)

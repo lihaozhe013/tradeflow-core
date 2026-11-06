@@ -1,5 +1,4 @@
-import type { Request, Response } from 'express';
-import { Router, type Router as ExpressRouter } from 'express';
+import { Hono } from 'hono';
 import decimalCalc from '@/utils/decimalCalculator';
 import {
   calculateFilteredSoldGoodsCost,
@@ -10,24 +9,31 @@ import {
   validateBasicParams
 } from '@/routes/analysis/utils';
 import type { AnalysisType } from '@/routes/analysis/utils/types';
+import type { AppEnv } from '@/types/hono';
 
-const router: ExpressRouter = Router();
+const app = new Hono<AppEnv>();
 
 // GET /api/analysis/data
-router.get('/data', async (req: Request, res: Response) => {
-  const { start_date, end_date, customer_code, supplier_code, product_model, type } =
-    req.query as Record<string, string | undefined>;
+app.get('/data', async (c) => {
+  const start_date = c.req.query('start_date');
+  const end_date = c.req.query('end_date');
+  const customer_code = c.req.query('customer_code');
+  const supplier_code = c.req.query('supplier_code');
+  const product_model = c.req.query('product_model');
+  const type = c.req.query('type');
 
   const analysisType = (type as AnalysisType) || 'outbound';
   const partnerCode = analysisType === 'inbound' ? supplier_code : customer_code;
 
   const validation = validateBasicParams({ start_date, end_date });
   if (!validation.isValid) {
-    res.status(400).json({
-      success: false,
-      message: validation.error
-    });
-    return;
+    return c.json(
+      {
+        success: false,
+        message: validation.error
+      },
+      400
+    );
   }
 
   const lastUpdated = new Date().toISOString();
@@ -40,7 +46,7 @@ router.get('/data', async (req: Request, res: Response) => {
       product_model
     );
 
-    res.json({
+    return c.json({
       success: true,
       data: {
         ...purchaseData,
@@ -54,7 +60,6 @@ router.get('/data', async (req: Request, res: Response) => {
         last_updated: lastUpdated
       }
     });
-    return;
   }
 
   const salesData = await calculateSalesData(start_date!, end_date!, customer_code, product_model);
@@ -76,7 +81,7 @@ router.get('/data', async (req: Request, res: Response) => {
     profitRate = decimalCalc.toDbNumber(rate, 2);
   }
 
-  res.json({
+  return c.json({
     success: true,
     data: {
       sales_amount: salesAmount,
@@ -95,20 +100,26 @@ router.get('/data', async (req: Request, res: Response) => {
 });
 
 // GET /api/analysis/detail
-router.get('/detail', async (req: Request, res: Response) => {
-  const { start_date, end_date, customer_code, supplier_code, product_model, type } =
-    req.query as Record<string, string | undefined>;
+app.get('/detail', async (c) => {
+  const start_date = c.req.query('start_date');
+  const end_date = c.req.query('end_date');
+  const customer_code = c.req.query('customer_code');
+  const supplier_code = c.req.query('supplier_code');
+  const product_model = c.req.query('product_model');
+  const type = c.req.query('type');
 
   const analysisType = (type as AnalysisType) || 'outbound';
   const partnerCode = analysisType === 'inbound' ? supplier_code : customer_code;
 
   const validation = validateBasicParams({ start_date, end_date });
   if (!validation.isValid) {
-    res.status(400).json({
-      success: false,
-      message: validation.error
-    });
-    return;
+    return c.json(
+      {
+        success: false,
+        message: validation.error
+      },
+      400
+    );
   }
 
   const detailData = await calculateDetailAnalysis(
@@ -119,19 +130,19 @@ router.get('/detail', async (req: Request, res: Response) => {
     analysisType
   );
 
-  res.json({
+  return c.json({
     success: true,
     data: detailData || []
   });
 });
 
 // GET /api/analysis/filter-options
-router.get('/filter-options', async (_req: Request, res: Response) => {
+app.get('/filter-options', async (c) => {
   const options = await getFilterOptions();
-  res.json({
+  return c.json({
     success: true,
     ...options
   });
 });
 
-export default router;
+export default app;

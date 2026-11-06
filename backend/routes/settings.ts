@@ -1,45 +1,59 @@
-import { Router } from 'express';
+import { Hono } from 'hono';
 import { z } from 'zod';
 import { prisma } from '@/prismaClient';
 import type { Prisma } from '@/prisma/client';
 import { authorize } from '@/utils/auth';
 import { parseSetting, sections, exportCatalog } from '@/settings/schema';
 import { readRuntimeSettings } from '@/settings/service';
+import type { AppEnv } from '@/types/hono';
 
-const router = Router();
-router.get('/runtime', async (_req, res) => {
-  res.setHeader('Cache-Control', 'no-store');
-  res.json(await readRuntimeSettings());
+const app = new Hono<AppEnv>();
+
+app.get('/runtime', async (c) => {
+  c.header('Cache-Control', 'no-store');
+  return c.json(await readRuntimeSettings());
 });
-router.use(authorize(['superuser']));
-router.get('/', async (_req, res) => {
-  res.setHeader('Cache-Control', 'no-store');
-  res.json({
+
+app.use('*', authorize(['superuser']));
+
+app.get('/', async (c) => {
+  c.header('Cache-Control', 'no-store');
+  return c.json({
     data: await prisma.systemSetting.findMany({ orderBy: { section: 'asc' } }),
     catalog: exportCatalog
   });
 });
-router.put('/:section', async (req, res) => {
-  const sectionResult = z.enum(sections).safeParse(req.params['section']);
+
+app.put('/:section', async (c) => {
+  const sectionParam = c.req.param('section');
+  const sectionResult = z.enum(sections).safeParse(sectionParam);
+  let body: unknown;
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json({ message: 'Invalid settings request.' }, 400);
+  }
+
   const bodyResult = z
     .strictObject({ value: z.unknown(), version: z.number().int().positive() })
-    .safeParse(req.body);
+    .safeParse(body);
   if (!sectionResult.success || !bodyResult.success) {
-    res.status(400).json({ message: 'Invalid settings request.' });
-    return;
+    return c.json({ message: 'Invalid settings request.' }, 400);
   }
   const section = sectionResult.data;
-  let value;
+  let value: unknown;
   try {
     value = parseSetting(section, bodyResult.data.value);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      res.status(400).json({ message: 'Invalid settings.', issues: error.issues });
-      return;
+      return c.json({ message: 'Invalid settings.', issues: error.issues }, 400);
     }
     throw error;
   }
-  if (section === 'about') value = { ...value, lastUpdated: new Date().toISOString() };
+  if (section === 'about') {
+    value = { ...(value as Record<string, unknown>), lastUpdated: new Date().toISOString() };
+  }
+  const user = c.get('user')!;
   const result = await prisma.$transaction(async (db) => {
     const old = await db.systemSetting.findUniqueOrThrow({ where: { section } });
     const updated = await db.systemSetting.updateMany({
@@ -48,18 +62,18 @@ router.put('/:section', async (req, res) => {
         value: value as Prisma.InputJsonValue,
         version: { increment: 1 },
         updatedAt: new Date(),
-        updatedBy: req.user!.username
+        updatedBy: user.username
       }
     });
     if (updated.count !== 1) return null;
     const before = old.value as Record<string, unknown>;
-    const fields = Object.keys(value).filter(
+    const fields = Object.keys(value as Record<string, unknown>).filter(
       (key) =>
         JSON.stringify(before[key]) !== JSON.stringify((value as Record<string, unknown>)[key])
     );
     await db.systemLog.create({
       data: {
-        username: req.user!.username,
+        username: user.username,
         action: 'UPDATE',
         resource: `/api/settings/${section}`,
         params: JSON.stringify({ section, fields, version: bodyResult.data.version + 1 })
@@ -68,11 +82,9 @@ router.put('/:section', async (req, res) => {
     return db.systemSetting.findUniqueOrThrow({ where: { section } });
   });
   if (!result) {
-    res
-      .status(409)
-      .json({ message: 'Settings changed. Reload the current version before saving.' });
-    return;
+    return c.json({ message: 'Settings changed. Reload the current version before saving.' }, 409);
   }
-  res.json({ data: result });
+  return c.json({ data: result });
 });
-export default router;
+
+export default app;

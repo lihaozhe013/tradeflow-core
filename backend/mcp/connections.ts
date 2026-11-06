@@ -1,4 +1,4 @@
-import { Router, type Request, type Response, type NextFunction } from 'express';
+import { Hono } from 'hono';
 import { z } from 'zod';
 import { mcpPrisma } from '@/prismaClient';
 import { authenticateToken, getAuthConfig } from '@/utils/auth';
@@ -7,13 +7,10 @@ import { generateMcpToken, hashMcpToken } from '@/mcp/credentials';
 import { effectiveToolsForRole, MCP_STAGING_TOOL_NAMES, toolsForRole } from '@/mcp/tools';
 import { MCP_GUIDE_VERSION, MIN_BRIDGE_VERSION, roleCatalog } from '@/mcp/catalog';
 import type { McpConfig } from '@/types/config';
+import type { AppEnv } from '@/types/hono';
 
 export const MCP_CREDENTIAL_DAYS = 90;
 
-/**
- * A connection name is chosen by the user or client. It is a label, not a fixed Agent list, so a
- * new host does not require a server release to connect.
- */
 const clientNameSchema = z
   .string()
   .trim()
@@ -54,61 +51,71 @@ function catalogMetadata(role: string, stagingWritesEnabled: boolean) {
   };
 }
 
-export function createMcpConnectionRouter(settings: McpConfig): Router {
-  const router = Router();
-  router.use((_req, res, next) => {
+export function createMcpConnectionRouter(settings: McpConfig): Hono<AppEnv> {
+  const router = new Hono<AppEnv>();
+
+  router.use('*', async (c, next) => {
     if (!getAuthConfig().enabled) {
-      res.status(409).json({
-        success: false,
-        code: 'AUTH_DISABLED',
-        message: 'Account authentication must be enabled.'
-      });
-      return;
+      return c.json(
+        {
+          success: false,
+          code: 'AUTH_DISABLED',
+          message: 'Account authentication must be enabled.'
+        },
+        409
+      );
     }
-    next();
+    return await next();
   });
-  router.use(authenticateToken);
-  router.use((req, res, next) => {
-    if (!req.user || toolsForRole(req.user.role).length === 0) {
-      res.status(403).json({ success: false, code: 'ROLE_NOT_SUPPORTED' });
-      return;
+
+  router.use('*', authenticateToken);
+
+  router.use('*', async (c, next) => {
+    const user = c.get('user');
+    if (!user || toolsForRole(user.role).length === 0) {
+      return c.json({ success: false, code: 'ROLE_NOT_SUPPORTED' }, 403);
     }
-    res.setHeader('Cache-Control', 'no-store');
-    next();
+    c.header('Cache-Control', 'no-store');
+    return await next();
   });
-  router.get('/capabilities', (req, res) => {
-    res.json({
+
+  router.get('/capabilities', (c) => {
+    const user = c.get('user')!;
+    return c.json({
       success: true,
       data: {
         version: 1,
         enabled: settings.enabled,
         endpointPath: '/mcp',
-        allowedTools: toolsForRole(req.user!.role),
+        allowedTools: toolsForRole(user.role),
         effectiveTools: effectiveToolsForRole(
-          req.user!.role,
+          user.role,
           settings.stagingWrites?.enabled === true
         ),
         stagingWritesEnabled: settings.stagingWrites?.enabled === true,
         credentialDays: MCP_CREDENTIAL_DAYS,
         dataScope: 'instance',
-        ...catalogMetadata(req.user!.role, settings.stagingWrites?.enabled === true)
+        ...catalogMetadata(user.role, settings.stagingWrites?.enabled === true)
       }
     });
   });
-  router.get('/catalog', (req, res) => {
-    res.json({
+
+  router.get('/catalog', (c) => {
+    const user = c.get('user')!;
+    return c.json({
       success: true,
-      data: roleCatalog(req.user!.role, settings.stagingWrites?.enabled === true)
+      data: roleCatalog(user.role, settings.stagingWrites?.enabled === true)
     });
   });
-  router.get('/connections', async (req, res) => {
-    const parsed = listSchema.safeParse(req.query);
+
+  router.get('/connections', async (c) => {
+    const parsed = listSchema.safeParse(c.req.query());
     if (!parsed.success) {
-      res.status(400).json({ success: false, code: 'INVALID_CONNECTION_QUERY' });
-      return;
+      return c.json({ success: false, code: 'INVALID_CONNECTION_QUERY' }, 400);
     }
+    const user = c.get('user')!;
     const owner = await mcpPrisma.user.findUniqueOrThrow({
-      where: { username: req.user!.username }
+      where: { username: user.username }
     });
     const { page, limit, status, client } = parsed.data;
     const now = new Date();
@@ -160,26 +167,31 @@ export function createMcpConnectionRouter(settings: McpConfig): Router {
         ...MCP_STAGING_TOOL_NAMES.filter((tool) => allowed.has(tool))
       ]
     }));
-    res.json({
+    return c.json({
       success: true,
       data,
       pagination: { page, limit, total, pages: Math.ceil(total / limit) }
     });
   });
-  router.post('/connections', async (req, res) => {
+
+  router.post('/connections', async (c) => {
     if (!settings.enabled) {
-      res.status(409).json({ success: false, code: 'MCP_DISABLED' });
-      return;
+      return c.json({ success: false, code: 'MCP_DISABLED' }, 409);
     }
-    const parsed = createSchema.safeParse(req.body);
+    let body: unknown;
+    try {
+      body = await c.req.json();
+    } catch {
+      return c.json({ success: false, code: 'INVALID_CONNECTION' }, 400);
+    }
+    const parsed = createSchema.safeParse(body);
     if (!parsed.success) {
-      res.status(400).json({ success: false, code: 'INVALID_CONNECTION' });
-      return;
+      return c.json({ success: false, code: 'INVALID_CONNECTION' }, 400);
     }
-    const owner = await mcpPrisma.user.findUnique({ where: { username: req.user!.username } });
+    const user = c.get('user')!;
+    const owner = await mcpPrisma.user.findUnique({ where: { username: user.username } });
     if (!owner?.enabled) {
-      res.status(401).json({ success: false, code: 'ACCOUNT_DISABLED' });
-      return;
+      return c.json({ success: false, code: 'ACCOUNT_DISABLED' }, 401);
     }
     const token = generateMcpToken();
     const connection = await mcpPrisma.mcpConnection.create({
@@ -197,47 +209,48 @@ export function createMcpConnectionRouter(settings: McpConfig): Router {
       connectionId: connection.id,
       client: connection.client
     });
-    res.status(201).json({
-      success: true,
-      data: {
-        ...connection,
-        token,
-        effectiveTools: effectiveToolsForRole(owner.role, settings.stagingWrites?.enabled === true),
-        ...catalogMetadata(owner.role, settings.stagingWrites?.enabled === true)
-      }
-    });
+    return c.json(
+      {
+        success: true,
+        data: {
+          ...connection,
+          token,
+          effectiveTools: effectiveToolsForRole(owner.role, settings.stagingWrites?.enabled === true),
+          ...catalogMetadata(owner.role, settings.stagingWrites?.enabled === true)
+        }
+      },
+      201
+    );
   });
-  router.delete('/connections/:id', async (req, res) => {
-    const parsed = idSchema.safeParse(req.params['id']);
+
+  router.delete('/connections/:id', async (c) => {
+    const parsed = idSchema.safeParse(c.req.param('id'));
     if (!parsed.success) {
-      res.status(400).json({ success: false, code: 'INVALID_CONNECTION' });
-      return;
+      return c.json({ success: false, code: 'INVALID_CONNECTION' }, 400);
     }
+    const user = c.get('user')!;
     const existing = await mcpPrisma.mcpConnection.findFirst({
       where: {
         id: parsed.data,
-        ownerUsername: req.user!.username
+        ownerUsername: user.username
       }
     });
     if (!existing) {
-      res.status(404).json({ success: false, code: 'CONNECTION_NOT_FOUND' });
-      return;
+      return c.json({ success: false, code: 'CONNECTION_NOT_FOUND' }, 404);
     }
     await mcpPrisma.mcpConnection.updateMany({
       where: {
         id: existing.id,
-        ownerUsername: req.user!.username,
+        ownerUsername: user.username,
         revokedAt: null
       },
       data: { revokedAt: new Date() }
     });
     logger.info('MCP connection revoked', { connectionId: existing.id });
-    res.status(204).end();
+    return c.body(null, 204);
   });
-  router.use((_req, res) => res.status(404).json({ success: false, code: 'NOT_FOUND' }));
-  router.use((_error: unknown, req: Request, res: Response, _next: NextFunction) => {
-    logger.error('MCP connection operation failed', { operation: req.method, status: 500 });
-    res.status(500).json({ success: false, code: 'CONNECTION_OPERATION_FAILED' });
-  });
+
+  router.all('*', (c) => c.json({ success: false, code: 'NOT_FOUND' }, 404));
+
   return router;
 }

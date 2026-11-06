@@ -34,39 +34,31 @@ async function startServer(): Promise<void> {
     const { initializeSettings } = await import('@/settings/service');
     await initializeSettings();
     const app = createApp();
-    const server = app.listen(PORT, () => {
-      if (process.env['NODE_ENV'] !== 'test') {
-        void import('@/services/dashboardScheduler').then(({ startDashboardScheduler }) => {
-          const stop = startDashboardScheduler();
-          server.once('close', stop);
-          process.once('SIGTERM', () => {
-            stop();
-            server.close(() => {
-              void disconnectClients?.();
-            });
-          });
-          process.once('SIGINT', () => {
-            stop();
-            server.close(() => {
-              void disconnectClients?.();
-            });
-          });
-        });
-      }
-      logger.info('Server Start Complete!', {
-        port: PORT,
-        environment: process.env['NODE_ENV'] || 'development',
-        pid: process.pid,
-        frontend_hosted: shouldHostFrontend
-      });
+
+    const server = Bun.serve({
+      fetch: app.fetch,
+      port: PORT
     });
-    server.once('error', (error: NodeJS.ErrnoException) => {
-      logger.error('Backend HTTP server failed to start.', {
-        errorCode: error.code ?? 'HTTP_LISTEN_FAILED'
+
+    if (process.env['NODE_ENV'] !== 'test') {
+      void import('@/services/dashboardScheduler').then(({ startDashboardScheduler }) => {
+        const stop = startDashboardScheduler();
+        const shutdown = async () => {
+          stop();
+          server.stop(true);
+          await disconnectClients?.();
+          process.exit(0);
+        };
+        process.once('SIGTERM', () => void shutdown());
+        process.once('SIGINT', () => void shutdown());
       });
-      void disconnectClients?.().finally(() => {
-        process.exitCode = 1;
-      });
+    }
+
+    logger.info('Server Start Complete!', {
+      port: PORT,
+      environment: process.env['NODE_ENV'] || 'development',
+      pid: process.pid,
+      frontend_hosted: shouldHostFrontend
     });
   } catch (error) {
     if (error instanceof DatabaseBootstrapError) {

@@ -21,7 +21,7 @@ const backendWebServer = externalServer
   ? []
   : [
       {
-        command: 'bun run prisma:generate && bun run tsx server.ts',
+        command: 'bun run prisma:generate && bun server.ts',
         cwd: backendDir,
         url: `${backendUrl}/healthz`,
         timeout: 120_000,

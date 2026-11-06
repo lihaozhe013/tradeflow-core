@@ -1,8 +1,12 @@
-import { Router } from 'express';
+import { Hono } from 'hono';
 import { readSetting } from '@/settings/service';
-const router = Router();
-router.get('/', async (_req, res) => {
-  res.setHeader('Cache-Control', 'no-store');
-  res.json(await readSetting('about'));
+import type { AppEnv } from '@/types/hono';
+
+const app = new Hono<AppEnv>();
+
+app.get('/', async (c) => {
+  c.header('Cache-Control', 'no-store');
+  return c.json(await readSetting('about'));
 });
-export default router;
+
+export default app;

@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
-import { createServer } from 'node:http';
 import { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/client';
-import request from 'supertest';
+import request from '@/test/helpers/request';
+import { createTestServer } from '@/test/helpers/server';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createApp } from '@/app';
 import { mcpPrisma } from '@/prismaClient';
@@ -193,15 +193,11 @@ describe('User MCP connections', () => {
     );
     expect(connection.effectiveTools).toHaveLength(11);
 
-    const server = createServer(stagingApp);
-    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
-    const address = server.address();
-    if (!address || typeof address === 'string')
-      throw new Error('Staging MCP server did not start');
+    const server = await createTestServer(stagingApp);
     const client = new Client({ name: 'staging-permission-test', version: '1' });
     try {
       await client.connect(
-        new StreamableHTTPClientTransport(new URL(`http://127.0.0.1:${address.port}/mcp`), {
+        new StreamableHTTPClientTransport(new URL(`http://127.0.0.1:${server.port}/mcp`), {
           authProvider: { token: async () => token }
         })
       );
@@ -212,7 +208,7 @@ describe('User MCP connections', () => {
     } finally {
       await mcpPrisma.user.update({ where: { username: users[1]! }, data: { role: 'editor' } });
       await client.close();
-      await new Promise<void>((resolve) => server.close(() => resolve()));
+      await server.stop();
     }
   });
   it('shares request budget between credentials owned by one account', async () => {
@@ -233,14 +229,11 @@ describe('User MCP connections', () => {
   it('filters discovery and rejects financial calls after a live downgrade', async () => {
     const owner = await mcpPrisma.user.findUniqueOrThrow({ where: { username: users[1]! } });
     const created = await issue(signToken(owner).token);
-    const server = createServer(app);
-    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
-    const address = server.address();
-    if (!address || typeof address === 'string') throw new Error('Test server did not start');
+    const server = await createTestServer(app);
     const client = new Client({ name: 'dynamic-permission-test', version: '1' });
     try {
       await client.connect(
-        new StreamableHTTPClientTransport(new URL(`http://127.0.0.1:${address.port}/mcp`), {
+        new StreamableHTTPClientTransport(new URL(`http://127.0.0.1:${server.port}/mcp`), {
           authProvider: { token: async () => created.body.data.token as string }
         })
       );
@@ -255,7 +248,7 @@ describe('User MCP connections', () => {
       expect(await mcpPrisma.mcpConnection.count({ where: { ownerUsername: users[1]! } })).toBe(0);
     } finally {
       await client.close();
-      await new Promise<void>((resolve) => server.close(() => resolve()));
+      await server.stop();
     }
   });
   it('paginates more than 100 credentials, derives status and rejects invalid queries', async () => {

@@ -1,26 +1,30 @@
-import express, { type Router, type Request, type Response } from 'express';
+import { Hono } from 'hono';
 import { prisma } from '@/prismaClient';
 import { inventoryService } from '@/utils/inventoryService';
 import decimalCalc from '@/utils/decimalCalculator';
 import { pagination_limit } from '@/utils/paths';
 import { listInventory } from '@/services/readService';
+import type { AppEnv } from '@/types/hono';
 
-const router: Router = express.Router();
+const app = new Hono<AppEnv>();
 
 /**
  * GET /api/inventory
  */
-router.get('/', async (req: Request, res: Response): Promise<void> => {
-  const { product_model, page = 1, limit = pagination_limit } = req.query;
+app.get('/', async (c) => {
+  const product_model = c.req.query('product_model');
+  const page = c.req.query('page') ?? '1';
+  const limit = c.req.query('limit') ?? String(pagination_limit);
   const pageNum = Number(page) || 1;
   const limitNum = Number(limit) || pagination_limit;
+
   const result = await listInventory(prisma, {
     productModel: product_model ? String(product_model) : undefined,
     page: pageNum,
     limit: limitNum
   });
 
-  res.json({
+  return c.json({
     data: result.data,
     pagination: {
       page: pageNum,
@@ -34,16 +38,14 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
 /**
  * GET /api/inventory/total-cost-estimate
  */
-router.get('/total-cost-estimate', async (_req: Request, res: Response): Promise<void> => {
+app.get('/total-cost-estimate', async (c) => {
   const items = await prisma.inventory.findMany({
     where: { quantity: { gt: 0 } }
   });
 
   let totalCost = decimalCalc.decimal(0);
 
-  // This loop might be slow if thousands of products, but typically fine for SMB
   for (const item of items) {
-    // Get latest purchase price
     const priceRow = await prisma.inboundRecord.findFirst({
       where: { product: { product_model: item.product_model } },
       orderBy: [{ inbound_date: 'desc' }, { id: 'desc' }],
@@ -56,7 +58,7 @@ router.get('/total-cost-estimate', async (_req: Request, res: Response): Promise
     }
   }
 
-  res.json({
+  return c.json({
     total_cost_estimate: decimalCalc.toDbNumber(totalCost, 2),
     last_updated: new Date().toISOString()
   });
@@ -65,9 +67,9 @@ router.get('/total-cost-estimate', async (_req: Request, res: Response): Promise
 /**
  * POST /api/inventory/refresh
  */
-router.post('/refresh', async (_req: Request, res: Response): Promise<void> => {
+app.post('/refresh', async (c) => {
   const result = await inventoryService.recalculateAll();
-  res.json({
+  return c.json({
     success: true,
     message: 'Inventory recalculation completed!',
     last_updated: new Date().toISOString(),
@@ -75,4 +77,4 @@ router.post('/refresh', async (_req: Request, res: Response): Promise<void> => {
   });
 });
 
-export default router;
+export default app;

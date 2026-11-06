@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import request from 'supertest';
+import request from '@/test/helpers/request';
 import { beforeAll, afterAll, describe, expect, it } from 'vitest';
 import { createApp } from '@/app';
 import { mcpPrisma } from '@/prismaClient';

@@ -1,4 +1,4 @@
-import express, { type Router, type Request, type Response } from 'express';
+import { Hono } from 'hono';
 import {
   findUser,
   verifyPassword,
@@ -9,27 +9,36 @@ import {
 } from '@/utils/auth';
 import { logger } from '@/utils/logger';
 import desktopSessions from '@/routes/desktopSessions';
+import type { AppEnv } from '@/types/hono';
 
-const router: Router = express.Router();
-router.use('/desktop', desktopSessions);
+const app = new Hono<AppEnv>();
+
+app.route('/desktop', desktopSessions);
 
 /**
  * POST /api/auth/login
  */
-router.post('/login', loginRateLimiter, async (req: Request, res: Response): Promise<Response> => {
-  const { username, password } = req.body || {};
+app.post('/login', loginRateLimiter, async (c) => {
+  let body: { username?: string; password?: string } | undefined;
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json({ success: false, message: 'Incorrect username or password!' }, 400);
+  }
+
+  const { username, password } = body || {};
   if (!username || !password) {
-    return res.status(400).json({ success: false, message: 'Incorrect username or password!' });
+    return c.json({ success: false, message: 'Incorrect username or password!' }, 400);
   }
 
   const user = await findUser(username);
   if (!user || user.enabled === false || !user.password_hash) {
-    return res.status(401).json({ success: false, message: 'Incorrect username or password!' });
+    return c.json({ success: false, message: 'Incorrect username or password!' }, 401);
   }
 
   const ok = await verifyPassword(password, user.password_hash);
   if (!ok) {
-    return res.status(401).json({ success: false, message: 'Incorrect username or password!' });
+    return c.json({ success: false, message: 'Incorrect username or password!' }, 401);
   }
 
   const { token, expires_in } = signToken(user);
@@ -38,7 +47,7 @@ router.post('/login', loginRateLimiter, async (req: Request, res: Response): Pro
     username: user.username,
     role: user.role
   });
-  return res.json({
+  return c.json({
     success: true,
     token,
     expires_in,
@@ -49,17 +58,18 @@ router.post('/login', loginRateLimiter, async (req: Request, res: Response): Pro
 /**
  * GET /api/auth/me
  */
-router.get('/me', authenticateToken, (req: Request, res: Response): Response => {
-  if (!req.user) {
-    return res.status(401).json({ success: false, message: 'Unauthorized' });
+app.get('/me', authenticateToken, (c) => {
+  const user = c.get('user');
+  if (!user) {
+    return c.json({ success: false, message: 'Unauthorized' }, 401);
   }
 
-  return res.json({
+  return c.json({
     success: true,
     user: {
-      username: req.user.username,
-      role: req.user.role,
-      display_name: req.user.name
+      username: user.username,
+      role: user.role,
+      display_name: user.name
     }
   });
 });
@@ -68,8 +78,8 @@ router.get('/me', authenticateToken, (req: Request, res: Response): Response => 
  * POST /api/auth/logout
  * User logout (stateless JWT; simply delete the token will be fine)
  */
-router.post('/logout', (_req: Request, res: Response): Response => {
-  return res.json({ success: true });
+app.post('/logout', (c) => {
+  return c.json({ success: true });
 });
 
-export default router;
+export default app;

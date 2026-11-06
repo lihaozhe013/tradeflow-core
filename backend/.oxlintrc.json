@@ -35,6 +35,7 @@
     "require-module-specifiers": "off",
     "always-return": "off",
     "no-callback-in-promise": "off",
-    "no-promise-in-callback": "off"
+    "no-promise-in-callback": "off",
+    "unicorn/no-thenable": "off"
   }
 }
