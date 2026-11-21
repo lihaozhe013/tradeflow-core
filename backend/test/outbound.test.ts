@@ -293,5 +293,6 @@ describe('POST /api/outbound/batch', () => {
     expect(res.status).toBe(200);
     expect(res.body.updated).toBe(2);
     expect(res.body.notFound).toEqual([999999]);
+    expect(res.body.errors).toBe(0);
   });
 });

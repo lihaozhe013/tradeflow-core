@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { prisma } from '@/prismaClient';
-import type { Prisma } from '@/prisma/client';
+import { Prisma } from '@/prisma/client';
 import decimalCalc from '@/utils/decimalCalculator';
 import { pagination_limit } from '@/utils/paths';
 import { inventoryService } from '@/utils/inventoryService';
@@ -227,51 +227,61 @@ app.post('/batch', async (c) => {
 
   const needsRecalculation = hasQuantity || hasUnitPrice;
   let completed = 0;
+  let errors = 0;
   const notFound: number[] = [];
 
   for (const recordId of ids) {
-    const oldRecord = await prisma.outboundRecord.findUnique({
-      where: { id: recordId },
-      include: { product: true }
-    });
-    if (!oldRecord) {
-      notFound.push(recordId);
-      continue;
-    }
-
-    let result;
-    if (needsRecalculation) {
-      const quantity = oldRecord.quantity ?? 0;
-      const unitPrice = oldRecord.unit_price ?? 0;
-
-      const finalQuantity = hasQuantity ? (updates.quantity as number) : quantity;
-      const finalUnitPrice = hasUnitPrice ? (updates.unit_price as number) : unitPrice;
-      const total_price = decimalCalc.calculateTotalPrice(finalQuantity, finalUnitPrice);
-
-      result = await prisma.outboundRecord.update({
+    try {
+      const oldRecord = await prisma.outboundRecord.findUnique({
         where: { id: recordId },
-        data: {
-          ...updateData,
-          total_price: total_price
-        },
         include: { product: true }
       });
-    } else {
-      result = await prisma.outboundRecord.update({
-        where: { id: recordId },
-        data: updateData,
-        include: { product: true }
-      });
-    }
+      if (!oldRecord) {
+        notFound.push(recordId);
+        continue;
+      }
 
-    await inventoryService.onOutboundUpdate(oldRecord, result);
-    completed++;
+      let result;
+      if (needsRecalculation) {
+        const quantity = oldRecord.quantity ?? 0;
+        const unitPrice = oldRecord.unit_price ?? 0;
+
+        const finalQuantity = hasQuantity ? (updates.quantity as number) : quantity;
+        const finalUnitPrice = hasUnitPrice ? (updates.unit_price as number) : unitPrice;
+        const total_price = decimalCalc.calculateTotalPrice(finalQuantity, finalUnitPrice);
+
+        result = await prisma.outboundRecord.update({
+          where: { id: recordId },
+          data: {
+            ...updateData,
+            total_price: total_price
+          },
+          include: { product: true }
+        });
+      } else {
+        result = await prisma.outboundRecord.update({
+          where: { id: recordId },
+          data: updateData,
+          include: { product: true }
+        });
+      }
+
+      await inventoryService.onOutboundUpdate(oldRecord, result);
+      completed++;
+    } catch (e: unknown) {
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2025') {
+        notFound.push(recordId);
+      } else {
+        errors++;
+      }
+    }
   }
 
   return c.json({
     message: 'Batch update completed!',
     updated: completed,
-    notFound: notFound
+    notFound: notFound,
+    errors: errors
   });
 });
 

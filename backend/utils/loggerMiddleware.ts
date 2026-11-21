@@ -78,14 +78,16 @@ export const requestLogger: MiddlewareHandler<AppEnv> = async (c, next) => {
   }
 
   let bodyToLog: string | null = null;
-  try {
-    const cloned = c.req.raw.clone();
-    const body = await cloned.json();
-    if (body) {
-      bodyToLog = JSON.stringify(maskSensitiveData(body));
+  if (c.req.header('content-type')?.toLowerCase().includes('application/json')) {
+    try {
+      const cloned = c.req.raw.clone();
+      const body = await cloned.json();
+      if (body) {
+        bodyToLog = JSON.stringify(maskSensitiveData(body));
+      }
+    } catch {
+      // ignore non-json body
     }
-  } catch {
-    // ignore non-json body
   }
 
   await next();

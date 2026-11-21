@@ -252,5 +252,10 @@ export function createMcpConnectionRouter(settings: McpConfig): Hono<AppEnv> {
 
   router.all('*', (c) => c.json({ success: false, code: 'NOT_FOUND' }, 404));
 
+  router.onError((_error, c) => {
+    logger.error('MCP connection operation failed', { operation: c.req.method, status: 500 });
+    return c.json({ success: false, code: 'CONNECTION_OPERATION_FAILED' }, 500);
+  });
+
   return router;
 }

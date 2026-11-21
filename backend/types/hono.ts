@@ -11,6 +11,9 @@ export interface CustomError extends Error {
 }
 
 export interface AppEnv {
+  Bindings?: {
+    remoteIp?: string;
+  };
   Variables: {
     user?: User;
   };

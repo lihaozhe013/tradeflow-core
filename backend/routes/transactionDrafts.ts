@@ -263,4 +263,12 @@ app.post('/:id/reject', async (c) => {
   }
 });
 
+app.onError((error, c) => {
+  logger.error('Transaction draft request failed', {
+    operation: c.req.method,
+    errorName: error instanceof Error ? error.name : 'UnknownError'
+  });
+  return c.json({ success: false, code: 'DRAFT_OPERATION_FAILED' }, 500);
+});
+
 export default app;

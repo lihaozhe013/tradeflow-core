@@ -448,4 +448,14 @@ describe('TradeFlow MCP', () => {
     expect(second.status).toBe(429);
     expect(second.headers['retry-after']).toBe('60');
   });
+
+  it('rejects oversized JSON payloads over 100kb', async () => {
+    const oversized = JSON.stringify({ pad: 'a'.repeat(110 * 1024) });
+    const res = await request(app)
+      .post('/mcp')
+      .set('Authorization', `Bearer ${token}`)
+      .set('Content-Type', 'application/json')
+      .send(oversized);
+    expect(res.status).toBe(413);
+  });
 });

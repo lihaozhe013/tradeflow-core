@@ -1,6 +1,8 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
+import { getMimeType } from 'hono/utils/mime';
 import fs from 'fs';
+import fsPromises from 'node:fs/promises';
 import path from 'path';
 import type { AppEnv } from '@/types/hono';
 import { config, getConfigDir, getCacheDir } from '@/utils/paths';
@@ -162,6 +164,36 @@ export function createApp(mcpSettings: McpConfig = getMcpSettings()): Hono<AppEn
     logger.info(`Frontend hosting has been enabled: ${frontendDist}`);
 
     if (fs.existsSync(frontendDist)) {
+      const resolvedDist = path.resolve(frontendDist);
+
+      const serveStaticFile = async (
+        filePath: string,
+        ifNoneMatch: string | undefined
+      ): Promise<Response | null> => {
+        let stats: fs.Stats;
+        try {
+          stats = await fsPromises.stat(filePath);
+        } catch {
+          return null;
+        }
+        if (!stats.isFile()) return null;
+
+        const etag = `W/"${stats.size.toString(16)}-${Math.trunc(stats.mtimeMs).toString(16)}"`;
+        const headers: Record<string, string> = {
+          'Content-Type': getMimeType(filePath) ?? 'application/octet-stream',
+          'Cache-Control': 'public, max-age=0',
+          ETag: etag,
+          'Last-Modified': stats.mtime.toUTCString()
+        };
+
+        if (ifNoneMatch && ifNoneMatch === etag) {
+          return new Response(null, { status: 304, headers });
+        }
+
+        const content = await fsPromises.readFile(filePath);
+        return new Response(content, { status: 200, headers });
+      };
+
       app.get('*', async (c, next) => {
         if (
           c.req.path.startsWith('/api') ||
@@ -172,19 +204,34 @@ export function createApp(mcpSettings: McpConfig = getMcpSettings()): Hono<AppEn
           return await next();
         }
 
-        const reqPath = c.req.path === '/' ? '/index.html' : c.req.path;
-        const filePath = path.join(frontendDist, reqPath);
-        const file = Bun.file(filePath);
-        if (await file.exists()) {
-          return new Response(file);
+        let decodedPath: string;
+        try {
+          decodedPath = decodeURIComponent(c.req.path);
+        } catch {
+          return c.body(null, 400);
+        }
+        if (decodedPath.includes('\0')) {
+          return c.body(null, 400);
+        }
+
+        const relativePath = decodedPath === '/' ? 'index.html' : decodedPath.replace(/^\/+/, '');
+        const segments = relativePath.split('/').filter(Boolean);
+        // Block dotfiles and any segment attempting upward traversal before resolving.
+        if (!segments.some((segment) => segment.startsWith('.'))) {
+          const candidatePath = path.resolve(resolvedDist, relativePath);
+          if (candidatePath.startsWith(resolvedDist + path.sep)) {
+            const response = await serveStaticFile(candidatePath, c.req.header('if-none-match'));
+            if (response) return response;
+          }
         }
 
         // SPA Route Fallback
         if (config.frontend?.fallbackToIndex) {
-          const indexFile = Bun.file(path.join(frontendDist, 'index.html'));
-          if (await indexFile.exists()) {
-            return new Response(indexFile);
-          }
+          const indexResponse = await serveStaticFile(
+            path.join(resolvedDist, 'index.html'),
+            c.req.header('if-none-match')
+          );
+          if (indexResponse) return indexResponse;
         }
 
         return await next();
@@ -201,6 +248,4 @@ export function createApp(mcpSettings: McpConfig = getMcpSettings()): Hono<AppEn
   return app;
 }
 
-const defaultApp = createApp();
-export type AppType = typeof defaultApp;
-export default defaultApp;
+export type AppType = ReturnType<typeof createApp>;

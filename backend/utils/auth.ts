@@ -3,7 +3,7 @@ import path from 'path';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import argon2 from 'argon2';
-import type { MiddlewareHandler } from 'hono';
+import type { Context, MiddlewareHandler } from 'hono';
 import { logger } from '@/utils/logger';
 import { resolveFilesInCachePath, config } from '@/utils/paths';
 import { prisma } from '../prismaClient';
@@ -161,13 +161,23 @@ export function signToken(
 // In-memory login attempts: key => { count, firstAt }
 const attempts = new Map<string, LoginAttempt>();
 
+function getClientIp(c: Context<AppEnv>): string {
+  const remoteIp = c.env?.remoteIp;
+  if (config.server?.trustProxy) {
+    return (
+      c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ||
+      c.req.header('x-real-ip') ||
+      remoteIp ||
+      'unknown'
+    );
+  }
+  return remoteIp || 'unknown';
+}
+
 export const loginRateLimiter: MiddlewareHandler<AppEnv> = async (c, next) => {
   const { windowMinutes, maxAttempts } = getAuthConfig().loginRateLimit;
   const windowMs = windowMinutes * 60 * 1000;
-  const ip =
-    c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ||
-    c.req.header('x-real-ip') ||
-    'unknown';
+  const ip = getClientIp(c);
   let username = 'unknown';
 
   try {
@@ -304,9 +314,9 @@ export const checkWritePermission: MiddlewareHandler<AppEnv> = async (c, next) =
     if (
       allowExportsForReader &&
       method === 'POST' &&
-      (c.req.url.includes('/api/export') ||
-        c.req.url.includes('/api/overview') ||
-        c.req.url.includes('/api/analysis'))
+      (requestPath.startsWith('/api/export') ||
+        requestPath.startsWith('/api/overview') ||
+        requestPath.startsWith('/api/analysis'))
     ) {
       return await next();
     }
@@ -316,10 +326,7 @@ export const checkWritePermission: MiddlewareHandler<AppEnv> = async (c, next) =
         username: user.username,
         method: method,
         url: c.req.url,
-        ip:
-          c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ||
-          c.req.header('x-real-ip') ||
-          'unknown'
+        ip: getClientIp(c)
       });
       return c.json(
         {

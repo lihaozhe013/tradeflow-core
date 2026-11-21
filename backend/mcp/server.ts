@@ -8,6 +8,7 @@ import {
 } from '@modelcontextprotocol/server';
 import type { Prisma } from '@/prisma/client';
 import { Hono } from 'hono';
+import { bodyLimit } from 'hono/body-limit';
 import * as z from 'zod/v4';
 import {
   calculateFilteredSoldGoodsCost,
@@ -394,10 +395,18 @@ function releaseRequest(agentId: string) {
   else activeRequests.delete(agentId);
 }
 
+const MCP_MAX_JSON_BYTES = 100 * 1024;
+const mcpBodyLimit = bodyLimit({
+  maxSize: MCP_MAX_JSON_BYTES,
+  onError: (c) => c.json({ error: 'Payload too large' }, 413)
+});
+
 export function createMcpRouter(mcpConfig: McpConfig): Hono<AppEnv> {
   const settings = validateMcpConfig(mcpConfig);
   const app = new Hono<AppEnv>();
   const verifier = createMcpTokenVerifier(settings);
+
+  app.use('/', async (c, next) => (c.req.method === 'POST' ? mcpBodyLimit(c, next) : await next()));
 
   app.post('/', async (c) => {
     // 1. Host Validation

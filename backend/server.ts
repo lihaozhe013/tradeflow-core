@@ -35,17 +35,31 @@ async function startServer(): Promise<void> {
     await initializeSettings();
     const app = createApp();
 
-    const server = Bun.serve({
-      fetch: app.fetch,
-      port: PORT
-    });
+    let server: ReturnType<typeof Bun.serve>;
+    try {
+      server = Bun.serve({
+        fetch: (req, bunServer) => {
+          const remoteIp = bunServer.requestIP(req)?.address;
+          return app.fetch(req, { remoteIp });
+        },
+        port: PORT
+      });
+    } catch (listenError) {
+      const code = (listenError as NodeJS.ErrnoException | undefined)?.code;
+      logger.error('Backend HTTP server failed to start.', {
+        errorCode: code ?? 'HTTP_LISTEN_FAILED'
+      });
+      await disconnectClients?.();
+      process.exitCode = 1;
+      return;
+    }
 
     if (process.env['NODE_ENV'] !== 'test') {
       void import('@/services/dashboardScheduler').then(({ startDashboardScheduler }) => {
         const stop = startDashboardScheduler();
         const shutdown = async () => {
           stop();
-          server.stop(true);
+          await server.stop(false);
           await disconnectClients?.();
           process.exit(0);
         };
