@@ -1,9 +1,28 @@
-import { prisma } from '@/prismaClient';
+import { escapeIdentifier } from 'pg';
+import { DatabaseBootstrapError, initializeDatabase } from '@/utils/databaseBootstrap';
 import { config } from '@/utils/paths';
-import { MANUAL_PASSWORD, MANUAL_USERNAME, seedDatabase, truncateAll } from '@/test/seed';
 
 // The E2E seed guard owns the tradeflow_e2e database; this script must never touch it.
 const E2E_DATABASE_NAME = 'tradeflow_e2e';
+
+function reportBootstrapError(error: DatabaseBootstrapError): void {
+  const databaseName = config.database?.dbName;
+  const user = config.database?.user;
+
+  console.error(`[db:reset] ${error.message}`);
+  if (
+    error.errorCode === '42501' &&
+    error.message.startsWith('Creating database ') &&
+    databaseName &&
+    user
+  ) {
+    console.error(
+      '[db:reset] As a PostgreSQL administrator, create it manually with: ' +
+        `CREATE DATABASE ${escapeIdentifier(databaseName)} OWNER ${escapeIdentifier(user)};`
+    );
+  }
+  console.error(`[db:reset] ${error.recommendation}`);
+}
 
 async function main(): Promise<void> {
   const databaseName = config.database?.dbName;
@@ -14,10 +33,26 @@ async function main(): Promise<void> {
     );
   }
 
-  // Always start from a clean slate: drop every row, then regenerate the full dataset.
-  await truncateAll();
-  console.info('[db:reset] Cleared all existing data.');
+  console.info('[db:reset] Ensuring the configured PostgreSQL database and schema are ready...');
+  try {
+    await initializeDatabase(config.database);
+  } catch (error) {
+    if (error instanceof DatabaseBootstrapError) {
+      reportBootstrapError(error);
+      process.exitCode = 1;
+      return;
+    }
+    throw error;
+  }
 
+  // Import Prisma and the seeder only after the schema exists so their pools never
+  // target a missing database.
+  const [{ prisma }, { MANUAL_PASSWORD, MANUAL_USERNAME, seedDatabase }] = await Promise.all([
+    import('@/prismaClient'),
+    import('@/test/seed')
+  ]);
+
+  console.info('[db:reset] Database ready. Regenerating the demo dataset...');
   const t0 = Date.now();
   const result = await seedDatabase();
   console.info(
@@ -29,8 +64,7 @@ async function main(): Promise<void> {
   await prisma.$disconnect();
 }
 
-main().catch(async (error: unknown) => {
+main().catch((error: unknown) => {
   console.error('[db:reset] Reset failed:', error instanceof Error ? error.message : error);
-  await prisma.$disconnect();
   process.exit(1);
 });

@@ -10,7 +10,7 @@
     "dev": "bun run prisma:generate && bun --watch server.ts",
     "dev:debug": "bun run prisma:generate && bun --inspect --watch server.ts",
     "dev:reset": "bun run prisma:generate && bun scripts/seedDevDatabase.ts && bun --watch server.ts",
-    "db:reset": "bun scripts/seedDevDatabase.ts",
+    "db:reset": "bun run prisma:generate && bun scripts/seedDevDatabase.ts",
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",
     "test": "vitest run",

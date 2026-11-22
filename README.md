@@ -17,11 +17,19 @@ stdio-capable Agent configure its own connection.
 
 Requires Bun, Node.js 26+, `uv`, and PostgreSQL. Copy `config-example/` into the matching ignored
 runtime locations and set local database credentials. `build-config/` supplies build inputs.
+`bun run db:reset` creates `config/config.yaml` from the example when it is missing.
 
 ```bash
 bun run install:all
+bun run db:reset
 bun run dev
 ```
+
+`bun run db:reset` creates the configured PostgreSQL database when the configured role is allowed to,
+applies the Prisma schema, and regenerates the demo dataset. The seeded administrator login is
+`admin` / `admin123`. To use a different local PostgreSQL setup without editing `config.yaml`, set
+`TRADEFLOW_DB_HOST`, `TRADEFLOW_DB_PORT`, `TRADEFLOW_DB_USER`, `TRADEFLOW_DB_PASSWORD`, and
+`TRADEFLOW_DB_NAME`.
 
 `bun run dev` starts the API and browser app and writes a fresh ignored `debug.log`.
 
