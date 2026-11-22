@@ -15,9 +15,22 @@ stdio-capable Agent configure its own connection.
 
 ## Setup
 
-Requires Bun, Node.js 26+, `uv`, and PostgreSQL. Copy `config-example/` into the matching ignored
-runtime locations and set local database credentials. `build-config/` supplies build inputs.
-`bun run db:reset` creates `config/config.yaml` from the example when it is missing.
+Requires Bun, Node.js 26+, `uv`, and PostgreSQL. A fresh clone can initialize the complete local
+development environment with:
+
+```bash
+bun run dev:setup
+bun run dev
+```
+
+`dev:setup` installs workspace dependencies, replaces `config/` and `build-config/` with the
+templates from `config-example/`, clears local cache and `debug.log`, drops and recreates the
+configured PostgreSQL database with demo data, creates a local MCP bearer token, and runs
+`bun run build`. The command is destructive; stop `bun run dev` first. It prints the administrator
+login (`admin` / `admin123`) and the MCP token when it finishes. Use `--skip-install` or
+`--skip-build` to omit those steps on later runs.
+
+For a lighter reset that keeps the existing database structure:
 
 ```bash
 bun run install:all
@@ -25,11 +38,14 @@ bun run db:reset
 bun run dev
 ```
 
-`bun run db:reset` creates the configured PostgreSQL database when the configured role is allowed to,
-applies the Prisma schema, and regenerates the demo dataset. The seeded administrator login is
-`admin` / `admin123`. To use a different local PostgreSQL setup without editing `config.yaml`, set
+`bun run db:reset` creates `config/config.yaml` from the example when it is missing, creates the
+configured PostgreSQL database when the configured role is allowed to, applies the Prisma schema,
+and regenerates the demo dataset. `bun run db:recreate` does the same after dropping the configured
+database. To use a different local PostgreSQL setup without editing `config.yaml`, set
 `TRADEFLOW_DB_HOST`, `TRADEFLOW_DB_PORT`, `TRADEFLOW_DB_USER`, `TRADEFLOW_DB_PASSWORD`, and
-`TRADEFLOW_DB_NAME`.
+`TRADEFLOW_DB_NAME`. When set during `dev:setup`, these values are written into the generated
+`config/config.yaml`. `db:recreate` and `dev:setup` only drop databases on loopback hosts; set
+`TRADEFLOW_ALLOW_REMOTE_DB_RESET=1` only for disposable remote development databases.
 
 `bun run dev` starts the API and browser app and writes a fresh ignored `debug.log`.
 

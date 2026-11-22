@@ -52,7 +52,10 @@ try {
   process.exit(1);
 }
 
-const result = spawnSync('bun', ['run', '--cwd', path.join(rootDir, 'backend'), 'db:reset'], {
+const dropDatabase = process.argv.includes('--drop');
+const backendScript = dropDatabase ? 'db:recreate' : 'db:reset';
+
+const result = spawnSync('bun', ['run', '--cwd', path.join(rootDir, 'backend'), backendScript], {
   cwd: rootDir,
   env: { ...process.env, TRADEFLOW_CONFIG_DIR: configDir },
   stdio: 'inherit'

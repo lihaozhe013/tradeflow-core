@@ -68,7 +68,10 @@ async function startServer(): Promise<void> {
         recommendation: error.recommendation
       });
     } else {
-      logger.error('Backend startup failed.', { errorCode: 'STARTUP_FAILED' });
+      logger.error('Backend startup failed.', {
+        errorCode: 'STARTUP_FAILED',
+        error: error instanceof Error ? error.message : String(error)
+      });
     }
     await disconnectClients?.();
     process.exitCode = 1;
