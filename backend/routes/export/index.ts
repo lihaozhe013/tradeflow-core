@@ -1,5 +1,4 @@
-import type { Request, Response } from 'express';
-import { Router, type Router as ExpressRouter } from 'express';
+import { Hono } from 'hono';
 import { logger } from '@/utils/logger';
 import transactionPreview from './transactionPreview';
 import * as ExportService from '@/routes/export/utils';
@@ -10,29 +9,44 @@ import type {
   InvoiceFilters,
   AnalysisExportOptions
 } from '@/routes/export/utils/types';
+import type { AppEnv } from '@/types/hono';
 
-const router: ExpressRouter = Router();
-router.use(transactionPreview);
+const app = new Hono<AppEnv>();
+
+app.route('/', transactionPreview);
 
 // Export base information
-router.post('/base-info', async (req: Request, res: Response) => {
-  const { tables } = req.body as BasicDataFilters;
+app.post('/base-info', async (c) => {
+  let body: any;
+  try {
+    body = await c.req.json();
+  } catch {
+    body = {};
+  }
+  const { tables } = body as BasicDataFilters;
   const buffer = await ExportService.exportBaseInfo({
     tables: tables || '123'
   });
   const filename = ExportService.generateFilename('base-info');
 
-  res.setHeader(
-    'Content-Type',
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-  );
-  res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(filename)}"`);
-  res.send(buffer);
+  return new Response(new Uint8Array(buffer), {
+    status: 200,
+    headers: {
+      'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'Content-Disposition': `attachment; filename="${encodeURIComponent(filename)}"`
+    }
+  });
 });
 
 // Export inbound and outbound records
-router.post('/inbound-outbound', async (req: Request, res: Response) => {
-  const { tables, dateFrom, dateTo, productCode, customerCode } = req.body as TransactionFilters;
+app.post('/inbound-outbound', async (c) => {
+  let body: any;
+  try {
+    body = await c.req.json();
+  } catch {
+    body = {};
+  }
+  const { tables, dateFrom, dateTo, productCode, customerCode } = body as TransactionFilters;
   const buffer = await ExportService.exportInboundOutbound({
     tables: tables || '12',
     dateFrom,
@@ -43,17 +57,24 @@ router.post('/inbound-outbound', async (req: Request, res: Response) => {
 
   const filename = ExportService.generateFilename('inbound-outbound');
 
-  res.setHeader(
-    'Content-Type',
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-  );
-  res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(filename)}"`);
-  res.send(buffer);
+  return new Response(new Uint8Array(buffer), {
+    status: 200,
+    headers: {
+      'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'Content-Disposition': `attachment; filename="${encodeURIComponent(filename)}"`
+    }
+  });
 });
 
 // Export statement
-router.post('/statement', async (req: Request, res: Response) => {
-  const { tables, dateFrom, dateTo, productCode, customerCode } = req.body as TransactionFilters;
+app.post('/statement', async (c) => {
+  let body: any;
+  try {
+    body = await c.req.json();
+  } catch {
+    body = {};
+  }
+  const { tables, dateFrom, dateTo, productCode, customerCode } = body as TransactionFilters;
   const buffer = await ExportService.exportStatement({
     tables: tables || '12',
     dateFrom,
@@ -64,17 +85,24 @@ router.post('/statement', async (req: Request, res: Response) => {
 
   const filename = ExportService.generateFilename('statement');
 
-  res.setHeader(
-    'Content-Type',
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-  );
-  res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(filename)}"`);
-  res.send(buffer);
+  return new Response(new Uint8Array(buffer), {
+    status: 200,
+    headers: {
+      'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'Content-Disposition': `attachment; filename="${encodeURIComponent(filename)}"`
+    }
+  });
 });
 
 // Export receivable and payable details
-router.post('/receivable-payable', async (req: Request, res: Response) => {
-  const { outboundFrom, outboundTo, paymentFrom, paymentTo } = req.body as ReceivablePayableFilters;
+app.post('/receivable-payable', async (c) => {
+  let body: any;
+  try {
+    body = await c.req.json();
+  } catch {
+    body = {};
+  }
+  const { outboundFrom, outboundTo, paymentFrom, paymentTo } = body as ReceivablePayableFilters;
   const buffer = await ExportService.exportReceivablePayable({
     outboundFrom,
     outboundTo,
@@ -83,20 +111,26 @@ router.post('/receivable-payable', async (req: Request, res: Response) => {
   });
 
   const filename = ExportService.generateFilename('receivable-payable');
-  res.setHeader(
-    'Content-Type',
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-  );
-  res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(filename)}"`);
-  res.send(buffer);
+  return new Response(new Uint8Array(buffer), {
+    status: 200,
+    headers: {
+      'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'Content-Disposition': `attachment; filename="${encodeURIComponent(filename)}"`
+    }
+  });
 });
 
 // Export invoice details
-router.post('/invoice', async (req: Request, res: Response) => {
-  const { partnerCode, dateFrom, dateTo } = req.body as InvoiceFilters;
+app.post('/invoice', async (c) => {
+  let body: any;
+  try {
+    body = await c.req.json();
+  } catch {
+    body = {};
+  }
+  const { partnerCode, dateFrom, dateTo } = body as InvoiceFilters;
   if (!partnerCode) {
-    res.status(400).json({ success: false, message: 'Partner code is required' });
-    return;
+    return c.json({ success: false, message: 'Partner code is required' }, 400);
   }
   const buffer = await ExportService.exportInvoice({
     partnerCode,
@@ -105,22 +139,28 @@ router.post('/invoice', async (req: Request, res: Response) => {
   });
   const filename = ExportService.generateFilename('invoice');
 
-  res.setHeader(
-    'Content-Type',
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-  );
-  res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(filename)}"`);
-  res.send(buffer);
+  return new Response(new Uint8Array(buffer), {
+    status: 200,
+    headers: {
+      'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'Content-Disposition': `attachment; filename="${encodeURIComponent(filename)}"`
+    }
+  });
 });
 
 // Export analysis data
-router.post('/analysis', async (req: Request, res: Response) => {
+app.post('/analysis', async (c) => {
+  let body: any;
+  try {
+    body = await c.req.json();
+  } catch {
+    body = {};
+  }
   const { analysisData, detailData, startDate, endDate, customerCode, productModel } =
-    req.body as AnalysisExportOptions;
+    body as AnalysisExportOptions;
 
   if (!analysisData) {
-    res.status(400).json({ success: false, message: 'Analysis data is required' });
-    return;
+    return c.json({ success: false, message: 'Analysis data is required' }, 400);
   }
 
   const buffer = await ExportService.exportAnalysis({
@@ -133,17 +173,24 @@ router.post('/analysis', async (req: Request, res: Response) => {
   });
   const filename = ExportService.generateFilename('analysis');
 
-  res.setHeader(
-    'Content-Type',
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-  );
-  res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(filename)}"`);
-  res.send(buffer);
+  return new Response(new Uint8Array(buffer), {
+    status: 200,
+    headers: {
+      'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'Content-Disposition': `attachment; filename="${encodeURIComponent(filename)}"`
+    }
+  });
 });
 
 // Export advanced analysis data
-router.post('/advanced-analysis', async (req: Request, res: Response) => {
-  const { exportType, startDate, endDate } = req.body as {
+app.post('/advanced-analysis', async (c) => {
+  let body: any;
+  try {
+    body = await c.req.json();
+  } catch {
+    body = {};
+  }
+  const { exportType, startDate, endDate } = body as {
     exportType: string;
     startDate: string;
     endDate: string;
@@ -167,30 +214,32 @@ router.post('/advanced-analysis', async (req: Request, res: Response) => {
     size: buffer.length
   });
 
-  res.setHeader(
-    'Content-Type',
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-  );
-  res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(filename)}"`);
-  res.send(buffer);
+  return new Response(new Uint8Array(buffer), {
+    status: 200,
+    headers: {
+      'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'Content-Disposition': `attachment; filename="${encodeURIComponent(filename)}"`
+    }
+  });
 });
 
 // Export inventory data
-router.post('/inventory', async (_req: Request, res: Response) => {
+app.post('/inventory', async (_c) => {
   const buffer = await ExportService.exportInventory();
   const filename = ExportService.generateFilename('inventory');
 
-  res.setHeader(
-    'Content-Type',
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-  );
-  res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(filename)}"`);
-  res.send(buffer);
+  return new Response(new Uint8Array(buffer), {
+    status: 200,
+    headers: {
+      'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'Content-Disposition': `attachment; filename="${encodeURIComponent(filename)}"`
+    }
+  });
 });
 
 // Get export service status
-router.get('/status', (_req: Request, res: Response) => {
-  res.json({
+app.get('/status', (c) => {
+  return c.json({
     success: true,
     message: 'Export service is running (Based on Sheetjs)',
     available_exports: [
@@ -230,4 +279,4 @@ router.get('/status', (_req: Request, res: Response) => {
   });
 });
 
-export default router;
+export default app;

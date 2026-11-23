@@ -1,12 +1,14 @@
 import { McpServer } from '@modelcontextprotocol/server';
-import { NodeStreamableHTTPServerTransport } from '@modelcontextprotocol/node';
 import {
-  createMcpExpressApp as createProtectedMcpApp,
-  requireBearerAuth
-} from '@modelcontextprotocol/express';
-import type { AuthInfo } from '@modelcontextprotocol/server';
+  WebStandardStreamableHTTPServerTransport,
+  hostHeaderValidationResponse,
+  originValidationResponse,
+  verifyBearerToken,
+  bearerAuthChallengeResponse
+} from '@modelcontextprotocol/server';
 import type { Prisma } from '@/prisma/client';
-import type { Express, Request, Response, NextFunction } from 'express';
+import { Hono } from 'hono';
+import { bodyLimit } from 'hono/body-limit';
 import * as z from 'zod/v4';
 import {
   calculateFilteredSoldGoodsCost,
@@ -31,6 +33,7 @@ import { createMcpTokenVerifier, validateMcpConfig } from '@/mcp/credentials';
 import { createMcpDraftTools } from '@/mcp/transactionDraftTools';
 import type { DraftSource } from '@/services/transactionDraftService';
 import { withMcpReadOnlyTransaction } from '@/mcp/database';
+import type { AppEnv } from '@/types/hono';
 
 const pageSchema = z.number().int().min(1).default(1);
 const limitSchema = z.number().int().min(1).max(MAX_MCP_PAGE_SIZE).default(DEFAULT_MCP_PAGE_SIZE);
@@ -356,52 +359,93 @@ function registerTools(
   }
 }
 
-export function createMcpRouter(mcpConfig: McpConfig): Express {
+interface RequestWindow {
+  startsAt: number;
+  count: number;
+}
+
+const requestWindows = new Map<string, RequestWindow>();
+const activeRequests = new Map<string, number>();
+
+function allowRequest(settings: McpConfig, agentId: string): Response | null {
+  const now = Date.now();
+  const window = requestWindows.get(agentId);
+  const state = !window || now - window.startsAt >= 60_000 ? { startsAt: now, count: 0 } : window;
+  const requestLimit = settings.requestsPerMinute ?? 60;
+  if (state.count >= requestLimit) {
+    return Response.json(
+      { error: 'MCP request rate limit exceeded.' },
+      { status: 429, headers: { 'Retry-After': '60' } }
+    );
+  }
+  const active = activeRequests.get(agentId) ?? 0;
+  if (active >= (settings.maxConcurrentRequests ?? 2)) {
+    return Response.json({ error: 'Too many concurrent MCP requests.' }, { status: 429 });
+  }
+
+  state.count += 1;
+  requestWindows.set(agentId, state);
+  activeRequests.set(agentId, active + 1);
+  return null;
+}
+
+function releaseRequest(agentId: string) {
+  const remaining = (activeRequests.get(agentId) ?? 1) - 1;
+  if (remaining > 0) activeRequests.set(agentId, remaining);
+  else activeRequests.delete(agentId);
+}
+
+const MCP_MAX_JSON_BYTES = 100 * 1024;
+const mcpBodyLimit = bodyLimit({
+  maxSize: MCP_MAX_JSON_BYTES,
+  onError: (c) => c.json({ error: 'Payload too large' }, 413)
+});
+
+export function createMcpRouter(mcpConfig: McpConfig): Hono<AppEnv> {
   const settings = validateMcpConfig(mcpConfig);
-  const app = createProtectedMcpApp({
-    host: '0.0.0.0',
-    allowedHosts: settings.allowedHosts,
-    allowedOrigins:
-      settings.allowedOrigins.length > 0 ? settings.allowedOrigins : settings.allowedHosts,
-    jsonLimit: '100kb'
-  });
+  const app = new Hono<AppEnv>();
   const verifier = createMcpTokenVerifier(settings);
-  const authenticate = requireBearerAuth({ verifier });
 
-  app.post('/', authenticate, (req: Request, res: Response, next) => {
-    const auth = (req as Request & { auth?: AuthInfo }).auth;
-    const agentId = auth?.clientId;
-    if (!agentId) {
-      res.status(401).json({ error: 'Unauthorized' });
-      return;
+  app.use('/', async (c, next) => (c.req.method === 'POST' ? mcpBodyLimit(c, next) : await next()));
+
+  app.post('/', async (c) => {
+    // 1. Host Validation
+    const hostRes = hostHeaderValidationResponse(c.req.raw, settings.allowedHosts);
+    if (hostRes) return hostRes;
+
+    // 2. Origin Validation
+    const allowedOrigins =
+      settings.allowedOrigins.length > 0 ? settings.allowedOrigins : settings.allowedHosts;
+    const originRes = originValidationResponse(c.req.raw, allowedOrigins);
+    if (originRes) return originRes;
+
+    // 3. Bearer Auth Validation
+    let auth;
+    try {
+      auth = await verifyBearerToken(c.req.header('authorization'), { verifier });
+    } catch (error) {
+      return bearerAuthChallengeResponse(error);
     }
-    const startedAt = Date.now();
-    res.once('finish', () => {
-      const body = req.body as { method?: unknown; params?: { name?: unknown } } | undefined;
-      const tool = typeof body?.params?.name === 'string' ? body.params.name : undefined;
-      logger.info('MCP request completed', {
-        integrationId: agentId,
-        method:
-          typeof body?.method === 'string' &&
-          [
-            'initialize',
-            'notifications/initialized',
-            'server/discover',
-            'tools/list',
-            'tools/call',
-            'ping'
-          ].includes(body.method)
-            ? body.method
-            : 'unknown',
-        ...(MCP_TOOL_NAMES.includes(tool as McpToolName) ? { tool } : {}),
-        durationMs: Date.now() - startedAt,
-        status: res.statusCode
-      });
-    });
 
+    const agentId = auth.clientId;
+    if (!agentId) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    // 4. Rate Limiting and Concurrency
     const budgetKey =
-      typeof auth?.extra?.['budgetKey'] === 'string' ? auth.extra['budgetKey'] : agentId;
-    if (!allowRequest(settings, budgetKey, res)) return;
+      typeof auth.extra?.['budgetKey'] === 'string' ? auth.extra['budgetKey'] : agentId;
+    const rateLimitError = allowRequest(settings, budgetKey);
+    if (rateLimitError) return rateLimitError;
+
+    const startedAt = Date.now();
+    let parsedBody: unknown;
+    try {
+      parsedBody = await c.req.json();
+    } catch {
+      releaseRequest(budgetKey);
+      return c.json({ error: 'Invalid JSON' }, 400);
+    }
 
     const ownerUsername = budgetKey.startsWith('user:') ? budgetKey.slice('user:'.length) : null;
     const draftSource: DraftSource = {
@@ -414,63 +458,54 @@ export function createMcpRouter(mcpConfig: McpConfig): Express {
 
     const server = new McpServer({ name: 'tradeflow-core', version: '1.0.0' });
     const scopes = new Set(
-      (auth?.scopes ?? []).filter((scope): scope is McpToolName =>
+      (auth.scopes ?? []).filter((scope): scope is McpToolName =>
         MCP_TOOL_NAMES.includes(scope as McpToolName)
       )
     );
     registerTools(server, scopes, settings, draftSource);
-    const transport = new NodeStreamableHTTPServerTransport({ sessionIdGenerator: undefined });
-    void server
-      .connect(transport)
-      .then(() => transport.handleRequest(req, res, req.body))
-      .catch(next);
+
+    const transport = new WebStandardStreamableHTTPServerTransport({ sessionIdGenerator: undefined });
+
+    try {
+      await server.connect(transport);
+      const res = await transport.handleRequest(c.req.raw, { parsedBody });
+
+      const bodyObj = parsedBody as { method?: unknown; params?: { name?: unknown } } | undefined;
+      const tool = typeof bodyObj?.params?.name === 'string' ? bodyObj.params.name : undefined;
+      logger.info('MCP request completed', {
+        integrationId: agentId,
+        method:
+          typeof bodyObj?.method === 'string' &&
+          [
+            'initialize',
+            'notifications/initialized',
+            'server/discover',
+            'tools/list',
+            'tools/call',
+            'ping'
+          ].includes(bodyObj.method)
+            ? bodyObj.method
+            : 'unknown',
+        ...(MCP_TOOL_NAMES.includes(tool as McpToolName) ? { tool } : {}),
+        durationMs: Date.now() - startedAt,
+        status: res.status
+      });
+
+      return res;
+    } catch (err) {
+      logger.error('MCP protocol request failed', {
+        status: 500,
+        error: err instanceof Error ? err.message : String(err)
+      });
+      return c.json({ error: 'MCP request failed.' }, 500);
+    } finally {
+      releaseRequest(budgetKey);
+    }
   });
-  app.use((_req, res) => res.status(404).json({ error: 'Not found' }));
-  app.use((_error: unknown, _req: Request, res: Response, _next: NextFunction) => {
-    logger.error('MCP protocol request failed', { status: 500 });
-    res.status(500).json({ error: 'MCP request failed.' });
-  });
+
+  app.all('*', (c) => c.json({ error: 'Not found' }, 404));
+
   return app;
-}
-
-interface RequestWindow {
-  startsAt: number;
-  count: number;
-}
-
-const requestWindows = new Map<string, RequestWindow>();
-const activeRequests = new Map<string, number>();
-
-function allowRequest(settings: McpConfig, agentId: string, res: Response): boolean {
-  const now = Date.now();
-  const window = requestWindows.get(agentId);
-  const state = !window || now - window.startsAt >= 60_000 ? { startsAt: now, count: 0 } : window;
-  const requestLimit = settings.requestsPerMinute ?? 60;
-  if (state.count >= requestLimit) {
-    res.setHeader('Retry-After', '60');
-    res.status(429).json({ error: 'MCP request rate limit exceeded.' });
-    return false;
-  }
-  const active = activeRequests.get(agentId) ?? 0;
-  if (active >= (settings.maxConcurrentRequests ?? 2)) {
-    res.status(429).json({ error: 'Too many concurrent MCP requests.' });
-    return false;
-  }
-
-  state.count += 1;
-  requestWindows.set(agentId, state);
-  activeRequests.set(agentId, active + 1);
-  let released = false;
-  const release = () => {
-    if (released) return;
-    released = true;
-    const remaining = (activeRequests.get(agentId) ?? 1) - 1;
-    if (remaining > 0) activeRequests.set(agentId, remaining);
-    else activeRequests.delete(agentId);
-  };
-  res.once('finish', release);
-  res.once('close', release);
-  return true;
 }
 
 export function getMcpSettings(): McpConfig {

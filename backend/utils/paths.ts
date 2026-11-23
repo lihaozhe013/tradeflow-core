@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import * as yaml from 'js-yaml';
 import type { AppConfig } from '@/types/config';
+import { applyDatabaseEnvironmentOverrides } from '@/utils/configOverrides';
 import { logger } from '@/utils/logger';
 
 function getAppRoot(): string {
@@ -87,6 +88,8 @@ try {
 } catch (e) {
   logger.error('Failed to load config.yaml', e);
 }
+
+config = applyDatabaseEnvironmentOverrides(config);
 
 const pagination_limit = config.pagination_limit ? Number(config.pagination_limit) : 20;
 

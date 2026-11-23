@@ -143,4 +143,25 @@ describe('Authorization middleware', () => {
       .set('Authorization', 'Bearer not.a.valid.token');
     expect(res.status).toBe(401);
   });
+
+  it('does not allow reader write bypass via query string containing /api/export', async () => {
+    const agent = await authAgent('reader');
+    const res = await agent.post('/api/inbound?redirect=/api/export').send({});
+    expect(res.status).toBe(403);
+    expect(res.body.error_code).toBe('READ_ONLY_ACCESS_DENIED');
+  });
+
+  it('enforces login rate limiting even when X-Forwarded-For varies without trustProxy', async () => {
+    const probeUser = `rate_limit_probe_${Date.now()}`;
+    let lastStatus = 0;
+    for (let i = 0; i < 25; i++) {
+      const res = await publicAgent()
+        .post('/api/auth/login')
+        .set('X-Forwarded-For', `203.0.113.${i + 1}`)
+        .send({ username: probeUser, password: 'invalid' });
+      lastStatus = res.status;
+      if (lastStatus === 429) break;
+    }
+    expect(lastStatus).toBe(429);
+  });
 });

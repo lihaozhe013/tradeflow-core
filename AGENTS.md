@@ -1,8 +1,8 @@
 # Agent Instructions
 
-TradeFlow Core is a Bun workspace with a React/Vite frontend, an Express/Prisma/PostgreSQL backend,
-and a Python build helper. Start with [docs/AGENT_MAP.md](docs/AGENT_MAP.md) to find the owning
-code; verify behavior in source rather than treating documentation as an API contract.
+TradeFlow Core is a Bun workspace with a React/Vite frontend, a Hono/Prisma/PostgreSQL backend, and
+a Python build helper. Start with [docs/AGENT_MAP.md](docs/AGENT_MAP.md) to find the owning code;
+verify behavior in source rather than treating documentation as an API contract.
 
 ## Repository rules
 

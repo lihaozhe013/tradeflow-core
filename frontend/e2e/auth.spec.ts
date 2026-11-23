@@ -33,7 +33,7 @@ test('loads every application page for an editor and supports logout', async ({ 
     ['receivable', 'Receivable'],
     ['payable', 'Payable'],
     ['analysis', 'Data Analysis'],
-    ['export', 'Base Info'],
+    ['export', 'Data Export'],
     ['audit', 'Audit Log'],
     ['profile', 'Profile Settings']
   ] as const;
@@ -117,7 +117,7 @@ test.describe('narrow viewport', () => {
       ['receivable', 'Receivable'],
       ['payable', 'Payable'],
       ['analysis', 'Data Analysis'],
-      ['export', 'Base Info'],
+      ['export', 'Data Export'],
       ['audit', 'Audit Log'],
       ['profile', 'Profile Settings']
     ] as const) {

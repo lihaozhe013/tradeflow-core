@@ -1,9 +1,12 @@
-import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
+import { timingSafeEqual } from 'node:crypto';
 import { OAuthError, OAuthErrorCode } from '@modelcontextprotocol/server';
 import type { AuthInfo, OAuthTokenVerifier } from '@modelcontextprotocol/server';
 import type { McpConfig, McpCredentialConfig, McpToolName } from '@/types/config';
 import { MCP_STAGING_TOOL_NAMES, MCP_TOOL_NAMES, effectiveToolsForRole } from '@/mcp/tools';
+import { generateMcpToken, hashMcpToken } from '@/mcp/token';
 import { mcpPrisma } from '@/prismaClient';
+
+export { generateMcpToken, hashMcpToken };
 
 export type McpCredential = McpCredentialConfig;
 
@@ -96,10 +99,6 @@ export function validateMcpConfig(value: McpConfig): McpConfig {
   };
 }
 
-export function hashMcpToken(token: string): string {
-  return createHash('sha256').update(token, 'utf8').digest('hex');
-}
-
 function safeHashEquals(expected: string, provided: string): boolean {
   const expectedBuffer = Buffer.from(expected, 'hex');
   const providedBuffer = Buffer.from(provided, 'hex');
@@ -175,8 +174,4 @@ export function createMcpTokenVerifier(config: McpConfig): OAuthTokenVerifier {
       };
     }
   };
-}
-
-export function generateMcpToken(): string {
-  return `tfmcp_${randomBytes(32).toString('base64url')}`;
 }

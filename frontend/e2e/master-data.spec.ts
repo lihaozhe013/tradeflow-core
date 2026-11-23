@@ -44,7 +44,7 @@ test('partners support validation, creation, filtering, editing, and deletion', 
     records.track(`/partners/${encodeURIComponent(shortName)}`);
 
     await page.getByPlaceholder('Enter code').first().fill(suffix);
-    await page.getByRole('button', { name: 'Search', exact: true }).click();
+    await page.getByRole('button', { name: 'Search' }).click();
     let row = page.getByRole('row').filter({ hasText: shortName });
     await expect(row).toContainText(fullName);
 
@@ -54,7 +54,7 @@ test('partners support validation, creation, filtering, editing, and deletion', 
     await typeFilter.click();
     await typeFilter.press('ArrowDown');
     await typeFilter.press('Enter');
-    await page.getByRole('button', { name: 'Search', exact: true }).click();
+    await page.getByRole('button', { name: 'Search' }).click();
     row = page.getByRole('row').filter({ hasText: shortName });
     await expect(row).toContainText('Supplier');
 
@@ -114,7 +114,7 @@ test('products support creation, category and code filtering, editing, and delet
     records.track(`/products/${encodeURIComponent(code)}`);
 
     await page.getByPlaceholder('Enter code').first().fill(code);
-    await page.getByRole('button', { name: 'Search', exact: true }).click();
+    await page.getByRole('button', { name: 'Search' }).click();
     let row = page.getByRole('row').filter({ hasText: model });
     await expect(row).toContainText('Other');
 
@@ -135,7 +135,7 @@ test('products support creation, category and code filtering, editing, and delet
     await page.getByPlaceholder('Enter code').first().clear();
     await page.getByRole('combobox').first().click();
     await page.getByText(updatedCategory, { exact: true }).last().click();
-    await page.getByRole('button', { name: 'Search', exact: true }).click();
+    await page.getByRole('button', { name: 'Search' }).click();
     await expect(page.getByRole('row').filter({ hasText: model })).toBeVisible();
 
     await row.getByRole('button', { name: 'Delete' }).click();
@@ -209,7 +209,7 @@ test('product prices support creation, filtering, editing, and deletion', async 
     await productModelFilter.pressSequentially(product.product_model);
     await productModelFilter.press('ArrowDown');
     await productModelFilter.press('Enter');
-    await page.getByRole('button', { name: 'Search', exact: true }).click();
+    await page.getByRole('button', { name: 'Search' }).click();
     let row = page.getByRole('row').filter({ hasText: product.product_model });
     await expect(row).toContainText('12.5');
 
@@ -234,7 +234,7 @@ test('product prices support creation, filtering, editing, and deletion', async 
     await productModelFilter.pressSequentially(product.product_model);
     await productModelFilter.press('ArrowDown');
     await productModelFilter.press('Enter');
-    await page.getByRole('button', { name: 'Search', exact: true }).click();
+    await page.getByRole('button', { name: 'Search' }).click();
     row = page.getByRole('row').filter({ hasText: product.product_model });
     await expect(row).toContainText('14.75');
 
@@ -262,7 +262,7 @@ test('shows empty results and recovers after a temporary list request failure', 
   await expect(page.getByRole('heading', { name: 'Partners' })).toBeVisible();
   await page.unroute('**/api/partners?*');
   await page.getByPlaceholder('Enter short name').fill('no-match-e2e-record');
-  await page.getByRole('button', { name: 'Search', exact: true }).click();
+  await page.getByRole('button', { name: 'Search' }).click();
   await expect(page.getByRole('row').filter({ hasText: 'no-match-e2e-record' })).toHaveCount(0);
 });
 
@@ -311,7 +311,7 @@ test('partner and product deletion stays blocked while stock records reference t
 
     await page.goto('/#/partners');
     await page.getByPlaceholder('Enter short name').fill(supplier.short_name);
-    await page.getByRole('button', { name: 'Search', exact: true }).click();
+    await page.getByRole('button', { name: 'Search' }).click();
     let row = page.getByRole('row').filter({ hasText: supplier.short_name });
     await row.getByRole('button', { name: 'Delete' }).click();
     const partnerDeleteResponse = page.waitForResponse(
@@ -324,7 +324,7 @@ test('partner and product deletion stays blocked while stock records reference t
 
     await page.goto('/#/products');
     await page.getByPlaceholder('Enter code').fill(product.code);
-    await page.getByRole('button', { name: 'Search', exact: true }).click();
+    await page.getByRole('button', { name: 'Search' }).click();
     row = page.getByRole('row').filter({ hasText: product.product_model });
     await row.getByRole('button', { name: 'Delete' }).click();
     const productDeleteResponse = page.waitForResponse(

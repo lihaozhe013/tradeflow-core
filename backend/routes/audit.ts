@@ -1,7 +1,8 @@
-import express, { type Router, type Request, type Response } from 'express';
+import { Hono } from 'hono';
 import { prisma } from '@/prismaClient';
+import type { AppEnv } from '@/types/hono';
 
-const router: Router = express.Router();
+const app = new Hono<AppEnv>();
 
 /**
  * GET /api/audit/logs
@@ -9,8 +10,14 @@ const router: Router = express.Router();
  * - superuser: can view all logs, supports username filter
  * - editor/reader: can only view own logs
  */
-router.get('/logs', async (req: Request, res: Response): Promise<void> => {
-  const { page, pageSize, startDate, endDate, username, resource, params } = req.query;
+app.get('/logs', async (c) => {
+  const page = c.req.query('page');
+  const pageSize = c.req.query('pageSize');
+  const startDate = c.req.query('startDate');
+  const endDate = c.req.query('endDate');
+  const username = c.req.query('username');
+  const resource = c.req.query('resource');
+  const params = c.req.query('params');
 
   const pageNum = Math.max(1, Number(page) || 1);
   const limit = Math.min(100, Math.max(1, Number(pageSize) || 20));
@@ -18,7 +25,7 @@ router.get('/logs', async (req: Request, res: Response): Promise<void> => {
 
   const where: Record<string, unknown> = {};
 
-  const currentUser = req.user;
+  const currentUser = c.get('user');
   const isSuperuser = currentUser?.role === 'superuser';
 
   if (isSuperuser && typeof username === 'string' && username.trim()) {
@@ -55,7 +62,7 @@ router.get('/logs', async (req: Request, res: Response): Promise<void> => {
     prisma.systemLog.count({ where })
   ]);
 
-  res.json({
+  return c.json({
     success: true,
     data: {
       items,
@@ -66,4 +73,4 @@ router.get('/logs', async (req: Request, res: Response): Promise<void> => {
   });
 });
 
-export default router;
+export default app;

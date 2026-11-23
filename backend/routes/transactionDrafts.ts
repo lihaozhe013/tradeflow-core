@@ -1,4 +1,4 @@
-import express, { type Request, type Response, type Router } from 'express';
+import { Hono } from 'hono';
 import * as z from 'zod/v4';
 import type { TransactionDraft } from '@/prisma/client';
 import { getAuthConfig } from '@/utils/auth';
@@ -13,8 +13,10 @@ import {
   transitionDraft,
   updateHumanDraft
 } from '@/services/transactionDraftService';
+import type { AppEnv } from '@/types/hono';
 
-const router: Router = express.Router();
+const app = new Hono<AppEnv>();
+
 const directionSchema = z.enum(['inbound', 'outbound']);
 const statusSchema = z.enum(['pending', 'approved', 'rejected']);
 const idSchema = z.string().uuid();
@@ -25,8 +27,14 @@ const querySchema = z
     requestId: z.string().trim().min(1).max(128).optional(),
     partnerCode: z.string().trim().min(1).max(100).optional(),
     productCode: z.string().trim().min(1).max(100).optional(),
-    startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-    endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+    startDate: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/)
+      .optional(),
+    endDate: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/)
+      .optional(),
     page: z.coerce.number().int().min(1).max(1_000_000).default(1),
     limit: z.coerce.number().int().min(1).max(100).default(20)
   })
@@ -80,44 +88,42 @@ function publicDraft(row: TransactionDraft, issues: unknown[] = []) {
   };
 }
 
-function errorResponse(res: Response, error: unknown): void {
+function errorResponse(c: any, error: unknown): Response {
   if (error instanceof DraftNotFoundError) {
-    res.status(404).json({ success: false, code: 'DRAFT_NOT_FOUND' });
-    return;
+    return c.json({ success: false, code: 'DRAFT_NOT_FOUND' }, 404);
   }
   if (error instanceof DraftConflictError) {
-    res.status(409).json({ success: false, code: error.code });
-    return;
+    return c.json({ success: false, code: error.code }, 409);
   }
   if (error instanceof Error && error.message === 'DRAFT_NOT_READY') {
-    res.status(422).json({ success: false, code: 'DRAFT_NOT_READY', issues: (error as Error & { issues?: unknown[] }).issues ?? [] });
-    return;
+    return c.json(
+      {
+        success: false,
+        code: 'DRAFT_NOT_READY',
+        issues: (error as Error & { issues?: unknown[] }).issues ?? []
+      },
+      422
+    );
   }
   if (error instanceof Error && error.message === 'INVALID_REJECT_REASON') {
-    res.status(400).json({ success: false, code: error.message });
-    return;
+    return c.json({ success: false, code: error.message }, 400);
   }
   const name = error instanceof Error ? error.name : 'UnknownError';
-  logger.error('Transaction draft operation failed', { operation: res.req.method, errorName: name });
-  res.status(500).json({ success: false, code: 'DRAFT_OPERATION_FAILED' });
+  logger.error('Transaction draft operation failed', { operation: c.req.method, errorName: name });
+  return c.json({ success: false, code: 'DRAFT_OPERATION_FAILED' }, 500);
 }
 
-router.get('/', async (req: Request, res: Response): Promise<void> => {
-  const parsed = querySchema.safeParse(req.query);
+app.get('/', async (c) => {
+  const parsed = querySchema.safeParse(c.req.query());
   if (!parsed.success) {
-    res.status(400).json({ success: false, code: 'INVALID_DRAFT_QUERY' });
-    return;
+    return c.json({ success: false, code: 'INVALID_DRAFT_QUERY' }, 400);
   }
-  if (
-    parsed.data.startDate && parsed.data.endDate &&
-    parsed.data.startDate > parsed.data.endDate
-  ) {
-    res.status(400).json({ success: false, code: 'INVALID_DRAFT_DATE_RANGE' });
-    return;
+  if (parsed.data.startDate && parsed.data.endDate && parsed.data.startDate > parsed.data.endDate) {
+    return c.json({ success: false, code: 'INVALID_DRAFT_DATE_RANGE' }, 400);
   }
   const result = await listDrafts(parsed.data);
   const issues = await draftIssues(result.data);
-  res.json({
+  return c.json({
     success: true,
     reviewEnabled: getAuthConfig().enabled,
     data: result.data.map((row) => publicDraft(row, issues[row.id] ?? [])),
@@ -130,117 +136,139 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
   });
 });
 
-router.get('/:id', async (req: Request, res: Response): Promise<void> => {
-  const parsedId = idSchema.safeParse(req.params['id']);
+app.get('/:id', async (c) => {
+  const parsedId = idSchema.safeParse(c.req.param('id'));
   if (!parsedId.success) {
-    res.status(400).json({ success: false, code: 'INVALID_DRAFT_ID' });
-    return;
+    return c.json({ success: false, code: 'INVALID_DRAFT_ID' }, 400);
   }
   const row = await findDraft(parsedId.data);
   if (!row) {
-    res.status(404).json({ success: false, code: 'DRAFT_NOT_FOUND' });
-    return;
+    return c.json({ success: false, code: 'DRAFT_NOT_FOUND' }, 404);
   }
   const issues = await draftIssues([row]);
-  res.json({ success: true, data: publicDraft(row, issues[row.id] ?? []) });
+  return c.json({ success: true, data: publicDraft(row, issues[row.id] ?? []) });
 });
 
-router.patch('/:id', async (req: Request, res: Response): Promise<void> => {
-  if (!getAuthConfig().enabled || !req.user || !['editor', 'superuser'].includes(req.user.role)) {
-    res.status(!getAuthConfig().enabled ? 409 : 403).json({
-      success: false,
-      code: !getAuthConfig().enabled ? 'AUTH_REQUIRED' : 'INSUFFICIENT_PERMISSIONS'
-    });
-    return;
+app.patch('/:id', async (c) => {
+  const user = c.get('user');
+  if (!getAuthConfig().enabled || !user || !['editor', 'superuser'].includes(user.role)) {
+    return c.json(
+      {
+        success: false,
+        code: !getAuthConfig().enabled ? 'AUTH_REQUIRED' : 'INSUFFICIENT_PERMISSIONS'
+      },
+      !getAuthConfig().enabled ? 409 : 403
+    );
   }
-  const parsedId = idSchema.safeParse(req.params['id']);
-  const body = reviewSchema.safeParse(req.body);
+  const parsedId = idSchema.safeParse(c.req.param('id'));
+  let bodyJson: unknown;
+  try {
+    bodyJson = await c.req.json();
+  } catch {
+    bodyJson = {};
+  }
+  const body = reviewSchema.safeParse(bodyJson);
   if (!parsedId.success || !body.success || !body.data.patch) {
-    res.status(400).json({ success: false, code: 'INVALID_DRAFT_UPDATE' });
-    return;
+    return c.json({ success: false, code: 'INVALID_DRAFT_UPDATE' }, 400);
   }
   try {
     const result = await updateHumanDraft(
       parsedId.data,
       body.data.expectedVersion,
       body.data.patch,
-      req.user.username
+      user.username
     );
     const issues = await draftIssues([result]);
-    res.json({ success: true, data: publicDraft(result, issues[result.id] ?? []) });
+    return c.json({ success: true, data: publicDraft(result, issues[result.id] ?? []) });
   } catch (error) {
-    errorResponse(res, error);
+    return errorResponse(c, error);
   }
 });
 
-router.post('/:id/approve', async (req: Request, res: Response): Promise<void> => {
-  if (!getAuthConfig().enabled || !req.user || !['editor', 'superuser'].includes(req.user.role)) {
-    res.status(!getAuthConfig().enabled ? 409 : 403).json({
-      success: false,
-      code: !getAuthConfig().enabled ? 'AUTH_REQUIRED' : 'INSUFFICIENT_PERMISSIONS'
-    });
-    return;
+app.post('/:id/approve', async (c) => {
+  const user = c.get('user');
+  if (!getAuthConfig().enabled || !user || !['editor', 'superuser'].includes(user.role)) {
+    return c.json(
+      {
+        success: false,
+        code: !getAuthConfig().enabled ? 'AUTH_REQUIRED' : 'INSUFFICIENT_PERMISSIONS'
+      },
+      !getAuthConfig().enabled ? 409 : 403
+    );
   }
-  const parsedId = idSchema.safeParse(req.params['id']);
-  const body = reviewSchema.safeParse(req.body);
+  const parsedId = idSchema.safeParse(c.req.param('id'));
+  let bodyJson: unknown;
+  try {
+    bodyJson = await c.req.json();
+  } catch {
+    bodyJson = {};
+  }
+  const body = reviewSchema.safeParse(bodyJson);
   if (!parsedId.success || !body.success) {
-    res.status(400).json({ success: false, code: 'INVALID_DRAFT_REVIEW' });
-    return;
+    return c.json({ success: false, code: 'INVALID_DRAFT_REVIEW' }, 400);
   }
   try {
     const result = await transitionDraft(
       parsedId.data,
       body.data.expectedVersion,
       'approved',
-      req.user.username,
+      user.username,
       body.data.patch
     );
-    res.json({
+    return c.json({
       success: true,
       duplicate: result.duplicate,
       data: publicDraft(result.draft),
       formalRecordId: result.formalRecordId
     });
   } catch (error) {
-    errorResponse(res, error);
+    return errorResponse(c, error);
   }
 });
 
-router.post('/:id/reject', async (req: Request, res: Response): Promise<void> => {
-  if (!getAuthConfig().enabled || !req.user || !['editor', 'superuser'].includes(req.user.role)) {
-    res.status(!getAuthConfig().enabled ? 409 : 403).json({
-      success: false,
-      code: !getAuthConfig().enabled ? 'AUTH_REQUIRED' : 'INSUFFICIENT_PERMISSIONS'
-    });
-    return;
+app.post('/:id/reject', async (c) => {
+  const user = c.get('user');
+  if (!getAuthConfig().enabled || !user || !['editor', 'superuser'].includes(user.role)) {
+    return c.json(
+      {
+        success: false,
+        code: !getAuthConfig().enabled ? 'AUTH_REQUIRED' : 'INSUFFICIENT_PERMISSIONS'
+      },
+      !getAuthConfig().enabled ? 409 : 403
+    );
   }
-  const parsedId = idSchema.safeParse(req.params['id']);
-  const body = rejectSchema.safeParse(req.body);
+  const parsedId = idSchema.safeParse(c.req.param('id'));
+  let bodyJson: unknown;
+  try {
+    bodyJson = await c.req.json();
+  } catch {
+    bodyJson = {};
+  }
+  const body = rejectSchema.safeParse(bodyJson);
   if (!parsedId.success || !body.success) {
-    res.status(400).json({ success: false, code: 'INVALID_DRAFT_REJECTION' });
-    return;
+    return c.json({ success: false, code: 'INVALID_DRAFT_REJECTION' }, 400);
   }
   try {
     const result = await transitionDraft(
       parsedId.data,
       body.data.expectedVersion,
       'rejected',
-      req.user.username,
+      user.username,
       body.data.patch,
       body.data.reason
     );
-    res.json({ success: true, data: publicDraft(result.draft) });
+    return c.json({ success: true, data: publicDraft(result.draft) });
   } catch (error) {
-    errorResponse(res, error);
+    return errorResponse(c, error);
   }
 });
 
-router.use((_error: unknown, req: Request, res: Response, _next: (error?: unknown) => void) => {
+app.onError((error, c) => {
   logger.error('Transaction draft request failed', {
-    operation: req.method,
-    errorName: _error instanceof Error ? _error.name : 'UnknownError'
+    operation: c.req.method,
+    errorName: error instanceof Error ? error.name : 'UnknownError'
   });
-  res.status(500).json({ success: false, code: 'DRAFT_OPERATION_FAILED' });
+  return c.json({ success: false, code: 'DRAFT_OPERATION_FAILED' }, 500);
 });
 
-export default router;
+export default app;

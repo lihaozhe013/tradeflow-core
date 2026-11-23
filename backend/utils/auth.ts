@@ -3,11 +3,12 @@ import path from 'path';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import argon2 from 'argon2';
-import type { Request, Response, NextFunction } from 'express';
+import type { Context, MiddlewareHandler } from 'hono';
 import { logger } from '@/utils/logger';
 import { resolveFilesInCachePath, config } from '@/utils/paths';
 import { prisma } from '../prismaClient';
-import type { User } from '@/prisma/client';
+import type { User as DbUser } from '@/prisma/client';
+import type { AppEnv } from '@/types/hono';
 
 const secretPath: string = resolveFilesInCachePath('jwt-secret.txt');
 
@@ -77,7 +78,7 @@ export function ensureJwtSecret(): string {
   }
 }
 
-export async function getAllUsers(): Promise<User[]> {
+export async function getAllUsers(): Promise<DbUser[]> {
   try {
     return await prisma.user.findMany();
   } catch (e) {
@@ -86,7 +87,7 @@ export async function getAllUsers(): Promise<User[]> {
   }
 }
 
-export async function findUser(username: string): Promise<User | null> {
+export async function findUser(username: string): Promise<DbUser | null> {
   try {
     return await prisma.user.findUnique({ where: { username } });
   } catch (e) {
@@ -97,18 +98,18 @@ export async function findUser(username: string): Promise<User | null> {
   }
 }
 
-export async function createUser(data: User): Promise<User> {
+export async function createUser(data: DbUser): Promise<DbUser> {
   return await prisma.user.create({ data });
 }
 
-export async function updateUser(username: string, data: Partial<User>): Promise<User> {
+export async function updateUser(username: string, data: Partial<DbUser>): Promise<DbUser> {
   return await prisma.user.update({
     where: { username },
     data
   });
 }
 
-export async function deleteUser(username: string): Promise<User> {
+export async function deleteUser(username: string): Promise<DbUser> {
   return await prisma.user.delete({ where: { username } });
 }
 
@@ -128,7 +129,7 @@ export async function hashPassword(plain: string): Promise<string> {
 }
 
 export function getPublicUser(
-  u: User | null | undefined
+  u: DbUser | null | undefined
 ): { username: string; role: string; display_name: string } | null {
   if (!u) return null;
   return {
@@ -139,7 +140,7 @@ export function getPublicUser(
 }
 
 export function signToken(
-  user: User,
+  user: DbUser,
   expiresInHours?: number
 ): { token: string; expires_in: number } {
   const secret = ensureJwtSecret();
@@ -160,17 +161,40 @@ export function signToken(
 // In-memory login attempts: key => { count, firstAt }
 const attempts = new Map<string, LoginAttempt>();
 
-export function loginRateLimiter(req: Request, res: Response, next: NextFunction): void {
+function getClientIp(c: Context<AppEnv>): string {
+  const remoteIp = c.env?.remoteIp;
+  if (config.server?.trustProxy) {
+    return (
+      c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ||
+      c.req.header('x-real-ip') ||
+      remoteIp ||
+      'unknown'
+    );
+  }
+  return remoteIp || 'unknown';
+}
+
+export const loginRateLimiter: MiddlewareHandler<AppEnv> = async (c, next) => {
   const { windowMinutes, maxAttempts } = getAuthConfig().loginRateLimit;
   const windowMs = windowMinutes * 60 * 1000;
-  const ip = req.ip || req.socket?.remoteAddress || 'unknown';
-  const username = (req.body && req.body.username) || 'unknown';
+  const ip = getClientIp(c);
+  let username = 'unknown';
+
+  try {
+    const cloned = c.req.raw.clone();
+    const body = (await cloned.json()) as { username?: string };
+    if (body?.username) {
+      username = body.username;
+    }
+  } catch {
+    // Ignore invalid JSON on probe
+  }
+
   const key = `${ip}:${username}`;
   const now = Date.now();
 
   const rec = attempts.get(key) || { count: 0, firstAt: now };
   if (now - rec.firstAt > windowMs) {
-    // reset window
     rec.count = 0;
     rec.firstAt = now;
   }
@@ -178,155 +202,149 @@ export function loginRateLimiter(req: Request, res: Response, next: NextFunction
   attempts.set(key, rec);
 
   if (rec.count > maxAttempts) {
-    res.status(429).json({
-      success: false,
-      message: 'Too many login attempts. Please try later.'
-    });
-    return;
+    return c.json(
+      {
+        success: false,
+        message: 'Too many login attempts. Please try later.'
+      },
+      429
+    );
   }
-  next();
-}
+  return await next();
+};
 
-export async function authenticateToken(
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> {
+export const authenticateToken: MiddlewareHandler<AppEnv> = async (c, next) => {
   const { enabled } = getAuthConfig();
   if (!enabled) {
-    // Auth disabled: inject a dev user
-    req.user = {
+    c.set('user', {
       username: 'dev',
       role: 'editor',
       name: 'Developer',
       pwd_ver: new Date().toISOString()
-    };
-    next();
-    return;
+    });
+    return await next();
   }
 
-  // Allow unauthenticated access to login route
-  if (req.originalUrl && req.originalUrl.startsWith('/api/auth/login')) {
-    next();
-    return;
+  if (c.req.path.startsWith('/api/auth/login')) {
+    return await next();
   }
 
-  const authHeader = req.headers['authorization'] || '';
+  const authHeader = c.req.header('authorization') || '';
   const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
   if (!token) {
-    res.status(401).json({ success: false, message: 'Unauthorized' });
-    return;
+    return c.json({ success: false, message: 'Unauthorized' }, 401);
   }
+
   try {
     const secret = ensureJwtSecret();
     const decoded = jwt.verify(token, secret, {
       algorithms: ['HS256']
     }) as JWTPayload;
 
-    // Check DB
     const user = await findUser(decoded.sub);
-
     if (!user || user.enabled === false) {
-      res.status(401).json({ success: false, message: 'Unauthorized' });
-      return;
+      return c.json({ success: false, message: 'Unauthorized' }, 401);
     }
+
     const tokenPwdVer = new Date(decoded.pwd_ver || 0).getTime();
     const userPwdVer = new Date(user.last_password_change || 0).getTime();
     if (tokenPwdVer < userPwdVer) {
-      res.status(401).json({ success: false, message: 'Token expired' });
-      return;
+      return c.json({ success: false, message: 'Token expired' }, 401);
     }
-    req.user = {
+
+    c.set('user', {
       username: user.username,
       role: user.role,
       name: user.display_name || user.username,
       pwd_ver: decoded.pwd_ver
-    };
-    next();
-  } catch (e) {
-    res.status(401).json({
-      success: false,
-      message: 'Unauthorized',
-      error: (e as Error).message
     });
+    return await next();
+  } catch (e) {
+    return c.json(
+      {
+        success: false,
+        message: 'Unauthorized',
+        error: (e as Error).message
+      },
+      401
+    );
   }
-}
+};
 
-export function authorize(roles: string | string[] = ['editor', 'reader']) {
+export function authorize(
+  roles: string | string[] = ['editor', 'reader']
+): MiddlewareHandler<AppEnv> {
   const set = new Set(Array.isArray(roles) ? roles : [roles]);
-  return (req: Request, res: Response, next: NextFunction) => {
-    if (!req.user) {
-      res.status(401).json({ success: false, message: 'Unauthorized' });
-      return;
+  return async (c, next) => {
+    const user = c.get('user');
+    if (!user) {
+      return c.json({ success: false, message: 'Unauthorized' }, 401);
     }
-    if (!set.has(req.user.role)) {
-      res.status(403).json({ success: false, message: 'Forbidden' });
-      return;
+    if (!set.has(user.role)) {
+      return c.json({ success: false, message: 'Forbidden' }, 403);
     }
-    next();
+    return await next();
   };
 }
 
-// Check write permissions for read-only users
-export function checkWritePermission(req: Request, res: Response, next: NextFunction): void {
-  if (!req.user) {
-    res.status(401).json({ success: false, message: 'Unauthorized' });
-    return;
+export const checkWritePermission: MiddlewareHandler<AppEnv> = async (c, next) => {
+  const user = c.get('user');
+  if (!user) {
+    return c.json({ success: false, message: 'Unauthorized' }, 401);
   }
 
-  const method = req.method.toUpperCase();
+  const method = c.req.method.toUpperCase();
   const { allowExportsForReader } = getAuthConfig();
 
-  if (req.user.role === 'editor' || req.user.role === 'superuser') {
-    next();
-    return;
+  if (user.role === 'editor' || user.role === 'superuser') {
+    return await next();
   }
 
-  if (req.user.role === 'reader') {
-    const requestPath = req.originalUrl.split('?')[0] ?? '';
+  if (user.role === 'reader') {
+    const requestPath = c.req.path;
 
     if (method === 'PUT' && READER_SELF_SERVICE_PATHS.has(requestPath)) {
-      next();
-      return;
+      return await next();
     }
 
     if (method === 'GET') {
-      next();
-      return;
+      return await next();
     }
 
-    // Reader can use the POST request for the export feature and refresh overview + analysis pages
     if (
       allowExportsForReader &&
       method === 'POST' &&
-      (req.originalUrl.includes('/api/export') ||
-        req.originalUrl.includes('/api/overview') ||
-        req.originalUrl.includes('/api/analysis'))
+      (requestPath.startsWith('/api/export') ||
+        requestPath.startsWith('/api/overview') ||
+        requestPath.startsWith('/api/analysis'))
     ) {
-      next();
-      return;
+      return await next();
     }
 
     if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(method)) {
       logger.warn('Read-only users attempting to perform write operations.', {
-        username: req.user.username,
+        username: user.username,
         method: method,
-        url: req.originalUrl,
-        ip: req.ip
+        url: c.req.url,
+        ip: getClientIp(c)
       });
-      res.status(403).json({
-        success: false,
-        message: 'Read-only users are not authorized to perform this operation.',
-        error_code: 'READ_ONLY_ACCESS_DENIED'
-      });
-      return;
+      return c.json(
+        {
+          success: false,
+          message: 'Read-only users are not authorized to perform this operation.',
+          error_code: 'READ_ONLY_ACCESS_DENIED'
+        },
+        403
+      );
     }
   }
 
-  // Access denied for other unknown roles.
-  res.status(403).json({
-    success: false,
-    message: 'INSUFFICIENT_PERMISSIONS',
-    error_code: 'INSUFFICIENT_PERMISSIONS'
-  });
-}
+  return c.json(
+    {
+      success: false,
+      message: 'INSUFFICIENT_PERMISSIONS',
+      error_code: 'INSUFFICIENT_PERMISSIONS'
+    },
+    403
+  );
+};

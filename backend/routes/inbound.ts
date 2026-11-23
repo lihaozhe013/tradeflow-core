@@ -1,4 +1,4 @@
-import express, { type Router, type Request, type Response } from 'express';
+import { Hono } from 'hono';
 import { prisma } from '@/prismaClient';
 import type { Prisma } from '@/prisma/client';
 import decimalCalc from '@/utils/decimalCalculator';
@@ -6,8 +6,9 @@ import { pagination_limit } from '@/utils/paths';
 import { inventoryService } from '@/utils/inventoryService';
 import { listTransactions } from '@/services/readService';
 import { createInboundRecord } from '@/services/transactionWriteService';
+import type { AppEnv } from '@/types/hono';
 
-const router: Router = express.Router();
+const app = new Hono<AppEnv>();
 
 function isProvided(val: unknown): boolean {
   return !(
@@ -21,7 +22,6 @@ function isProvided(val: unknown): boolean {
 
 const NUMBER_FILTER_MAX_LENGTH = 100;
 
-// Query params are untrusted: only accept single string values, trimmed and length-capped.
 function numberFilterValue(val: unknown): string {
   if (!isProvided(val) || typeof val !== 'string') return '';
   return val.trim().slice(0, NUMBER_FILTER_MAX_LENGTH);
@@ -30,41 +30,38 @@ function numberFilterValue(val: unknown): string {
 /**
  * GET /api/inbound
  */
-router.get('/', async (req: Request, res: Response): Promise<void> => {
-  const pageParam = req.query['page'] ?? '1';
-  let page = parseInt(pageParam as string, 10);
+app.get('/', async (c) => {
+  const pageParam = c.req.query('page') ?? '1';
+  let page = parseInt(pageParam, 10);
   if (!Number.isFinite(page) || page < 1) page = 1;
   const allowedSortFields = ['inbound_date', 'unit_price', 'total_price', 'id'];
-  const requestedSort = req.query['sort_field'] as string | undefined;
+  const requestedSort = c.req.query('sort_field');
   const result = await listTransactions(prisma, {
     direction: 'inbound',
     page,
     limit: pagination_limit,
-    partnerShortName: isProvided(req.query['supplier_short_name'])
-      ? (req.query['supplier_short_name'] as string)
+    partnerShortName: isProvided(c.req.query('supplier_short_name'))
+      ? c.req.query('supplier_short_name')
       : undefined,
-    productModel: isProvided(req.query['product_model'])
-      ? (req.query['product_model'] as string)
+    productModel: isProvided(c.req.query('product_model'))
+      ? c.req.query('product_model')
       : undefined,
-    startDate: isProvided(req.query['start_date'])
-      ? (req.query['start_date'] as string)
-      : undefined,
-    endDate: isProvided(req.query['end_date']) ? (req.query['end_date'] as string) : undefined,
-    keyword: numberFilterValue(req.query['keyword']) || undefined,
-    orderNumber: numberFilterValue(req.query['order_number']) || undefined,
-    invoiceNumber: numberFilterValue(req.query['invoice_number']) || undefined,
-    receiptNumber: numberFilterValue(req.query['receipt_number']) || undefined,
+    startDate: isProvided(c.req.query('start_date')) ? c.req.query('start_date') : undefined,
+    endDate: isProvided(c.req.query('end_date')) ? c.req.query('end_date') : undefined,
+    keyword: numberFilterValue(c.req.query('keyword')) || undefined,
+    orderNumber: numberFilterValue(c.req.query('order_number')) || undefined,
+    invoiceNumber: numberFilterValue(c.req.query('invoice_number')) || undefined,
+    receiptNumber: numberFilterValue(c.req.query('receipt_number')) || undefined,
     sortField:
       requestedSort && allowedSortFields.includes(requestedSort) ? requestedSort : undefined,
-    sortOrder:
-      (req.query['sort_order'] as string | undefined)?.toLowerCase() === 'asc' ? 'asc' : 'desc'
+    sortOrder: c.req.query('sort_order')?.toLowerCase() === 'asc' ? 'asc' : 'desc'
   });
   const rows = result.data.map((row) => ({
     ...row,
     product_model: row.product?.product_model || null
   }));
 
-  res.json({
+  return c.json({
     data: rows,
     pagination: {
       page: result.page,
@@ -78,11 +75,16 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
 /**
  * POST /api/inbound
  */
-router.post('/', async (req: Request, res: Response): Promise<void> => {
+app.post('/', async (c) => {
+  let body: any;
+  try {
+    body = await c.req.json();
+  } catch {
+    body = {};
+  }
   const {
     supplier_code,
     product_code,
-
     quantity,
     unit_price,
     inbound_date,
@@ -91,7 +93,7 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
     receipt_number,
     order_number,
     remark
-  } = req.body;
+  } = body;
 
   const result = await prisma.$transaction((tx) =>
     createInboundRecord(tx, {
@@ -107,18 +109,23 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
       remark
     })
   );
-  res.json({ id: result.id, message: 'Inbound record created!' });
+  return c.json({ id: result.id, message: 'Inbound record created!' });
 });
 
 /**
  * PUT /api/inbound/:id
  */
-router.put('/:id', async (req: Request, res: Response): Promise<void> => {
-  const id = Number(req.params['id']);
+app.put('/:id', async (c) => {
+  const id = Number(c.req.param('id'));
+  let body: any;
+  try {
+    body = await c.req.json();
+  } catch {
+    body = {};
+  }
   const {
     supplier_code,
     product_code,
-
     quantity,
     unit_price,
     inbound_date,
@@ -127,7 +134,7 @@ router.put('/:id', async (req: Request, res: Response): Promise<void> => {
     receipt_number,
     order_number,
     remark
-  } = req.body;
+  } = body;
 
   const total_price = decimalCalc.calculateTotalPrice(quantity, unit_price);
   const oldRecord = await prisma.inboundRecord.findUnique({
@@ -135,8 +142,7 @@ router.put('/:id', async (req: Request, res: Response): Promise<void> => {
     include: { product: true }
   });
   if (!oldRecord) {
-    res.status(404).json({ error: 'No inbound records exist' });
-    return;
+    return c.json({ error: 'No inbound records exist' }, 404);
   }
   const result = await prisma.inboundRecord.update({
     where: { id },
@@ -156,33 +162,37 @@ router.put('/:id', async (req: Request, res: Response): Promise<void> => {
     include: { product: true }
   });
   await inventoryService.onInboundUpdate(oldRecord, result);
-  res.json({ message: 'Inbound record updated!' });
+  return c.json({ message: 'Inbound record updated!' });
 });
 
 /**
  * DELETE /api/inbound/:id
  */
-router.delete('/:id', async (req: Request, res: Response): Promise<void> => {
-  const id = Number(req.params['id']);
+app.delete('/:id', async (c) => {
+  const id = Number(c.req.param('id'));
   await prisma.inboundRecord.delete({ where: { id } });
   await inventoryService.onInboundDelete(id);
-  res.json({ message: 'Inbound record deleted!' });
+  return c.json({ message: 'Inbound record deleted!' });
 });
 
 /**
  * POST /api/inbound/batch
  * Batch update multiple inbound records
  */
-router.post('/batch', async (req: Request, res: Response): Promise<void> => {
-  const { ids, updates } = req.body;
+app.post('/batch', async (c) => {
+  let body: any;
+  try {
+    body = await c.req.json();
+  } catch {
+    body = {};
+  }
+  const { ids, updates } = body;
   if (!ids || !Array.isArray(ids) || ids.length === 0) {
-    res.status(400).json({ error: 'ids array is required and must not be empty' });
-    return;
+    return c.json({ error: 'ids array is required and must not be empty' }, 400);
   }
 
   if (!updates || typeof updates !== 'object') {
-    res.status(400).json({ error: 'updates object is required' });
-    return;
+    return c.json({ error: 'updates object is required' }, 400);
   }
 
   const allowedFieldsMap: Record<string, keyof Prisma.InboundRecordUncheckedUpdateInput> = {
@@ -198,7 +208,6 @@ router.post('/batch', async (req: Request, res: Response): Promise<void> => {
     remark: 'remark'
   };
 
-  // Prepare base update object
   const updateData: Prisma.InboundRecordUpdateInput = {};
   let hasQuantity = false;
   let hasUnitPrice = false;
@@ -213,20 +222,12 @@ router.post('/batch', async (req: Request, res: Response): Promise<void> => {
   }
 
   if (Object.keys(updateData).length === 0) {
-    res.status(400).json({ error: 'No valid update fields provided' });
-    return;
+    return c.json({ error: 'No valid update fields provided' }, 400);
   }
 
   const needsRecalculation = hasQuantity || hasUnitPrice;
   let completed = 0;
   const notFound: number[] = [];
-
-  // Transactions per record might be safer to track individual success/failure
-  // But REST API usually implies all-or-nothing or partial-ok report.
-  // The original code tried to update one by one and collected errors.
-
-  // We can't use updateMany easily if recalculation is needed per row dependent on its own values.
-  // So we iterate.
 
   for (const recordId of ids) {
     const oldRecord = await prisma.inboundRecord.findUnique({
@@ -240,11 +241,9 @@ router.post('/batch', async (req: Request, res: Response): Promise<void> => {
 
     let result;
     if (needsRecalculation) {
-      // We have oldRecord, so we can use its values safely
       const quantity = oldRecord.quantity ?? 0;
       const unitPrice = oldRecord.unit_price ?? 0;
 
-      // Assuming updates object has correct types or casting as needed
       const finalQuantity = hasQuantity ? (updates.quantity as number) : quantity;
       const finalUnitPrice = hasUnitPrice ? (updates.unit_price as number) : unitPrice;
       const total_price = decimalCalc.calculateTotalPrice(finalQuantity, finalUnitPrice);
@@ -269,11 +268,11 @@ router.post('/batch', async (req: Request, res: Response): Promise<void> => {
     completed++;
   }
 
-  res.json({
+  return c.json({
     message: 'Batch update completed!',
     updated: completed,
     notFound: notFound
   });
 });
 
-export default router;
+export default app;

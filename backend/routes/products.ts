@@ -1,9 +1,10 @@
-import express, { type Router, type Request, type Response } from 'express';
+import { Hono } from 'hono';
 import { prisma } from '@/prismaClient';
 import { pagination_limit } from '@/utils/paths';
 import { searchProducts } from '@/services/readService';
+import type { AppEnv } from '@/types/hono';
 
-const router: Router = express.Router();
+const app = new Hono<AppEnv>();
 
 interface ProductBinding {
   code: string;
@@ -13,26 +14,29 @@ interface ProductBinding {
 /**
  * GET /api/products
  */
-router.get('/', async (req: Request, res: Response): Promise<void> => {
-  const { category, product_model, code, page, limit } = req.query;
+app.get('/', async (c) => {
+  const category = c.req.query('category');
+  const product_model = c.req.query('product_model');
+  const code = c.req.query('code');
+  const page = c.req.query('page');
+  const limit = c.req.query('limit');
 
   const usePagination = page !== undefined || limit !== undefined;
-  let pageNum = parseInt(String(page ?? '1'), 10);
+  let pageNum = parseInt(page ?? '1', 10);
   if (!Number.isFinite(pageNum) || pageNum < 1) pageNum = 1;
   const limitNum = Number(limit) || pagination_limit;
   const result = await searchProducts(prisma, {
-    category: category as string | undefined,
-    productModel: product_model as string | undefined,
-    code: code as string | undefined,
+    category,
+    productModel: product_model,
+    code,
     ...(usePagination ? { page: pageNum, limit: limitNum } : {})
   });
 
   if (!usePagination) {
-    res.json({ data: result.data });
-    return;
+    return c.json({ data: result.data });
   }
 
-  res.json({
+  return c.json({
     data: result.data,
     pagination: {
       page: pageNum,
@@ -43,21 +47,27 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
   });
 });
 
-router.get('/categories', async (_req, res) => {
+app.get('/categories', async (c) => {
   const rows = await prisma.product.findMany({
     select: { category: true },
     distinct: ['category'],
     where: { category: { not: null } },
     orderBy: { category: 'asc' }
   });
-  res.json({ data: rows.map((row) => row.category).filter(Boolean) });
+  return c.json({ data: rows.map((row) => row.category).filter(Boolean) });
 });
 
 /**
  * POST /api/products
  */
-router.post('/', async (req: Request, res: Response): Promise<void> => {
-  const { code, category, product_model, remark } = req.body;
+app.post('/', async (c) => {
+  let body: any;
+  try {
+    body = await c.req.json();
+  } catch {
+    body = {};
+  }
+  const { code, category, product_model, remark } = body;
 
   await prisma.product.create({
     data: {
@@ -67,15 +77,21 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
       remark
     }
   });
-  res.json({ code, message: 'Product info created!' });
+  return c.json({ code, message: 'Product info created!' });
 });
 
 /**
  * PUT /api/products/:code
  */
-router.put('/:code', async (req: Request, res: Response): Promise<void> => {
-  const code = req.params['code'] as string;
-  const { category, product_model, remark } = req.body;
+app.put('/:code', async (c) => {
+  const code = c.req.param('code');
+  let body: any;
+  try {
+    body = await c.req.json();
+  } catch {
+    body = {};
+  }
+  const { category, product_model, remark } = body;
 
   await prisma.product.update({
     where: { code },
@@ -86,33 +102,36 @@ router.put('/:code', async (req: Request, res: Response): Promise<void> => {
     }
   });
 
-  res.json({ message: 'Product info updated!' });
+  return c.json({ message: 'Product info updated!' });
 });
 
 /**
  * DELETE /api/products/:code
  */
-router.delete('/:code', async (req: Request, res: Response): Promise<void> => {
-  const code = req.params['code'] as string;
+app.delete('/:code', async (c) => {
+  const code = c.req.param('code');
 
   await prisma.product.delete({
     where: { code }
   });
 
-  res.json({ message: 'Product info deleted!' });
+  return c.json({ message: 'Product info deleted!' });
 });
 
 /**
  * POST /api/products/bindings
  */
-router.post('/bindings', async (req: Request, res: Response): Promise<void> => {
-  // Parsing and simple validation
-  const rawBody = req.body;
+app.post('/bindings', async (c) => {
+  let rawBody: any;
+  try {
+    rawBody = await c.req.json();
+  } catch {
+    rawBody = [];
+  }
   const bindings: ProductBinding[] = Array.isArray(rawBody) ? rawBody : [rawBody];
 
   if (!bindings.length) {
-    res.status(400).json({ error: 'No data binded' });
-    return;
+    return c.json({ error: 'No data binded' }, 400);
   }
 
   const codes = new Set<string>();
@@ -120,12 +139,10 @@ router.post('/bindings', async (req: Request, res: Response): Promise<void> => {
 
   for (const b of bindings) {
     if (!b.code || !b.product_model) {
-      res.status(400).json({ error: 'The code and model cannot be left blank' });
-      return;
+      return c.json({ error: 'The code and model cannot be left blank' }, 400);
     }
     if (codes.has(b.code) || models.has(b.product_model)) {
-      res.status(400).json({ error: 'Duplicated data' });
-      return;
+      return c.json({ error: 'Duplicated data' }, 400);
     }
     codes.add(b.code);
     models.add(b.product_model);
@@ -145,11 +162,9 @@ router.post('/bindings', async (req: Request, res: Response): Promise<void> => {
   });
 
   if (conflicts.length > 0) {
-    res.status(400).json({ error: 'Conflict data', conflicts });
-    return;
+    return c.json({ error: 'Conflict data', conflicts }, 400);
   }
 
-  // Batch Insert
   await prisma.$transaction(
     bindings.map((b) =>
       prisma.product.create({
@@ -161,7 +176,7 @@ router.post('/bindings', async (req: Request, res: Response): Promise<void> => {
     )
   );
 
-  res.json({ message: 'Binded' });
+  return c.json({ message: 'Binded' });
 });
 
-export default router;
+export default app;

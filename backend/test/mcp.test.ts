@@ -1,6 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { createServer, type Server } from 'node:http';
-import request from 'supertest';
+import request from '@/test/helpers/request';
 import { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/client';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createApp } from '@/app';
@@ -11,6 +10,7 @@ import { prisma } from '@/prismaClient';
 import type { Prisma } from '@/prisma/client';
 import type { McpConfig, McpToolName } from '@/types/config';
 import { authAgent } from '@/test/helpers/request';
+import { createTestServer, type TestServer } from '@/test/helpers/server';
 
 const token = 'tfmcp_test-token-0123456789abcdef';
 const settings: McpConfig = {
@@ -36,7 +36,7 @@ const settings: McpConfig = {
 };
 
 const app = createApp(settings);
-let server: Server;
+let server: TestServer;
 let endpoint = '';
 let client: Client;
 
@@ -54,11 +54,8 @@ function makeClient(accessToken: string): {
 }
 
 beforeAll(async () => {
-  server = createServer(app);
-  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
-  const address = server.address();
-  if (!address || typeof address === 'string') throw new Error('MCP test server did not start.');
-  endpoint = `http://127.0.0.1:${address.port}/mcp`;
+  server = await createTestServer(app);
+  endpoint = `http://127.0.0.1:${server.port}/mcp`;
   const connected = makeClient(token);
   client = connected.client;
   await client.connect(connected.transport);
@@ -66,9 +63,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await client.close();
-  await new Promise<void>((resolve, reject) =>
-    server.close((error) => (error ? reject(error) : resolve()))
-  );
+  await server.stop();
 });
 
 describe('TradeFlow MCP', () => {
@@ -115,12 +110,8 @@ describe('TradeFlow MCP', () => {
       ]
     };
     const stagingApp = createApp(stagingSettings);
-    const stagingServer = createServer(stagingApp);
-    await new Promise<void>((resolve) => stagingServer.listen(0, '127.0.0.1', resolve));
-    const address = stagingServer.address();
-    if (!address || typeof address === 'string')
-      throw new Error('MCP staging server did not start');
-    const endpointUrl = `http://127.0.0.1:${address.port}/mcp`;
+    const stagingServer = await createTestServer(stagingApp);
+    const endpointUrl = `http://127.0.0.1:${stagingServer.port}/mcp`;
     const stagedClient = {
       client: new Client({ name: 'staging-write-test', version: '1' }),
       transport: new StreamableHTTPClientTransport(new URL(endpointUrl), {
@@ -183,9 +174,7 @@ describe('TradeFlow MCP', () => {
       }
       await stagedClient.client.close();
       await isolatedClient.client.close();
-      await new Promise<void>((resolve, reject) =>
-        stagingServer.close((error) => (error ? reject(error) : resolve()))
-      );
+      await stagingServer.stop();
     }
   });
 
@@ -458,5 +447,15 @@ describe('TradeFlow MCP', () => {
     expect(first.status).not.toBe(429);
     expect(second.status).toBe(429);
     expect(second.headers['retry-after']).toBe('60');
+  });
+
+  it('rejects oversized JSON payloads over 100kb', async () => {
+    const oversized = JSON.stringify({ pad: 'a'.repeat(110 * 1024) });
+    const res = await request(app)
+      .post('/mcp')
+      .set('Authorization', `Bearer ${token}`)
+      .set('Content-Type', 'application/json')
+      .send(oversized);
+    expect(res.status).toBe(413);
   });
 });

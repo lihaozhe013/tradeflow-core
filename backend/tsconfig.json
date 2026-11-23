@@ -38,7 +38,7 @@
     "strictNullChecks": true,
     "strictPropertyInitialization": true,
     "target": "ESNext",
-    "types": ["node"]
+    "types": ["node", "bun"]
   },
   "exclude": ["node_modules", "dist", "**/*.spec.ts", "**/*.test.ts"],
   "include": ["**/*.ts"],

@@ -4,7 +4,7 @@ import { safeSheetName } from './utils/exportUtils';
 import decimalCalc from '@/utils/decimalCalculator';
 import { readExportTemplates } from '@/settings/service';
 import { previewColumns } from './previewTemplates';
-import { Router } from 'express';
+import { Hono } from 'hono';
 import { randomUUID } from 'node:crypto';
 import fs from 'node:fs/promises';
 import ExcelJS from 'exceljs';
@@ -12,6 +12,7 @@ import { z } from 'zod';
 import { prisma } from '@/prismaClient';
 import { listTransactions } from '@/services/readService';
 import { resolveFilesInCachePath } from '@/utils/paths';
+import type { AppEnv } from '@/types/hono';
 
 const text = z.string().max(100).optional();
 const filters = z
@@ -51,14 +52,20 @@ interface Snapshot {
   columns: z.infer<typeof column>[];
   rows: Record<string, Cell>[];
 }
-const router = Router();
+
+const app = new Hono<AppEnv>();
 const snapshotPath = (id: string) => resolveFilesInCachePath('export-previews', `${id}.json`);
 
-router.post('/previews/transactions', async (req, res) => {
-  const parsed = spec.safeParse(req.body);
+app.post('/previews/transactions', async (c) => {
+  let body: unknown;
+  try {
+    body = await c.req.json();
+  } catch {
+    body = {};
+  }
+  const parsed = spec.safeParse(body);
   if (!parsed.success) {
-    res.status(400).json({ message: 'Invalid export scope.', issues: parsed.error.issues });
-    return;
+    return c.json({ message: 'Invalid export scope.', issues: parsed.error.issues }, 400);
   }
   const input = parsed.data;
   const result = await prisma.$transaction(
@@ -73,12 +80,10 @@ router.post('/previews/transactions', async (req, res) => {
     { isolationLevel: 'RepeatableRead' }
   );
   if (result.total > 100000) {
-    res.status(422).json({ message: 'Narrow the filters to at most 100000 records.' });
-    return;
+    return c.json({ message: 'Narrow the filters to at most 100000 records.' }, 422);
   }
   if (input.ids && result.total !== new Set(input.ids).size) {
-    res.status(409).json({ message: 'Selected records changed. Refresh the table.' });
-    return;
+    return c.json({ message: 'Selected records changed. Refresh the table.' }, 409);
   }
   const inbound = input.direction === 'inbound';
   const keys = [
@@ -98,7 +103,7 @@ router.post('/previews/transactions', async (req, res) => {
   const columns = previewColumns([template], keys, {
     [inbound ? 'supplier_short_name' : 'customer_short_name']: 'partner_name'
   });
-  const fieldKeys = [...new Set([...keys, ...columns.map((c) => c.key)])];
+  const fieldKeys = [...new Set([...keys, ...columns.map((col) => col.key)])];
   const rows = result.data.map((record) => {
     const raw = {
       ...record,
@@ -113,8 +118,9 @@ router.post('/previews/transactions', async (req, res) => {
     >;
   });
   const id = randomUUID();
+  const user = c.get('user')!;
   const snapshot: Snapshot = {
-    owner: req.user!.username,
+    owner: user.username,
     direction: input.direction,
     sheetName: template.sheetName,
     expiresAt: Date.now() + 86400000,
@@ -124,7 +130,7 @@ router.post('/previews/transactions', async (req, res) => {
   const path = snapshotPath(id);
   await fs.mkdir(resolveFilesInCachePath('export-previews'), { recursive: true });
   await fs.writeFile(path, JSON.stringify(snapshot), { flag: 'wx' });
-  res.json({
+  return c.json({
     id,
     sheetName: snapshot.sheetName,
     columns,
@@ -134,7 +140,13 @@ router.post('/previews/transactions', async (req, res) => {
   });
 });
 
-router.post('/previews/records', async (req, res) => {
+app.post('/previews/records', async (c) => {
+  let body: unknown;
+  try {
+    body = await c.req.json();
+  } catch {
+    body = {};
+  }
   const parsed = z
     .strictObject({
       source: z.enum(['partners', 'products', 'prices', 'receivable', 'payable', 'inventory']),
@@ -156,18 +168,16 @@ router.post('/previews/records', async (req, res) => {
         .max(10000)
         .optional()
     })
-    .safeParse(req.body);
+    .safeParse(body);
   if (!parsed.success) {
-    res.status(400).json({ message: 'Invalid export scope.', issues: parsed.error.issues });
-    return;
+    return c.json({ message: 'Invalid export scope.', issues: parsed.error.issues }, 400);
   }
   const { source, filters: f, keys: selected } = parsed.data;
   if (
     source === 'prices' &&
     selected?.some((key) => !Number.isSafeInteger(Number(key)) || Number(key) <= 0)
   ) {
-    res.status(400).json({ message: 'Invalid price record IDs.' });
-    return;
+    return c.json({ message: 'Invalid price record IDs.' }, 400);
   }
   const data = await prisma.$transaction(
     async (db) => {
@@ -359,12 +369,10 @@ router.post('/previews/records', async (req, res) => {
     { isolationLevel: 'RepeatableRead' }
   );
   if (!data || (selected && data.key && data.rows.length !== new Set(selected.map(String)).size)) {
-    res.status(409).json({ message: 'Selected records changed. Refresh the table.' });
-    return;
+    return c.json({ message: 'Selected records changed. Refresh the table.' }, 409);
   }
   if (data.rows.length > 100000) {
-    res.status(422).json({ message: 'Narrow the filters to at most 100000 records.' });
-    return;
+    return c.json({ message: 'Narrow the filters to at most 100000 records.' }, 422);
   }
   const templates = await readExportTemplates();
   const financial = source === 'receivable' || source === 'payable';
@@ -390,15 +398,16 @@ router.post('/previews/records', async (req, res) => {
         }
       : {}
   );
-  const fieldKeys = [...new Set([...data.columns, ...columns.map((c) => c.key)])];
+  const fieldKeys = [...new Set([...data.columns, ...columns.map((col) => col.key)])];
   const rows = data.rows.map((raw) => {
     const record = { ...raw } as unknown as Record<string, Cell>;
     if (source === 'partners') record['type_name'] = record['type'] === 0 ? 'Supplier' : 'Customer';
     return Object.fromEntries(fieldKeys.map((key) => [key, record[key] ?? null]));
   });
   const id = randomUUID();
+  const user = c.get('user')!;
   const snapshot: Snapshot = {
-    owner: req.user!.username,
+    owner: user.username,
     direction: source,
     sheetName: selectedTemplates[0]!.sheetName,
     expiresAt: Date.now() + 86400000,
@@ -407,7 +416,7 @@ router.post('/previews/records', async (req, res) => {
   };
   await fs.mkdir(resolveFilesInCachePath('export-previews'), { recursive: true });
   await fs.writeFile(snapshotPath(id), JSON.stringify(snapshot), { flag: 'wx' });
-  res.json({
+  return c.json({
     id,
     sheetName: snapshot.sheetName,
     columns,
@@ -417,22 +426,27 @@ router.post('/previews/records', async (req, res) => {
   });
 });
 
-router.post('/previews/reports', async (req, res) => {
-  const parsed = reportSpec.safeParse(req.body);
+app.post('/previews/reports', async (c) => {
+  let body: unknown;
+  try {
+    body = await c.req.json();
+  } catch {
+    body = {};
+  }
+  const parsed = reportSpec.safeParse(body);
   if (!parsed.success) {
-    res.status(400).json({ message: 'Invalid report filters.', issues: parsed.error.issues });
-    return;
+    return c.json({ message: 'Invalid report filters.', issues: parsed.error.issues }, 400);
   }
   const sheets = await prepareReport(parsed.data);
   const total = sheets.reduce((sum, sheet) => sum + sheet.rows.length, 0);
   if (total > 100000 || sheets.length > 100) {
-    res.status(422).json({ message: 'Narrow the report filters.' });
-    return;
+    return c.json({ message: 'Narrow the report filters.' }, 422);
   }
   const first = sheets[0]!;
   const id = randomUUID();
+  const user = c.get('user')!;
   const snapshot: Snapshot = {
-    owner: req.user!.username,
+    owner: user.username,
     expiresAt: Date.now() + 86400000,
     direction: parsed.data.report,
     sheetName: first.sheetName,
@@ -442,7 +456,7 @@ router.post('/previews/reports', async (req, res) => {
   };
   await fs.mkdir(resolveFilesInCachePath('export-previews'), { recursive: true });
   await fs.writeFile(snapshotPath(id), JSON.stringify(snapshot), { flag: 'wx' });
-  res.json({
+  return c.json({
     id,
     columns: first.columns,
     rows: first.rows.slice(0, 50),
@@ -455,8 +469,14 @@ router.post('/previews/reports', async (req, res) => {
   });
 });
 
-router.post('/previews/:id/download', async (req, res) => {
-  const id = z.uuid().safeParse(req.params['id']);
+app.post('/previews/:id/download', async (c) => {
+  const id = z.uuid().safeParse(c.req.param('id'));
+  let bodyJson: unknown;
+  try {
+    bodyJson = await c.req.json();
+  } catch {
+    bodyJson = {};
+  }
   const body = z
     .strictObject({
       format: z.enum(['xlsx', 'csv']),
@@ -474,27 +494,24 @@ router.post('/previews/:id/download', async (req, res) => {
       font: z.enum(['Arial', 'Calibri', 'Microsoft YaHei', 'SimSun']),
       fontSize: z.number().int().min(8).max(36)
     })
-    .safeParse(req.body);
+    .safeParse(bodyJson);
   if (!id.success || !body.success) {
-    res.status(400).json({ message: 'Invalid export settings.' });
-    return;
+    return c.json({ message: 'Invalid export settings.' }, 400);
   }
   let snapshot: Snapshot;
   try {
     snapshot = JSON.parse(await fs.readFile(snapshotPath(id.data), 'utf8')) as Snapshot;
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
-    res.sendStatus(404);
-    return;
+    return c.body(null, 404);
   }
-  if (snapshot.owner !== req.user!.username) {
-    res.sendStatus(404);
-    return;
+  const user = c.get('user')!;
+  if (snapshot.owner !== user.username) {
+    return c.body(null, 404);
   }
   if (snapshot.expiresAt <= Date.now()) {
     await fs.unlink(snapshotPath(id.data));
-    res.status(410).json({ message: 'Preview expired. Refresh the preview.' });
-    return;
+    return c.json({ message: 'Preview expired. Refresh the preview.' }, 410);
   }
   const settings = body.data;
   const sourceSheets = snapshot.sheets ?? [
@@ -512,8 +529,7 @@ router.post('/previews/:id/download', async (req, res) => {
     new Set(overrides.map((sheet) => sheet.key)).size !== overrides.length ||
     overrides.some((sheet) => !sourceSheets.some((source) => source.key === sheet.key))
   ) {
-    res.status(400).json({ message: 'Invalid export worksheets.' });
-    return;
+    return c.json({ message: 'Invalid export worksheets.' }, 400);
   }
   const resolved = sourceSheets.map((sheet) => ({
     ...sheet,
@@ -522,24 +538,22 @@ router.post('/previews/:id/download', async (req, res) => {
   if (
     resolved.some(
       (sheet) =>
-        new Set(sheet.columns.map((c) => c.key)).size !== sheet.columns.length ||
+        new Set(sheet.columns.map((col) => col.key)).size !== sheet.columns.length ||
         sheet.columns.some(
-          (c) =>
+          (col) =>
             !sourceSheets
               .find((source) => source.key === sheet.key)!
-              .columns.some((allowed) => allowed.key === c.key)
+              .columns.some((allowed) => allowed.key === col.key)
         )
     )
   ) {
-    res.status(400).json({ message: 'Invalid export columns.' });
-    return;
+    return c.json({ message: 'Invalid export columns.' }, 400);
   }
   if (
-    resolved.some((sheet) => !sheet.columns.some((c) => c.visible)) ||
+    resolved.some((sheet) => !sheet.columns.some((col) => col.visible)) ||
     !resolved.some((sheet) => sheet.rows.length)
   ) {
-    res.status(422).json({ message: 'Select at least one column and one record.' });
-    return;
+    return c.json({ message: 'Select at least one column and one record.' }, 422);
   }
   const book = new ExcelJS.Workbook();
   const used = new Set<string>();
@@ -551,11 +565,11 @@ router.post('/previews/:id/download', async (req, res) => {
       name = base.slice(0, 31 - suffix.length) + suffix;
     }
     used.add(name.toLowerCase());
-    const columns = source.columns.filter((c) => c.visible);
+    const columns = source.columns.filter((col) => col.visible);
     const sheet = book.addWorksheet(name, { views: [{ state: 'frozen', ySplit: 1 }] });
-    sheet.columns = columns.map((c) => ({ header: c.label, key: c.key, width: c.width }));
+    sheet.columns = columns.map((col) => ({ header: col.label, key: col.key, width: col.width }));
     source.rows.forEach((row) =>
-      sheet.addRow(Object.fromEntries(columns.map((c) => [c.key, row[c.key]])))
+      sheet.addRow(Object.fromEntries(columns.map((col) => [col.key, row[col.key]])))
     );
     sheet.eachRow((row, index) =>
       row.eachCell((cell) => {
@@ -580,8 +594,8 @@ router.post('/previews/:id/download', async (req, res) => {
     Buffer.from(
       '\uFEFF' +
         [
-          sheet.columns.map((c) => csvCell(c.label)).join(','),
-          ...sheet.rows.map((row) => sheet.columns.map((c) => csvCell(row[c.key])).join(','))
+          sheet.columns.map((col) => csvCell(col.label)).join(','),
+          ...sheet.rows.map((row) => sheet.columns.map((col) => csvCell(row[col.key])).join(','))
         ].join('\r\n')
     );
   const zipped = settings.format === 'csv' && rendered.length > 1;
@@ -595,18 +609,21 @@ router.post('/previews/:id/download', async (req, res) => {
             )
           )
         : csv(rendered[0]!);
-  res.setHeader(
-    'Content-Type',
+
+  const contentType =
     settings.format === 'xlsx'
       ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
       : zipped
         ? 'application/zip'
-        : 'text/csv; charset=utf-8'
-  );
-  res.setHeader(
-    'Content-Disposition',
-    `attachment; filename="${snapshot.direction}.${zipped ? 'zip' : settings.format}"`
-  );
-  res.send(buffer);
+        : 'text/csv; charset=utf-8';
+
+  return new Response(new Uint8Array(buffer), {
+    status: 200,
+    headers: {
+      'Content-Type': contentType,
+      'Content-Disposition': `attachment; filename="${snapshot.direction}.${zipped ? 'zip' : settings.format}"`
+    }
+  });
 });
-export default router;
+
+export default app;
